@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `${request.headers.get('origin')}/success`,
+     success_url: `${request.headers.get('origin')}/success?produkt=${encodeURIComponent(productName)}`,
       cancel_url: `${request.headers.get('origin')}/`,
     });
 
