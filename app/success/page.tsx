@@ -1,7 +1,6 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
 
 const downloads: Record<string, string> = {
   'Geometrie Formelsammlung Klasse 6-9': 'https://xxptbgzjjdifcyrtxbkj.supabase.co/storage/v1/object/sign/materialien/Geometrie_Formelsammlung%20(1).pdf?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wN2U1ODRkYy1kNGQwLTQ1NzMtYjQzMi03NjY0ZTRmNTQzZTkiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJtYXRlcmlhbGllbi9HZW9tZXRyaWVfRm9ybWVsc2FtbWx1bmcgKDEpLnBkZiIsImlhdCI6MTc3ODc1NTk1MCwiZXhwIjoxODEwMjkxOTUwfQ.PgFV_bdF147s4XXlbRIMS6lpfoYuI8jHWkzk3wle41s',
@@ -12,38 +11,44 @@ const downloads: Record<string, string> = {
 function SuccessContent() {
   const searchParams = useSearchParams();
   const produkt = searchParams.get('produkt');
+  const url = produkt ? downloads[produkt] : null;
 
   useEffect(() => {
-    if (produkt && downloads[produkt]) {
-      const link = document.createElement('a');
-      link.href = downloads[produkt];
-      link.download = produkt + '.pdf';
-      link.click();
+    if (url) {
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+      }, 1000);
     }
-  }, [produkt]);
+  }, [url]);
+
+  if (url) {
+    return (
+      <main style={{minHeight: '100vh', backgroundColor: '#f5f0e8', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+        <div style={{backgroundColor: 'white', borderRadius: '16px', padding: '48px', border: '1px solid #e0d8cc', textAlign: 'center', maxWidth: '500px', width: '100%'}}>
+          <div style={{fontSize: '64px', marginBottom: '16px'}}>🎉</div>
+          <h1 style={{fontSize: '28px', fontWeight: '700', color: '#4a4035', margin: '0 0 12px'}}>Vielen Dank!</h1>
+          <p style={{fontSize: '16px', color: '#7a6e62', margin: '0 0 16px'}}>Deine Zahlung war erfolgreich!</p>
+          <p style={{fontSize: '15px', color: '#5b9bd5', fontWeight: '600', margin: '0 0 24px'}}>Dein Download startet automatisch...</p>
+          <a href={url} target="_blank" style={{display: 'inline-block', backgroundColor: '#5b9bd5', color: 'white', padding: '14px 32px', borderRadius: '10px', textDecoration: 'none', fontWeight: '700', fontSize: '16px', marginBottom: '24px'}}>
+            Hier klicken zum Herunterladen
+          </a>
+          <br/>
+          <a href="/" style={{color: '#5b9bd5', fontSize: '14px', textDecoration: 'none'}}>Zurueck zur Startseite</a>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main style={{minHeight: '100vh', backgroundColor: '#f5f0e8', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-      <div style={{backgroundColor: 'white', borderRadius: '16px', padding: '48px', border: '1px solid #e0d8cc', textAlign: 'center', maxWidth: '500px'}}>
+    <main style={{minHeight: '100vh', backgroundColor: '#f5f0e8', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+      <div style={{backgroundColor: 'white', borderRadius: '16px', padding: '48px', border: '1px solid #e0d8cc', textAlign: 'center', maxWidth: '500px', width: '100%'}}>
         <div style={{fontSize: '64px', marginBottom: '16px'}}>🎉</div>
         <h1 style={{fontSize: '28px', fontWeight: '700', color: '#4a4035', margin: '0 0 12px'}}>Vielen Dank!</h1>
-        <p style={{fontSize: '16px', color: '#7a6e62', margin: '0 0 8px', lineHeight: '1.6'}}>
-          Deine Zahlung war erfolgreich!
-        </p>
-        <p style={{fontSize: '16px', color: '#5b9bd5', fontWeight: '600', margin: '0 0 24px'}}>
-          ⬇️ Dein Download startet automatisch...
-        </p>
-        {produkt && downloads[produkt] && (
-          
-            href={downloads[produkt]}
-            download={produkt + '.pdf'}
-            style={{display: 'inline-block', backgroundColor: '#5b9bd5', color: 'white', padding: '12px 28px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600', fontSize: '15px', marginBottom: '24px'}}
-          >
-            ⬇️ Nochmal herunterladen
-          </a>
-        )}
-        <br/>
-        <a href="/" style={{color: '#5b9bd5', fontSize: '14px', textDecoration: 'none'}}>← Zurück zur Startseite</a>
+        <p style={{fontSize: '16px', color: '#7a6e62', margin: '0 0 24px'}}>Deine Zahlung war erfolgreich!</p>
+        <a href="/" style={{color: '#5b9bd5', fontSize: '14px', textDecoration: 'none'}}>Zurueck zur Startseite</a>
       </div>
     </main>
   );
@@ -51,7 +56,11 @@ function SuccessContent() {
 
 export default function Success() {
   return (
-    <Suspense fallback={<div>Laden...</div>}>
+    <Suspense fallback={
+      <main style={{minHeight: '100vh', backgroundColor: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+        <p style={{color: '#5b9bd5', fontSize: '18px'}}>Laden...</p>
+      </main>
+    }>
       <SuccessContent />
     </Suspense>
   );
