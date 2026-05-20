@@ -230,7 +230,7 @@ export default function Home() {
         </div>
 
         {/* Slogan + Buttons — immer sichtbar */}
-        <div style={{marginBottom: '8px'}}>
+       <div style={{marginBottom: '8px', opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease'}}>
           <p style={{fontSize: '20px', color: '#555', letterSpacing: '2px', fontWeight: '500', marginBottom: '32px'}}>Dein Lernstream. Deine Regeln.</p>
           <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
             <a href="#mathe" style={{background: 'linear-gradient(135deg, #5b9bd5, #2d6da8)', color: 'white', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 6px 20px rgba(45,109,168,0.4)'}}>Materialien ansehen</a>
