@@ -20,17 +20,26 @@ export default function Home() {
   const [ausgewaehlt, setAusgewaehlt] = useState<Produkt | null>(null);
   const [heftPos, setHeftPos] = useState(0);
   const [heftRichtung, setHeftRichtung] = useState(1);
+  const [kratzen, setKratzen] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setHeftPos(prev => {
-        if (prev >= 80) setHeftRichtung(-1);
-        if (prev <= 0) setHeftRichtung(1);
-        return prev + heftRichtung * 2;
+        const next = prev + heftRichtung * 1.5;
+        if (next >= 60) setHeftRichtung(-1);
+        if (next <= 0) setHeftRichtung(1);
+        return next;
       });
     }, 30);
     return () => clearInterval(interval);
   }, [heftRichtung]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setKratzen(prev => !prev);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, []);
 
   const kaufen = async (productName: string, price: number) => {
     const response = await fetch('/api/checkout', {
@@ -137,40 +146,42 @@ export default function Home() {
 
       <style>{`
         @keyframes beinLinks {
-          0%, 100% { transform: rotate(-20deg); }
-          50% { transform: rotate(20deg); }
+          0%, 100% { transform: rotate(-25deg); }
+          50% { transform: rotate(25deg); }
         }
         @keyframes beinRechts {
-          0%, 100% { transform: rotate(20deg); }
-          50% { transform: rotate(-20deg); }
+          0%, 100% { transform: rotate(25deg); }
+          50% { transform: rotate(-25deg); }
+        }
+        @keyframes armKratzen {
+          0%, 100% { transform: rotate(-30deg) translateY(-5px); }
+          50% { transform: rotate(-60deg) translateY(-15px); }
+        }
+        @keyframes fragezeichen {
+          0%, 100% { transform: translateY(0px) scale(1); opacity: 1; }
+          50% { transform: translateY(-10px) scale(1.2); opacity: 0.7; }
         }
         @keyframes schweben1 {
-          0%, 100% { transform: translateY(0px) rotate(-10deg); opacity: 0.7; }
-          50% { transform: translateY(-20px) rotate(10deg); opacity: 1; }
+          0%, 100% { transform: translateY(0px) rotate(-10deg); }
+          50% { transform: translateY(-20px) rotate(10deg); }
         }
         @keyframes schweben2 {
-          0%, 100% { transform: translateY(0px) rotate(5deg); opacity: 0.6; }
-          50% { transform: translateY(-15px) rotate(-5deg); opacity: 1; }
+          0%, 100% { transform: translateY(0px) rotate(5deg); }
+          50% { transform: translateY(-15px) rotate(-5deg); }
         }
         @keyframes schweben3 {
-          0%, 100% { transform: translateY(0px) rotate(-5deg); opacity: 0.8; }
-          50% { transform: translateY(-25px) rotate(15deg); opacity: 1; }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-25px); }
         }
-        @keyframes funkeln {
-          0%, 100% { opacity: 0; transform: scale(0.5); }
-          50% { opacity: 1; transform: scale(1.2); }
+        @keyframes blinzeln {
+          0%, 90%, 100% { transform: scaleY(1); }
+          95% { transform: scaleY(0.1); }
         }
       `}</style>
 
       {ausgewaehlt && (
-        <div
-          onClick={() => setAusgewaehlt(null)}
-          style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{backgroundColor: 'white', borderRadius: '16px', maxWidth: '700px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto'}}
-          >
+        <div onClick={() => setAusgewaehlt(null)} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'}}>
+          <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '16px', maxWidth: '700px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto'}}>
             <div style={{position: 'relative', height: '300px', backgroundColor: '#f0f0f0'}}>
               <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
               <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '12px', right: '12px', backgroundColor: 'white', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '18px', cursor: 'pointer', fontWeight: '700', color: '#4a4035', boxShadow: '0 2px 8px rgba(0,0,0,0.2)'}}>✕</button>
@@ -215,50 +226,79 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO mit Animation */}
-      <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '60px 24px 40px', position: 'relative', overflow: 'hidden', borderBottom: '1px solid #e0d8cc'}}>
+      <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '60px 24px 50px', position: 'relative', overflow: 'hidden', borderBottom: '1px solid #e0d8cc'}}>
 
         {/* Schwebende Formeln */}
-        <div style={{position: 'absolute', top: '20px', left: '8%', fontSize: '28px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben1 3s ease-in-out infinite'}}>x²</div>
-        <div style={{position: 'absolute', top: '40px', right: '10%', fontSize: '22px', fontWeight: '700', color: '#2d6da8', animation: 'schweben2 4s ease-in-out infinite'}}>E=mc²</div>
-        <div style={{position: 'absolute', bottom: '60px', left: '5%', fontSize: '26px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 3.5s ease-in-out infinite'}}>π</div>
-        <div style={{position: 'absolute', top: '30px', left: '30%', fontSize: '20px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben2 2.8s ease-in-out infinite'}}>a²+b²=c²</div>
-        <div style={{position: 'absolute', bottom: '40px', right: '8%', fontSize: '24px', fontWeight: '700', color: '#2d6da8', animation: 'schweben1 3.2s ease-in-out infinite'}}>F=ma</div>
-        <div style={{position: 'absolute', top: '60px', right: '30%', fontSize: '18px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 4.5s ease-in-out infinite'}}>∑</div>
-
-        {/* Funkelnde Sterne */}
-        <div style={{position: 'absolute', top: '15%', left: '20%', fontSize: '16px', animation: 'funkeln 2s ease-in-out infinite'}}>✨</div>
-        <div style={{position: 'absolute', top: '25%', right: '20%', fontSize: '16px', animation: 'funkeln 2.5s ease-in-out infinite 0.5s'}}>✨</div>
-        <div style={{position: 'absolute', bottom: '20%', left: '40%', fontSize: '16px', animation: 'funkeln 3s ease-in-out infinite 1s'}}>✨</div>
+        <div style={{position: 'absolute', top: '20px', left: '8%', fontSize: '24px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben1 3s ease-in-out infinite'}}>x²</div>
+        <div style={{position: 'absolute', top: '40px', right: '10%', fontSize: '20px', fontWeight: '700', color: '#2d6da8', animation: 'schweben2 4s ease-in-out infinite'}}>E=mc²</div>
+        <div style={{position: 'absolute', bottom: '80px', left: '5%', fontSize: '22px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 3.5s ease-in-out infinite'}}>π</div>
+        <div style={{position: 'absolute', top: '30px', left: '28%', fontSize: '18px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben2 2.8s ease-in-out infinite'}}>a²+b²=c²</div>
+        <div style={{position: 'absolute', bottom: '60px', right: '8%', fontSize: '20px', fontWeight: '700', color: '#2d6da8', animation: 'schweben1 3.2s ease-in-out infinite'}}>F=ma</div>
+        <div style={{position: 'absolute', top: '50px', right: '28%', fontSize: '16px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 4.5s ease-in-out infinite'}}>∑</div>
 
         {/* Titel */}
         <h1 style={{fontSize: '80px', fontWeight: '900', margin: '0 0 8px', letterSpacing: '-3px', color: '#1a1a2e', textTransform: 'uppercase', lineHeight: 1}}>LERNFLIX</h1>
         <p style={{fontSize: '18px', margin: '0 0 40px', color: '#666666', letterSpacing: '2px', fontWeight: '500'}}>Dein Lernstream. Deine Regeln.</p>
 
-        {/* Animiertes Heft */}
-        <div style={{display: 'flex', justifyContent: 'center', marginBottom: '40px'}}>
-          <div style={{position: 'relative', transform: `translateX(${heftPos - 40}px)`, transition: 'transform 0.05s linear'}}>
+        {/* Animiertes Heft Maskottchen */}
+        <div style={{display: 'flex', justifyContent: 'center', marginBottom: '40px', minHeight: '180px', alignItems: 'flex-end'}}>
+          <div style={{position: 'relative', transform: `translateX(${heftPos - 30}px)`}}>
+
+            {/* Fragezeichen über Kopf */}
+            <div style={{position: 'absolute', top: '-40px', right: '-10px', fontSize: '28px', fontWeight: '900', color: '#5b9bd5', animation: 'fragezeichen 1.5s ease-in-out infinite'}}>?</div>
+
+            {/* Arm kratzen */}
+            <div style={{
+              position: 'absolute',
+              top: '15px',
+              right: '-20px',
+              width: '8px',
+              height: '35px',
+              backgroundColor: '#5b9bd5',
+              borderRadius: '4px',
+              transformOrigin: 'top center',
+              animation: kratzen ? 'armKratzen 0.3s ease-in-out infinite' : 'none',
+              transform: 'rotate(-40deg)',
+            }}></div>
+
             {/* Heft Körper */}
-            <div style={{width: '80px', height: '100px', backgroundColor: '#5b9bd5', borderRadius: '8px 12px 12px 8px', position: 'relative', boxShadow: '4px 4px 12px rgba(91,155,213,0.4)'}}>
-              {/* Heft Linien */}
-              <div style={{position: 'absolute', top: '20px', left: '15px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.6)'}}></div>
-              <div style={{position: 'absolute', top: '32px', left: '15px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.6)'}}></div>
-              <div style={{position: 'absolute', top: '44px', left: '15px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.6)'}}></div>
-              <div style={{position: 'absolute', top: '56px', left: '15px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.6)'}}></div>
-              {/* Heft Spirale */}
-              <div style={{position: 'absolute', left: '6px', top: '10px', width: '6px', height: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
-                {[0,1,2,3,4].map(i => (
-                  <div key={i} style={{width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#1a1a2e'}}></div>
+            <div style={{width: '90px', height: '110px', backgroundColor: '#5b9bd5', borderRadius: '8px 14px 14px 8px', position: 'relative', boxShadow: '6px 6px 20px rgba(91,155,213,0.35)'}}>
+
+              {/* Spirale */}
+              <div style={{position: 'absolute', left: '5px', top: '12px', width: '8px', height: '86px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
+                {[0,1,2,3,4,5].map(i => (
+                  <div key={i} style={{width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#1a1a2e', border: '2px solid white'}}></div>
                 ))}
               </div>
-              {/* Gesicht */}
-              <div style={{position: 'absolute', top: '12px', right: '12px', fontSize: '20px'}}>📚</div>
+
+              {/* Augen */}
+              <div style={{position: 'absolute', top: '22px', left: '24px', display: 'flex', gap: '14px'}}>
+                <div style={{width: '14px', height: '14px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite'}}>
+                  <div style={{width: '7px', height: '7px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+                </div>
+                <div style={{width: '14px', height: '14px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite 0.1s'}}>
+                  <div style={{width: '7px', height: '7px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+                </div>
+              </div>
+
+              {/* Lächeln */}
+              <div style={{position: 'absolute', top: '48px', left: '22px', width: '46px', height: '22px', borderBottom: '4px solid white', borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderRadius: '0 0 30px 30px'}}></div>
+
+              {/* Wangen */}
+              <div style={{position: 'absolute', top: '42px', left: '18px', width: '10px', height: '6px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.7}}></div>
+              <div style={{position: 'absolute', top: '42px', right: '12px', width: '10px', height: '6px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.7}}></div>
+
+              {/* Linien auf Heft */}
+              <div style={{position: 'absolute', bottom: '20px', left: '20px', right: '8px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
+              <div style={{position: 'absolute', bottom: '30px', left: '20px', right: '8px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
             </div>
+
             {/* Beine */}
-            <div style={{display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '4px'}}>
-              <div style={{width: '10px', height: '30px', backgroundColor: '#1a1a2e', borderRadius: '5px', transformOrigin: 'top center', animation: 'beinLinks 0.5s ease-in-out infinite'}}></div>
-              <div style={{width: '10px', height: '30px', backgroundColor: '#1a1a2e', borderRadius: '5px', transformOrigin: 'top center', animation: 'beinRechts 0.5s ease-in-out infinite'}}></div>
+            <div style={{display: 'flex', justifyContent: 'center', gap: '18px', marginTop: '4px'}}>
+              <div style={{width: '11px', height: '32px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: 'beinLinks 0.4s ease-in-out infinite'}}></div>
+              <div style={{width: '11px', height: '32px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: 'beinRechts 0.4s ease-in-out infinite'}}></div>
             </div>
+
           </div>
         </div>
 
