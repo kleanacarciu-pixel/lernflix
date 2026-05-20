@@ -23,7 +23,7 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "user",
-            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit diesem JSON ohne Markdown: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
+            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit reinem JSON ohne Markdown, ohne Backticks, ohne Erklaerung: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
           },
         ],
       }),
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "API Fehler" }, { status: 500 });
     }
 
-    const text = data.content[0].text.trim();
+    let text = data.content[0].text.trim();
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
     const quizData = JSON.parse(text);
     return NextResponse.json(quizData);
   } catch (error) {
