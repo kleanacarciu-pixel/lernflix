@@ -149,13 +149,10 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO */}
       <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '50px 24px 50px', borderBottom: '1px solid #e0d8cc', overflow: 'hidden'}}>
 
-        {/* Animation Container */}
         <div style={{display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '300px', marginBottom: '40px', position: 'relative'}}>
 
-          {/* Heft */}
           <div style={{
             transform: phase === 'weglaufen' ? 'translateX(700px)' : 'translateX(0px)',
             opacity: phase === 'weglaufen' ? 0 : 1,
@@ -163,31 +160,24 @@ export default function Home() {
             position: 'relative',
           }}>
 
-            {/* 3 Fragezeichen — nur kratzen Phase */}
             {phase === 'kratzen' && (<>
               <div style={{position: 'absolute', top: '-70px', left: '50%', transform: 'translateX(-50%)', fontSize: '52px', fontWeight: '900', color: '#5b9bd5', animation: 'frage1 1.2s ease-in-out infinite'}}>?</div>
               <div style={{position: 'absolute', top: '-55px', left: '-30px', fontSize: '34px', fontWeight: '900', color: '#2d6da8', animation: 'frage2 1.5s ease-in-out infinite 0.3s'}}>?</div>
               <div style={{position: 'absolute', top: '-55px', right: '-30px', fontSize: '34px', fontWeight: '900', color: '#8a6a20', animation: 'frage3 1.8s ease-in-out infinite 0.6s'}}>?</div>
             </>)}
 
-            {/* Heft Körper */}
             <div style={{
-              width: '140px',
-              height: '170px',
+              width: '140px', height: '170px',
               background: 'linear-gradient(135deg, #5b9bd5 0%, #2d6da8 100%)',
-              borderRadius: '12px 20px 20px 12px',
-              position: 'relative',
+              borderRadius: '12px 20px 20px 12px', position: 'relative',
               boxShadow: '10px 10px 30px rgba(45,109,168,0.4)',
               animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none',
             }}>
-              {/* Spirale */}
               <div style={{position: 'absolute', left: '6px', top: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: '142px'}}>
                 {[0,1,2,3,4,5,6,7,8].map(i => (
                   <div key={i} style={{width: '12px', height: '12px', borderRadius: '50%', background: 'linear-gradient(135deg, #1a1a2e, #333)', border: '2.5px solid rgba(255,255,255,0.8)'}}></div>
                 ))}
               </div>
-
-              {/* Augen */}
               <div style={{position: 'absolute', top: '32px', left: '36px', display: 'flex', gap: '22px'}}>
                 <div style={{width: '22px', height: '22px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', animation: 'blinzeln 4s ease-in-out infinite'}}>
                   <div style={{width: '11px', height: '11px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
@@ -196,27 +186,19 @@ export default function Home() {
                   <div style={{width: '11px', height: '11px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
                 </div>
               </div>
-
-              {/* Lächeln */}
-              <div style={{position: 'absolute', top: '70px', left: '28px', width: '84px', height: '36px', borderBottom: '6px solid white', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderRadius: '0 0 60px 60px', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.15))'}}></div>
-
-              {/* Wangen */}
+              <div style={{position: 'absolute', top: '70px', left: '28px', width: '84px', height: '36px', borderBottom: '6px solid white', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderRadius: '0 0 60px 60px'}}></div>
               <div style={{position: 'absolute', top: '64px', left: '22px', width: '18px', height: '10px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.85}}></div>
               <div style={{position: 'absolute', top: '64px', right: '16px', width: '18px', height: '10px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.85}}></div>
-
-              {/* Linien */}
               <div style={{position: 'absolute', bottom: '30px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
               <div style={{position: 'absolute', bottom: '46px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
             </div>
 
-            {/* Beine */}
             <div style={{display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '6px'}}>
               <div style={{width: '14px', height: '46px', background: 'linear-gradient(180deg, #1a1a2e, #333)', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
               <div style={{width: '14px', height: '46px', background: 'linear-gradient(180deg, #1a1a2e, #333)', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
             </div>
           </div>
 
-          {/* Schild */}
           {phase === 'schild' && (
             <div style={{position: 'absolute', right: 'calc(50% - 230px)', bottom: '50px', animation: 'schildRein 0.7s ease-out forwards'}}>
               <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
@@ -229,13 +211,15 @@ export default function Home() {
           )}
         </div>
 
-        {/* Slogan + Buttons — immer sichtbar */}
-       <div style={{marginBottom: '8px', opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease'}}>
-          <p style={{fontSize: '20px', color: '#555', letterSpacing: '2px', fontWeight: '500', marginBottom: '32px'}}>Dein Lernstream. Deine Regeln.</p>
-          <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
-            <a href="#mathe" style={{background: 'linear-gradient(135deg, #5b9bd5, #2d6da8)', color: 'white', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 6px 20px rgba(45,109,168,0.4)'}}>Materialien ansehen</a>
-            <a href="/quiz" style={{backgroundColor: 'white', color: '#2d6da8', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', border: '2.5px solid #2d6da8', boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>Kostenlose Quizze</a>
-          </div>
+        {/* Slogan — nur bei Schild */}
+        <div style={{opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '20px', minHeight: '32px'}}>
+          <p style={{fontSize: '20px', color: '#555', letterSpacing: '2px', fontWeight: '500', margin: 0}}>Dein Lernstream. Deine Regeln.</p>
+        </div>
+
+        {/* Buttons — immer sichtbar */}
+        <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
+          <a href="#mathe" style={{background: 'linear-gradient(135deg, #5b9bd5, #2d6da8)', color: 'white', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 6px 20px rgba(45,109,168,0.4)'}}>Materialien ansehen</a>
+          <a href="/quiz" style={{backgroundColor: 'white', color: '#2d6da8', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', border: '2.5px solid #2d6da8', boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>Kostenlose Quizze</a>
         </div>
       </section>
 
