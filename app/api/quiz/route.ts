@@ -18,12 +18,12 @@ export async function POST(request: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1000,
         messages: [
           {
             role: "user",
-            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit reinem JSON ohne Markdown, ohne Backticks, ohne Erklaerung: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
+            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit reinem JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
           },
         ],
       }),
