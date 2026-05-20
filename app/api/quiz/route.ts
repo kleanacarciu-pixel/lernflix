@@ -18,7 +18,7 @@ export async function POST(request: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 1000,
         messages: [
           {
@@ -30,9 +30,9 @@ export async function POST(request: Request) {
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
-      console.error("Anthropic Fehler:", data);
+      console.error("Anthropic Fehler:", JSON.stringify(data));
       return NextResponse.json({ error: "API Fehler" }, { status: 500 });
     }
 
