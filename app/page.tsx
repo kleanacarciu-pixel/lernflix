@@ -18,27 +18,28 @@ type Produkt = {
 
 export default function Home() {
   const [ausgewaehlt, setAusgewaehlt] = useState<Produkt | null>(null);
-  const [heftPos, setHeftPos] = useState(0);
-  const [heftRichtung, setHeftRichtung] = useState(1);
-  const [kratzen, setKratzen] = useState(false);
+  const [phase, setPhase] = useState<'kratzen' | 'weglaufen' | 'zurueck' | 'schild'>('kratzen');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setHeftPos(prev => {
-        const next = prev + heftRichtung * 1.5;
-        if (next >= 60) setHeftRichtung(-1);
-        if (next <= 0) setHeftRichtung(1);
-        return next;
-      });
-    }, 30);
-    return () => clearInterval(interval);
-  }, [heftRichtung]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setKratzen(prev => !prev);
-    }, 1500);
-    return () => clearInterval(interval);
+    const timings = [
+      { phase: 'weglaufen' as const, delay: 3000 },
+      { phase: 'zurueck' as const, delay: 5500 },
+      { phase: 'schild' as const, delay: 7000 },
+      { phase: 'kratzen' as const, delay: 11000 },
+    ];
+    const timeouts = timings.map(({ phase, delay }) =>
+      setTimeout(() => setPhase(phase), delay)
+    );
+    const loop = setInterval(() => {
+      setPhase('kratzen');
+      timings.forEach(({ phase, delay }) =>
+        setTimeout(() => setPhase(phase), delay)
+      );
+    }, 12000);
+    return () => {
+      timeouts.forEach(clearTimeout);
+      clearInterval(loop);
+    };
   }, []);
 
   const kaufen = async (productName: string, price: number) => {
@@ -141,6 +142,9 @@ export default function Home() {
     </div>
   );
 
+  const heftX = phase === 'weglaufen' ? 300 : phase === 'zurueck' || phase === 'schild' ? 0 : 0;
+  const heftOpacity = phase === 'weglaufen' ? 0 : 1;
+
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#f5f0e8', fontFamily: 'sans-serif'}}>
 
@@ -154,12 +158,16 @@ export default function Home() {
           50% { transform: rotate(-25deg); }
         }
         @keyframes armKratzen {
-          0%, 100% { transform: rotate(-30deg) translateY(-5px); }
-          50% { transform: rotate(-60deg) translateY(-15px); }
+          0%, 100% { transform: rotate(-30deg); }
+          50% { transform: rotate(-70deg) translateY(-8px); }
         }
         @keyframes fragezeichen {
-          0%, 100% { transform: translateY(0px) scale(1); opacity: 1; }
-          50% { transform: translateY(-10px) scale(1.2); opacity: 0.7; }
+          0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+          50% { transform: translateY(-12px) scale(1.3); opacity: 0.6; }
+        }
+        @keyframes schildDrehen {
+          0% { transform: rotateY(90deg) scale(0.5); opacity: 0; }
+          100% { transform: rotateY(0deg) scale(1); opacity: 1; }
         }
         @keyframes schweben1 {
           0%, 100% { transform: translateY(0px) rotate(-10deg); }
@@ -174,8 +182,13 @@ export default function Home() {
           50% { transform: translateY(-25px); }
         }
         @keyframes blinzeln {
-          0%, 90%, 100% { transform: scaleY(1); }
-          95% { transform: scaleY(0.1); }
+          0%, 88%, 100% { transform: scaleY(1); }
+          94% { transform: scaleY(0.08); }
+        }
+        @keyframes wackeln {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-5deg); }
+          75% { transform: rotate(5deg); }
         }
       `}</style>
 
@@ -228,81 +241,109 @@ export default function Home() {
 
       <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '60px 24px 50px', position: 'relative', overflow: 'hidden', borderBottom: '1px solid #e0d8cc'}}>
 
-        {/* Schwebende Formeln */}
         <div style={{position: 'absolute', top: '20px', left: '8%', fontSize: '24px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben1 3s ease-in-out infinite'}}>x²</div>
         <div style={{position: 'absolute', top: '40px', right: '10%', fontSize: '20px', fontWeight: '700', color: '#2d6da8', animation: 'schweben2 4s ease-in-out infinite'}}>E=mc²</div>
         <div style={{position: 'absolute', bottom: '80px', left: '5%', fontSize: '22px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 3.5s ease-in-out infinite'}}>π</div>
         <div style={{position: 'absolute', top: '30px', left: '28%', fontSize: '18px', fontWeight: '700', color: '#5b9bd5', animation: 'schweben2 2.8s ease-in-out infinite'}}>a²+b²=c²</div>
         <div style={{position: 'absolute', bottom: '60px', right: '8%', fontSize: '20px', fontWeight: '700', color: '#2d6da8', animation: 'schweben1 3.2s ease-in-out infinite'}}>F=ma</div>
-        <div style={{position: 'absolute', top: '50px', right: '28%', fontSize: '16px', fontWeight: '700', color: '#8a6a20', animation: 'schweben3 4.5s ease-in-out infinite'}}>∑</div>
 
-        {/* Titel */}
         <h1 style={{fontSize: '80px', fontWeight: '900', margin: '0 0 8px', letterSpacing: '-3px', color: '#1a1a2e', textTransform: 'uppercase', lineHeight: 1}}>LERNFLIX</h1>
         <p style={{fontSize: '18px', margin: '0 0 40px', color: '#666666', letterSpacing: '2px', fontWeight: '500'}}>Dein Lernstream. Deine Regeln.</p>
 
-        {/* Animiertes Heft Maskottchen */}
-        <div style={{display: 'flex', justifyContent: 'center', marginBottom: '40px', minHeight: '180px', alignItems: 'flex-end'}}>
-          <div style={{position: 'relative', transform: `translateX(${heftPos - 30}px)`}}>
+        {/* Animation Container */}
+        <div style={{display: 'flex', justifyContent: 'center', marginBottom: '40px', minHeight: '220px', alignItems: 'flex-end', position: 'relative'}}>
 
-            {/* Fragezeichen über Kopf */}
-            <div style={{position: 'absolute', top: '-40px', right: '-10px', fontSize: '28px', fontWeight: '900', color: '#5b9bd5', animation: 'fragezeichen 1.5s ease-in-out infinite'}}>?</div>
+          {/* Heft Maskottchen */}
+          <div style={{
+            transform: `translateX(${heftX}px)`,
+            opacity: heftOpacity,
+            transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.5s ease-in 1s' : phase === 'zurueck' ? 'transform 1.5s ease-out, opacity 0.3s ease-out' : 'none',
+            position: 'relative',
+          }}>
 
-            {/* Arm kratzen */}
-            <div style={{
-              position: 'absolute',
-              top: '15px',
-              right: '-20px',
-              width: '8px',
-              height: '35px',
-              backgroundColor: '#5b9bd5',
-              borderRadius: '4px',
-              transformOrigin: 'top center',
-              animation: kratzen ? 'armKratzen 0.3s ease-in-out infinite' : 'none',
-              transform: 'rotate(-40deg)',
-            }}></div>
+            {/* Fragezeichen — nur bei kratzen Phase */}
+            {phase === 'kratzen' && (
+              <div style={{position: 'absolute', top: '-50px', right: '-5px', fontSize: '32px', fontWeight: '900', color: '#5b9bd5', animation: 'fragezeichen 1s ease-in-out infinite'}}>?</div>
+            )}
+
+            {/* Arm kratzen — nur bei kratzen Phase */}
+            {phase === 'kratzen' && (
+              <div style={{position: 'absolute', top: '10px', right: '-22px', width: '9px', height: '38px', backgroundColor: '#5b9bd5', borderRadius: '5px', transformOrigin: 'top center', animation: 'armKratzen 0.4s ease-in-out infinite'}}></div>
+            )}
 
             {/* Heft Körper */}
-            <div style={{width: '90px', height: '110px', backgroundColor: '#5b9bd5', borderRadius: '8px 14px 14px 8px', position: 'relative', boxShadow: '6px 6px 20px rgba(91,155,213,0.35)'}}>
-
+            <div style={{
+              width: '100px',
+              height: '120px',
+              backgroundColor: '#5b9bd5',
+              borderRadius: '10px 16px 16px 10px',
+              position: 'relative',
+              boxShadow: '6px 6px 20px rgba(91,155,213,0.4)',
+              animation: phase === 'schild' ? 'wackeln 0.5s ease-in-out 3' : 'none',
+            }}>
               {/* Spirale */}
-              <div style={{position: 'absolute', left: '5px', top: '12px', width: '8px', height: '86px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
-                {[0,1,2,3,4,5].map(i => (
-                  <div key={i} style={{width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#1a1a2e', border: '2px solid white'}}></div>
+              <div style={{position: 'absolute', left: '5px', top: '12px', width: '10px', height: '96px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around'}}>
+                {[0,1,2,3,4,5,6].map(i => (
+                  <div key={i} style={{width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#1a1a2e', border: '2px solid white'}}></div>
                 ))}
               </div>
 
               {/* Augen */}
-              <div style={{position: 'absolute', top: '22px', left: '24px', display: 'flex', gap: '14px'}}>
-                <div style={{width: '14px', height: '14px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite'}}>
-                  <div style={{width: '7px', height: '7px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+              <div style={{position: 'absolute', top: '24px', left: '28px', display: 'flex', gap: '16px'}}>
+                <div style={{width: '16px', height: '16px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite'}}>
+                  <div style={{width: '8px', height: '8px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
                 </div>
-                <div style={{width: '14px', height: '14px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite 0.1s'}}>
-                  <div style={{width: '7px', height: '7px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+                <div style={{width: '16px', height: '16px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 3s ease-in-out infinite 0.15s'}}>
+                  <div style={{width: '8px', height: '8px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
                 </div>
               </div>
 
-              {/* Lächeln */}
-              <div style={{position: 'absolute', top: '48px', left: '22px', width: '46px', height: '22px', borderBottom: '4px solid white', borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderRadius: '0 0 30px 30px'}}></div>
+              {/* Lächeln gross */}
+              <div style={{position: 'absolute', top: '52px', left: '24px', width: '52px', height: '24px', borderBottom: '5px solid white', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderRadius: '0 0 40px 40px'}}></div>
 
               {/* Wangen */}
-              <div style={{position: 'absolute', top: '42px', left: '18px', width: '10px', height: '6px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.7}}></div>
-              <div style={{position: 'absolute', top: '42px', right: '12px', width: '10px', height: '6px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.7}}></div>
+              <div style={{position: 'absolute', top: '46px', left: '20px', width: '12px', height: '7px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.8}}></div>
+              <div style={{position: 'absolute', top: '46px', right: '14px', width: '12px', height: '7px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.8}}></div>
 
-              {/* Linien auf Heft */}
-              <div style={{position: 'absolute', bottom: '20px', left: '20px', right: '8px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
-              <div style={{position: 'absolute', bottom: '30px', left: '20px', right: '8px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
+              {/* Linien */}
+              <div style={{position: 'absolute', bottom: '22px', left: '22px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
+              <div style={{position: 'absolute', bottom: '32px', left: '22px', right: '10px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
             </div>
 
             {/* Beine */}
-            <div style={{display: 'flex', justifyContent: 'center', gap: '18px', marginTop: '4px'}}>
-              <div style={{width: '11px', height: '32px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: 'beinLinks 0.4s ease-in-out infinite'}}></div>
-              <div style={{width: '11px', height: '32px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: 'beinRechts 0.4s ease-in-out infinite'}}></div>
+            <div style={{display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '4px'}}>
+              <div style={{width: '12px', height: '35px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
+              <div style={{width: '12px', height: '35px', backgroundColor: '#1a1a2e', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
             </div>
-
           </div>
+
+          {/* Schild — nur bei schild Phase */}
+          {phase === 'schild' && (
+            <div style={{
+              position: 'absolute',
+              right: 'calc(50% - 180px)',
+              bottom: '40px',
+              animation: 'schildDrehen 0.8s ease-out forwards',
+            }}>
+              <div style={{
+                backgroundColor: '#1a1a2e',
+                color: 'white',
+                padding: '16px 28px',
+                borderRadius: '12px',
+                fontSize: '28px',
+                fontWeight: '900',
+                letterSpacing: '-1px',
+                boxShadow: '4px 4px 16px rgba(0,0,0,0.3)',
+                border: '4px solid #5b9bd5',
+              }}>
+                LERNFLIX
+              </div>
+              {/* Schild Stange */}
+              <div style={{width: '6px', height: '40px', backgroundColor: '#1a1a2e', margin: '0 auto'}}></div>
+            </div>
+          )}
         </div>
 
-        {/* Buttons */}
         <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
           <a href="#mathe" style={{backgroundColor: '#5b9bd5', color: 'white', fontWeight: '700', padding: '14px 32px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 4px 15px rgba(91,155,213,0.4)'}}>Materialien ansehen</a>
           <a href="/quiz" style={{backgroundColor: 'white', color: '#5b9bd5', fontWeight: '700', padding: '14px 32px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', border: '2px solid #5b9bd5'}}>Kostenlose Quizze</a>
