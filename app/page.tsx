@@ -26,10 +26,10 @@ export default function Home() {
       setTimeout(() => setPhase('weglaufen'), 3500);
       setTimeout(() => setPhase('zurueck'), 5500);
       setTimeout(() => setPhase('schild'), 7200);
-      setTimeout(run, 12000);
     };
-    const t = setTimeout(run, 0);
-    return () => clearTimeout(t);
+    run();
+    const loop = setInterval(run, 12000);
+    return () => clearInterval(loop);
   }, []);
 
   const kaufen = async (productName: string, price: number) => {
@@ -44,28 +44,19 @@ export default function Home() {
 
   const produkte: Produkt[] = [
     {
-      id: 1,
-      kategorie: 'mathe',
-      typ: 'Formelsammlung',
-      titel: 'Geometrie Klasse 6–9',
+      id: 1, kategorie: 'mathe', typ: 'Formelsammlung', titel: 'Geometrie Klasse 6–9',
       beschreibung: 'Alle Geometrie-Formeln von Klasse 6 bis 9 — mit Figuren, Beispielen und Erklärungen.',
       details: ['8 vollständige Kapitel', 'Alle Formeln für Vierecke, Dreiecke, Kreis', 'Alle 3D-Körper: Würfel, Zylinder, Kegel, Kugel', 'Satz des Pythagoras mit Erklärung', 'Ähnlichkeit und Strahlensätze', 'Übersichtstabelle am Ende', 'Mit Witzen und Tipps — kinderfreundlich!'],
       seiten: '12 Seiten', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg', emoji: '📐', farbe: '#5b9bd5', hellfarbe: '#ddeeff',
     },
     {
-      id: 2,
-      kategorie: 'mathe',
-      typ: 'Arbeitsblatt',
-      titel: 'Potenzen',
+      id: 2, kategorie: 'mathe', typ: 'Arbeitsblatt', titel: 'Potenzen',
       beschreibung: 'Alles über Potenzen — Regeln, Beispiele und Übungen. Perfekt für Klasse 7–9.',
       details: ['Potenzregeln vollständig erklärt', 'Negative Exponenten', 'Potenzieren mit Brüchen', 'Übungsaufgaben mit Lösungen', 'Einfache und verständliche Sprache'],
       seiten: 'PDF', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg', emoji: '🔢', farbe: '#8a6a20', hellfarbe: '#f5ead0',
     },
     {
-      id: 3,
-      kategorie: 'physik',
-      typ: 'Formelsammlung',
-      titel: 'Mechanik',
+      id: 3, kategorie: 'physik', typ: 'Formelsammlung', titel: 'Mechanik',
       beschreibung: 'Alle wichtigen Mechanik-Formeln — Kraft, Geschwindigkeit, Energie und mehr.',
       details: ['Kraft, Masse, Beschleunigung', 'Geschwindigkeit und Bewegung', 'Energie und Arbeit', 'Hebel und Drehmoment', 'Mit Beispielen und Erklärungen'],
       seiten: 'PDF', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg', emoji: '⚡', farbe: '#2d6da8', hellfarbe: '#ddeeff',
@@ -102,11 +93,13 @@ export default function Home() {
       <style>{`
         @keyframes beinLinks { 0%,100%{transform:rotate(-28deg)}50%{transform:rotate(28deg)} }
         @keyframes beinRechts { 0%,100%{transform:rotate(28deg)}50%{transform:rotate(-28deg)} }
-        @keyframes fragezeichen { 0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-15px) scale(1.3);opacity:0.5} }
+        @keyframes frage1 { 0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-18px) scale(1.2);opacity:0.4} }
+        @keyframes frage2 { 0%,100%{transform:translateY(0) scale(1);opacity:0.8}50%{transform:translateY(-14px) scale(1.15);opacity:0.3} }
+        @keyframes frage3 { 0%,100%{transform:translateY(0) scale(1);opacity:0.6}50%{transform:translateY(-10px) scale(1.1);opacity:0.2} }
         @keyframes schildRein { 0%{transform:scale(0) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1} }
         @keyframes blinzeln { 0%,85%,100%{transform:scaleY(1)}92%{transform:scaleY(0.05)} }
-        @keyframes schweben { 0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)} }
-        @keyframes schildSchaukeln { 0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)} }
+        @keyframes schweben { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
+        @keyframes schildSchaukeln { 0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)} }
       `}</style>
 
       {ausgewaehlt && (
@@ -157,89 +150,91 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '60px 24px 50px', borderBottom: '1px solid #e0d8cc', overflow: 'hidden'}}>
+      <section style={{backgroundColor: '#ffffff', textAlign: 'center', padding: '50px 24px 50px', borderBottom: '1px solid #e0d8cc', overflow: 'hidden'}}>
 
         {/* Animation Container */}
-        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '280px', marginBottom: '40px', position: 'relative'}}>
+        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '300px', marginBottom: '40px', position: 'relative'}}>
 
           {/* Heft */}
           <div style={{
-            transform: phase === 'weglaufen' ? 'translateX(600px)' : 'translateX(0px)',
+            transform: phase === 'weglaufen' ? 'translateX(700px)' : 'translateX(0px)',
             opacity: phase === 'weglaufen' ? 0 : 1,
             transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out',
             position: 'relative',
           }}>
 
-            {/* Fragezeichen */}
-            {(phase === 'kratzen') && (
-              <div style={{position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', fontSize: '50px', fontWeight: '900', color: '#5b9bd5', animation: 'fragezeichen 1s ease-in-out infinite'}}>?</div>
-            )}
+            {/* 3 Fragezeichen — nur kratzen Phase */}
+            {phase === 'kratzen' && (<>
+              <div style={{position: 'absolute', top: '-70px', left: '50%', transform: 'translateX(-50%)', fontSize: '52px', fontWeight: '900', color: '#5b9bd5', animation: 'frage1 1.2s ease-in-out infinite'}}>?</div>
+              <div style={{position: 'absolute', top: '-55px', left: '-30px', fontSize: '34px', fontWeight: '900', color: '#2d6da8', animation: 'frage2 1.5s ease-in-out infinite 0.3s'}}>?</div>
+              <div style={{position: 'absolute', top: '-55px', right: '-30px', fontSize: '34px', fontWeight: '900', color: '#8a6a20', animation: 'frage3 1.8s ease-in-out infinite 0.6s'}}>?</div>
+            </>)}
 
             {/* Heft Körper */}
             <div style={{
-              width: '130px',
-              height: '160px',
-              backgroundColor: '#5b9bd5',
+              width: '140px',
+              height: '170px',
+              background: 'linear-gradient(135deg, #5b9bd5 0%, #2d6da8 100%)',
               borderRadius: '12px 20px 20px 12px',
               position: 'relative',
-              boxShadow: '8px 8px 24px rgba(91,155,213,0.45)',
-              animation: phase === 'kratzen' ? 'schweben 2s ease-in-out infinite' : 'none',
+              boxShadow: '10px 10px 30px rgba(45,109,168,0.4)',
+              animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none',
             }}>
               {/* Spirale */}
-              <div style={{position: 'absolute', left: '6px', top: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: '132px'}}>
-                {[0,1,2,3,4,5,6,7].map(i => (
-                  <div key={i} style={{width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1a1a2e', border: '2.5px solid white'}}></div>
+              <div style={{position: 'absolute', left: '6px', top: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: '142px'}}>
+                {[0,1,2,3,4,5,6,7,8].map(i => (
+                  <div key={i} style={{width: '12px', height: '12px', borderRadius: '50%', background: 'linear-gradient(135deg, #1a1a2e, #333)', border: '2.5px solid rgba(255,255,255,0.8)'}}></div>
                 ))}
               </div>
 
               {/* Augen */}
-              <div style={{position: 'absolute', top: '30px', left: '34px', display: 'flex', gap: '20px'}}>
-                <div style={{width: '20px', height: '20px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite'}}>
-                  <div style={{width: '10px', height: '10px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+              <div style={{position: 'absolute', top: '32px', left: '36px', display: 'flex', gap: '22px'}}>
+                <div style={{width: '22px', height: '22px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', animation: 'blinzeln 4s ease-in-out infinite'}}>
+                  <div style={{width: '11px', height: '11px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
                 </div>
-                <div style={{width: '20px', height: '20px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
-                  <div style={{width: '10px', height: '10px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
+                <div style={{width: '22px', height: '22px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.2)', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
+                  <div style={{width: '11px', height: '11px', backgroundColor: '#1a1a2e', borderRadius: '50%'}}></div>
                 </div>
               </div>
 
               {/* Lächeln */}
-              <div style={{position: 'absolute', top: '66px', left: '28px', width: '74px', height: '32px', borderBottom: '6px solid white', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderRadius: '0 0 50px 50px'}}></div>
+              <div style={{position: 'absolute', top: '70px', left: '28px', width: '84px', height: '36px', borderBottom: '6px solid white', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderRadius: '0 0 60px 60px', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.15))'}}></div>
 
               {/* Wangen */}
-              <div style={{position: 'absolute', top: '60px', left: '22px', width: '16px', height: '9px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.85}}></div>
-              <div style={{position: 'absolute', top: '60px', right: '16px', width: '16px', height: '9px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.85}}></div>
+              <div style={{position: 'absolute', top: '64px', left: '22px', width: '18px', height: '10px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.85}}></div>
+              <div style={{position: 'absolute', top: '64px', right: '16px', width: '18px', height: '10px', backgroundColor: '#ff9999', borderRadius: '50%', opacity: 0.85}}></div>
 
               {/* Linien */}
-              <div style={{position: 'absolute', bottom: '28px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
-              <div style={{position: 'absolute', bottom: '42px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.4)'}}></div>
+              <div style={{position: 'absolute', bottom: '30px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
+              <div style={{position: 'absolute', bottom: '46px', left: '28px', right: '12px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
             </div>
 
             {/* Beine */}
-            <div style={{display: 'flex', justifyContent: 'center', gap: '26px', marginTop: '6px'}}>
-              <div style={{width: '14px', height: '44px', backgroundColor: '#1a1a2e', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
-              <div style={{width: '14px', height: '44px', backgroundColor: '#1a1a2e', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
+            <div style={{display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '6px'}}>
+              <div style={{width: '14px', height: '46px', background: 'linear-gradient(180deg, #1a1a2e, #333)', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
+              <div style={{width: '14px', height: '46px', background: 'linear-gradient(180deg, #1a1a2e, #333)', borderRadius: '7px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
             </div>
           </div>
 
           {/* Schild */}
           {phase === 'schild' && (
-            <div style={{position: 'absolute', right: 'calc(50% - 220px)', bottom: '44px', animation: 'schildRein 0.6s ease-out forwards'}}>
+            <div style={{position: 'absolute', right: 'calc(50% - 230px)', bottom: '50px', animation: 'schildRein 0.7s ease-out forwards'}}>
               <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
-                <div style={{backgroundColor: '#1a1a2e', color: 'white', padding: '18px 36px', borderRadius: '14px', fontSize: '36px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '6px 6px 20px rgba(0,0,0,0.35)', border: '4px solid #5b9bd5'}}>
+                <div style={{background: 'linear-gradient(135deg, #1a1a2e, #2d3748)', color: 'white', padding: '20px 40px', borderRadius: '16px', fontSize: '38px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '8px 8px 24px rgba(0,0,0,0.4)', border: '4px solid #5b9bd5'}}>
                   LERNFLIX
                 </div>
-                <div style={{width: '8px', height: '50px', backgroundColor: '#1a1a2e', margin: '0 auto', borderRadius: '4px'}}></div>
+                <div style={{width: '8px', height: '55px', background: 'linear-gradient(180deg, #1a1a2e, #333)', margin: '0 auto', borderRadius: '4px'}}></div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Slogan + Buttons — erscheinen wenn Schild da */}
-        <div style={{opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '8px'}}>
-          <p style={{fontSize: '20px', color: '#666666', letterSpacing: '2px', fontWeight: '500', marginBottom: '32px'}}>Dein Lernstream. Deine Regeln.</p>
+        {/* Slogan + Buttons — immer sichtbar */}
+        <div style={{marginBottom: '8px'}}>
+          <p style={{fontSize: '20px', color: '#555', letterSpacing: '2px', fontWeight: '500', marginBottom: '32px'}}>Dein Lernstream. Deine Regeln.</p>
           <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
-            <a href="#mathe" style={{backgroundColor: '#5b9bd5', color: 'white', fontWeight: '700', padding: '14px 32px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 4px 15px rgba(91,155,213,0.4)'}}>Materialien ansehen</a>
-            <a href="/quiz" style={{backgroundColor: 'white', color: '#5b9bd5', fontWeight: '700', padding: '14px 32px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', border: '2px solid #5b9bd5'}}>Kostenlose Quizze</a>
+            <a href="#mathe" style={{background: 'linear-gradient(135deg, #5b9bd5, #2d6da8)', color: 'white', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 6px 20px rgba(45,109,168,0.4)'}}>Materialien ansehen</a>
+            <a href="/quiz" style={{backgroundColor: 'white', color: '#2d6da8', fontWeight: '700', padding: '16px 36px', borderRadius: '50px', textDecoration: 'none', fontSize: '16px', border: '2.5px solid #2d6da8', boxShadow: '0 4px 12px rgba(0,0,0,0.08)'}}>Kostenlose Quizze</a>
           </div>
         </div>
       </section>
