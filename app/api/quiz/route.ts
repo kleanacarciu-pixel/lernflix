@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -7,8 +9,8 @@ export async function POST(request: Request) {
     const schwierigkeit = body.schwierigkeit || "mittel";
 
     let schwierigkeitText = "mittelschwer";
-    if (schwierigkeit === "leicht") schwierigkeitText = "einfach";
-    if (schwierigkeit === "schwer") schwierigkeitText = "schwierig";
+    if (schwierigkeit === "leicht") schwierigkeitText = "einfach fuer Kinder";
+    if (schwierigkeit === "schwer") schwierigkeitText = "schwierig fuer fortgeschrittene Schueler";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -19,11 +21,11 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1000,
+        max_tokens: 800,
         messages: [
           {
             role: "user",
-            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit reinem JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
+            content: `Erstelle 5 Multiple-Choice-Fragen zum Thema ${thema} auf Deutsch. Schwierigkeit: ${schwierigkeitText}. Fragen sollen witzig und mit Alltagsbeispielen sein. Antworte NUR mit reinem JSON ohne Markdown: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
           },
         ],
       }),
@@ -32,7 +34,6 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Anthropic Fehler:", JSON.stringify(data));
       return NextResponse.json({ error: "API Fehler" }, { status: 500 });
     }
 
@@ -42,6 +43,6 @@ export async function POST(request: Request) {
     return NextResponse.json(quizData);
   } catch (error) {
     console.error("Fehler:", error);
-    return NextResponse.json({ error: "Fehler beim Erstellen" }, { status: 500 });
+    return NextResponse.json({ error: "Fehler" }, { status: 500 });
   }
 }
