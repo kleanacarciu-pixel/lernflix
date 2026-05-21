@@ -79,36 +79,49 @@ export default function Home() {
   const mathe = produkte.filter(p => p.kategorie === 'mathe');
   const physik = produkte.filter(p => p.kategorie === 'physik');
 
-  const produktGradients: Record<number, string> = {
-    1: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
-    2: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
-    3: 'linear-gradient(135deg, #ff6b35 0%, #cc4400 100%)',
-  };
-
   const ProduktKarte = ({ p }: { p: Produkt }) => (
     <div
       onClick={() => setAusgewaehlt(p)}
-      style={{background: produktGradients[p.id], borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', color: 'white'}}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}
+      style={{backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e5e5ea', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,113,227,0.15)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
     >
-      <div style={{padding: '28px 24px'}}>
-        <div style={{fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.75, marginBottom: '10px'}}>{p.typ}</div>
-        <h4 style={{margin: '0 0 10px', fontSize: '20px', fontWeight: '800', color: 'white', lineHeight: 1.3}}>{p.titel}</h4>
-        <p style={{margin: '0 0 20px', fontSize: '14px', color: 'rgba(255,255,255,0.82)', lineHeight: '1.6'}}>{p.beschreibung}</p>
-        <div style={{borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <span style={{fontSize: '28px', fontWeight: '800', color: 'white'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-          <span style={{fontSize: '14px', color: 'white', fontWeight: '600', backgroundColor: 'rgba(255,255,255,0.2)', padding: '8px 18px', borderRadius: '20px', backdropFilter: 'blur(10px)'}}>Details →</span>
+      <div style={{background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)', height: '160px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+        <span style={{fontSize: '52px'}}>{p.kategorie === 'mathe' ? '📐' : '⚡'}</span>
+        <span style={{fontSize: '11px', fontWeight: '700', color: '#0071e3', textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(0,113,227,0.1)', padding: '3px 10px', borderRadius: '20px'}}>{p.typ}</span>
+      </div>
+      <div style={{padding: '18px 20px'}}>
+        <h4 style={{margin: '0 0 8px', fontSize: '17px', fontWeight: '700', color: '#1d1d1f'}}>{p.titel}</h4>
+        <p style={{margin: '0 0 14px', fontSize: '14px', color: '#6e6e73', lineHeight: '1.5'}}>{p.beschreibung}</p>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f5', paddingTop: '12px'}}>
+          <span style={{fontSize: '22px', fontWeight: '700', color: '#0071e3'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+          <span style={{fontSize: '13px', color: '#0071e3', fontWeight: '600', backgroundColor: '#e8f0fe', padding: '6px 14px', borderRadius: '20px'}}>Details →</span>
         </div>
       </div>
     </div>
   );
 
   const kategorien = [
-    { href: '#mathe', titel: 'Mathe', desc: 'Formeln & Übungen', gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', icon: '📐' },
-    { href: '#physik', titel: 'Physik', desc: 'Formeln & Gesetze', gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', icon: '⚡' },
-    { href: '#pakete', titel: 'Lernpakete', desc: 'Abitur & mehr', gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)', icon: '🎒' },
-    { href: '/quiz', titel: 'Quiz', desc: 'Kostenlos testen', gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)', icon: '🧠' },
+    {
+      href: '#mathe', titel: 'Mathematik', desc: 'Formeln, Übungen & Erklärungen',
+      gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
+      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/><rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>),
+    },
+    {
+      href: '#physik', titel: 'Physik', desc: 'Gesetze, Formeln & Experimente',
+      gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
+      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="5" fill="white"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/></svg>),
+    },
+    {
+      href: '#pakete', titel: 'Lernpakete', desc: 'Abitur, Sommer & Spezialthemen',
+      gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)',
+      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
+    },
+    {
+      href: '/quiz', titel: 'Quizze', desc: 'Kostenlos Wissen testen',
+      gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)',
+      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="white"/></svg>),
+    },
   ];
 
   return (
@@ -130,22 +143,19 @@ export default function Home() {
         @keyframes gradientMove { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
       `}</style>
 
-      {/* POPUP */}
       {ausgewaehlt && (
         <div onClick={() => setAusgewaehlt(null)} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(20px)'}}>
           <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '24px', maxWidth: '680px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 100px rgba(0,0,0,0.3)'}}>
-            <div style={{position: 'relative', height: mobil ? '200px' : '280px', background: produktGradients[ausgewaehlt.id]}}>
-              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3}} />
-              <div style={{position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '24px'}}>
-                <div style={{fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px'}}>{ausgewaehlt.typ}</div>
-                <h2 style={{margin: 0, fontSize: mobil ? '22px' : '28px', fontWeight: '800', color: 'white'}}>{ausgewaehlt.titel}</h2>
-              </div>
-              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
+            <div style={{position: 'relative', height: mobil ? '200px' : '280px', background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)'}}>
+              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
+              <div style={{position: 'absolute', top: '16px', left: '16px', backgroundColor: '#0071e3', color: 'white', fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase'}}>{ausgewaehlt.typ}</div>
             </div>
             <div style={{padding: mobil ? '20px' : '32px'}}>
+              <h2 style={{margin: '0 0 8px', fontSize: mobil ? '20px' : '24px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.titel}</h2>
               <p style={{margin: '0 0 20px', fontSize: '15px', color: '#6e6e73', lineHeight: '1.6'}}>{ausgewaehlt.beschreibung}</p>
-              <div style={{backgroundColor: '#f5f5f7', borderRadius: '14px', padding: '18px', marginBottom: '20px'}}>
-                <p style={{margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#1d1d1f'}}>Was ist drin:</p>
+              <div style={{backgroundColor: '#f5f5f7', borderRadius: '12px', padding: '18px', marginBottom: '20px'}}>
+                <p style={{margin: '0 0 10px', fontSize: '14px', fontWeight: '700', color: '#1d1d1f'}}>Was ist drin:</p>
                 {ausgewaehlt.details.map((d, i) => (
                   <div key={i} style={{display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px'}}>
                     <span style={{color: '#0071e3', fontWeight: '700', fontSize: '14px', flexShrink: 0}}>✓</span>
@@ -163,7 +173,7 @@ export default function Home() {
                   <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
                   <p style={{margin: '0', fontSize: '30px', fontWeight: '800', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: produktGradients[ausgewaehlt.id], color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)'}}>
+                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
                   Jetzt kaufen
                 </button>
               </div>
@@ -172,22 +182,19 @@ export default function Home() {
         </div>
       )}
 
-      {/* HEADER */}
       <header style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: scrolled ? 'rgba(255,255,255,0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none', padding: mobil ? '12px 16px' : '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease'}}>
         <img src="/logo.jpg?v=1" alt="Lerne mit Anna" style={{height: mobil ? '40px' : '48px', borderRadius: '10px'}} />
-        <nav style={{display: 'flex', gap: mobil ? '12px' : '28px', alignItems: 'center'}}>
+        <nav style={{display: 'flex', gap: mobil ? '10px' : '28px', alignItems: 'center'}}>
           {!mobil && <>
             <a href="#mathe" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Mathe</a>
             <a href="#physik" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Physik</a>
             <a href="#pakete" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernpakete</a>
           </>}
-          <a href="/quiz" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: mobil ? '8px 16px' : '8px 20px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Quiz starten</a>
+          <a href="/quiz" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: '8px 18px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Quiz starten</a>
         </nav>
       </header>
 
-      {/* HERO */}
       <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: mobil ? '90px 16px 40px' : '100px 24px 60px', overflow: 'hidden'}}>
-
         <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #e8f0ff 0%, #ffffff 25%, #f0e8ff 50%, #e8f8ff 75%, #fff0e8 100%)', backgroundSize: '400% 400%', animation: 'gradientMove 10s ease infinite', zIndex: 0}}></div>
         <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: mobil ? '300px' : '600px', height: mobil ? '300px' : '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none'}}></div>
 
@@ -208,7 +215,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Heft Animation */}
         <div style={{position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: mobil ? '200px' : '280px', marginBottom: mobil ? '32px' : '48px', width: '100%'}}>
           <div style={{transform: phase === 'weglaufen' ? `translateX(${mobil ? '300px' : '700px'})` : 'translateX(0px)', opacity: phase === 'weglaufen' ? 0 : 1, transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out', position: 'relative'}}>
 
@@ -232,9 +238,11 @@ export default function Home() {
                   <div style={{width: mobil ? '9px' : '12px', height: mobil ? '9px' : '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
                 </div>
               </div>
-              <div style={{position: 'absolute', top: mobil ? '52px' : '74px', left: mobil ? '22px' : '30px', width: mobil ? '66px' : '90px', height: mobil ? '28px' : '38px', borderBottom: mobil ? '5px solid white' : '6px solid white', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderRadius: '0 0 50px 50px'}}></div>
+              <div style={{position: 'absolute', top: mobil ? '52px' : '74px', left: mobil ? '22px' : '30px', width: mobil ? '66px' : '90px', height: mobil ? '28px' : '38px', borderBottom: '5px solid white', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderRadius: '0 0 50px 50px'}}></div>
               <div style={{position: 'absolute', top: mobil ? '48px' : '68px', left: mobil ? '18px' : '24px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
               <div style={{position: 'absolute', top: mobil ? '48px' : '68px', right: mobil ? '12px' : '17px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
+              <div style={{position: 'absolute', bottom: mobil ? '22px' : '32px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
+              <div style={{position: 'absolute', bottom: mobil ? '34px' : '50px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
             </div>
 
             <div style={{display: 'flex', justifyContent: 'center', gap: mobil ? '22px' : '30px', marginTop: '5px'}}>
@@ -244,9 +252,9 @@ export default function Home() {
           </div>
 
           {phase === 'schild' && (
-            <div style={{position: 'absolute', right: mobil ? 'calc(50% - 160px)' : 'calc(50% - 250px)', bottom: mobil ? '40px' : '55px', animation: 'schildRein 0.7s ease-out forwards'}}>
+            <div style={{position: 'absolute', right: mobil ? 'calc(50% - 155px)' : 'calc(50% - 250px)', bottom: mobil ? '40px' : '55px', animation: 'schildRein 0.7s ease-out forwards'}}>
               <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
-                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: mobil ? '14px 24px' : '20px 44px', borderRadius: '18px', fontSize: mobil ? '26px' : '40px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)'}}>
+                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: mobil ? '14px 22px' : '20px 44px', borderRadius: '18px', fontSize: mobil ? '26px' : '40px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)'}}>
                   LERNFLIX
                 </div>
                 <div style={{width: '8px', height: mobil ? '36px' : '55px', backgroundColor: '#1d1d1f', margin: '0 auto', borderRadius: '4px'}}></div>
@@ -260,27 +268,32 @@ export default function Home() {
         </div>
 
         <div style={{position: 'relative', zIndex: 2, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}>
-          <a href="#mathe" style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 28px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(0,113,227,0.4)'}}>
+          <a href="#mathe" style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(0,113,227,0.4)'}}>
             Materialien ansehen
           </a>
-          <a href="/quiz" style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 28px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(88,86,214,0.4)'}}>
+          <a href="/quiz" style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(88,86,214,0.4)'}}>
             Kostenlose Quizze
           </a>
         </div>
       </section>
 
-      {/* Kategorien */}
+      {/* Kategorien — MIT SVG Icons */}
       <section style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px', textAlign: 'center'}}>Alle Kategorien</h2>
           <p style={{fontSize: '16px', color: '#6e6e73', textAlign: 'center', marginBottom: '36px'}}>Wähle dein Fach und starte durch</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px'}}>
+          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px'}}>
             {kategorien.map((k) => (
               <a key={k.titel} href={k.href} style={{textDecoration: 'none'}}>
-                <div style={{background: k.gradient, borderRadius: '16px', padding: mobil ? '20px 16px' : '28px 20px', transition: 'all 0.3s ease', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', textAlign: 'center'}}>
-                  <div style={{fontSize: mobil ? '32px' : '36px', marginBottom: '8px'}}>{k.icon}</div>
-                  <h4 style={{margin: '0 0 4px', fontSize: mobil ? '15px' : '17px', fontWeight: '700', color: 'white'}}>{k.titel}</h4>
-                  <p style={{margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.8)'}}>{k.desc}</p>
+                <div
+                  style={{background: k.gradient, borderRadius: '20px', padding: mobil ? '20px 16px' : '32px 28px', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative', overflow: 'hidden'}}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.22)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}
+                >
+                  <div style={{marginBottom: mobil ? '12px' : '20px'}}>{k.icon}</div>
+                  <h4 style={{margin: '0 0 6px', fontSize: mobil ? '15px' : '20px', fontWeight: '700', color: 'white'}}>{k.titel}</h4>
+                  <p style={{margin: 0, fontSize: mobil ? '11px' : '14px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4'}}>{k.desc}</p>
+                  <div style={{position: 'absolute', bottom: '16px', right: '16px', fontSize: '16px', color: 'rgba(255,255,255,0.5)'}}>→</div>
                 </div>
               </a>
             ))}
@@ -336,7 +349,7 @@ export default function Home() {
                 <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px'}}>
                   {['Über 10 verschiedene Themen', 'Leicht, Mittel & Schwer', 'Sofortige Erklärungen', 'Kostenlos & ohne Anmeldung'].map((f, i) => (
                     <div key={i} style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <div style={{width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+                      <div style={{width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       </div>
                       <span style={{fontSize: '15px', color: 'rgba(255,255,255,0.9)', fontWeight: '500'}}>{f}</span>
