@@ -25,15 +25,17 @@ const SCHWIERIGKEITEN = [
 ];
 
 const GIFS_SUPER = [
+  "https://media.giphy.com/media/3ohhwytHcusSCXXOUg/giphy.gif",
+  "https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif",
   "https://media.giphy.com/media/l4FGGafcOHmrlQxG0/giphy.gif",
-  "https://media.giphy.com/media/xT5LMzIlfQIBe1GzPi/giphy.gif",
 ];
 const GIFS_GUT = [
+  "https://media.giphy.com/media/xT5LMzIlfQIBe1GzPi/giphy.gif",
   "https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif",
-  "https://media.giphy.com/media/xT5LMHxhOfscxPfIfm/giphy.gif",
 ];
 const GIFS_WEITER = [
-  "https://media.giphy.com/media/3oEjI5VtIhHvK37WYo/giphy.gif",
+  "https://media.giphy.com/media/26BRzQS5HXcEWVnkk/giphy.gif",
+  "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
 ];
 
 type Frage = {
@@ -55,7 +57,6 @@ export default function QuizPage() {
   const [laden, setLaden] = useState(false);
   const [vorladen, setVorladen] = useState(false);
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
-  const [fehler, setFehler] = useState("");
   const [zufallsGif, setZufallsGif] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
 
@@ -97,8 +98,6 @@ export default function QuizPage() {
           clearInterval(interval);
         }
       }, 500);
-    } else {
-      setFehler("Bitte wähle Thema und Schwierigkeit!");
     }
   }
 
@@ -137,7 +136,6 @@ export default function QuizPage() {
     setPunkte(0);
     setAusgewaehlt(null);
     setAntwortGezeigt(false);
-    setFehler("");
     setZufallsGif("");
   }
 
@@ -161,11 +159,11 @@ export default function QuizPage() {
           <div>
             <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
               <button onClick={() => { setAktiverTab("mathe"); setThema(""); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5", boxShadow: aktiverTab === "mathe" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)" }}>
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5" }}>
                 📐 Mathe
               </button>
               <button onClick={() => { setAktiverTab("physik"); setThema(""); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5", boxShadow: aktiverTab === "physik" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)" }}>
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5" }}>
                 ⚡ Physik
               </button>
             </div>
@@ -191,26 +189,11 @@ export default function QuizPage() {
               ))}
             </div>
 
-            {vorladen && thema && schwierigkeit && (
-              <div style={{ background: "#dbeafe", border: "2px solid #5b9bd5", borderRadius: "12px", padding: "12px", marginBottom: "16px", textAlign: "center", color: "#1e40af", fontSize: "15px", fontWeight: "600" }}>
-                ⚡ KI bereitet deine Fragen vor...
-              </div>
-            )}
-            {vorgeladeneFragen.length > 0 && (
-              <div style={{ background: "#dcfce7", border: "2px solid #16a34a", borderRadius: "12px", padding: "12px", marginBottom: "16px", textAlign: "center", color: "#166534", fontSize: "15px", fontWeight: "600" }}>
-                ✅ Fragen bereit! Drück auf Start!
-              </div>
-            )}
-
-            {fehler && (
-              <div style={{ background: "#fee2e2", border: "2px solid #ef4444", borderRadius: "12px", padding: "14px", marginBottom: "16px", color: "#991b1b", textAlign: "center" }}>
-                ❌ {fehler}
-              </div>
-            )}
-
-            <button onClick={startQuiz} disabled={!thema || !schwierigkeit || laden}
+            <button
+              onClick={startQuiz}
+              disabled={!thema || !schwierigkeit || laden}
               style={{ width: "100%", background: thema && schwierigkeit ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "#ccc", color: "white", border: "none", padding: "18px", borderRadius: "14px", fontSize: "20px", cursor: thema && schwierigkeit ? "pointer" : "not-allowed", fontWeight: "800" }}>
-              {laden ? "⏳ Noch einen Moment..." : vorladen ? "⏳ Fragen werden geladen..." : "🚀 Quiz starten!"}
+              {laden ? "⏳ Einen Moment..." : "🚀 Quiz starten!"}
             </button>
           </div>
         )}
