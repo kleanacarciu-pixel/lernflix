@@ -24,17 +24,9 @@ const SCHWIERIGKEITEN = [
   { id: "schwer", name: "🔥 Schwer", farbe: "#ef4444" },
 ];
 
-const GIFS_SUPER = [
-  "https://media.giphy.com/media/3ohhwytHcusSCXXOUg/giphy.gif",
-  "https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif",
-];
-const GIFS_GUT = [
-  "https://media.giphy.com/media/xT5LMzIlfQIBe1GzPi/giphy.gif",
-  "https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif",
-];
-const GIFS_WEITER = [
-  "https://media.giphy.com/media/26BRzQS5HXcEWVnkk/giphy.gif",
-];
+const EMOJIS_SUPER = ["🏆🎉🥳", "⭐⭐⭐", "🎊🏅✨"];
+const EMOJIS_GUT = ["👍😊💪", "🌟😄✨", "💪🎯👏"];
+const EMOJIS_WEITER = ["📚💡🔥", "⚡📖💪", "🎯📚✏️"];
 
 type Frage = {
   frage: string;
@@ -53,18 +45,13 @@ export default function QuizPage() {
   const [punkte, setPunkte] = useState(0);
   const [laden, setLaden] = useState(false);
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
-  const [zufallsGif, setZufallsGif] = useState("");
+  const [zufallsEmoji, setZufallsEmoji] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
-  
-  // Ref für vorgeladene Fragen — damit setInterval sie sehen kann!
   const vorgeladeneRef = useRef<Frage[]>([]);
-  const [vorgeladen, setVorgeladen] = useState(false);
 
   useEffect(() => {
     if (thema && schwierigkeit) {
       vorgeladeneRef.current = [];
-      setVorgeladen(false);
-      
       fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,7 +61,6 @@ export default function QuizPage() {
         .then(data => {
           if (data && data.fragen && data.fragen.length > 0) {
             vorgeladeneRef.current = data.fragen;
-            setVorgeladen(true);
           }
         })
         .catch(() => {});
@@ -83,15 +69,12 @@ export default function QuizPage() {
 
   function startQuiz() {
     if (!thema || !schwierigkeit) return;
-    
     if (vorgeladeneRef.current.length > 0) {
-      // Fragen schon fertig — sofort starten!
       setFragen(vorgeladeneRef.current);
       setSchritt("quiz");
       setAktuelle(0);
       setPunkte(0);
     } else {
-      // Noch laden — warten bis fertig
       setLaden(true);
       const interval = setInterval(() => {
         if (vorgeladeneRef.current.length > 0) {
@@ -103,12 +86,7 @@ export default function QuizPage() {
           clearInterval(interval);
         }
       }, 300);
-      
-      // Timeout nach 30 Sekunden
-      setTimeout(() => {
-        clearInterval(interval);
-        setLaden(false);
-      }, 30000);
+      setTimeout(() => { clearInterval(interval); setLaden(false); }, 30000);
     }
   }
 
@@ -116,19 +94,17 @@ export default function QuizPage() {
     if (antwortGezeigt) return;
     setAusgewaehlt(index);
     setAntwortGezeigt(true);
-    if (index === fragen[aktuelle].richtig) {
-      setPunkte((p) => p + 1);
-    }
+    if (index === fragen[aktuelle].richtig) setPunkte((p) => p + 1);
   }
 
   function naechsteFrage() {
     if (aktuelle + 1 >= fragen.length) {
       const finalPunkte = punkte + (ausgewaehlt === fragen[aktuelle].richtig ? 1 : 0);
       const prozentFinal = Math.round((finalPunkte / fragen.length) * 100);
-      let gifListe = GIFS_WEITER;
-      if (prozentFinal >= 80) gifListe = GIFS_SUPER;
-      else if (prozentFinal >= 50) gifListe = GIFS_GUT;
-      setZufallsGif(gifListe[Math.floor(Math.random() * gifListe.length)]);
+      let emojiListe = EMOJIS_WEITER;
+      if (prozentFinal >= 80) emojiListe = EMOJIS_SUPER;
+      else if (prozentFinal >= 50) emojiListe = EMOJIS_GUT;
+      setZufallsEmoji(emojiListe[Math.floor(Math.random() * emojiListe.length)]);
       setSchritt("ergebnis");
     } else {
       setAktuelle((a) => a + 1);
@@ -143,12 +119,11 @@ export default function QuizPage() {
     setSchwierigkeit("");
     setFragen([]);
     vorgeladeneRef.current = [];
-    setVorgeladen(false);
     setAktuelle(0);
     setPunkte(0);
     setAusgewaehlt(null);
     setAntwortGezeigt(false);
-    setZufallsGif("");
+    setZufallsEmoji("");
   }
 
   const gesamtFragen = fragen && fragen.length > 0 ? fragen.length : 1;
@@ -160,9 +135,7 @@ export default function QuizPage() {
     <div style={{ minHeight: "100vh", background: "#f5f0e8", fontFamily: "Arial, sans-serif" }}>
       <div style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", padding: "20px", textAlign: "center" }}>
         <h1 style={{ color: "white", margin: 0, fontSize: "32px", fontWeight: "900" }}>🎓 Lernflix Quiz</h1>
-        <p style={{ color: "rgba(255,255,255,0.9)", margin: "6px 0 0 0", fontSize: "16px" }}>
-          Teste dein Wissen — kostenlos & interaktiv!
-        </p>
+        <p style={{ color: "rgba(255,255,255,0.9)", margin: "6px 0 0 0", fontSize: "16px" }}>Teste dein Wissen — kostenlos & interaktiv!</p>
       </div>
 
       <div style={{ maxWidth: "750px", margin: "0 auto", padding: "30px 16px" }}>
@@ -267,8 +240,10 @@ export default function QuizPage() {
             </h2>
             <div style={{ background: "white", borderRadius: "20px", padding: "30px", marginBottom: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
               <p style={{ fontSize: "56px", fontWeight: "900", color: "#2d6da8", margin: "0 0 8px 0" }}>{punkte}/{fragen.length}</p>
-              <p style={{ fontSize: "22px", color: "#555", margin: "0 0 20px 0" }}>{prozent}% richtig</p>
-              {zufallsGif && <img src={zufallsGif} alt="Ergebnis" style={{ width: "200px", borderRadius: "16px", border: "4px solid #dbeafe" }} />}
+              <p style={{ fontSize: "22px", color: "#555", margin: "0 0 16px 0" }}>{prozent}% richtig</p>
+              {zufallsEmoji && (
+                <div style={{ fontSize: "80px", margin: "16px 0" }}>{zufallsEmoji}</div>
+              )}
             </div>
 
             <div style={{ background: "#dbeafe", border: "2px solid #5b9bd5", borderRadius: "16px", padding: "24px", marginBottom: "24px" }}>
