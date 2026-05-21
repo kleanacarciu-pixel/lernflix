@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -9,8 +7,8 @@ export async function POST(request: Request) {
     const schwierigkeit = body.schwierigkeit || "mittel";
 
     let schwierigkeitText = "mittelschwer";
-    if (schwierigkeit === "leicht") schwierigkeitText = "einfach fuer Kinder";
-    if (schwierigkeit === "schwer") schwierigkeitText = "schwierig fuer fortgeschrittene Schueler";
+    if (schwierigkeit === "leicht") schwierigkeitText = "einfach";
+    if (schwierigkeit === "schwer") schwierigkeitText = "schwierig";
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -21,20 +19,19 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 800,
+        max_tokens: 600,
         messages: [
           {
             role: "user",
-            content: `Erstelle 5 Multiple-Choice-Fragen zum Thema ${thema} auf Deutsch. Schwierigkeit: ${schwierigkeitText}. Fragen sollen witzig und mit Alltagsbeispielen sein. Antworte NUR mit reinem JSON ohne Markdown: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
+            content: `5 Multiple-Choice-Fragen zu ${thema} auf Deutsch, ${schwierigkeitText}. Nur JSON: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
           },
         ],
       }),
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      return NextResponse.json({ error: "API Fehler" }, { status: 500 });
+      return NextResponse.json({ error: "Fehler" }, { status: 500 });
     }
 
     let text = data.content[0].text.trim();
