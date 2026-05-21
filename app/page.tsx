@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const THEMEN = [
   { id: "pythagoras", name: "📐 Pythagoras", klasse: "Klasse 8-9", fach: "mathe" },
@@ -27,16 +27,12 @@ const SCHWIERIGKEITEN = [
 const GIFS_SUPER = [
   "https://media.giphy.com/media/l4FGGafcOHmrlQxG0/giphy.gif",
   "https://media.giphy.com/media/xT5LMzIlfQIBe1GzPi/giphy.gif",
-  "https://media.giphy.com/media/3oEjI5VtIhHvK37WYo/giphy.gif",
 ];
-
 const GIFS_GUT = [
   "https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif",
   "https://media.giphy.com/media/xT5LMHxhOfscxPfIfm/giphy.gif",
 ];
-
 const GIFS_WEITER = [
-  "https://media.giphy.com/media/l4FGGafcOHmrlQxG0/giphy.gif",
   "https://media.giphy.com/media/3oEjI5VtIhHvK37WYo/giphy.gif",
 ];
 
@@ -52,37 +48,59 @@ export default function QuizPage() {
   const [thema, setThema] = useState("");
   const [schwierigkeit, setSchwierigkeit] = useState("");
   const [fragen, setFragen] = useState<Frage[]>([]);
+  const [vorgeladeneFragen, setVorgeladeneFragen] = useState<Frage[]>([]);
   const [aktuelle, setAktuelle] = useState(0);
   const [ausgewaehlt, setAusgewaehlt] = useState<number | null>(null);
   const [punkte, setPunkte] = useState(0);
   const [laden, setLaden] = useState(false);
+  const [vorladen, setVorladen] = useState(false);
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
   const [fehler, setFehler] = useState("");
   const [zufallsGif, setZufallsGif] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
 
-  async function startQuiz() {
-    setLaden(true);
-    setFehler("");
-    try {
-      const res = await fetch("/api/quiz", {
+  // Fragen vorladen sobald Thema UND Schwierigkeit ausgewählt
+  useEffect(() => {
+    if (thema && schwierigkeit) {
+      setVorladen(true);
+      setVorgeladeneFragen([]);
+      fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ thema, schwierigkeit }),
-      });
-      const data = await res.json();
-      if (data && data.fragen && data.fragen.length > 0) {
-        setFragen(data.fragen);
-        setSchritt("quiz");
-        setAktuelle(0);
-        setPunkte(0);
-      } else {
-        setFehler("Fehler beim Laden! Bitte nochmal versuchen!");
-      }
-    } catch {
-      setFehler("Fehler! Bitte nochmal versuchen!");
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.fragen && data.fragen.length > 0) {
+            setVorgeladeneFragen(data.fragen);
+          }
+          setVorladen(false);
+        })
+        .catch(() => setVorladen(false));
     }
-    setLaden(false);
+  }, [thema, schwierigkeit]);
+
+  function startQuiz() {
+    if (vorgeladeneFragen.length > 0) {
+      setFragen(vorgeladeneFragen);
+      setSchritt("quiz");
+      setAktuelle(0);
+      setPunkte(0);
+    } else if (vorladen) {
+      setLaden(true);
+      const interval = setInterval(() => {
+        if (vorgeladeneFragen.length > 0) {
+          setFragen(vorgeladeneFragen);
+          setSchritt("quiz");
+          setAktuelle(0);
+          setPunkte(0);
+          setLaden(false);
+          clearInterval(interval);
+        }
+      }, 500);
+    } else {
+      setFehler("Bitte wähle Thema und Schwierigkeit!");
+    }
   }
 
   function antwortWaehlen(index: number) {
@@ -97,10 +115,10 @@ export default function QuizPage() {
   function naechsteFrage() {
     if (aktuelle + 1 >= fragen.length) {
       const finalPunkte = punkte + (ausgewaehlt === fragen[aktuelle].richtig ? 1 : 0);
-      const prozent = Math.round((finalPunkte / fragen.length) * 100);
+      const prozentFinal = Math.round((finalPunkte / fragen.length) * 100);
       let gifListe = GIFS_WEITER;
-      if (prozent >= 80) gifListe = GIFS_SUPER;
-      else if (prozent >= 50) gifListe = GIFS_GUT;
+      if (prozentFinal >= 80) gifListe = GIFS_SUPER;
+      else if (prozentFinal >= 50) gifListe = GIFS_GUT;
       setZufallsGif(gifListe[Math.floor(Math.random() * gifListe.length)]);
       setSchritt("ergebnis");
     } else {
@@ -115,6 +133,7 @@ export default function QuizPage() {
     setThema("");
     setSchwierigkeit("");
     setFragen([]);
+    setVorgeladeneFragen([]);
     setAktuelle(0);
     setPunkte(0);
     setAusgewaehlt(null);
@@ -142,45 +161,21 @@ export default function QuizPage() {
         {schritt === "auswahl" && (
           <div>
             <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-              <button
-                onClick={() => setAktiverTab("mathe")}
-                style={{
-                  flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer",
-                  fontSize: "18px", fontWeight: "700",
-                  background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white",
-                  color: aktiverTab === "mathe" ? "white" : "#5b9bd5",
-                  boxShadow: aktiverTab === "mathe" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)",
-                }}
-              >📐 Mathe</button>
-              <button
-                onClick={() => setAktiverTab("physik")}
-                style={{
-                  flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer",
-                  fontSize: "18px", fontWeight: "700",
-                  background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white",
-                  color: aktiverTab === "physik" ? "white" : "#5b9bd5",
-                  boxShadow: aktiverTab === "physik" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)",
-                }}
-              >⚡ Physik</button>
+              <button onClick={() => { setAktiverTab("mathe"); setThema(""); }}
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5", boxShadow: aktiverTab === "mathe" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)" }}>
+                📐 Mathe
+              </button>
+              <button onClick={() => { setAktiverTab("physik"); setThema(""); }}
+                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5", boxShadow: aktiverTab === "physik" ? "0 4px 15px rgba(91,155,213,0.4)" : "0 2px 8px rgba(0,0,0,0.08)" }}>
+                ⚡ Physik
+              </button>
             </div>
 
             <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Wähle dein Thema!</h2>
             <div style={{ display: "grid", gap: "10px", marginBottom: "28px" }}>
               {(aktiverTab === "mathe" ? mathThemen : physikThemen).map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => setThema(t.id)}
-                  style={{
-                    background: thema === t.id ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white",
-                    color: thema === t.id ? "white" : "#1a1a2e",
-                    padding: "16px 20px", borderRadius: "12px", cursor: "pointer",
-                    border: `2px solid ${thema === t.id ? "#2d6da8" : "#e0d8cc"}`,
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    fontSize: "17px", fontWeight: "600",
-                    boxShadow: thema === t.id ? "0 4px 15px rgba(91,155,213,0.3)" : "0 2px 6px rgba(0,0,0,0.06)",
-                    transition: "all 0.2s",
-                  }}
-                >
+                <div key={t.id} onClick={() => setThema(t.id)}
+                  style={{ background: thema === t.id ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: thema === t.id ? "white" : "#1a1a2e", padding: "16px 20px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${thema === t.id ? "#2d6da8" : "#e0d8cc"}`, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "17px", fontWeight: "600", transition: "all 0.2s" }}>
                   <span>{t.name}</span>
                   <span style={{ fontSize: "13px", opacity: 0.8 }}>{t.klasse}</span>
                 </div>
@@ -190,22 +185,24 @@ export default function QuizPage() {
             <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Schwierigkeit?</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "28px" }}>
               {SCHWIERIGKEITEN.map((s) => (
-                <div
-                  key={s.id}
-                  onClick={() => setSchwierigkeit(s.id)}
-                  style={{
-                    background: schwierigkeit === s.id ? s.farbe : "white",
-                    color: schwierigkeit === s.id ? "white" : "#1a1a2e",
-                    padding: "16px", borderRadius: "12px", cursor: "pointer",
-                    border: `2px solid ${schwierigkeit === s.id ? s.farbe : "#e0d8cc"}`,
-                    textAlign: "center", fontSize: "16px", fontWeight: "700",
-                    transition: "all 0.2s",
-                  }}
-                >
+                <div key={s.id} onClick={() => setSchwierigkeit(s.id)}
+                  style={{ background: schwierigkeit === s.id ? s.farbe : "white", color: schwierigkeit === s.id ? "white" : "#1a1a2e", padding: "16px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${schwierigkeit === s.id ? s.farbe : "#e0d8cc"}`, textAlign: "center", fontSize: "16px", fontWeight: "700", transition: "all 0.2s" }}>
                   {s.name}
                 </div>
               ))}
             </div>
+
+            {/* Vorladen Status */}
+            {vorladen && thema && schwierigkeit && (
+              <div style={{ background: "#dbeafe", border: "2px solid #5b9bd5", borderRadius: "12px", padding: "12px", marginBottom: "16px", textAlign: "center", color: "#1e40af", fontSize: "15px", fontWeight: "600" }}>
+                ⚡ KI bereitet deine Fragen vor...
+              </div>
+            )}
+            {vorgeladeneFragen.length > 0 && (
+              <div style={{ background: "#dcfce7", border: "2px solid #16a34a", borderRadius: "12px", padding: "12px", marginBottom: "16px", textAlign: "center", color: "#166534", fontSize: "15px", fontWeight: "600" }}>
+                ✅ Fragen bereit! Drück auf Start!
+              </div>
+            )}
 
             {fehler && (
               <div style={{ background: "#fee2e2", border: "2px solid #ef4444", borderRadius: "12px", padding: "14px", marginBottom: "16px", color: "#991b1b", textAlign: "center" }}>
@@ -213,52 +210,26 @@ export default function QuizPage() {
               </div>
             )}
 
-            <button
-              onClick={startQuiz}
-              disabled={!thema || !schwierigkeit || laden}
-              style={{
-                width: "100%",
-                background: thema && schwierigkeit ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "#ccc",
-                color: "white", border: "none", padding: "18px", borderRadius: "14px",
-                fontSize: "20px", cursor: thema && schwierigkeit ? "pointer" : "not-allowed",
-                fontWeight: "800",
-              }}
-            >
-              {laden ? "⏳ KI erstellt Fragen..." : "🚀 Quiz starten!"}
+            <button onClick={startQuiz} disabled={!thema || !schwierigkeit || laden}
+              style={{ width: "100%", background: thema && schwierigkeit ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "#ccc", color: "white", border: "none", padding: "18px", borderRadius: "14px", fontSize: "20px", cursor: thema && schwierigkeit ? "pointer" : "not-allowed", fontWeight: "800" }}>
+              {laden ? "⏳ Noch einen Moment..." : vorladen ? "⏳ Fragen werden geladen..." : "🚀 Quiz starten!"}
             </button>
-
-            {laden && (
-              <p style={{ textAlign: "center", color: "#5b9bd5", marginTop: "16px", fontSize: "14px" }}>
-                Bitte warte kurz — die KI erstellt gerade deine Fragen...
-              </p>
-            )}
           </div>
         )}
 
         {schritt === "quiz" && fragen && fragen.length > 0 && (
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px", alignItems: "center" }}>
-              <span style={{ color: "#2d6da8", fontWeight: "800", fontSize: "16px" }}>
-                Frage {aktuelle + 1} von {fragen.length}
-              </span>
-              <span style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", padding: "6px 16px", borderRadius: "20px", fontWeight: "800", fontSize: "16px" }}>
-                ⭐ {punkte} Punkte
-              </span>
+              <span style={{ color: "#2d6da8", fontWeight: "800", fontSize: "16px" }}>Frage {aktuelle + 1} von {fragen.length}</span>
+              <span style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", padding: "6px 16px", borderRadius: "20px", fontWeight: "800", fontSize: "16px" }}>⭐ {punkte} Punkte</span>
             </div>
 
             <div style={{ background: "#dbeafe", borderRadius: "10px", height: "10px", marginBottom: "24px", overflow: "hidden" }}>
-              <div style={{
-                background: "linear-gradient(90deg, #5b9bd5, #2d6da8)",
-                height: "10px", borderRadius: "10px",
-                width: `${((aktuelle + 1) / fragen.length) * 100}%`,
-                transition: "width 0.4s ease",
-              }} />
+              <div style={{ background: "linear-gradient(90deg, #5b9bd5, #2d6da8)", height: "10px", borderRadius: "10px", width: `${((aktuelle + 1) / fragen.length) * 100}%`, transition: "width 0.4s ease" }} />
             </div>
 
             <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", border: "2px solid #dbeafe" }}>
-              <h3 style={{ fontSize: "20px", color: "#1a1a2e", marginTop: 0, lineHeight: 1.6, fontWeight: "700" }}>
-                {fragen[aktuelle].frage}
-              </h3>
+              <h3 style={{ fontSize: "20px", color: "#1a1a2e", marginTop: 0, lineHeight: 1.6, fontWeight: "700" }}>{fragen[aktuelle].frage}</h3>
             </div>
 
             <div style={{ display: "grid", gap: "12px", marginBottom: "20px" }}>
@@ -268,43 +239,15 @@ export default function QuizPage() {
                 let textColor = "#1a1a2e";
 
                 if (antwortGezeigt) {
-                  if (i === fragen[aktuelle].richtig) {
-                    bg = "#dcfce7";
-                    border = "#16a34a";
-                    textColor = "#166534";
-                  } else if (i === ausgewaehlt) {
-                    bg = "#fee2e2";
-                    border = "#dc2626";
-                    textColor = "#991b1b";
-                  } else {
-                    bg = "#f9fafb";
-                    border = "#d1d5db";
-                    textColor = "#9ca3af";
-                  }
+                  if (i === fragen[aktuelle].richtig) { bg = "#dcfce7"; border = "#16a34a"; textColor = "#166534"; }
+                  else if (i === ausgewaehlt) { bg = "#fee2e2"; border = "#dc2626"; textColor = "#991b1b"; }
+                  else { bg = "#f9fafb"; border = "#d1d5db"; textColor = "#9ca3af"; }
                 }
 
                 return (
-                  <div
-                    key={i}
-                    onClick={() => antwortWaehlen(i)}
-                    style={{
-                      background: bg,
-                      border: `2.5px solid ${border}`,
-                      borderRadius: "12px", padding: "16px 20px",
-                      cursor: antwortGezeigt ? "default" : "pointer",
-                      fontSize: "17px", fontWeight: "700", color: textColor,
-                      transition: "all 0.2s",
-                      display: "flex", alignItems: "center", gap: "14px",
-                    }}
-                  >
-                    <span style={{
-                      background: antwortGezeigt ? "transparent" : "linear-gradient(135deg, #5b9bd5, #2d6da8)",
-                      color: antwortGezeigt ? textColor : "white",
-                      borderRadius: "8px", padding: "4px 12px",
-                      fontSize: "15px", fontWeight: "900",
-                      border: antwortGezeigt ? `2px solid ${border}` : "none",
-                      minWidth: "32px", textAlign: "center",
-                    }}>
+                  <div key={i} onClick={() => antwortWaehlen(i)}
+                    style={{ background: bg, border: `2.5px solid ${border}`, borderRadius: "12px", padding: "16px 20px", cursor: antwortGezeigt ? "default" : "pointer", fontSize: "17px", fontWeight: "700", color: textColor, transition: "all 0.2s", display: "flex", alignItems: "center", gap: "14px" }}>
+                    <span style={{ background: antwortGezeigt ? "transparent" : "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: antwortGezeigt ? textColor : "white", borderRadius: "8px", padding: "4px 12px", fontSize: "15px", fontWeight: "900", border: antwortGezeigt ? `2px solid ${border}` : "none", minWidth: "32px", textAlign: "center" }}>
                       {["A", "B", "C", "D"][i]}
                     </span>
                     {antwort}
@@ -315,24 +258,12 @@ export default function QuizPage() {
 
             {antwortGezeigt && (
               <div>
-                <div style={{
-                  background: ausgewaehlt === fragen[aktuelle].richtig ? "#dcfce7" : "#fee2e2",
-                  border: `2px solid ${ausgewaehlt === fragen[aktuelle].richtig ? "#16a34a" : "#dc2626"}`,
-                  borderRadius: "12px", padding: "16px", marginBottom: "16px",
-                  fontSize: "16px", fontWeight: "600",
-                  color: ausgewaehlt === fragen[aktuelle].richtig ? "#166534" : "#991b1b",
-                }}>
+                <div style={{ background: ausgewaehlt === fragen[aktuelle].richtig ? "#dcfce7" : "#fee2e2", border: `2px solid ${ausgewaehlt === fragen[aktuelle].richtig ? "#16a34a" : "#dc2626"}`, borderRadius: "12px", padding: "16px", marginBottom: "16px", fontSize: "16px", fontWeight: "600", color: ausgewaehlt === fragen[aktuelle].richtig ? "#166534" : "#991b1b" }}>
                   {ausgewaehlt === fragen[aktuelle].richtig ? "✅ Richtig! " : "❌ Falsch! "}
                   {fragen[aktuelle].erklaerung}
                 </div>
-                <button
-                  onClick={naechsteFrage}
-                  style={{
-                    width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)",
-                    color: "white", border: "none", padding: "16px", borderRadius: "12px",
-                    fontSize: "18px", cursor: "pointer", fontWeight: "800",
-                  }}
-                >
+                <button onClick={naechsteFrage}
+                  style={{ width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "16px", borderRadius: "12px", fontSize: "18px", cursor: "pointer", fontWeight: "800" }}>
                   {aktuelle + 1 >= fragen.length ? "🏁 Ergebnis sehen!" : "➡️ Nächste Frage"}
                 </button>
               </div>
@@ -346,38 +277,20 @@ export default function QuizPage() {
               {prozent >= 80 ? "🏆 Fantastisch!" : prozent >= 50 ? "👍 Gut gemacht!" : "💪 Weiter üben!"}
             </h2>
             <div style={{ background: "white", borderRadius: "20px", padding: "30px", marginBottom: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
-              <p style={{ fontSize: "56px", fontWeight: "900", color: "#2d6da8", margin: "0 0 8px 0" }}>
-                {punkte}/{fragen.length}
-              </p>
+              <p style={{ fontSize: "56px", fontWeight: "900", color: "#2d6da8", margin: "0 0 8px 0" }}>{punkte}/{fragen.length}</p>
               <p style={{ fontSize: "22px", color: "#555", margin: "0 0 20px 0" }}>{prozent}% richtig</p>
-              {zufallsGif && (
-                <img src={zufallsGif} alt="Ergebnis" style={{ width: "200px", borderRadius: "16px", border: "4px solid #dbeafe" }} />
-              )}
+              {zufallsGif && <img src={zufallsGif} alt="Ergebnis" style={{ width: "200px", borderRadius: "16px", border: "4px solid #dbeafe" }} />}
             </div>
 
             <div style={{ background: "#dbeafe", border: "2px solid #5b9bd5", borderRadius: "16px", padding: "24px", marginBottom: "24px" }}>
-              <p style={{ fontSize: "18px", fontWeight: "800", color: "#1e40af", margin: "0 0 10px 0" }}>
-                📚 Noch mehr lernen?
-              </p>
-              <p style={{ color: "#3b4f7a", margin: "0 0 16px 0", fontSize: "15px" }}>
-                Unsere Lernmaterialien helfen dir noch besser zu werden!
-              </p>
-              <button
-                onClick={() => window.location.href = "/"}
-                style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "12px 28px", borderRadius: "10px", fontWeight: "800", fontSize: "16px", cursor: "pointer" }}
-              >
+              <p style={{ fontSize: "18px", fontWeight: "800", color: "#1e40af", margin: "0 0 10px 0" }}>📚 Noch mehr lernen?</p>
+              <p style={{ color: "#3b4f7a", margin: "0 0 16px 0", fontSize: "15px" }}>Unsere Lernmaterialien helfen dir noch besser zu werden!</p>
+              <button onClick={() => window.location.href = "/"} style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "12px 28px", borderRadius: "10px", fontWeight: "800", fontSize: "16px", cursor: "pointer" }}>
                 Materialien ansehen
               </button>
             </div>
 
-            <button
-              onClick={neuStarten}
-              style={{
-                width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)",
-                color: "white", border: "none", padding: "16px", borderRadius: "12px",
-                fontSize: "18px", cursor: "pointer", fontWeight: "800",
-              }}
-            >
+            <button onClick={neuStarten} style={{ width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "16px", borderRadius: "12px", fontSize: "18px", cursor: "pointer", fontWeight: "800" }}>
               🔄 Nochmal spielen!
             </button>
           </div>
