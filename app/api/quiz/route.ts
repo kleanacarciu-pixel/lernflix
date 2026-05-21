@@ -19,19 +19,21 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
+        max_tokens: 1000,
         messages: [
           {
             role: "user",
-            content: `5 Multiple-Choice-Fragen zu ${thema} auf Deutsch, ${schwierigkeitText}. Nur JSON: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
+            content: `Du bist ein witziger deutscher Mathe-Lehrer. Erstelle genau 5 Multiple-Choice-Fragen zum Thema ${thema} fuer deutsche Schueler. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat genau 4 Antwortmoeglichkeiten. Nur eine Antwort ist richtig. Benutze Emojis. Alles auf Deutsch. Antworte NUR mit reinem JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"Fragetext?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"Erklaerung"}]}`,
           },
         ],
       }),
     });
 
     const data = await response.json();
+
     if (!response.ok) {
-      return NextResponse.json({ error: "Fehler" }, { status: 500 });
+      console.error("Anthropic Fehler:", JSON.stringify(data));
+      return NextResponse.json({ error: "API Fehler" }, { status: 500 });
     }
 
     let text = data.content[0].text.trim();
@@ -40,6 +42,6 @@ export async function POST(request: Request) {
     return NextResponse.json(quizData);
   } catch (error) {
     console.error("Fehler:", error);
-    return NextResponse.json({ error: "Fehler" }, { status: 500 });
+    return NextResponse.json({ error: "Fehler beim Erstellen" }, { status: 500 });
   }
 }
