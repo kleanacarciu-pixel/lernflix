@@ -74,10 +74,10 @@ export default function Home() {
   const mathe = produkte.filter(p => p.kategorie === 'mathe');
   const physik = produkte.filter(p => p.kategorie === 'physik');
 
-  const ProduktKarte = ({ p }: { p: Produkt }) => (
+ const ProduktKarte = ({ p }: { p: Produkt }) => (
     <div
       onClick={() => setAusgewaehlt(p)}
-      style={{background: p.gradient, borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', position: 'relative', color: 'white'}}
+      style={{background: 'white', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e5e5ea', position: 'relative', color: '#1d1d1f'}}
       onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-8px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}
     >
@@ -354,7 +354,7 @@ export default function Home() {
           <p style={{fontSize: '17px', color: '#6e6e73', marginBottom: '48px'}}>Teste dein Wissen — direkt hier in der App!</p>
           <div style={{background: 'linear-gradient(135deg, #0071e3 0%, #5856d6 100%)', borderRadius: '20px', padding: '60px', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,113,227,0.3)'}}>
             <div style={{fontSize: '64px', marginBottom: '20px'}}>🧠</div>
-            <h4 style={{margin: '0 0 12px', fontSize: '24px', fontWeight: '700', color: 'white'}}>KI-generierte Quizze!</h4>
+            <h4 style={{margin: '0 0 12px', fontSize: '24px', fontWeight: '700', color: 'white'}}>Kostenlose Quizze!</h4>
             <p style={{margin: '0 0 32px', fontSize: '16px', color: 'rgba(255,255,255,0.85)'}}>Jedes Mal neue Fragen in Mathe und Physik — kostenlos und interaktiv!</p>
             <button
               onClick={() => window.location.href = '/quiz'}
