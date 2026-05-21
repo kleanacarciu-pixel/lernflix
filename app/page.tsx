@@ -95,6 +95,67 @@ export default function Home() {
     </div>
   );
 
+  const kategorien = [
+    {
+      href: '#mathe',
+      titel: 'Mathematik',
+      desc: 'Formeln, Übungen & Erklärungen',
+      farbe: '#0071e3',
+      gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/>
+          <rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/>
+          <rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/>
+          <path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      href: '#physik',
+      titel: 'Physik',
+      desc: 'Gesetze, Formeln & Experimente',
+      farbe: '#5856d6',
+      gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="5" fill="white"/>
+          <ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/>
+          <ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/>
+          <ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/>
+        </svg>
+      ),
+    },
+    {
+      href: '#pakete',
+      titel: 'Lernpakete',
+      desc: 'Abitur, Sommer & Spezialthemen',
+      farbe: '#34c759',
+      gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)',
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/>
+          <path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      ),
+    },
+    {
+      href: '/quiz',
+      titel: 'Quizze',
+      desc: 'Kostenlos Wissen testen',
+      farbe: '#ff9500',
+      gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)',
+      icon: (
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/>
+          <path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+          <circle cx="20" cy="27" r="1.5" fill="white"/>
+        </svg>
+      ),
+    },
+  ];
+
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif'}}>
 
@@ -108,7 +169,10 @@ export default function Home() {
         @keyframes blinzeln { 0%,85%,100%{transform:scaleY(1)}92%{transform:scaleY(0.05)} }
         @keyframes schweben { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
         @keyframes schildSchaukeln { 0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)} }
-        @keyframes fadeIn { 0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)} }
+        @keyframes formelSchweben1 { 0%,100%{transform:translateY(0) rotate(-5deg);opacity:0.12}50%{transform:translateY(-20px) rotate(5deg);opacity:0.22} }
+        @keyframes formelSchweben2 { 0%,100%{transform:translateY(0) rotate(3deg);opacity:0.1}50%{transform:translateY(-15px) rotate(-3deg);opacity:0.18} }
+        @keyframes formelSchweben3 { 0%,100%{transform:translateY(0);opacity:0.08}50%{transform:translateY(-25px);opacity:0.16} }
+        @keyframes gradientMove { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
       `}</style>
 
       {ausgewaehlt && (
@@ -116,7 +180,7 @@ export default function Home() {
           <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '24px', maxWidth: '700px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)'}}>
             <div style={{position: 'relative', height: '300px', backgroundColor: '#f5f5f7'}}>
               <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', fontSize: '16px', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>✕</button>
+              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
             </div>
             <div style={{padding: '32px'}}>
               <h2 style={{margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.emoji} {ausgewaehlt.titel}</h2>
@@ -150,15 +214,7 @@ export default function Home() {
       )}
 
       {/* Header */}
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        backgroundColor: scrolled ? 'rgba(255,255,255,0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(0,0,0,0.1)' : 'none',
-        padding: '16px 32px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        transition: 'all 0.3s ease',
-      }}>
+      <header style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: scrolled ? 'rgba(255,255,255,0.85)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.1)' : 'none', padding: '16px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease'}}>
         <img src="/logo.jpg?v=1" alt="Lerne mit Anna" style={{height: '44px'}} />
         <nav style={{display: 'flex', gap: '32px'}}>
           <a href="#mathe" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '14px', fontWeight: '500'}}>Mathe</a>
@@ -169,27 +225,32 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(180deg, #f5f5f7 0%, #ffffff 100%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        textAlign: 'center', padding: '100px 24px 60px', overflow: 'hidden', position: 'relative',
-      }}>
+      <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '100px 24px 60px', overflow: 'hidden'}}>
 
-        {/* Hintergrund Kreise */}
-        <div style={{position: 'absolute', top: '10%', left: '5%', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.06) 0%, transparent 70%)', pointerEvents: 'none'}}></div>
-        <div style={{position: 'absolute', bottom: '10%', right: '5%', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.04) 0%, transparent 70%)', pointerEvents: 'none'}}></div>
+        {/* Animierter Gradient Hintergrund */}
+        <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #f0f4ff 0%, #ffffff 30%, #f5f0ff 60%, #f0f8ff 100%)', backgroundSize: '400% 400%', animation: 'gradientMove 8s ease infinite', zIndex: 0}}></div>
 
-        {/* Animation Container */}
-        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '280px', marginBottom: '48px', position: 'relative', width: '100%', maxWidth: '600px'}}>
+        {/* Schwebende Formeln */}
+        <div style={{position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden'}}>
+          {[
+            {text: 'x²', top: '15%', left: '8%', size: '36px', delay: '0s', anim: 'formelSchweben1 4s ease-in-out infinite'},
+            {text: 'E=mc²', top: '20%', right: '10%', size: '28px', delay: '1s', anim: 'formelSchweben2 5s ease-in-out infinite 1s'},
+            {text: 'π', top: '70%', left: '6%', size: '40px', delay: '0.5s', anim: 'formelSchweben3 4.5s ease-in-out infinite 0.5s'},
+            {text: 'a²+b²=c²', top: '12%', left: '25%', size: '22px', delay: '2s', anim: 'formelSchweben1 6s ease-in-out infinite 2s'},
+            {text: 'F=ma', top: '75%', right: '8%', size: '26px', delay: '1.5s', anim: 'formelSchweben2 5.5s ease-in-out infinite 1.5s'},
+            {text: '∑', top: '30%', right: '20%', size: '32px', delay: '3s', anim: 'formelSchweben3 7s ease-in-out infinite 3s'},
+            {text: 'v=λf', top: '60%', left: '20%', size: '24px', delay: '2.5s', anim: 'formelSchweben1 5s ease-in-out infinite 2.5s'},
+            {text: '∫', top: '45%', right: '5%', size: '36px', delay: '0.8s', anim: 'formelSchweben2 4.8s ease-in-out infinite 0.8s'},
+          ].map((f, i) => (
+            <div key={i} style={{position: 'absolute', top: f.top, left: (f as {left?: string}).left, right: (f as {right?: string}).right, fontSize: f.size, fontWeight: '700', color: '#0071e3', fontFamily: 'Georgia, serif', animation: f.anim}}>
+              {f.text}
+            </div>
+          ))}
+        </div>
 
-          {/* Heft */}
-          <div style={{
-            transform: phase === 'weglaufen' ? 'translateX(600px)' : 'translateX(0px)',
-            opacity: phase === 'weglaufen' ? 0 : 1,
-            transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out',
-            position: 'relative',
-          }}>
+        {/* Heft Animation */}
+        <div style={{position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '280px', marginBottom: '48px', width: '100%', maxWidth: '600px'}}>
+          <div style={{transform: phase === 'weglaufen' ? 'translateX(600px)' : 'translateX(0px)', opacity: phase === 'weglaufen' ? 0 : 1, transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out', position: 'relative'}}>
 
             {phase === 'kratzen' && (<>
               <div style={{position: 'absolute', top: '-70px', left: '50%', transform: 'translateX(-50%)', fontSize: '48px', fontWeight: '900', color: '#0071e3', animation: 'frage1 1.2s ease-in-out infinite'}}>?</div>
@@ -197,13 +258,7 @@ export default function Home() {
               <div style={{position: 'absolute', top: '-55px', right: '-35px', fontSize: '32px', fontWeight: '900', color: '#0071e3', opacity: 0.4, animation: 'frage3 1.8s ease-in-out infinite 0.6s'}}>?</div>
             </>)}
 
-            <div style={{
-              width: '140px', height: '170px',
-              background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
-              borderRadius: '12px 20px 20px 12px', position: 'relative',
-              boxShadow: '0 20px 60px rgba(0,113,227,0.35)',
-              animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none',
-            }}>
+            <div style={{width: '140px', height: '170px', background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', borderRadius: '12px 20px 20px 12px', position: 'relative', boxShadow: '0 20px 60px rgba(0,113,227,0.35)', animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none'}}>
               <div style={{position: 'absolute', left: '6px', top: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: '142px'}}>
                 {[0,1,2,3,4,5,6,7,8].map(i => (
                   <div key={i} style={{width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#1d1d1f', border: '2.5px solid rgba(255,255,255,0.8)'}}></div>
@@ -230,7 +285,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Schild */}
           {phase === 'schild' && (
             <div style={{position: 'absolute', right: 'calc(50% - 230px)', bottom: '50px', animation: 'schildRein 0.7s ease-out forwards'}}>
               <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
@@ -244,13 +298,13 @@ export default function Home() {
         </div>
 
         {/* Slogan */}
-        <div style={{opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '20px', minHeight: '32px'}}>
+        <div style={{position: 'relative', zIndex: 2, opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '20px', minHeight: '32px'}}>
           <p style={{fontSize: '21px', color: '#6e6e73', letterSpacing: '0.5px', fontWeight: '400', margin: 0}}>Dein Lernstream. Deine Regeln.</p>
         </div>
 
         {/* Buttons */}
-        <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
-          <a href="#mathe" style={{backgroundColor: '#0071e3', color: 'white', fontWeight: '600', padding: '14px 32px', borderRadius: '980px', textDecoration: 'none', fontSize: '16px'}}>
+        <div style={{position: 'relative', zIndex: 2, display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
+          <a href="#mathe" style={{backgroundColor: '#0071e3', color: 'white', fontWeight: '600', padding: '14px 32px', borderRadius: '980px', textDecoration: 'none', fontSize: '16px', boxShadow: '0 4px 16px rgba(0,113,227,0.35)'}}>
             Materialien ansehen
           </a>
           <a href="/quiz" style={{backgroundColor: 'rgba(0,113,227,0.1)', color: '#0071e3', fontWeight: '600', padding: '14px 32px', borderRadius: '980px', textDecoration: 'none', fontSize: '16px'}}>
@@ -262,21 +316,20 @@ export default function Home() {
       {/* Kategorien */}
       <section style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '48px', textAlign: 'center'}}>Alle Kategorien</h2>
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px'}}>
-            {[
-              {href: '#mathe', emoji: '📐', titel: 'Mathe', desc: 'Übungen & Erklärungen'},
-              {href: '#physik', emoji: '⚡', titel: 'Physik', desc: 'Formeln & Aufgaben'},
-              {href: '#pakete', emoji: '🎒', titel: 'Lernpakete', desc: 'Abitur & Spezialthemen'},
-              {href: '/quiz', emoji: '🧠', titel: 'Quiz', desc: 'Kostenlos testen'},
-            ].map((k) => (
+          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px', textAlign: 'center'}}>Alle Kategorien</h2>
+          <p style={{fontSize: '17px', color: '#6e6e73', textAlign: 'center', marginBottom: '48px'}}>Wähle dein Fach und starte durch</p>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px'}}>
+            {kategorien.map((k) => (
               <a key={k.titel} href={k.href} style={{textDecoration: 'none'}}>
-                <div style={{backgroundColor: 'white', borderRadius: '18px', padding: '32px 24px', textAlign: 'center', border: '1px solid #e5e5ea', transition: 'all 0.3s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.04)'}}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(0,0,0,0.1)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'; }}>
-                  <div style={{fontSize: '48px', marginBottom: '16px'}}>{k.emoji}</div>
-                  <h4 style={{margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#1d1d1f'}}>{k.titel}</h4>
-                  <p style={{margin: 0, fontSize: '13px', color: '#6e6e73'}}>{k.desc}</p>
+                <div
+                  style={{background: k.gradient, borderRadius: '20px', padding: '32px 28px', color: 'white', transition: 'all 0.3s ease', boxShadow: `0 4px 20px ${k.farbe}30`, position: 'relative', overflow: 'hidden'}}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 16px 40px ${k.farbe}50`; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 20px ${k.farbe}30`; }}
+                >
+                  <div style={{marginBottom: '20px'}}>{k.icon}</div>
+                  <h4 style={{margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: 'white'}}>{k.titel}</h4>
+                  <p style={{margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5'}}>{k.desc}</p>
+                  <div style={{position: 'absolute', bottom: '20px', right: '20px', fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.7)'}}>→</div>
                 </div>
               </a>
             ))}
@@ -287,7 +340,8 @@ export default function Home() {
       {/* Mathe */}
       <section id="mathe" style={{backgroundColor: '#ffffff', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '48px'}}>📐 Mathe</h2>
+          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Mathematik</h2>
+          <p style={{fontSize: '17px', color: '#6e6e73', marginBottom: '48px'}}>Formeln, Übungen und Erklärungen für die Schule</p>
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px'}}>
             {mathe.map(p => <ProduktKarte key={p.id} p={p} />)}
           </div>
@@ -297,7 +351,8 @@ export default function Home() {
       {/* Physik */}
       <section id="physik" style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '48px'}}>⚡ Physik</h2>
+          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Physik</h2>
+          <p style={{fontSize: '17px', color: '#6e6e73', marginBottom: '48px'}}>Gesetze, Formeln und Experimente verständlich erklärt</p>
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px'}}>
             {physik.map(p => <ProduktKarte key={p.id} p={p} />)}
           </div>
@@ -307,9 +362,10 @@ export default function Home() {
       {/* Lernpakete */}
       <section id="pakete" style={{backgroundColor: '#ffffff', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '48px'}}>🎒 Lernpakete</h2>
-          <div style={{backgroundColor: '#f5f5f7', borderRadius: '18px', padding: '48px', textAlign: 'center', border: '1px solid #e5e5ea'}}>
-            <div style={{fontSize: '48px', marginBottom: '16px'}}>🚀</div>
+          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Lernpakete</h2>
+          <p style={{fontSize: '17px', color: '#6e6e73', marginBottom: '48px'}}>Spezielle Pakete für besondere Lernsituationen</p>
+          <div style={{background: 'linear-gradient(135deg, #f5f5f7 0%, #ffffff 100%)', borderRadius: '20px', padding: '60px', textAlign: 'center', border: '1px solid #e5e5ea'}}>
+            <div style={{width: '64px', height: '64px', background: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px'}}>🚀</div>
             <h4 style={{margin: '0 0 8px', fontSize: '22px', fontWeight: '700', color: '#1d1d1f'}}>Bald verfügbar!</h4>
             <p style={{margin: 0, fontSize: '15px', color: '#6e6e73'}}>Spezielle Lernpakete für Abitur, Sommer und mehr kommen bald!</p>
           </div>
@@ -319,14 +375,14 @@ export default function Home() {
       {/* Quiz */}
       <section id="quiz" style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '16px'}}>🧠 Quiz</h2>
-          <p style={{fontSize: '15px', color: '#6e6e73', marginBottom: '40px'}}>Kostenlos — direkt hier in der App!</p>
-          <div style={{backgroundColor: 'white', borderRadius: '18px', padding: '48px', textAlign: 'center', border: '1px solid #e5e5ea'}}>
+          <h2 style={{fontSize: '32px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Kostenlose Quizze</h2>
+          <p style={{fontSize: '17px', color: '#6e6e73', marginBottom: '48px'}}>Teste dein Wissen — direkt hier in der App!</p>
+          <div style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', borderRadius: '20px', padding: '60px', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,113,227,0.25)'}}>
             <div style={{fontSize: '64px', marginBottom: '20px'}}>🧠</div>
-            <h4 style={{margin: '0 0 12px', fontSize: '22px', fontWeight: '700', color: '#1d1d1f'}}>Kostenlose Quizze!</h4>
-            <p style={{margin: '0 0 28px', fontSize: '15px', color: '#6e6e73'}}>Teste dein Wissen in Mathe und Physik — kostenlos und interaktiv!</p>
-            <button onClick={() => window.location.href = '/quiz'} style={{backgroundColor: '#0071e3', color: 'white', border: 'none', borderRadius: '980px', padding: '14px 32px', fontSize: '16px', fontWeight: '600', cursor: 'pointer'}}>
-              Quiz starten
+            <h4 style={{margin: '0 0 12px', fontSize: '24px', fontWeight: '700', color: 'white'}}>Quiz starten!</h4>
+            <p style={{margin: '0 0 32px', fontSize: '16px', color: 'rgba(255,255,255,0.8)'}}>KI-generierte Fragen in Mathe und Physik — kostenlos und interaktiv!</p>
+            <button onClick={() => window.location.href = '/quiz'} style={{backgroundColor: 'white', color: '#0071e3', border: 'none', borderRadius: '980px', padding: '14px 36px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.15)'}}>
+              Jetzt Quiz starten
             </button>
           </div>
         </div>
