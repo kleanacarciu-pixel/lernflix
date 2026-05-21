@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const THEMEN = [
   { id: "pythagoras", name: "📐 Pythagoras", klasse: "Klasse 8-9", fach: "mathe" },
@@ -27,7 +27,6 @@ const SCHWIERIGKEITEN = [
 const GIFS_SUPER = [
   "https://media.giphy.com/media/3ohhwytHcusSCXXOUg/giphy.gif",
   "https://media.giphy.com/media/artj92V8o75VPL7AeQ/giphy.gif",
-  "https://media.giphy.com/media/l4FGGafcOHmrlQxG0/giphy.gif",
 ];
 const GIFS_GUT = [
   "https://media.giphy.com/media/xT5LMzIlfQIBe1GzPi/giphy.gif",
@@ -35,7 +34,6 @@ const GIFS_GUT = [
 ];
 const GIFS_WEITER = [
   "https://media.giphy.com/media/26BRzQS5HXcEWVnkk/giphy.gif",
-  "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
 ];
 
 type Frage = {
@@ -50,20 +48,23 @@ export default function QuizPage() {
   const [thema, setThema] = useState("");
   const [schwierigkeit, setSchwierigkeit] = useState("");
   const [fragen, setFragen] = useState<Frage[]>([]);
-  const [vorgeladeneFragen, setVorgeladeneFragen] = useState<Frage[]>([]);
   const [aktuelle, setAktuelle] = useState(0);
   const [ausgewaehlt, setAusgewaehlt] = useState<number | null>(null);
   const [punkte, setPunkte] = useState(0);
   const [laden, setLaden] = useState(false);
-  const [vorladen, setVorladen] = useState(false);
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
   const [zufallsGif, setZufallsGif] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
+  
+  // Ref für vorgeladene Fragen — damit setInterval sie sehen kann!
+  const vorgeladeneRef = useRef<Frage[]>([]);
+  const [vorgeladen, setVorgeladen] = useState(false);
 
   useEffect(() => {
     if (thema && schwierigkeit) {
-      setVorladen(true);
-      setVorgeladeneFragen([]);
+      vorgeladeneRef.current = [];
+      setVorgeladen(false);
+      
       fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,32 +73,42 @@ export default function QuizPage() {
         .then(res => res.json())
         .then(data => {
           if (data && data.fragen && data.fragen.length > 0) {
-            setVorgeladeneFragen(data.fragen);
+            vorgeladeneRef.current = data.fragen;
+            setVorgeladen(true);
           }
-          setVorladen(false);
         })
-        .catch(() => setVorladen(false));
+        .catch(() => {});
     }
   }, [thema, schwierigkeit]);
 
   function startQuiz() {
-    if (vorgeladeneFragen.length > 0) {
-      setFragen(vorgeladeneFragen);
+    if (!thema || !schwierigkeit) return;
+    
+    if (vorgeladeneRef.current.length > 0) {
+      // Fragen schon fertig — sofort starten!
+      setFragen(vorgeladeneRef.current);
       setSchritt("quiz");
       setAktuelle(0);
       setPunkte(0);
-    } else if (vorladen) {
+    } else {
+      // Noch laden — warten bis fertig
       setLaden(true);
       const interval = setInterval(() => {
-        if (vorgeladeneFragen.length > 0) {
-          setFragen(vorgeladeneFragen);
+        if (vorgeladeneRef.current.length > 0) {
+          setFragen(vorgeladeneRef.current);
           setSchritt("quiz");
           setAktuelle(0);
           setPunkte(0);
           setLaden(false);
           clearInterval(interval);
         }
-      }, 500);
+      }, 300);
+      
+      // Timeout nach 30 Sekunden
+      setTimeout(() => {
+        clearInterval(interval);
+        setLaden(false);
+      }, 30000);
     }
   }
 
@@ -131,7 +142,8 @@ export default function QuizPage() {
     setThema("");
     setSchwierigkeit("");
     setFragen([]);
-    setVorgeladeneFragen([]);
+    vorgeladeneRef.current = [];
+    setVorgeladen(false);
     setAktuelle(0);
     setPunkte(0);
     setAusgewaehlt(null);
@@ -189,9 +201,7 @@ export default function QuizPage() {
               ))}
             </div>
 
-            <button
-              onClick={startQuiz}
-              disabled={!thema || !schwierigkeit || laden}
+            <button onClick={startQuiz} disabled={!thema || !schwierigkeit || laden}
               style={{ width: "100%", background: thema && schwierigkeit ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "#ccc", color: "white", border: "none", padding: "18px", borderRadius: "14px", fontSize: "20px", cursor: thema && schwierigkeit ? "pointer" : "not-allowed", fontWeight: "800" }}>
               {laden ? "⏳ Einen Moment..." : "🚀 Quiz starten!"}
             </button>
@@ -218,13 +228,11 @@ export default function QuizPage() {
                 let bg = "white";
                 let border = "#2d6da8";
                 let textColor = "#1a1a2e";
-
                 if (antwortGezeigt) {
                   if (i === fragen[aktuelle].richtig) { bg = "#dcfce7"; border = "#16a34a"; textColor = "#166534"; }
                   else if (i === ausgewaehlt) { bg = "#fee2e2"; border = "#dc2626"; textColor = "#991b1b"; }
                   else { bg = "#f9fafb"; border = "#d1d5db"; textColor = "#9ca3af"; }
                 }
-
                 return (
                   <div key={i} onClick={() => antwortWaehlen(i)}
                     style={{ background: bg, border: `2.5px solid ${border}`, borderRadius: "12px", padding: "16px 20px", cursor: antwortGezeigt ? "default" : "pointer", fontSize: "17px", fontWeight: "700", color: textColor, transition: "all 0.2s", display: "flex", alignItems: "center", gap: "14px" }}>
