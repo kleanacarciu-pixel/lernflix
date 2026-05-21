@@ -11,7 +11,6 @@ type Produkt = {
   seiten: string;
   preis: number;
   vorschau: string;
-  gradient: string;
 };
 
 export default function Home() {
@@ -53,41 +52,41 @@ export default function Home() {
       beschreibung: 'Alle Geometrie-Formeln von Klasse 6 bis 9 — mit Figuren, Beispielen und Erklärungen.',
       details: ['8 vollständige Kapitel', 'Alle Formeln für Vierecke, Dreiecke, Kreis', 'Alle 3D-Körper: Würfel, Zylinder, Kegel, Kugel', 'Satz des Pythagoras mit Erklärung', 'Ähnlichkeit und Strahlensätze', 'Übersichtstabelle am Ende', 'Mit Witzen und Tipps — kinderfreundlich!'],
       seiten: '12 Seiten', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-      gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
     },
     {
       id: 2, kategorie: 'mathe', typ: 'Arbeitsblatt', titel: 'Potenzen',
       beschreibung: 'Alles über Potenzen — Regeln, Beispiele und Übungen. Perfekt für Klasse 7–9.',
       details: ['Potenzregeln vollständig erklärt', 'Negative Exponenten', 'Potenzieren mit Brüchen', 'Übungsaufgaben mit Lösungen', 'Einfache und verständliche Sprache'],
       seiten: 'PDF', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
-      gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
     },
     {
       id: 3, kategorie: 'physik', typ: 'Formelsammlung', titel: 'Mechanik',
       beschreibung: 'Alle wichtigen Mechanik-Formeln — Kraft, Geschwindigkeit, Energie und mehr.',
       details: ['Kraft, Masse, Beschleunigung', 'Geschwindigkeit und Bewegung', 'Energie und Arbeit', 'Hebel und Drehmoment', 'Mit Beispielen und Erklärungen'],
       seiten: 'PDF', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-      gradient: 'linear-gradient(135deg, #ff6b6b 0%, #cc0000 100%)',
     },
   ];
 
   const mathe = produkte.filter(p => p.kategorie === 'mathe');
   const physik = produkte.filter(p => p.kategorie === 'physik');
 
- const ProduktKarte = ({ p }: { p: Produkt }) => (
+  const ProduktKarte = ({ p }: { p: Produkt }) => (
     <div
       onClick={() => setAusgewaehlt(p)}
-      style={{background: 'white', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e5e5ea', position: 'relative', color: '#1d1d1f'}}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-8px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)'; }}
+      style={{backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e5e5ea', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,113,227,0.15)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
     >
-      <div style={{padding: '32px 28px 24px'}}>
-        <div style={{fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.7, marginBottom: '12px'}}>{p.typ}</div>
-        <h4 style={{margin: '0 0 10px', fontSize: '20px', fontWeight: '700', color: 'white'}}>{p.titel}</h4>
-        <p style={{margin: '0 0 24px', fontSize: '14px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5'}}>{p.beschreibung}</p>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '20px'}}>
-          <span style={{fontSize: '28px', fontWeight: '700', color: 'white'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-          <span style={{fontSize: '14px', color: 'white', fontWeight: '600', backgroundColor: 'rgba(255,255,255,0.2)', padding: '8px 18px', borderRadius: '20px', backdropFilter: 'blur(10px)'}}>Details →</span>
+      <div style={{background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)', height: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+        <span style={{fontSize: '64px'}}>{p.kategorie === 'mathe' ? '📐' : '⚡'}</span>
+        <span style={{fontSize: '11px', fontWeight: '700', color: '#0071e3', textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(0,113,227,0.1)', padding: '4px 12px', borderRadius: '20px'}}>{p.typ}</span>
+      </div>
+      <div style={{padding: '20px 22px'}}>
+        <h4 style={{margin: '0 0 8px', fontSize: '17px', fontWeight: '700', color: '#1d1d1f'}}>{p.titel}</h4>
+        <p style={{margin: '0 0 16px', fontSize: '14px', color: '#6e6e73', lineHeight: '1.5'}}>{p.beschreibung}</p>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f5', paddingTop: '14px'}}>
+          <span style={{fontSize: '24px', fontWeight: '700', color: '#0071e3'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+          <span style={{fontSize: '14px', color: '#0071e3', fontWeight: '600', backgroundColor: '#e8f0fe', padding: '6px 16px', borderRadius: '20px'}}>Details →</span>
         </div>
       </div>
     </div>
@@ -133,21 +132,18 @@ export default function Home() {
         @keyframes formelSchweben2 { 0%,100%{transform:translateY(0) rotate(3deg);opacity:0.1}50%{transform:translateY(-15px) rotate(-3deg);opacity:0.18} }
         @keyframes formelSchweben3 { 0%,100%{transform:translateY(0);opacity:0.08}50%{transform:translateY(-25px);opacity:0.16} }
         @keyframes gradientMove { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
-        @keyframes pulseGlow { 0%,100%{box-shadow:0 0 20px rgba(0,113,227,0.3)}50%{box-shadow:0 0 40px rgba(0,113,227,0.6)} }
       `}</style>
 
       {ausgewaehlt && (
         <div onClick={() => setAusgewaehlt(null)} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(20px)'}}>
           <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '24px', maxWidth: '700px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 100px rgba(0,0,0,0.3)'}}>
-            <div style={{position: 'relative', height: '300px', background: ausgewaehlt.gradient}}>
-              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7}} />
+            <div style={{position: 'relative', height: '300px', background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)'}}>
+              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
               <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
-              <div style={{position: 'absolute', bottom: '20px', left: '28px'}}>
-                <div style={{fontSize: '11px', fontWeight: '700', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px'}}>{ausgewaehlt.typ}</div>
-                <h2 style={{margin: 0, fontSize: '28px', fontWeight: '700', color: 'white'}}>{ausgewaehlt.titel}</h2>
-              </div>
             </div>
             <div style={{padding: '32px'}}>
+              <div style={{fontSize: '11px', fontWeight: '700', color: '#0071e3', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px'}}>{ausgewaehlt.typ}</div>
+              <h2 style={{margin: '0 0 8px', fontSize: '24px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.titel}</h2>
               <p style={{margin: '0 0 24px', fontSize: '15px', color: '#6e6e73', lineHeight: '1.6'}}>{ausgewaehlt.beschreibung}</p>
               <div style={{backgroundColor: '#f5f5f7', borderRadius: '12px', padding: '20px', marginBottom: '24px'}}>
                 <p style={{margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#1d1d1f'}}>Was ist drin:</p>
@@ -168,7 +164,7 @@ export default function Home() {
                   <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
                   <p style={{margin: '0', fontSize: '32px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: ausgewaehlt.gradient, color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.2)'}}>
+                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '16px', fontWeight: '600', cursor: 'pointer'}}>
                   Jetzt kaufen
                 </button>
               </div>
@@ -177,7 +173,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Header */}
       <header style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: scrolled ? 'rgba(255,255,255,0.85)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none', padding: '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease'}}>
         <img src="/logo.jpg?v=1" alt="Lerne mit Anna" style={{height: '52px', borderRadius: '12px'}} />
         <nav style={{display: 'flex', gap: '32px', alignItems: 'center'}}>
@@ -188,16 +183,11 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO */}
       <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '100px 24px 60px', overflow: 'hidden'}}>
 
-        {/* Animierter Gradient */}
         <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #e8f0ff 0%, #ffffff 25%, #f0e8ff 50%, #e8f8ff 75%, #fff0e8 100%)', backgroundSize: '400% 400%', animation: 'gradientMove 10s ease infinite', zIndex: 0}}></div>
-
-        {/* Großer Glow Kreis */}
         <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none'}}></div>
 
-        {/* Schwebende Formeln */}
         <div style={{position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden'}}>
           {[
             {text: 'x²', top: '12%', left: '7%', size: '42px', anim: 'formelSchweben1 4s ease-in-out infinite'},
@@ -215,7 +205,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Animation */}
         <div style={{position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: '300px', marginBottom: '48px', width: '100%', maxWidth: '700px'}}>
           <div style={{transform: phase === 'weglaufen' ? 'translateX(700px)' : 'translateX(0px)', opacity: phase === 'weglaufen' ? 0 : 1, transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out', position: 'relative'}}>
 
@@ -232,10 +221,10 @@ export default function Home() {
                 ))}
               </div>
               <div style={{position: 'absolute', top: '34px', left: '38px', display: 'flex', gap: '24px'}}>
-                <div style={{width: '24px', height: '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', animation: 'blinzeln 4s ease-in-out infinite'}}>
+                <div style={{width: '24px', height: '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite'}}>
                   <div style={{width: '12px', height: '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
                 </div>
-                <div style={{width: '24px', height: '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
+                <div style={{width: '24px', height: '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
                   <div style={{width: '12px', height: '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
                 </div>
               </div>
@@ -255,7 +244,7 @@ export default function Home() {
           {phase === 'schild' && (
             <div style={{position: 'absolute', right: 'calc(50% - 250px)', bottom: '55px', animation: 'schildRein 0.7s ease-out forwards'}}>
               <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
-                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: '20px 44px', borderRadius: '18px', fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)'}}>
+                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: '20px 44px', borderRadius: '18px', fontSize: '40px', fontWeight: '900', letterSpacing: '-1.5px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)'}}>
                   LERNFLIX
                 </div>
                 <div style={{width: '8px', height: '55px', backgroundColor: '#1d1d1f', margin: '0 auto', borderRadius: '4px'}}></div>
@@ -264,31 +253,28 @@ export default function Home() {
           )}
         </div>
 
-        {/* Slogan */}
         <div style={{position: 'relative', zIndex: 2, opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '24px', minHeight: '36px'}}>
           <p style={{fontSize: '22px', color: '#6e6e73', letterSpacing: '0.5px', fontWeight: '400', margin: 0}}>Dein Lernstream. Deine Regeln.</p>
         </div>
 
-        {/* Buttons — POTENT */}
         <div style={{position: 'relative', zIndex: 2, display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
           <a href="#mathe"
-            style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: '17px', boxShadow: '0 8px 30px rgba(0,113,227,0.45)', letterSpacing: '0.3px'}}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 40px rgba(0,113,227,0.6)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 30px rgba(0,113,227,0.45)'; }}
+            style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: '17px', boxShadow: '0 8px 30px rgba(0,113,227,0.45)', transition: 'all 0.3s ease'}}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.05)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
           >
             Materialien ansehen
           </a>
           <a href="/quiz"
-            style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: '17px', boxShadow: '0 8px 30px rgba(88,86,214,0.45)', letterSpacing: '0.3px'}}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.05)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 12px 40px rgba(88,86,214,0.6)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 8px 30px rgba(88,86,214,0.45)'; }}
+            style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: '17px', boxShadow: '0 8px 30px rgba(88,86,214,0.45)', transition: 'all 0.3s ease'}}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1.05)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = 'scale(1)'; }}
           >
             Kostenlose Quizze
           </a>
         </div>
       </section>
 
-      {/* Kategorien */}
       <section style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px', textAlign: 'center'}}>Alle Kategorien</h2>
@@ -297,7 +283,7 @@ export default function Home() {
             {kategorien.map((k) => (
               <a key={k.titel} href={k.href} style={{textDecoration: 'none'}}>
                 <div
-                  style={{background: k.gradient, borderRadius: '20px', padding: '32px 28px', color: 'white', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative', overflow: 'hidden'}}
+                  style={{background: k.gradient, borderRadius: '20px', padding: '32px 28px', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative', overflow: 'hidden'}}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.22)'; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}
                 >
@@ -312,7 +298,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Mathe */}
       <section id="mathe" style={{backgroundColor: '#ffffff', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Mathematik</h2>
@@ -323,7 +308,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Physik */}
       <section id="physik" style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Physik</h2>
@@ -334,7 +318,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Lernpakete */}
       <section id="pakete" style={{backgroundColor: '#ffffff', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Lernpakete</h2>
@@ -347,7 +330,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quiz */}
       <section id="quiz" style={{backgroundColor: '#f5f5f7', padding: '80px 24px'}}>
         <div style={{maxWidth: '1100px', margin: '0 auto'}}>
           <h2 style={{fontSize: '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '12px'}}>Kostenlose Quizze</h2>
@@ -358,7 +340,7 @@ export default function Home() {
             <p style={{margin: '0 0 32px', fontSize: '16px', color: 'rgba(255,255,255,0.85)'}}>Jedes Mal neue Fragen in Mathe und Physik — kostenlos und interaktiv!</p>
             <button
               onClick={() => window.location.href = '/quiz'}
-              style={{backgroundColor: 'white', color: '#0071e3', border: 'none', borderRadius: '980px', padding: '16px 40px', fontSize: '17px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)'}}
+              style={{backgroundColor: 'white', color: '#0071e3', border: 'none', borderRadius: '980px', padding: '16px 40px', fontSize: '17px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', transition: 'all 0.3s ease'}}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.05)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
             >
@@ -368,7 +350,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer style={{textAlign: 'center', padding: '40px', backgroundColor: '#ffffff', borderTop: '1px solid #e5e5ea', color: '#6e6e73', fontSize: '13px'}}>
         © 2025 Lerne mit Anna ·
         <a href="/impressum" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 8px'}}>Impressum</a> ·
