@@ -108,7 +108,7 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
 }`;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5",
       max_tokens: 1800,
       temperature: 0.7,
       messages: [{ role: "user", content: prompt }],
