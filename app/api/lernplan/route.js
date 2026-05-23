@@ -5,111 +5,87 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 export async function POST(req) {
   try {
     const form = await req.json();
-    const { name, alter, klasse, faecher, probleme, lerntyp, blockade,
-            ziel, zuhause, naechstePruefung, schlaf, wasFunktioniert,
-            zeit, adhs, stunden } = form;
+    const {
+      name, alter, klasse, schultyp, schulende, nachmittag,
+      faecher, lernprobleme, lerntyp, ziel, wochenbeschreibung,
+      adhs, previousNotes
+    } = form;
 
-    const istJung     = parseInt(alter) <= 12;
+    const istJung = parseInt(alter) <= 12;
     const istTeenager = parseInt(alter) >= 13 && parseInt(alter) <= 15;
-    const hatADHS     = adhs?.includes("Ja");
-    const pruefungBald = naechstePruefung?.includes("Woche") || naechstePruefung?.includes("2 Wochen");
-    const maxBlock    = hatADHS ? "20 Minuten" : "25–30 Minuten";
+    const hatADHS = adhs?.includes("Ja");
+    const maxBlock = hatADHS ? "15-20 Minuten" : "25 Minuten";
 
     const sprache = istJung
-      ? "Sehr einfaches Deutsch, kurze Sätze, warm und spielerisch. Gerne Emojis. Keine komplizierten Wörter."
+      ? "Sehr einfache Sprache. Kurze Sätze. Viele Emojis. Wie du mit einem 10-jährigen Kind reden würdest."
       : istTeenager
-      ? "Normales Deutsch, freundlich und auf Augenhöhe. Gelegentlich 'okay' oder 'cool' ist fine. Nicht zu kindisch."
-      : "Klares, erwachsenes Deutsch. Respektvoll, motivierend, auf Augenhöhe.";
+      ? "Normale Jugendsprache. Freundlich und verständlich. Nicht zu kindisch, nicht zu formal."
+      : "Klar und respektvoll. Auf Augenhöhe.";
 
-    const adhsTipps = hatADHS
-      ? `ADHS-MODUS AKTIV – Diese Regeln sind PFLICHT:
-- Lernblöcke maximal 20 Minuten – danach IMMER aktive Pause
-- Aktive Pausen = Bewegung: aufstehen, strecken, Fenster auf, 10 Sprünge, Wasser holen
-- NIEMALS zwei Fokus-Blöcke hintereinander
-- Aufgaben extrem konkret formulieren: nicht "Mathe lernen" sondern "Seite 47, nur Aufgabe 3"
-- Lernbubble schaffen: Handy in anderen Raum, Kopfhörer mit leiser Musik, Lieblingsgetränk bereit
-- Jeden Block mit einem konkreten Startsatz beginnen`
-      : `Konzentrations-Tipps:
-- Lernblöcke 25–30 Minuten, dann 5 Min Pause
-- Lernbubble: ruhiger Platz, Handy stumm, Wasser bereit`;
+    const prompt = `Du bist Anna, eine erfahrene Nachhilfelehrerin. Erstelle einen realistischen, detaillierten Wochenplan.
 
-    const zeitTipp = zeit?.includes("Morgens") ? "Blöcke morgens oder vor der Schule"
-      : zeit?.includes("Mittags") ? "Blöcke direkt nach der Schule wenn Stoff frisch ist"
-      : zeit?.includes("Nachmittags") ? "Blöcke zwischen 15 und 18 Uhr – goldene Stunde für diesen Schüler"
-      : zeit?.includes("Abends") ? "Blöcke abends aber nicht nach 21 Uhr – Schlaf schützen"
-      : "Flexible Zeiten";
-
-    const zuhauseTipp = (zuhause?.includes("laut") || zuhause?.includes("Geschwister"))
-      ? "Situation zuhause schwierig – Bibliothek empfehlen oder Kopfhörer-Strategie"
-      : zuhause?.includes("kein festen Platz")
-      ? "Festen Lernplatz empfehlen – auch Küchentisch wenn aufgeräumt"
-      : "Lernumgebung okay – Lernbubble weiter optimieren";
-
-    const pruefungsTipp = pruefungBald
-      ? "PRÜFUNG BALD! Plan intensiv, nur Prüfungsstoff, täglich wiederholen, extra Motivation!"
-      : "Aufbauender nachhaltiger Plan ohne Druck.";
-
-    const prompt = `Du bist Anna – eine warmherzige, erfahrene Nachhilfelehrerin die seit Jahren Schüler begleitet. Du hast eine besondere Gabe: Du machst komplizierte Dinge einfach, erklärst alles mit Alltagsbeispielen, baust interessante Fakten und kleine Bewegungen ein, und schaffst eine "Lernbubble" – einen sicheren Raum wo Lernen möglich wird. Deine Persönlichkeit: strukturiert aber liebevoll, wie eine Mutter die ihr Kind wirklich versteht. Du glaubst an jeden Schüler.
+SCHÜLER:
+Name: ${name} | Alter: ${alter} Jahre | ${klasse} | Schultyp: ${schultyp || "nicht angegeben"}
+Schulende: ${schulende || "nicht angegeben"}
+Nachmittags-Aktivitäten: ${nachmittag || "keine"}
+Schwere Fächer: ${faecher?.join(", ") || "nicht angegeben"}
+Lernprobleme: ${lernprobleme?.join(", ") || "keine"}
+Lerntyp: ${lerntyp || "nicht angegeben"}
+Ziel: ${ziel || "nicht angegeben"}
+So sieht meine Woche aus: ${wochenbeschreibung || "nicht angegeben"}
+ADHS: ${adhs || "Nein"}
+${previousNotes ? `Notizen aus letzter Woche: ${previousNotes}` : ""}
 
 SPRACHE: ${sprache}
 
-SCHÜLER:
-Name: ${name} | Alter: ${alter} Jahre | ${klasse}
-Schwere Fächer: ${faecher?.join(", ") || "nicht angegeben"}
-Probleme: ${probleme?.join(", ") || "keine"}
-Lerntyp: ${lerntyp || "nicht angegeben"}
-Blockade: ${blockade || "nicht angegeben"}
-Ziel: ${ziel || "nicht angegeben"}
-Zuhause: ${zuhause || "nicht angegeben"} → ${zuhauseTipp}
-Nächste Prüfung: ${naechstePruefung || "nicht angegeben"} → ${pruefungsTipp}
-Schlaf: ${schlaf || "nicht angegeben"}
-Was funktioniert: ${wasFunktioniert || "nicht angegeben"}
-Beste Lernzeit: ${zeit || "nicht angegeben"} → ${zeitTipp}
-ADHS: ${adhs || "nicht angegeben"}
-Verfügbare Zeit: ${stunden || "nicht angegeben"}
+WICHTIGE PLANUNGS-REGELN:
+1. Berücksichtige die Schulzeiten – plane NACH dem Schulende
+2. Berücksichtige Training, Nachhilfe und andere Nachmittags-Aktivitäten
+3. Plane REALISTISCHE Zeiten – kein Kind lernt 3 Stunden am Stück
+4. ${hatADHS ? "ADHS: maximal " + maxBlock + " pro Block, IMMER Bewegungspause danach" : "Lernblöcke: maximal 25 Minuten, dann 5-10 Min Pause"}
+5. Hausaufgaben ZUERST – dann Lernblöcke für schwache Fächer
+6. Mittwoch oder Freitag = leichterer Tag oder freier Nachmittag
+7. Wochenende: kurze Wiederholung, kein Stress
+8. Konkrete Aufgaben – nicht "Mathe lernen" sondern "Mathe Hausaufgaben + 1 Übungsaufgabe"
+9. NIEMALS "Schatz" oder "Liebling" verwenden
+10. Pausen mit konkreter Aktivität: "10 Min spazieren", "Snack holen", "Strecken"
 
-${adhsTipps}
-
-QUALITÄTSREGELN:
-1. Nenn ${name} beim Namen – im Titel und mindestens einer Regel
-2. Baue einen "Wusstest du dass..."-Fakt ein passend zu einem schwachen Fach
-3. Jede Pause hat eine KONKRETE Aktivität (nicht einfach "Pause machen")
-4. Regeln klingen wie Ratschläge einer liebevollen Mutter – warm und klar
-5. Maximal ${maxBlock} pro Lernblock
-6. Maximal 4 Blöcke pro Tag – realistisch bleiben
-7. Schwache Fächer priorisieren
-8. Niemals generisch – immer auf ${name} bezogen
-
-Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
+Antworte NUR mit JSON (kein Markdown):
 {
-  "titel": "${name}s persönlicher Lernplan",
-  "untertitel": "ein warmer, persönlicher Satz speziell für ${name} – klingt wie von einer Mutter",
-  "prioritaeten": ["Priorität 1 kurz", "Priorität 2", "Priorität 3"],
-  "wusstest_du": "Wusstest du dass [interessanter Fakt passend zu einem schwachen Fach von ${name}]? [kurze Motivation]",
+  "titel": "${name}s Lernplan",
+  "untertitel": "motivierender Satz für ${name} – warm aber ohne Kosenamen",
+  "prioritaeten": ["konkrete Priorität 1", "Priorität 2", "Priorität 3"],
+  "wusstest_du": "Wusstest du dass [interessanter Fakt zu einem schwachen Fach]?",
   "tage": {
-    "Mo": [{"zeit":"15:00","titel":"konkreter Name","beschreibung":"Was genau + kleiner Motivationssatz","typ":"fokus","dauer":"25 Min"}],
+    "Mo": [
+      {"zeit": "14:00", "titel": "Hausaufgaben Mathe", "beschreibung": "Seite 47 fertig machen – dann bist du frei!", "typ": "fokus", "dauer": "25 Min"},
+      {"zeit": "14:30", "titel": "Bewegungspause", "beschreibung": "Kurz rausgehen oder strecken – Kopf frei machen!", "typ": "pause", "dauer": "10 Min"},
+      {"zeit": "14:45", "titel": "Deutsch Vokabeln", "beschreibung": "10 Vokabeln mit Karteikarten – du schaffst das!", "typ": "fokus", "dauer": "20 Min"}
+    ],
     "Di": [...],
     "Mi": [...],
     "Do": [...],
-    "Fr": [...]
+    "Fr": [...],
+    "Sa": [...],
+    "So": [...]
   },
   "tipps": [
-    {"label":"Annas Tipp für ${name}","text":"persönlicher Tipp basierend auf Lerntyp ${lerntyp}"},
-    {"label":"Deine Lernbubble","text":"konkret wie ${name} seinen perfekten Lernraum schafft"},
-    {"label":"${hatADHS ? "ADHS & Fokus" : "Konzentration"}","text":"spezifischer Tipp"},
-    {"label":"Wenn du blockiert bist","text":"erster konkreter Schritt wenn gar nichts geht – sehr einfach"}
+    {"label": "Für ${name}", "text": "persönlicher Tipp basierend auf Lerntyp und Problemen"},
+    {"label": "Lernbubble", "text": "konkreter Tipp für perfekte Lernumgebung"},
+    {"label": "${hatADHS ? "Konzentration" : "Fokus"}", "text": "spezifischer Tipp"},
+    {"label": "Wenn gar nichts geht", "text": "erster kleiner Schritt – sehr konkret"}
   ],
   "regeln": [
-    "warme, klare Regel 1 – klingt wie Mutter-Rat",
-    "motivierende Regel 2",
-    "realistische Regel 3",
+    "kurze motivierende Regel 1",
+    "Regel 2",
+    "Regel 3",
     "${name} direkt ansprechen in Regel 4"
   ]
 }`;
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 1800,
+      max_tokens: 2000,
       temperature: 0.7,
       messages: [{ role: "user", content: prompt }],
     });
@@ -121,11 +97,9 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
     try {
       plan = JSON.parse(clean);
     } catch {
-      // Fallback wenn JSON kaputt
       plan = buildFallback(name, alter, hatADHS, faecher);
     }
 
-    // Qualitätsprüfung
     if (!plan.tage || Object.keys(plan.tage).length < 3) {
       plan = buildFallback(name, alter, hatADHS, faecher);
     }
@@ -138,35 +112,37 @@ Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
 }
 
 function buildFallback(name, alter, hatADHS, faecher) {
-  const block = hatADHS ? "20 Min" : "25 Min";
-  const fach = faecher?.[0] || "dein schwerstes Fach";
+  const fach = faecher?.[0] || "das schwere Fach";
+  const block = hatADHS ? "15 Min" : "25 Min";
   return {
     titel: `${name}s Lernplan`,
-    untertitel: `Du schaffst das, ${name}! Schritt für Schritt zum Ziel – ich bin bei dir. 💜`,
-    prioritaeten: [`${fach} meistern`, "Jeden Tag ein bisschen", "Auf dich achten"],
-    wusstest_du: `Wusstest du dass dein Gehirn beim Lernen neue Verbindungen baut – wie Muskeln beim Sport? Je öfter du übst, desto stärker wirst du!`,
+    untertitel: `Dein persönlicher Plan – Schritt für Schritt zum Ziel!`,
+    prioritaeten: [`${fach} meistern`, "Jeden Tag etwas tun", "Pausen nicht vergessen"],
+    wusstest_du: "Wusstest du dass dein Gehirn beim Lernen neue Verbindungen baut – wie Muskeln beim Sport? Übung macht den Meister!",
     tage: {
       Mo: [
-        {zeit:"15:00",titel:`${fach} – eine Aufgabe`,beschreibung:`Nur eine Aufgabe aufschlagen und starten. Du musst nicht alles – nur anfangen. Das reicht!`,typ:"fokus",dauer:block},
-        {zeit:`15:${hatADHS?"20":"30"}`,titel:"Aktive Pause",beschreibung:"Aufstehen, strecken, Fenster auf. Frische Luft für dein Gehirn!",typ:"pause",dauer:"10 Min"},
-        {zeit:`15:${hatADHS?"30":"45"}`,titel:"Wiederholen",beschreibung:"Was hast du gelernt? Einmal kurz erklären – laut oder im Kopf.",typ:"fokus",dauer:block},
+        {zeit:"14:30",titel:"Hausaufgaben erledigen",beschreibung:"Alle Aufgaben fertig machen – dann ist der Kopf frei!",typ:"fokus",dauer:block},
+        {zeit:"15:00",titel:"Pause",beschreibung:"Kurz bewegen, Snack holen, frische Luft schnappen!",typ:"pause",dauer:"10 Min"},
+        {zeit:"15:15",titel:`${fach} üben`,beschreibung:"Eine Aufgabe aufschlagen und loslegen – nur eine!",typ:"fokus",dauer:block},
       ],
-      Di: [{zeit:"15:00",titel:"Aufgaben erledigen",beschreibung:"Hausaufgaben zuerst – dann ist der Kopf frei.",typ:"fokus",dauer:block},{zeit:"16:00",titel:"Kurze Pause",beschreibung:"Bewegung, Snack, Wasser.",typ:"pause",dauer:"10 Min"}],
-      Mi: [{zeit:"15:00",titel:"Freier Nachmittag",beschreibung:`Heute erholen, ${name}! Du hast es verdient.`,typ:"aktiv",dauer:"frei"}],
-      Do: [{zeit:"15:00",titel:`${fach} wiederholen`,beschreibung:"Vom Montag nochmal anschauen – so bleibt es im Kopf!",typ:"fokus",dauer:block},{zeit:"16:00",titel:"Pause + Bewegung",beschreibung:"10 Minuten rausgehen oder strecken.",typ:"pause",dauer:"10 Min"}],
-      Fr: [{zeit:"15:00",titel:"Wochenrückblick",beschreibung:`Was hat diese Woche gut geklappt, ${name}? Stolz sein ist erlaubt! 🌟`,typ:"aktiv",dauer:"15 Min"}],
+      Di: [{zeit:"14:30",titel:"Hausaufgaben",beschreibung:"Zuerst erledigen, dann frei!",typ:"fokus",dauer:block},{zeit:"15:00",titel:"Pause",beschreibung:"10 Minuten erholen",typ:"pause",dauer:"10 Min"}],
+      Mi: [{zeit:"15:00",titel:"Freier Nachmittag",beschreibung:"Heute Pause – du hast es dir verdient!",typ:"aktiv",dauer:"frei"}],
+      Do: [{zeit:"14:30",titel:"Hausaufgaben",beschreibung:"Alles erledigen was noch offen ist",typ:"fokus",dauer:block},{zeit:"15:00",titel:`${fach} wiederholen`,beschreibung:"Vom Montag nochmal anschauen – so bleibt es im Gedächtnis!",typ:"fokus",dauer:block}],
+      Fr: [{zeit:"14:30",titel:"Wochenabschluss",beschreibung:"Was war diese Woche gut? Was nächste Woche besser machen?",typ:"aktiv",dauer:"15 Min"}],
+      Sa: [{zeit:"11:00",titel:"Kurze Wiederholung",beschreibung:"15 Minuten das Schwierigste nochmal anschauen – mehr nicht!",typ:"fokus",dauer:"15 Min"}],
+      So: [{zeit:"19:00",titel:"Plan für Montag",beschreibung:"5 Minuten: Was kommt morgen? Was brauche ich?",typ:"aktiv",dauer:"5 Min"}],
     },
     tipps: [
-      {label:"Annas wichtigster Tipp",text:"Fang mit der kleinsten möglichen Aufgabe an. Nicht das ganze Kapitel – nur eine Aufgabe. Der Start ist das Schwerste."},
-      {label:"Deine Lernbubble",text:"Handy in ein anderes Zimmer. Lieblingsgetränk bereit. Kopfhörer auf. Jetzt gehört die Zeit nur dir."},
-      {label:"Konzentration",text:"Timer auf 25 Minuten stellen. Nur diese 25 Minuten. Dann Pause. Das schaffst du!"},
-      {label:"Wenn du blockiert bist",text:"Zähl bis 3 und öffne einfach das Heft. Nur aufschlagen – mehr nicht. Der Rest kommt von alleine."},
+      {label:"Wichtigster Tipp",text:"Fang mit der kleinsten Aufgabe an. Nicht das ganze Kapitel – nur eine Aufgabe. Der Anfang ist immer das Schwerste."},
+      {label:"Deine Lernbubble",text:"Handy in ein anderes Zimmer. Lieblingsgetränk bereit. Kopfhörer auf. Jetzt gehört die Zeit dir."},
+      {label:"Fokus",text:"Timer auf 25 Minuten stellen. Nur diese 25 Minuten zählen. Dann Pause – versprochen!"},
+      {label:"Wenn gar nichts geht",text:"Zähl bis 3 und öffne einfach das Heft. Nur aufschlagen – mehr nicht. Der Rest kommt von alleine."},
     ],
     regeln: [
-      `${name}, du brauchst nicht perfekt sein – du musst nur anfangen. 💜`,
+      "Du musst nicht perfekt sein – du musst nur anfangen!",
       "Jeder kleine Schritt zählt. Auch 15 Minuten sind ein Erfolg.",
       "Pausen sind kein Versagen – sie machen dich stärker.",
-      `Ich glaube an dich, ${name}. Du schaffst mehr als du denkst.`,
+      `${name}, du schaffst mehr als du denkst!`,
     ],
   };
 }
