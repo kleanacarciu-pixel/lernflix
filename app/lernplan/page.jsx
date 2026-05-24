@@ -19,6 +19,45 @@ const PILLLABEL = {fokus:"Lernen 📖", pause:"Pause 🌿", aktiv:"Aktiv ⚡", s
 
 const emptyStundenplan = () => DAYS.map(([k,tag]) => ({ tag, schulzeit:"", faecher:[], sonstiges:"", nachmittag:"", hausaufgaben:[] }));
 
+function Chip({ label, active, onClick, chipAct, chipBase }) {
+  return <div onClick={onClick} style={active?chipAct:chipBase}>{label}</div>;
+}
+
+function SupportWidget({ t, inp, bigBtn, secBtn, supportOpen, setSupportOpen, supportMsg, setSupportMsg, supportReply, setSupportReply, supportLoading, supportEscalated, setSupportEscalated, showNachhilfe, setShowNachhilfe, sendSupport }) {
+  return (
+    <div style={{position:"fixed", bottom:"20px", right:"16px", zIndex:100, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"10px"}}>
+      {supportOpen && (
+        <div style={{background:t.surface, border:`1.5px solid ${t.border}`, borderRadius:"20px", padding:"1.25rem", width:"300px", maxWidth:"calc(100vw - 32px)", boxShadow:"0 8px 40px rgba(0,0,0,.15)"}}>
+          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem"}}>
+            <span style={{fontSize:"18px", fontWeight:"700", color:t.text}}>💬 Hilfe</span>
+            <button style={{background:"none", border:"none", color:t.text3, cursor:"pointer", fontSize:"22px"}} onClick={()=>{setSupportOpen(false);setSupportMsg("");setSupportReply("");setSupportEscalated(false);setShowNachhilfe(false);}}>✕</button>
+          </div>
+          {!supportReply ? (
+            <div>
+              <p style={{fontSize:"15px", color:t.text2, lineHeight:"1.6", marginBottom:"1rem"}}>Frag mich alles – auch zu Hausaufgaben oder Aufgaben!</p>
+              <textarea style={{...inp, resize:"none", fontSize:"15px", minHeight:"90px"}} placeholder="z.B. Wie rechne ich diese Matheaufgabe?..." value={supportMsg} onChange={e=>setSupportMsg(e.target.value)} rows={3}/>
+              <button style={bigBtn} disabled={!supportMsg.trim()||supportLoading} onClick={sendSupport}>{supportLoading?"Einen Moment...":"Absenden ✓"}</button>
+              <div style={{marginTop:"14px", paddingTop:"14px", borderTop:`1px solid ${t.border}`}}>
+                <p style={{fontSize:"13px", color:t.text3, marginBottom:"8px", fontWeight:"700"}}>SCHWERE AUFGABE? NACHHILFE?</p>
+                <a href="https://wa.me/4917624700519?text=Hallo%20Anna%2C%20ich%20brauche%20Hilfe." style={{display:"block", padding:"12px", background:"#25D366", color:"#fff", borderRadius:"14px", textAlign:"center", textDecoration:"none", fontSize:"15px", fontWeight:"700"}} target="_blank" rel="noopener noreferrer">💬 Anna auf WhatsApp</a>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{background:t.primaryLight, borderRadius:"14px", padding:"1rem", marginBottom:"1rem", fontSize:"15px", color:t.primary, lineHeight:"1.7"}}>{supportReply}</div>
+              {(supportEscalated||showNachhilfe) && (
+                <a href="https://wa.me/4917624700519?text=Hallo%20Anna%2C%20ich%20brauche%20Hilfe%20mit%20einer%20Aufgabe." style={{display:"block", padding:"13px", background:"#25D366", color:"#fff", borderRadius:"14px", textAlign:"center", textDecoration:"none", fontSize:"15px", fontWeight:"700", marginBottom:"10px"}} target="_blank" rel="noopener noreferrer">💬 WhatsApp – Anna meldet sich!</a>
+              )}
+              <button style={secBtn} onClick={()=>{setSupportMsg("");setSupportReply("");setSupportEscalated(false);setShowNachhilfe(false);}}>Neue Frage</button>
+            </div>
+          )}
+        </div>
+      )}
+      <button style={{background:t.primary, color:"#fff", border:"none", borderRadius:"50px", padding:"14px 22px", fontSize:"16px", fontWeight:"700", cursor:"pointer", boxShadow:`0 4px 20px ${t.primary}55`}} onClick={()=>setSupportOpen(o=>!o)}>{supportOpen?"✕ Schließen":"💬 Hilfe"}</button>
+    </div>
+  );
+}
+
 export default function LernplanPage() {
   const [themeKey, setThemeKey] = useState(null);
   const [screen, setScreen] = useState("theme");
@@ -162,40 +201,6 @@ export default function LernplanPage() {
   const chipBase = { padding:"10px 16px", borderRadius:"50px", border:`2px solid ${t.border}`, background:t.surface, fontSize:"14px", color:t.text2, cursor:"pointer", display:"inline-block", margin:"4px" };
   const chipAct = { ...chipBase, background:t.primary, borderColor:t.primary, color:"#fff", fontWeight:"700" };
 
-  const Chip = ({label, active, onClick}) => <div onClick={onClick} style={active?chipAct:chipBase}>{label}</div>;
-
-  const Support = () => (
-    <div style={{position:"fixed", bottom:"20px", right:"16px", zIndex:100, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"10px"}}>
-      {supportOpen && (
-        <div style={{background:t.surface, border:`1.5px solid ${t.border}`, borderRadius:"20px", padding:"1.25rem", width:"300px", maxWidth:"calc(100vw - 32px)", boxShadow:"0 8px 40px rgba(0,0,0,.15)"}}>
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem"}}>
-            <span style={{fontSize:"18px", fontWeight:"700", color:t.text}}>💬 Hilfe</span>
-            <button style={{background:"none", border:"none", color:t.text3, cursor:"pointer", fontSize:"22px"}} onClick={()=>{setSupportOpen(false);setSupportMsg("");setSupportReply("");setSupportEscalated(false);setShowNachhilfe(false);}}>✕</button>
-          </div>
-          {!supportReply ? (
-            <div>
-              <p style={{fontSize:"15px", color:t.text2, lineHeight:"1.6", marginBottom:"1rem"}}>Frag mich alles – auch zu Hausaufgaben oder Aufgaben!</p>
-              <textarea style={{...inp, resize:"none", fontSize:"15px", minHeight:"90px"}} placeholder="z.B. Wie rechne ich diese Matheaufgabe?..." value={supportMsg} onChange={e=>setSupportMsg(e.target.value)} rows={3}/>
-              <button style={bigBtn} disabled={!supportMsg.trim()||supportLoading} onClick={sendSupport}>{supportLoading?"Einen Moment...":"Absenden ✓"}</button>
-              <div style={{marginTop:"14px", paddingTop:"14px", borderTop:`1px solid ${t.border}`}}>
-                <p style={{fontSize:"13px", color:t.text3, marginBottom:"8px", fontWeight:"700"}}>SCHWERE AUFGABE? NACHHILFE?</p>
-                <a href="https://wa.me/4917624700519?text=Hallo%20Anna%2C%20ich%20brauche%20Hilfe." style={{display:"block", padding:"12px", background:"#25D366", color:"#fff", borderRadius:"14px", textAlign:"center", textDecoration:"none", fontSize:"15px", fontWeight:"700"}} target="_blank" rel="noopener noreferrer">💬 Anna auf WhatsApp</a>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{background:t.primaryLight, borderRadius:"14px", padding:"1rem", marginBottom:"1rem", fontSize:"15px", color:t.primary, lineHeight:"1.7"}}>{supportReply}</div>
-              {(supportEscalated||showNachhilfe) && (
-                <a href="https://wa.me/4917624700519?text=Hallo%20Anna%2C%20ich%20brauche%20Hilfe%20mit%20einer%20Aufgabe." style={{display:"block", padding:"13px", background:"#25D366", color:"#fff", borderRadius:"14px", textAlign:"center", textDecoration:"none", fontSize:"15px", fontWeight:"700", marginBottom:"10px"}} target="_blank" rel="noopener noreferrer">💬 WhatsApp – Anna meldet sich!</a>
-              )}
-              <button style={secBtn} onClick={()=>{setSupportMsg("");setSupportReply("");setSupportEscalated(false);setShowNachhilfe(false);}}>Neue Frage</button>
-            </div>
-          )}
-        </div>
-      )}
-      <button style={{background:t.primary, color:"#fff", border:"none", borderRadius:"50px", padding:"14px 22px", fontSize:"16px", fontWeight:"700", cursor:"pointer", boxShadow:`0 4px 20px ${t.primary}55`}} onClick={()=>setSupportOpen(o=>!o)}>{supportOpen?"✕ Schließen":"💬 Hilfe"}</button>
-    </div>
-  );
 
   // THEME
   if (screen === "theme") return (
@@ -216,7 +221,7 @@ export default function LernplanPage() {
         </div>
       ))}
       <button style={{...bigBtn, maxWidth:"400px"}} disabled={!themeKey} onClick={()=>plan?setScreen("plan"):setScreen("home")}>{plan?"Zum Plan →":"Los geht's! →"}</button>
-      <Support/>
+      <SupportWidget t={t} inp={inp} bigBtn={bigBtn} secBtn={secBtn} supportOpen={supportOpen} setSupportOpen={setSupportOpen} supportMsg={supportMsg} setSupportMsg={setSupportMsg} supportReply={supportReply} setSupportReply={setSupportReply} supportLoading={supportLoading} supportEscalated={supportEscalated} setSupportEscalated={setSupportEscalated} showNachhilfe={showNachhilfe} setShowNachhilfe={setShowNachhilfe} sendSupport={sendSupport} />
     </div>
   );
 
@@ -232,30 +237,41 @@ export default function LernplanPage() {
         <button style={bigBtn} onClick={()=>setScreen("form")}>Meinen Plan erstellen ✦</button>
         <button style={{...secBtn, border:"none", color:t.text3, fontSize:"14px"}} onClick={()=>setScreen("theme")}>Design ändern</button>
         {!istInstalliert && (installEvent || istIOS) && (
-          <div onClick={appInstallieren} style={{marginTop:"1.5rem", padding:"14px 16px", background:t.primaryLight, border:`1.5px solid ${t.primary}33`, borderRadius:"16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"12px", textAlign:"left"}}>
-            <span style={{fontSize:"26px"}}>📲</span>
+          <div onClick={appInstallieren} style={{marginTop:"1.75rem", padding:"18px 18px", background:t.primary, borderRadius:"18px", cursor:"pointer", display:"flex", alignItems:"center", gap:"14px", textAlign:"left", boxShadow:`0 6px 24px ${t.primary}44`}}>
+            <div style={{width:"46px", height:"46px", background:"rgba(255,255,255,.18)", borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"26px", flexShrink:0}}>📲</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:"15px", fontWeight:"700", color:t.primary}}>Als App aufs Handy</div>
-              <div style={{fontSize:"13px", color:t.text2}}>Tippe hier – dann hast du deinen Lernplan direkt auf dem Startbildschirm.</div>
+              <div style={{fontSize:"16px", fontWeight:"700", color:"#fff", marginBottom:"2px"}}>Lernplan als App installieren</div>
+              <div style={{fontSize:"13px", color:"rgba(255,255,255,.8)"}}>Hier tippen – dann hast du sie direkt auf dem Handy, wie eine echte App.</div>
             </div>
+            <span style={{fontSize:"22px", color:"#fff"}}>→</span>
           </div>
         )}
       </div>
       {iosHinweis && (
-        <div onClick={()=>setIosHinweis(false)} style={{position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem", zIndex:200}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:t.surface, borderRadius:"22px", padding:"1.75rem", maxWidth:"360px", width:"100%"}}>
-            <div style={{fontSize:"40px", textAlign:"center", marginBottom:"1rem"}}>📲</div>
-            <h3 style={{fontSize:"21px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:"1rem"}}>So holst du dir die App</h3>
-            <div style={{fontSize:"16px", color:t.text2, lineHeight:"1.8", marginBottom:"1.5rem"}}>
-              <div style={{marginBottom:"10px"}}><strong style={{color:t.primary}}>1.</strong> Tippe unten auf das <strong>Teilen-Symbol</strong> (Viereck mit Pfeil nach oben).</div>
-              <div style={{marginBottom:"10px"}}><strong style={{color:t.primary}}>2.</strong> Wähle <strong>„Zum Home-Bildschirm“</strong>.</div>
-              <div><strong style={{color:t.primary}}>3.</strong> Tippe auf <strong>„Hinzufügen“</strong> – fertig!</div>
+        <div onClick={()=>setIosHinweis(false)} style={{position:"fixed", inset:0, background:"rgba(0,0,0,.55)", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem", zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:t.surface, borderRadius:"24px", padding:"1.75rem", maxWidth:"370px", width:"100%"}}>
+            <div style={{fontSize:"44px", textAlign:"center", marginBottom:".75rem"}}>📲</div>
+            <h3 style={{fontSize:"22px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:".5rem"}}>In 3 Schritten auf dein Handy</h3>
+            <p style={{fontSize:"14px", color:t.text3, textAlign:"center", marginBottom:"1.5rem"}}>Ganz einfach – so geht's:</p>
+            <div style={{display:"flex", flexDirection:"column", gap:"14px", marginBottom:"1.5rem"}}>
+              <div style={{display:"flex", gap:"12px", alignItems:"center"}}>
+                <span style={{width:"32px", height:"32px", background:t.primary, color:"#fff", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", fontWeight:"700", flexShrink:0}}>1</span>
+                <span style={{fontSize:"15px", color:t.text, lineHeight:"1.5"}}>Tippe unten in der Leiste auf das <strong>Teilen-Symbol</strong> &nbsp;<span style={{display:"inline-block", border:`2px solid ${t.primary}`, borderRadius:"5px", padding:"1px 6px", color:t.primary, fontWeight:"700"}}>↑</span></span>
+              </div>
+              <div style={{display:"flex", gap:"12px", alignItems:"center"}}>
+                <span style={{width:"32px", height:"32px", background:t.primary, color:"#fff", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", fontWeight:"700", flexShrink:0}}>2</span>
+                <span style={{fontSize:"15px", color:t.text, lineHeight:"1.5"}}>Wische runter und tippe auf <strong>„Zum Home-Bildschirm“</strong></span>
+              </div>
+              <div style={{display:"flex", gap:"12px", alignItems:"center"}}>
+                <span style={{width:"32px", height:"32px", background:t.primary, color:"#fff", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px", fontWeight:"700", flexShrink:0}}>3</span>
+                <span style={{fontSize:"15px", color:t.text, lineHeight:"1.5"}}>Oben rechts auf <strong>„Hinzufügen“</strong> – fertig! 🎉</span>
+              </div>
             </div>
-            <button style={bigBtn} onClick={()=>setIosHinweis(false)}>Verstanden</button>
+            <button style={bigBtn} onClick={()=>setIosHinweis(false)}>Alles klar!</button>
           </div>
         </div>
       )}
-      <Support/>
+      <SupportWidget t={t} inp={inp} bigBtn={bigBtn} secBtn={secBtn} supportOpen={supportOpen} setSupportOpen={setSupportOpen} supportMsg={supportMsg} setSupportMsg={setSupportMsg} supportReply={supportReply} setSupportReply={setSupportReply} supportLoading={supportLoading} supportEscalated={supportEscalated} setSupportEscalated={setSupportEscalated} showNachhilfe={showNachhilfe} setShowNachhilfe={setShowNachhilfe} sendSupport={sendSupport} />
     </div>
   );
 
@@ -288,7 +304,7 @@ export default function LernplanPage() {
           <div><label style={lbl}>Alter</label><select style={{...inp,fontSize:"17px"}} value={form.alter} onChange={e=>setSingle("alter",e.target.value)}><option value="">...</option>{[8,9,10,11,12,13,14,15,16,17,18,19].map(a=><option key={a}>{a}</option>)}</select></div>
           <div><label style={lbl}>Klasse</label><select style={{...inp,fontSize:"17px"}} value={form.klasse} onChange={e=>setSingle("klasse",e.target.value)}><option value="">...</option>{["3.","4.","5.","6.","7.","8.","9.","10.","11.","12.","13."].map(k=><option key={k}>{k} Klasse</option>)}</select></div>
         </div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Welche Schule? 🏫</label><div style={{display:"flex",flexWrap:"wrap"}}>{SCHULTYPEN.map(s=><Chip key={s} label={s} active={form.schultyp===s} onClick={()=>setSingle("schultyp",s)}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Welche Schule? 🏫</label><div style={{display:"flex",flexWrap:"wrap"}}>{SCHULTYPEN.map(s=><Chip key={s} label={s} active={form.schultyp===s} onClick={()=>setSingle("schultyp",s)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
         <button style={bigBtn} disabled={!form.name||!form.alter||!form.klasse} onClick={()=>setStep(1)}>Weiter →</button>
       </div>,
       // STEP 1 – Stundenplan Tabelle (Klick)
@@ -350,11 +366,11 @@ export default function LernplanPage() {
         <div style={{fontSize:"52px", textAlign:"center", marginBottom:"1rem"}}>📚</div>
         <h2 style={{fontSize:"28px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:".5rem"}}>Fächer & Lernen</h2>
         <p style={{fontSize:"16px", color:t.text2, textAlign:"center", marginBottom:"2rem"}}>Sei ehrlich – das hilft deinem Plan!</p>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Welche Fächer sind schwer für dich? 😰 <span style={hint}>(mehrere)</span></label><div style={{display:"flex",flexWrap:"wrap"}}>{ALLE_FAECHER.map(f=><Chip key={f} label={f} active={form.schwacheFaecher.includes(f)} onClick={()=>toggleMulti("schwacheFaecher",f)}/>)}</div></div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Dein einfachstes Fach? 😊</label><div style={{display:"flex",flexWrap:"wrap"}}>{[...ALLE_FAECHER,"Weiß ich nicht"].map(f=><Chip key={f} label={f} active={form.einfachesFach===f} onClick={()=>setSingle("einfachesFach",f)}/>)}</div></div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Dein Lieblingsfach? ❤️</label><div style={{display:"flex",flexWrap:"wrap"}}>{[...ALLE_FAECHER,"Weiß ich nicht"].map(f=><Chip key={f} label={f} active={form.lieblingsfach===f} onClick={()=>setSingle("lieblingsfach",f)}/>)}</div></div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Was macht das Lernen schwer? 😤 <span style={hint}>(mehrere)</span></label><div style={{display:"flex",flexWrap:"wrap"}}>{LERNPROBLEME.map(p=><Chip key={p} label={p} active={form.lernprobleme.includes(p)} onClick={()=>toggleMulti("lernprobleme",p)}/>)}</div></div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Wie lernst du am besten? 🧠</label><div style={{display:"flex",flexWrap:"wrap"}}>{LERNTYPEN.map(l=><Chip key={l} label={l} active={form.lerntyp===l} onClick={()=>setSingle("lerntyp",l)}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Welche Fächer sind schwer für dich? 😰 <span style={hint}>(mehrere)</span></label><div style={{display:"flex",flexWrap:"wrap"}}>{ALLE_FAECHER.map(f=><Chip key={f} label={f} active={form.schwacheFaecher.includes(f)} onClick={()=>toggleMulti("schwacheFaecher",f)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Dein einfachstes Fach? 😊</label><div style={{display:"flex",flexWrap:"wrap"}}>{[...ALLE_FAECHER,"Weiß ich nicht"].map(f=><Chip key={f} label={f} active={form.einfachesFach===f} onClick={()=>setSingle("einfachesFach",f)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Dein Lieblingsfach? ❤️</label><div style={{display:"flex",flexWrap:"wrap"}}>{[...ALLE_FAECHER,"Weiß ich nicht"].map(f=><Chip key={f} label={f} active={form.lieblingsfach===f} onClick={()=>setSingle("lieblingsfach",f)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Was macht das Lernen schwer? 😤 <span style={hint}>(mehrere)</span></label><div style={{display:"flex",flexWrap:"wrap"}}>{LERNPROBLEME.map(p=><Chip key={p} label={p} active={form.lernprobleme.includes(p)} onClick={()=>toggleMulti("lernprobleme",p)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Wie lernst du am besten? 🧠</label><div style={{display:"flex",flexWrap:"wrap"}}>{LERNTYPEN.map(l=><Chip key={l} label={l} active={form.lerntyp===l} onClick={()=>setSingle("lerntyp",l)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
         <button style={bigBtn} onClick={()=>setStep(4)}>Weiter →</button>
         <button style={secBtn} onClick={()=>setStep(2)}>← Zurück</button>
       </div>,
@@ -385,8 +401,8 @@ export default function LernplanPage() {
           ))}
           <button onClick={addPruefung} style={{...secBtn,marginTop:"4px"}}>+ Test / Schulaufgabe / Referat hinzufügen</button>
         </div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Was ist dein Ziel? ⭐</label><div style={{display:"flex",flexWrap:"wrap"}}>{ZIELE.map(z=><Chip key={z} label={z} active={form.ziel===z} onClick={()=>setSingle("ziel",z)}/>)}</div></div>
-        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Hast du ADHS oder Konzentrationsprobleme? 🧩</label><div style={{display:"flex",flexWrap:"wrap"}}>{["Ja, offiziell diagnostiziert","Ja, aber nicht offiziell","Manchmal abgelenkt","Nein","Weiß ich nicht"].map(a=><Chip key={a} label={a} active={form.adhs===a} onClick={()=>setSingle("adhs",a)}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Was ist dein Ziel? ⭐</label><div style={{display:"flex",flexWrap:"wrap"}}>{ZIELE.map(z=><Chip key={z} label={z} active={form.ziel===z} onClick={()=>setSingle("ziel",z)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
+        <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Hast du ADHS oder Konzentrationsprobleme? 🧩</label><div style={{display:"flex",flexWrap:"wrap"}}>{["Ja, offiziell diagnostiziert","Ja, aber nicht offiziell","Manchmal abgelenkt","Nein","Weiß ich nicht"].map(a=><Chip key={a} label={a} active={form.adhs===a} onClick={()=>setSingle("adhs",a)} chipAct={chipAct} chipBase={chipBase}/>)}</div></div>
         <button style={{...bigBtn,fontSize:"20px",padding:"22px"}} disabled={!form.ziel||!form.adhs} onClick={generate}>Meinen Plan erstellen ✦</button>
         <button style={secBtn} onClick={()=>setStep(3)}>← Zurück</button>
       </div>
@@ -403,7 +419,7 @@ export default function LernplanPage() {
           {error && <div style={{background:t.accentLight, color:t.accent, borderRadius:"14px", padding:"1rem", marginBottom:"1rem", fontSize:"16px"}}>{error}</div>}
           {steps[step]}
         </div>
-        <Support/>
+        <SupportWidget t={t} inp={inp} bigBtn={bigBtn} secBtn={secBtn} supportOpen={supportOpen} setSupportOpen={setSupportOpen} supportMsg={supportMsg} setSupportMsg={setSupportMsg} supportReply={supportReply} setSupportReply={setSupportReply} supportLoading={supportLoading} supportEscalated={supportEscalated} setSupportEscalated={setSupportEscalated} showNachhilfe={showNachhilfe} setShowNachhilfe={setShowNachhilfe} sendSupport={sendSupport} />
       </div>
     );
   }
@@ -512,7 +528,7 @@ export default function LernplanPage() {
           <button style={{...secBtn, maxWidth:"260px", margin:"0 auto"}} onClick={()=>{setStep(0);setScreen("form");}}>Plan ändern oder neu erstellen</button>
         </div>
       </div>
-      <Support/>
+      <SupportWidget t={t} inp={inp} bigBtn={bigBtn} secBtn={secBtn} supportOpen={supportOpen} setSupportOpen={setSupportOpen} supportMsg={supportMsg} setSupportMsg={setSupportMsg} supportReply={supportReply} setSupportReply={setSupportReply} supportLoading={supportLoading} supportEscalated={supportEscalated} setSupportEscalated={setSupportEscalated} showNachhilfe={showNachhilfe} setShowNachhilfe={setShowNachhilfe} sendSupport={sendSupport} />
     </div>
   );
 }
