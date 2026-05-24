@@ -14,7 +14,7 @@ const ALLE_FAECHER = ["Mathematik","Deutsch","Englisch","Biologie","Chemie","Phy
 const LERNPROBLEME = ["Ich kann mich nicht konzentrieren","Ich weiß nicht wo ich anfangen soll","Ich vergesse alles wieder","Ich schiebe es immer auf","Handy lenkt mich ab","Ich verstehe den Stoff nicht","Ich habe keine Zeit","Weiß ich nicht"];
 const LERNTYPEN = ["Ich lese nochmal durch","Ich mache Karteikarten","Ich schreibe alles ab","Ich erkläre es laut","Ich schaue Videos","Ich brauche jemanden der erklärt","Weiß ich nicht"];
 const ZIELE = ["Versetzung schaffen","Meine Note verbessern","Abitur bestehen","Weniger Stress","Weiß ich nicht"];
-const LOADING_MSGS = ["Schaue mir deinen Stundenplan an...","Plane deine Woche realistisch...","Baue jeden Tag detailliert auf...","Fast fertig..."];
+const LOADING_MSGS = ["Schaue mir deinen Stundenplan an...","Plane deine Woche realistisch...","Verteile Hausaufgaben und Lernzeiten...","Baue Pausen und Konzentrationsuebungen ein...","Bereite jeden Tag fuer den naechsten vor...","Fuege deine Tipps hinzu...","Fast fertig..."];
 const PILLLABEL = {fokus:"Lernen 📖", pause:"Pause 🌿", aktiv:"Aktiv ⚡", schule:"Schule 🎒", konzentration:"Fokus 🧘", spiel:"Spiel 🎯", test:"Wichtig 📝", termin:"Termin 🏃"};
 
 const emptyStundenplan = () => DAYS.map(([k,tag]) => ({ tag, schulzeit:"", faecher:[], sonstiges:"", nachmittag:"", hausaufgaben:[] }));
@@ -46,6 +46,10 @@ export default function LernplanPage() {
   const [showNachhilfe, setShowNachhilfe] = useState(false);
   const [weekProgress, setWeekProgress] = useState(0);
   const [planTag, setPlanTag] = useState(0);
+  const [installEvent, setInstallEvent] = useState(null);
+  const [istInstalliert, setIstInstalliert] = useState(false);
+  const [istIOS, setIstIOS] = useState(false);
+  const [iosHinweis, setIosHinweis] = useState(false);
 
   const t = themeKey ? THEMES[themeKey] : THEMES.rose;
 
@@ -63,6 +67,28 @@ export default function LernplanPage() {
       if (sn) setNotes(JSON.parse(sn));
     } catch {}
   }, []);
+
+  // App-Installation erkennen
+  useEffect(() => {
+    try {
+      const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      setIstInstalliert(standalone);
+      const ios = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      setIstIOS(ios);
+    } catch {}
+    const handler = (e) => { e.preventDefault(); setInstallEvent(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const appInstallieren = async () => {
+    if (istIOS) { setIosHinweis(true); return; }
+    if (installEvent) {
+      installEvent.prompt();
+      await installEvent.userChoice;
+      setInstallEvent(null);
+    }
+  };
 
   useEffect(() => {
     if (!plan) return;
@@ -205,7 +231,30 @@ export default function LernplanPage() {
         <p style={{fontSize:"16px", color:t.text2, lineHeight:"1.75", marginBottom:"2.5rem"}}>Entwickelt aus echter Erfahrung – realistisch, strukturiert und genau auf deinen Alltag zugeschnitten.</p>
         <button style={bigBtn} onClick={()=>setScreen("form")}>Meinen Plan erstellen ✦</button>
         <button style={{...secBtn, border:"none", color:t.text3, fontSize:"14px"}} onClick={()=>setScreen("theme")}>Design ändern</button>
+        {!istInstalliert && (installEvent || istIOS) && (
+          <div onClick={appInstallieren} style={{marginTop:"1.5rem", padding:"14px 16px", background:t.primaryLight, border:`1.5px solid ${t.primary}33`, borderRadius:"16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"12px", textAlign:"left"}}>
+            <span style={{fontSize:"26px"}}>📲</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:"15px", fontWeight:"700", color:t.primary}}>Als App aufs Handy</div>
+              <div style={{fontSize:"13px", color:t.text2}}>Tippe hier – dann hast du deinen Lernplan direkt auf dem Startbildschirm.</div>
+            </div>
+          </div>
+        )}
       </div>
+      {iosHinweis && (
+        <div onClick={()=>setIosHinweis(false)} style={{position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", padding:"1.5rem", zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:t.surface, borderRadius:"22px", padding:"1.75rem", maxWidth:"360px", width:"100%"}}>
+            <div style={{fontSize:"40px", textAlign:"center", marginBottom:"1rem"}}>📲</div>
+            <h3 style={{fontSize:"21px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:"1rem"}}>So holst du dir die App</h3>
+            <div style={{fontSize:"16px", color:t.text2, lineHeight:"1.8", marginBottom:"1.5rem"}}>
+              <div style={{marginBottom:"10px"}}><strong style={{color:t.primary}}>1.</strong> Tippe unten auf das <strong>Teilen-Symbol</strong> (Viereck mit Pfeil nach oben).</div>
+              <div style={{marginBottom:"10px"}}><strong style={{color:t.primary}}>2.</strong> Wähle <strong>„Zum Home-Bildschirm“</strong>.</div>
+              <div><strong style={{color:t.primary}}>3.</strong> Tippe auf <strong>„Hinzufügen“</strong> – fertig!</div>
+            </div>
+            <button style={bigBtn} onClick={()=>setIosHinweis(false)}>Verstanden</button>
+          </div>
+        </div>
+      )}
       <Support/>
     </div>
   );
@@ -219,6 +268,7 @@ export default function LernplanPage() {
         <div style={{width:"44px", height:"44px", border:"4px solid rgba(255,255,255,.2)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin .8s linear infinite", margin:"0 auto 1.5rem"}}/>
         <p style={{fontSize:"20px", fontWeight:"700", color:"#fff", marginBottom:".75rem"}}>Dein Plan wird erstellt...</p>
         <p style={{fontSize:"15px", color:"rgba(255,255,255,.6)"}}>{LOADING_MSGS[loadingMsg]}</p>
+        <p style={{fontSize:"13px", color:"rgba(255,255,255,.4)", marginTop:"1.5rem"}}>Das kann einen kurzen Moment dauern –<br/>dein Plan wird mit Sorgfalt erstellt.</p>
       </div>
     </div>
   );
