@@ -236,7 +236,7 @@ export default function LernplanPage() {
         <div style={{marginBottom:"1.25rem"}}><label style={lbl}>Wie heißt du? 😊</label><input style={{...inp,fontSize:"18px"}} placeholder="Dein Vorname..." value={form.name} onChange={e=>setSingle("name",e.target.value)}/></div>
         <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", marginBottom:"1.25rem"}}>
           <div><label style={lbl}>Alter</label><select style={{...inp,fontSize:"17px"}} value={form.alter} onChange={e=>setSingle("alter",e.target.value)}><option value="">...</option>{[8,9,10,11,12,13,14,15,16,17,18,19].map(a=><option key={a}>{a}</option>)}</select></div>
-          <div><label style={lbl}>Klasse</label><select style={{...inp,fontSize:"17px"}} value={form.klasse} onChange={e=>setSingle("klasse",e.target.value)}><option value="">...</option>{["3.","4.","5.","6.","7.","8.","9.","10.","11.","12."].map(k=><option key={k}>{k} Klasse</option>)}</select></div>
+          <div><label style={lbl}>Klasse</label><select style={{...inp,fontSize:"17px"}} value={form.klasse} onChange={e=>setSingle("klasse",e.target.value)}><option value="">...</option>{["3.","4.","5.","6.","7.","8.","9.","10.","11.","12.","13."].map(k=><option key={k}>{k} Klasse</option>)}</select></div>
         </div>
         <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Welche Schule? 🏫</label><div style={{display:"flex",flexWrap:"wrap"}}>{SCHULTYPEN.map(s=><Chip key={s} label={s} active={form.schultyp===s} onClick={()=>setSingle("schultyp",s)}/>)}</div></div>
         <button style={bigBtn} disabled={!form.name||!form.alter||!form.klasse} onClick={()=>setStep(1)}>Weiter →</button>
@@ -414,9 +414,17 @@ export default function LernplanPage() {
                 {tickable && <div onClick={()=>saveChecked({...checked,[bk]:!isDone})} style={{width:"30px", height:"30px", borderRadius:"50%", border:`2.5px solid ${isDone?t.primary:t.border}`, background:isDone?t.primary:"transparent", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:"2px", color:"#fff", fontSize:"16px", fontWeight:"700"}}>{isDone?"✓":""}</div>}
                 <div style={{flex:1}}>
                   <div style={{fontSize:"18px", fontWeight:"700", color:isDone?t.text3:t.text, textDecoration:isDone?"line-through":"none", marginBottom:"5px"}}>{block.titel}</div>
-                  <div style={{fontSize:"15px", color:t.text2, lineHeight:"1.7"}}>
-                    {String(block.beschreibung||"").split("\n").map((line,li)=><div key={li} style={{marginBottom:line.trim()?"4px":"0"}}>{line}</div>)}
-                  </div>
+                  {block.beschreibung && <div style={{fontSize:"15px", color:t.text2, lineHeight:"1.7", marginBottom:(block.schritte&&block.schritte.length>0)?"8px":"0"}}>{block.beschreibung}</div>}
+                  {block.schritte && block.schritte.length>0 && (
+                    <div style={{display:"flex", flexDirection:"column", gap:"6px"}}>
+                      {block.schritte.map((s,si)=>(
+                        <div key={si} style={{display:"flex", gap:"8px", alignItems:"flex-start", fontSize:"15px", color:t.text2, lineHeight:"1.5"}}>
+                          <span style={{width:"20px", height:"20px", borderRadius:"50%", background:pillBg, color:pillCol, fontSize:"12px", fontWeight:"700", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:"1px"}}>{si+1}</span>
+                          <span>{s}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {tickable && (
