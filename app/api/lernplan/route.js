@@ -7,9 +7,10 @@ export async function POST(req) {
     const form = await req.json();
     const {
       name, alter, klasse, schultyp,
-      stundenplan,
+      stundenplan,        // [{tag, schulVon, schulBis, faecher:[], sonstiges, nachmittag, hausaufgaben:[{fach, anzahl}]}]
       schwacheFaecher, lieblingsfach, einfachesFach,
       lernprobleme, lerntyp, adhs, ziel,
+      tests,              // [{fach, datum}]
       previousNotes
     } = form;
 
@@ -19,123 +20,101 @@ export async function POST(req) {
     const maxBlock = hatADHS ? "15-20" : "25-30";
 
     const sprache = istJung
-      ? "Sehr einfache, kindgerechte Sprache. Kurze klare Sätze. Freundliche Emojis. So wie du mit einem 10-jährigen Kind sprichst."
+      ? "Sehr einfache, kindgerechte Sprache für ein Kind. Kurze Sätze. Freundliche Emojis."
       : istTeenager
-      ? "Jugendgerechte Sprache. Freundlich, direkt, motivierend. Nicht zu kindisch, nicht zu streng."
-      : "Klar, respektvoll, auf Augenhöhe. Motivierend und konkret.";
+      ? "Jugendgerechte Sprache. Freundlich, direkt, motivierend."
+      : "Klar, respektvoll, auf Augenhöhe. Motivierend.";
 
-    const stundenplanText = stundenplan?.map(d =>
-      `${d.tag}: Schule ${d.schule||"(nicht angegeben)"} | Fächer: ${d.faecher||"(nicht angegeben)"} | Nachmittag: ${d.nachmittag||"frei"} | Hausaufgaben: ${d.hausaufgaben||"keine angegeben"}`
-    ).join("\n") || "Kein Stundenplan angegeben";
+    const stundenplanText = stundenplan?.map(d => {
+      const ha = (d.hausaufgaben||[]).filter(h=>h.anzahl>0).map(h=>`${h.fach} (${h.anzahl} Aufgaben)`).join(", ") || "keine";
+      const faecher = [...(d.faecher||[]), d.sonstiges].filter(Boolean).join(", ") || "?";
+      return `${d.tag}: Schule ${d.schulVon||"?"}-${d.schulBis||"?"} | Fächer heute: ${faecher} | Nachmittag: ${d.nachmittag||"frei"} | Hausaufgaben: ${ha}`;
+    }).join("\n") || "Kein Stundenplan angegeben";
 
-    const prompt = `Du bist Anna – eine professionelle Nachhilfelehrerin mit jahrelanger Erfahrung. Du erstellst einen SEHR DETAILLIERTEN, individuellen Wochenplan, der ein Kind durch jeden Tag begleitet wie eine echte Lehrerin an seiner Seite.
+    const testText = tests?.filter(t=>t.fach).map(t=>`${t.fach} am ${t.datum||"bald"}`).join(", ") || "keine";
 
-═══ SCHÜLER-PROFIL ═══
-Name: ${name} | Alter: ${alter} Jahre | ${klasse} | ${schultyp||"Schule nicht angegeben"}
+    const prompt = `Du bist Anna – eine professionelle Nachhilfelehrerin mit jahrelanger Erfahrung. Du erstellst einen SEHR DETAILLIERTEN, realistischen Wochenplan, der ein Kind durch jeden einzelnen Tag begleitet.
+
+═══ SCHÜLER ═══
+Name: ${name} | Alter: ${alter} | ${klasse} | ${schultyp||"?"}
 ADHS/Konzentration: ${adhs||"Nein"}
-Lernprobleme: ${lernprobleme?.join(", ")||"keine angegeben"}
-Lerntyp: ${lerntyp||"nicht angegeben"}
-Schwache Fächer: ${schwacheFaecher?.join(", ")||"nicht angegeben"}
-Einfachstes Fach: ${einfachesFach||"nicht angegeben"}
-Lieblingsfach: ${lieblingsfach||"nicht angegeben"}
-Ziel: ${ziel||"nicht angegeben"}
-${previousNotes ? `\n═══ NOTIZEN AUS LETZTER WOCHE (sehr wichtig – Plan daran anpassen!) ═══\n${previousNotes}\nBerücksichtige diese Notizen: Wenn etwas zu schwer war, plane mehr Zeit. Wenn etwas gut lief, baue darauf auf.` : ""}
+Lernprobleme: ${lernprobleme?.join(", ")||"keine"}
+Lerntyp: ${lerntyp||"?"}
+Schwache Fächer: ${schwacheFaecher?.join(", ")||"?"}
+Einfachstes Fach: ${einfachesFach||"?"} | Lieblingsfach: ${lieblingsfach||"?"}
+Ziel: ${ziel||"?"}
+Anstehende Tests/Kurzarbeiten: ${testText}
+${previousNotes ? `\nNotizen letzte Woche (Plan daran anpassen!): ${previousNotes}` : ""}
 
-═══ STUNDENPLAN DES SCHÜLERS ═══
+═══ STUNDENPLAN ═══
 ${stundenplanText}
 
-═══ ANNAS METHODE – IMMER GENAU SO PLANEN ═══
+═══ ANNAS METHODE – GENAU SO PLANEN ═══
 
-1. NACH SCHULE: Immer 30-45 Min Pause zuerst (Snack, ausruhen, Kopf frei).
+1. HEIMKOMMEN → 30 Min Pause (essen, ausruhen). Bei sehr vollem Tag mit direktem Termin: Pause kürzer oder nach dem Termin.
 
-2. LERNREIHENFOLGE wenn Hausaufgaben da sind:
-   Hausaufgaben ZUERST → einfachstes Fach (Aufwärmen) → schwerstes Fach (Mitte, volle Energie) → Lieblingsfach (Belohnung am Ende)
-   Wenn keine Hausaufgaben: einfachstes → schwerstes → Lieblingsfach
+2. HAUSAUFGABEN REALISTISCH RECHNEN:
+   - Eine Hausaufgabe/Aufgabe dauert 10-13 Minuten – je nach Schwierigkeit.
+   - Bei 3 Mathe-Aufgaben → ca. 35-40 Min Block, nicht 25 Min!
+   - Wenn ein Termin dazwischen kommt: Hausaufgaben aufteilen – Teil 1 vor dem Termin, Teil 2 danach.
 
-3. SCHWACHE FÄCHER: An FAST JEDEM Tag 15-20 Min – auch an vollen Tagen – damit der Schüler im Kontakt mit dem Fach bleibt.
+3. JEDES FACH bekommt einen echten Fokus-Block – nicht nur Hausaufgaben, auch LERNEN/WIEDERHOLEN. Auch Fächer ohne Hausaufgaben: Stoff wiederholen, üben, vorbereiten.
 
-4. NIEMALS einen komplett freien Lern-Nachmittag. Auch an Trainingstagen IMMER mindestens: Hausaufgaben + 15 Min Wiederholung oder Vokabeln. An vollen Tagen die versteckten Lernzeiten nutzen.
+4. PROBLEMFÄCHER: zusätzlich JEDEN Tag 15-20 Min als Spiel/Wettbewerb (z.B. "Schaffst du 10 Vokabeln in 5 Minuten?", "Quiz gegen die Uhr"). Macht Spaß, hält den Kontakt zum Fach.
 
-5. VOLLE TAGE (Schule lang + Training): Kein langer Block. Stattdessen: Vokabeln/Fremdsprachen beim Abendessen mit Karteikarten + 15-20 Min Wiederholung vor dem Schlafen + versteckte Lernzeiten (Bus/Bahn, Schulpausen).
+5. REIHENFOLGE: Hausaufgaben zuerst → einfachstes Fach (Aufwärmen) → schwerstes Fach (volle Energie) → Lieblingsfach (Belohnung). Problemfach-Spiel kann zwischendrin.
 
-6. ${hatADHS ? `ADHS-MODUS: Maximal ${maxBlock} Min pro Block, IMMER Bewegungspause danach. Aufgaben in winzige Schritte zerlegen.` : `Lernblöcke ${maxBlock} Min, dann 5-10 Min Pause.`}
+6. PAUSEN fest einplanen: nach jedem Lernblock 5-10 Min. Konkrete Pause: "aufstehen, strecken, Wasser holen".
 
-7. JEDER LERNBLOCK MUSS DETAILLIERT SEIN – nicht "Mathe lernen", sondern konkrete Mini-Schritte. Beispiel für einen Mathe-Block:
-   Schritt 1: Heft aufschlagen, letzte Aufgabe anschauen (2 Min)
-   Schritt 2: Die Formel/Methode oben abschreiben (3 Min)
-   Schritt 3: Beispielaufgabe gemeinsam mit dem Buch durchgehen (5 Min)
-   Schritt 4: Aufgabe 4a und 4b selbst lösen (12 Min)
-   Schritt 5: Lösungen vergleichen, Haken setzen (3 Min)
+7. KONZENTRATIONSÜBUNGEN einbauen als eigene kurze Blöcke (typ "konzentration"): z.B. "1 Minute tief atmen", "Augen schließen und bis 20 zählen", "5 Dinge im Raum benennen". Besonders bei ADHS vor schweren Blöcken.
 
-8. FACH-LERNMETHODEN (immer in den Block-Beschreibungen anwenden):
-   - Mathe: erst Methode/Lösungsweg verstehen, DANN Aufgaben. Nie umgekehrt.
-   - Physik: erst ALLE Formeln + Regeln aufschreiben, dann Aufgaben damit lösen.
-   - Chemie: Reaktionsgleichungen + Logik dahinter.
-   - Fremdsprachen/Latein: Vokabeln mit Karteikarten, abends beim Essen + vor dem Schlafen wiederholen.
-   - Geschichte: Zeitstrahl, Zusammenhänge statt auswendig.
-   - Biologie: Skizzen und Diagramme zeichnen.
-   - Deutsch: laut lesen, Aufsätze immer erst strukturieren.
+8. TESTS/KURZARBEITEN: Wenn ein Test ansteht, in den Tagen davor EXTRA Vorbereitungs-Blöcke einplanen (typ "test"). Je näher der Test, desto mehr Zeit.
 
-9. ABSOLUTES VERBOT: Niemals "Schatz", "Liebling", "Maus", "Kleines" oder andere Kosenamen.
+9. ${hatADHS ? `ADHS: max ${maxBlock} Min pro Block, IMMER Konzentrationsübung oder Bewegungspause davor/danach.` : `Blöcke ${maxBlock} Min.`}
 
-10. SPRACHE: ${sprache}
+10. JEDER BLOCK DETAILLIERT: konkrete Mini-Schritte mit \\n getrennt. Beispiel Mathe:
+    "Schritt 1: Heft + Buch aufschlagen, Aufgabe lesen (2 Min)\\nSchritt 2: Formel oben notieren (3 Min)\\nSchritt 3: Beispiel im Buch durchgehen (5 Min)\\nSchritt 4: Aufgabe 1 lösen (12 Min)\\nSchritt 5: Aufgabe 2 lösen (12 Min)\\nSchritt 6: Kontrollieren, Haken machen (3 Min)"
 
-11. Plan MUSS realistisch zum echten Stundenplan passen. Bei Training bis 19 Uhr keinen Block um 18 Uhr.
+11. FACH-METHODEN: Mathe = erst Methode verstehen dann rechnen. Physik = erst Formeln aufschreiben. Sprachen = Karteikarten. Geschichte = Zeitstrahl. Bio = Skizzen. Deutsch = laut lesen, Struktur zuerst.
 
-═══ AUSGABE ═══
-Antworte NUR mit diesem JSON (kein Markdown, kein Text davor/danach). Jeder Lernblock-"beschreibung" MUSS die konkreten Mini-Schritte enthalten (mit \\n getrennt):
+12. NIEMALS Kosenamen ("Schatz", "Liebling" etc.).
 
+13. SPRACHE: ${sprache}
+
+14. NIEMALS ein komplett freier Lern-Nachmittag. Immer mindestens Hausaufgaben + kurze Wiederholung.
+
+═══ AUSGABE – NUR JSON ═══
 {
   "titel": "${name}s persönlicher Lernplan",
-  "untertitel": "warmer, motivierender Satz für ${name} – ohne Kosenamen",
-  "wusstest_du": "interessanter Lernfakt passend zu einem schwachen Fach",
-  "prioritaeten": ["konkrete Priorität 1", "Priorität 2", "Priorität 3"],
-  "fach_tipps": [
-    {"fach": "Name des schwachen Fachs", "tipp": "konkrete Lernmethode speziell für dieses Fach und diesen Schüler"}
-  ],
+  "untertitel": "warmer motivierender Satz, ohne Kosenamen",
+  "wusstest_du": "interessanter Lernfakt zu einem schwachen Fach",
+  "prioritaeten": ["Priorität 1", "Priorität 2", "Priorität 3"],
+  "fach_tipps": [{"fach": "Fachname", "tipp": "konkrete Lernmethode für dieses Fach"}],
   "tage": {
     "Mo": [
-      {
-        "zeit": "14:00",
-        "titel": "Pause & Erholen",
-        "beschreibung": "30 Minuten für dich: etwas essen, kurz hinlegen oder Musik hören. Dein Kopf braucht die Pause nach der Schule!",
-        "typ": "pause",
-        "dauer": "30 Min"
-      },
-      {
-        "zeit": "14:30",
-        "titel": "Hausaufgaben Mathe",
-        "beschreibung": "Schritt 1: Heft und Buch aufschlagen, Aufgabenstellung lesen (2 Min)\\nSchritt 2: Die passende Formel oben auf die Seite schreiben (3 Min)\\nSchritt 3: Das Beispiel im Buch anschauen und verstehen (5 Min)\\nSchritt 4: Aufgabe 1-3 rechnen (12 Min)\\nSchritt 5: Mit Lösungen vergleichen, Haken machen (3 Min)",
-        "typ": "fokus",
-        "dauer": "25 Min"
-      }
+      {"zeit": "14:00", "titel": "Pause & Erholen", "beschreibung": "30 Minuten Pause: etwas essen, kurz ausruhen, Kopf frei machen.", "typ": "pause", "dauer": "30 Min"},
+      {"zeit": "14:30", "titel": "Konzentration starten", "beschreibung": "1 Minute tief durchatmen. Augen zu, bis 20 zählen. Jetzt ist dein Kopf bereit.", "typ": "konzentration", "dauer": "2 Min"},
+      {"zeit": "14:32", "titel": "Hausaufgaben Mathe (3 Aufgaben)", "beschreibung": "Schritt 1: ...\\nSchritt 2: ...", "typ": "fokus", "fach": "Mathematik", "dauer": "38 Min"},
+      {"zeit": "15:10", "titel": "Pause", "beschreibung": "10 Min: aufstehen, strecken, Wasser trinken.", "typ": "pause", "dauer": "10 Min"},
+      {"zeit": "15:20", "titel": "Englisch lernen", "beschreibung": "Schritt 1: ...\\nSchritt 2: ...", "typ": "fokus", "fach": "Englisch", "dauer": "25 Min"},
+      {"zeit": "15:45", "titel": "Mathe-Spiel (Problemfach)", "beschreibung": "Wettbewerb: Schaffst du 5 Aufgaben in 15 Minuten? Stoppuhr an!", "typ": "spiel", "fach": "Mathematik", "dauer": "15 Min"}
     ],
-    "Di": [],
-    "Mi": [],
-    "Do": [],
-    "Fr": [],
-    "Sa": [],
-    "So": []
+    "Di": [], "Mi": [], "Do": [], "Fr": [], "Sa": [], "So": []
   },
   "tipps": [
-    {"label": "Für ${name}", "text": "persönlicher Tipp basierend auf Lerntyp ${lerntyp} und den Problemen"},
-    {"label": "Deine Lernbubble", "text": "konkreter Tipp für die perfekte Lernumgebung dieses Schülers"},
-    {"label": "${hatADHS ? 'ADHS & Konzentration' : 'Konzentration'}", "text": "spezifischer Tipp gegen die genannten Lernprobleme"},
-    {"label": "Wenn gar nichts geht", "text": "ganz konkreter erster Mini-Schritt"}
+    {"label": "Für ${name}", "text": "persönlicher Tipp"},
+    {"label": "Deine Lernbubble", "text": "Tipp zur Lernumgebung"},
+    {"label": "${hatADHS ? 'ADHS & Konzentration' : 'Konzentration'}", "text": "Tipp"},
+    {"label": "Wenn gar nichts geht", "text": "erster Mini-Schritt"}
   ],
-  "regeln": [
-    "kurze motivierende Regel direkt an ${name}",
-    "Regel 2",
-    "Regel 3",
-    "Regel 4"
-  ]
+  "regeln": ["Regel 1 an ${name}", "Regel 2", "Regel 3", "Regel 4"]
 }
 
-WICHTIG: Plane ALLE 7 Tage. Jeder Tag mehrere detaillierte Blöcke. Jeder Fokus-Block mit konkreten Mini-Schritten in der Beschreibung.`;
+WICHTIG: Alle 7 Tage planen. Jeder Tag: Pause + Konzentration + mehrere Fokus-Blöcke (jedes Fach) + Problemfach-Spiel + Pausen dazwischen. Block-Typen: "pause", "konzentration", "fokus", "spiel", "test". Bei "fokus", "spiel", "test" immer "fach" angeben. Jeder fokus/test-Block mit detaillierten Mini-Schritten.`;
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 4000,
+      max_tokens: 5500,
       temperature: 0.6,
       messages: [{ role: "user", content: prompt }],
     });
@@ -144,13 +123,10 @@ WICHTIG: Plane ALLE 7 Tage. Jeder Tag mehrere detaillierte Blöcke. Jeder Fokus-
     const clean = text.replace(/```json|```/g, "").trim();
 
     let plan;
-    try {
-      plan = JSON.parse(clean);
-    } catch {
-      plan = buildFallback(name, hatADHS, schwacheFaecher);
-    }
+    try { plan = JSON.parse(clean); }
+    catch { plan = buildFallback(name, hatADHS, schwacheFaecher, lieblingsfach); }
     if (!plan.tage || Object.keys(plan.tage).length < 5) {
-      plan = buildFallback(name, hatADHS, schwacheFaecher);
+      plan = buildFallback(name, hatADHS, schwacheFaecher, lieblingsfach);
     }
     return Response.json(plan);
   } catch (err) {
@@ -159,39 +135,39 @@ WICHTIG: Plane ALLE 7 Tage. Jeder Tag mehrere detaillierte Blöcke. Jeder Fokus-
   }
 }
 
-function buildFallback(name, hatADHS, faecher) {
-  const fach = faecher?.[0] || "dein schweres Fach";
-  const block = hatADHS ? "20 Min" : "25 Min";
-  const haBlock = {
-    zeit:"14:30", titel:"Hausaufgaben erledigen",
-    beschreibung:`Schritt 1: Alle Hefte und Bücher rausholen (2 Min)\nSchritt 2: Aufschreiben welche Hausaufgaben es gibt (2 Min)\nSchritt 3: Mit der einfachsten Aufgabe anfangen (10 Min)\nSchritt 4: Schwierigere Aufgaben (10 Min)\nSchritt 5: Alles durchschauen, Haken machen (1 Min)`,
-    typ:"fokus", dauer:block
-  };
+function buildFallback(name, hatADHS, faecher, lieblingsfach) {
+  const fach = faecher?.[0] || "Mathematik";
+  const fach2 = faecher?.[1] || "Englisch";
+  const lieb = lieblingsfach || "dein Lieblingsfach";
+  const konz = {zeit:"14:30",titel:"Konzentration starten",beschreibung:"1 Minute tief durchatmen. Augen schließen, bis 20 zählen. Jetzt ist dein Kopf bereit zum Lernen.",typ:"konzentration",dauer:"2 Min"};
+  const pause = (z)=>({zeit:z,titel:"Pause",beschreibung:"10 Minuten: aufstehen, strecken, Wasser trinken, ans Fenster.",typ:"pause",dauer:"10 Min"});
+  const startPause = {zeit:"14:00",titel:"Pause & Erholen",beschreibung:"30 Minuten Pause: etwas essen, ausruhen, Kopf frei machen nach der Schule. Das hast du dir verdient.",typ:"pause",dauer:"30 Min"};
+  const haBlock = {zeit:"14:32",titel:"Hausaufgaben erledigen",beschreibung:"Schritt 1: Alle Hefte und Bücher rausholen (2 Min)\nSchritt 2: Aufschreiben welche Hausaufgaben es gibt (3 Min)\nSchritt 3: Erste Aufgabe lösen (12 Min)\nSchritt 4: Zweite Aufgabe lösen (12 Min)\nSchritt 5: Alles kontrollieren, Haken machen (3 Min)",typ:"fokus",fach:fach,dauer:"32 Min"};
+  const lernBlock = (z,f)=>({zeit:z,titel:`${f} lernen`,beschreibung:`Schritt 1: Heft und Buch aufschlagen (2 Min)\nSchritt 2: Den heutigen Stoff durchlesen (8 Min)\nSchritt 3: Das Wichtigste rausschreiben (10 Min)\nSchritt 4: Kurz selbst abfragen (5 Min)`,typ:"fokus",fach:f,dauer:"25 Min"});
+  const spielBlock = (z)=>({zeit:z,titel:`${fach}-Spiel (Problemfach)`,beschreibung:`Wettbewerb gegen die Uhr! Stoppuhr stellen: Schaffst du 5 kleine Aufgaben in 15 Minuten? Jeden Tag versuchen den Rekord zu schlagen.`,typ:"spiel",fach:fach,dauer:"15 Min"});
+  const liebBlock = (z)=>({zeit:z,titel:`${lieb} – als Belohnung`,beschreibung:`Zum Schluss dein Lieblingsfach: 20 Minuten in Ruhe damit beschäftigen. Das ist deine Belohnung für die ganze Arbeit heute!`,typ:"fokus",fach:lieb,dauer:"20 Min"});
+  const standardTag = (extra)=>[startPause,konz,haBlock,pause("15:04"),lernBlock("15:14",fach2),pause("15:39"),spielBlock("15:49"),liebBlock("16:04"),...(extra||[])];
   return {
-    titel: `${name}s persönlicher Lernplan`,
-    untertitel: `Dein Plan begleitet dich durch jeden Tag – Schritt für Schritt!`,
-    wusstest_du: "Wusstest du dass dein Gehirn im Schlaf das Gelernte abspeichert? Deshalb hilft Wiederholen direkt vor dem Schlafen so gut!",
-    prioritaeten: [`${fach} jeden Tag üben`, "Hausaufgaben immer zuerst", "Pausen einhalten"],
-    fach_tipps: [
-      {fach:"Mathematik", tipp:"Erst die Methode und den Lösungsweg verstehen – dann erst Aufgaben rechnen. Nie umgekehrt!"},
-      {fach:"Fremdsprachen", tipp:"Vokabeln auf Karteikarten schreiben und abends beim Essen lernen – das geht ganz nebenbei."}
+    titel:`${name}s persönlicher Lernplan`,
+    untertitel:`Dein Plan begleitet dich durch jeden Tag – Schritt für Schritt!`,
+    wusstest_du:"Wusstest du dass dein Gehirn im Schlaf das Gelernte abspeichert? Deshalb hilft Wiederholen direkt vor dem Schlafen so gut!",
+    prioritaeten:[`${fach} jeden Tag üben`,"Hausaufgaben immer zuerst","Pausen einhalten"],
+    fach_tipps:[
+      {fach:"Mathematik",tipp:"Erst die Methode und den Lösungsweg verstehen – dann erst Aufgaben rechnen."},
+      {fach:"Fremdsprachen",tipp:"Vokabeln auf Karteikarten schreiben und abends beim Essen lernen."}
     ],
-    tage: {
-      Mo:[{zeit:"14:00",titel:"Pause & Erholen",beschreibung:"30 Minuten Pause: etwas essen, ausruhen, Kopf frei machen nach der Schule.",typ:"pause",dauer:"30 Min"},haBlock,{zeit:"15:00",titel:`${fach} üben`,beschreibung:`Schritt 1: Heft aufschlagen (1 Min)\nSchritt 2: Letzte Übung anschauen (4 Min)\nSchritt 3: Eine neue Aufgabe lösen (12 Min)\nSchritt 4: Kontrollieren (3 Min)`,typ:"fokus",dauer:block}],
-      Di:[{zeit:"14:00",titel:"Pause",beschreibung:"30 Min erholen nach der Schule.",typ:"pause",dauer:"30 Min"},haBlock,{zeit:"15:10",titel:`${fach} kurz üben`,beschreibung:`15 Minuten ${fach}: eine kleine Aufgabe – damit du im Kontakt mit dem Fach bleibst.`,typ:"fokus",dauer:"15 Min"}],
-      Mi:[{zeit:"14:00",titel:"Pause",beschreibung:"30 Min Pause.",typ:"pause",dauer:"30 Min"},haBlock,{zeit:"20:00",titel:"Wiederholung vor dem Schlafen",beschreibung:"20 Minuten: das Wichtigste vom Tag nochmal durchgehen – so bleibt es im Kopf.",typ:"fokus",dauer:"20 Min"}],
-      Do:[{zeit:"14:00",titel:"Pause",beschreibung:"30 Min erholen.",typ:"pause",dauer:"30 Min"},haBlock,{zeit:"15:00",titel:`${fach} üben`,beschreibung:`Schritt 1: Aufgabe vom Montag wiederholen (5 Min)\nSchritt 2: Neue Aufgabe lösen (12 Min)\nSchritt 3: Kontrollieren (3 Min)`,typ:"fokus",dauer:block}],
-      Fr:[{zeit:"14:00",titel:"Pause",beschreibung:"30 Min Pause.",typ:"pause",dauer:"30 Min"},{zeit:"14:30",titel:"Wochenrückblick",beschreibung:`Schritt 1: Was lief diese Woche gut? Aufschreiben (5 Min)\nSchritt 2: Was war schwer? (5 Min)\nSchritt 3: Hausaufgaben fürs Wochenende anschauen (5 Min)`,typ:"fokus",dauer:"15 Min"}],
-      Sa:[{zeit:"10:00",titel:"Wochenend-Übung",beschreibung:`20 Minuten ${fach}: in Ruhe eine Aufgabe – ohne Stress.`,typ:"fokus",dauer:"20 Min"}],
-      So:[{zeit:"18:00",titel:"Woche vorbereiten",beschreibung:`Schritt 1: Schultasche für Montag packen (5 Min)\nSchritt 2: Was kommt diese Woche? Anschauen (5 Min)`,typ:"fokus",dauer:"10 Min"},{zeit:"20:00",titel:"Wiederholung",beschreibung:"20 Min: das Schwierigste der Woche nochmal anschauen.",typ:"fokus",dauer:"20 Min"}]
+    tage:{
+      Mo:standardTag(),Di:standardTag(),Mi:standardTag(),Do:standardTag(),Fr:standardTag(),
+      Sa:[{zeit:"10:00",titel:"Pause & Start",beschreibung:"Gemütlich in den Tag starten.",typ:"pause",dauer:"frei"},konz,lernBlock("10:30",fach),pause("10:55"),spielBlock("11:05")],
+      So:[{zeit:"17:00",titel:"Woche vorbereiten",beschreibung:"Schritt 1: Schultasche für Montag packen (5 Min)\nSchritt 2: Stundenplan anschauen (5 Min)",typ:"fokus",fach:"Organisation",dauer:"10 Min"},lernBlock("17:15",fach),{zeit:"20:00",titel:"Wiederholung vor dem Schlafen",beschreibung:"20 Min: das Schwierigste der Woche nochmal anschauen.",typ:"fokus",fach:fach,dauer:"20 Min"}]
     },
-    tipps: [
-      {label:`Für ${name}`,text:"Fang immer mit der kleinsten Aufgabe an. Nicht das ganze Kapitel – nur eine Aufgabe. Der Anfang ist das Schwerste."},
-      {label:"Deine Lernbubble",text:"Handy in ein anderes Zimmer. Wasser bereitstellen. Schreibtisch aufräumen. Jetzt gehört die Zeit nur dir."},
-      {label:"Konzentration",text:"Timer auf 25 Minuten stellen. Nur diese 25 Minuten zählen. Danach gibt es eine echte Pause."},
-      {label:"Wenn gar nichts geht",text:"Zähl bis 3 und öffne einfach das Heft. Nur aufschlagen – mehr musst du nicht. Der Rest kommt von alleine."}
+    tipps:[
+      {label:`Für ${name}`,text:"Fang immer mit der kleinsten Aufgabe an. Nicht das ganze Kapitel – nur eine Aufgabe."},
+      {label:"Deine Lernbubble",text:"Handy in ein anderes Zimmer. Wasser bereitstellen. Schreibtisch aufräumen."},
+      {label:hatADHS?"ADHS & Konzentration":"Konzentration",text:"Timer auf 25 Minuten. Nur diese 25 Minuten zählen. Danach echte Pause."},
+      {label:"Wenn gar nichts geht",text:"Zähl bis 3 und öffne einfach das Heft. Nur aufschlagen – der Rest kommt von alleine."}
     ],
-    regeln: [
+    regeln:[
       `${name}, du musst nicht perfekt sein – du musst nur anfangen!`,
       "Jeder kleine Schritt zählt. Auch 15 Minuten sind ein Erfolg.",
       "Pausen sind kein Versagen – sie machen dich stärker.",
