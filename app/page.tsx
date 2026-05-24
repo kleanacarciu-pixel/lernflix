@@ -194,8 +194,10 @@ export default function Home() {
             <a href="#mathe" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Mathe</a>
             <a href="#physik" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Physik</a>
             <a href="#pakete" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernpakete</a>
+            <a href="/lernplan" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernplan</a>
           </>}
-         {!mobil && <a href="/lernplan" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernplan</a>}
+          <a href="/lernplan" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: '8px 18px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Lernplan erstellen</a>
+        </nav>
       </header>
 
       <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: mobil ? '90px 16px 40px' : '100px 24px 60px', overflow: 'hidden'}}>
