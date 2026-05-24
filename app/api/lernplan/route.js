@@ -56,6 +56,8 @@ ${pruefText}
 
 ═══ DIE WICHTIGSTE REGEL – SO PLANST DU JEDEN TAG ═══
 
+⚠️ KRITISCH: Du MUSST den echten Stundenplan oben verwenden! Schau für jeden Tag was hinter ">>> MORGEN" steht – GENAU diese Fächer werden gelernt. NIEMALS einfach nur "Mathematik" für alles. Wenn morgen Französisch, Geschichte und Biologie ist, dann plane HEUTE Blöcke für Französisch, Geschichte UND Biologie – jedes Fach einzeln!
+
 Der Lern-Nachmittag bereitet IMMER den NÄCHSTEN Schultag vor! NICHT zufällige Fächer.
 
 Für jeden Tag plane in dieser Reihenfolge:
@@ -115,7 +117,7 @@ WICHTIG: Alle 7 Tage. Jeder Tag bereitet den nächsten Schultag vor. Block-Typen
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 6000,
+      max_tokens: 8000,
       temperature: 0.5,
       messages: [{ role: "user", content: prompt }],
     });
@@ -123,10 +125,26 @@ WICHTIG: Alle 7 Tage. Jeder Tag bereitet den nächsten Schultag vor. Block-Typen
     const text = response.content[0].text;
     const clean = text.replace(/```json|```/g, "").trim();
 
-    let plan;
-    try { plan = JSON.parse(clean); }
-    catch { plan = buildFallback(name, hatADHS, schwacheFaecher, lieblingsfach); }
-    if (!plan.tage || Object.keys(plan.tage).length < 5) {
+    let plan = null;
+    try {
+      plan = JSON.parse(clean);
+    } catch (e1) {
+      // Versuch das JSON zu reparieren falls es abgeschnitten wurde
+      try {
+        let repaired = clean;
+        const lastBrace = repaired.lastIndexOf("}");
+        if (lastBrace > 0) repaired = repaired.slice(0, lastBrace + 1);
+        let open = (repaired.match(/{/g)||[]).length;
+        let close = (repaired.match(/}/g)||[]).length;
+        while (close < open) { repaired += "}"; close++; }
+        plan = JSON.parse(repaired);
+      } catch (e2) {
+        console.error("JSON konnte nicht geparst werden:", e1.message);
+        plan = null;
+      }
+    }
+    if (!plan || !plan.tage || Object.keys(plan.tage).length < 3) {
+      console.error("Plan ungueltig, nutze Fallback. Antwortlaenge:", text.length);
       plan = buildFallback(name, hatADHS, schwacheFaecher, lieblingsfach);
     }
     return Response.json(plan);
