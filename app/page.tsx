@@ -122,6 +122,11 @@ export default function Home() {
       gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)',
       icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="white"/></svg>),
     },
+    {
+      href: '/lernplan', titel: 'Mein Lernplan', desc: 'Persönlicher Lernplan nach Annas Methode',
+      gradient: 'linear-gradient(135deg, #2A7A78 0%, #1d5654 100%)',
+      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="6" width="28" height="28" rx="4" stroke="white" strokeWidth="2" fill="none"/><path d="M12 14h16M12 20h16M12 26h10" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
+    },
   ];
 
   return (
@@ -190,8 +195,7 @@ export default function Home() {
             <a href="#physik" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Physik</a>
             <a href="#pakete" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernpakete</a>
           </>}
-          <a href="/quiz" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: '8px 18px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Quiz starten</a>
-        </nav>
+         {!mobil && <a href="/lernplan" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernplan</a>}
       </header>
 
       <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: mobil ? '90px 16px 40px' : '100px 24px 60px', overflow: 'hidden'}}>
