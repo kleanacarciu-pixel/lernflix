@@ -15,7 +15,7 @@ const LERNPROBLEME = ["Ich kann mich nicht konzentrieren","Ich weiß nicht wo ic
 const LERNTYPEN = ["Ich lese nochmal durch","Ich mache Karteikarten","Ich schreibe alles ab","Ich erkläre es laut","Ich schaue Videos","Ich brauche jemanden der erklärt","Weiß ich nicht"];
 const ZIELE = ["Versetzung schaffen","Meine Note verbessern","Abitur bestehen","Weniger Stress","Weiß ich nicht"];
 const LOADING_MSGS = ["Schaue mir deinen Stundenplan an...","Plane deine Woche realistisch...","Baue jeden Tag detailliert auf...","Fast fertig..."];
-const PILLLABEL = {fokus:"Lernen 📖", pause:"Pause 🌿", aktiv:"Aktiv ⚡", schule:"Schule 🎒", konzentration:"Fokus 🧘", spiel:"Spiel 🎯", test:"Test 📝"};
+const PILLLABEL = {fokus:"Lernen 📖", pause:"Pause 🌿", aktiv:"Aktiv ⚡", schule:"Schule 🎒", konzentration:"Fokus 🧘", spiel:"Spiel 🎯", test:"Wichtig 📝", termin:"Termin 🏃"};
 
 const emptyStundenplan = () => DAYS.map(([k,tag]) => ({ tag, schulzeit:"", faecher:[], sonstiges:"", nachmittag:"", hausaufgaben:[] }));
 
@@ -28,7 +28,7 @@ export default function LernplanPage() {
     stundenplan: emptyStundenplan(),
     schwacheFaecher:[], lieblingsfach:"", einfachesFach:"",
     lernprobleme:[], lerntyp:"", adhs:"", ziel:"",
-    tests:[]
+    pruefungen:[]
   });
   const [plan, setPlan] = useState(null);
   const [loadingMsg, setLoadingMsg] = useState(0);
@@ -89,9 +89,9 @@ export default function LernplanPage() {
     return {...f,stundenplan:sp};
   });
   const getHausaufgabe = (i,fach) => { const h=(form.stundenplan[i].hausaufgaben||[]).find(x=>x.fach===fach); return h?h.anzahl:0; };
-  const addTest = () => setForm(f => ({...f, tests:[...f.tests, {fach:"", datum:""}]}));
-  const setTest = (i,field,val) => setForm(f => { const ts=[...f.tests]; ts[i]={...ts[i],[field]:val}; return {...f,tests:ts}; });
-  const removeTest = (i) => setForm(f => ({...f, tests:f.tests.filter((_,x)=>x!==i)}));
+  const addPruefung = () => setForm(f => ({...f, pruefungen:[...f.pruefungen, {art:"Test", fach:"", datum:""}]}));
+  const setPruefung = (i,field,val) => setForm(f => { const ts=[...f.pruefungen]; ts[i]={...ts[i],[field]:val}; return {...f,pruefungen:ts}; });
+  const removePruefung = (i) => setForm(f => ({...f, pruefungen:f.pruefungen.filter((_,x)=>x!==i)}));
 
   const generate = async () => {
     setScreen("loading"); setError(""); setLoadingMsg(0);
@@ -314,18 +314,26 @@ export default function LernplanPage() {
         <h2 style={{fontSize:"28px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:".5rem"}}>Tests & Ziel</h2>
         <p style={{fontSize:"16px", color:t.text2, textAlign:"center", marginBottom:"2rem"}}>Letzter Schritt – fast fertig!</p>
         <div style={{marginBottom:"1.5rem"}}>
-          <label style={lbl}>Steht ein Test oder eine Kurzarbeit an? 📝</label>
-          {form.tests.map((test,i) => (
-            <div key={i} style={{display:"flex", gap:"8px", marginBottom:"8px", alignItems:"center"}}>
-              <select style={{...inp,fontSize:"15px",flex:1}} value={test.fach} onChange={e=>setTest(i,"fach",e.target.value)}>
-                <option value="">Fach wählen...</option>
-                {ALLE_FAECHER.map(f=><option key={f}>{f}</option>)}
-              </select>
-              <input type="date" style={{...inp,fontSize:"15px",flex:1}} value={test.datum} onChange={e=>setTest(i,"datum",e.target.value)}/>
-              <button onClick={()=>removeTest(i)} style={{background:t.accentLight,color:t.accent,border:"none",borderRadius:"12px",width:"44px",height:"48px",fontSize:"18px",cursor:"pointer",flexShrink:0}}>✕</button>
+          <label style={lbl}>Steht ein Test, eine Schulaufgabe oder ein Referat an? 📝</label>
+          <p style={{fontSize:"14px",color:t.text3,marginBottom:"10px"}}>Anna plant dann extra Vorbereitungszeit ein!</p>
+          {form.pruefungen.map((p,i) => (
+            <div key={i} style={{background:t.surface,border:`2px solid ${t.border}`,borderRadius:"16px",padding:"12px",marginBottom:"10px"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"6px",marginBottom:"8px"}}>
+                {["Test","Kurzarbeit","Schulaufgabe","Referat","Projekt"].map(art=>(
+                  <div key={art} onClick={()=>setPruefung(i,"art",art)} style={{...(p.art===art?chipAct:chipBase),fontSize:"13px",padding:"7px 13px",margin:"0"}}>{art}</div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:"8px",alignItems:"center"}}>
+                <select style={{...inp,fontSize:"15px",flex:1}} value={p.fach} onChange={e=>setPruefung(i,"fach",e.target.value)}>
+                  <option value="">Fach...</option>
+                  {ALLE_FAECHER.map(f=><option key={f}>{f}</option>)}
+                </select>
+                <input type="date" style={{...inp,fontSize:"15px",flex:1}} value={p.datum} onChange={e=>setPruefung(i,"datum",e.target.value)}/>
+                <button onClick={()=>removePruefung(i)} style={{background:t.accentLight,color:t.accent,border:"none",borderRadius:"12px",width:"44px",height:"48px",fontSize:"18px",cursor:"pointer",flexShrink:0}}>✕</button>
+              </div>
             </div>
           ))}
-          <button onClick={addTest} style={{...secBtn,marginTop:"4px"}}>+ Test / Kurzarbeit hinzufügen</button>
+          <button onClick={addPruefung} style={{...secBtn,marginTop:"4px"}}>+ Test / Schulaufgabe / Referat hinzufügen</button>
         </div>
         <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Was ist dein Ziel? ⭐</label><div style={{display:"flex",flexWrap:"wrap"}}>{ZIELE.map(z=><Chip key={z} label={z} active={form.ziel===z} onClick={()=>setSingle("ziel",z)}/>)}</div></div>
         <div style={{marginBottom:"1.5rem"}}><label style={lbl}>Hast du ADHS oder Konzentrationsprobleme? 🧩</label><div style={{display:"flex",flexWrap:"wrap"}}>{["Ja, offiziell diagnostiziert","Ja, aber nicht offiziell","Manchmal abgelenkt","Nein","Weiß ich nicht"].map(a=><Chip key={a} label={a} active={form.adhs===a} onClick={()=>setSingle("adhs",a)}/>)}</div></div>
@@ -392,7 +400,8 @@ export default function LernplanPage() {
           const colMap = {
             fokus:[t.primaryLight,t.primary], pause:[t.accentLight,t.accent],
             konzentration:[t.tip[3],"#7A6AAA"], spiel:[t.spielLight,t.spiel],
-            test:["#FCE9E9","#C0392B"], aktiv:[t.beige,t.beigeText]
+            test:["#FCE9E9","#C0392B"], aktiv:[t.beige,t.beigeText],
+            termin:["#E4ECF7","#2D5A9E"]
           };
           const [pillBg,pillCol] = colMap[block.typ]||colMap.fokus;
           return (
