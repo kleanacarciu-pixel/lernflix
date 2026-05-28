@@ -107,6 +107,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Keine Fotos erhalten" }, { status: 400 });
     }
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY fehlt in den Vercel Environment Variables");
+      return NextResponse.json({ error: "Der Server ist gerade nicht richtig eingerichtet. Bitte melde dich bei Anna." }, { status: 500 });
+    }
+
     const heute = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
 
     const textPrompt = `Du bist eine erfahrene deutsche ${fach}-Lehrerin und schreibst fuer eine konkrete Schuelerin oder einen Schueler einen vollstaendigen Lernplan zur Vorbereitung auf eine Schulaufgabe. Du schreibst persoenlich, warm und direkt an den Schueler gerichtet.
@@ -172,7 +177,7 @@ WICHTIGE REGELN:
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -184,8 +189,9 @@ WICHTIGE REGELN:
 
     const data = await response.json();
     if (!response.ok) {
-      console.error("API Fehler:", JSON.stringify(data));
-      return NextResponse.json({ error: "Fehler beim Erstellen" }, { status: 500 });
+      console.error("Anthropic API Fehler:", response.status, JSON.stringify(data).slice(0, 800));
+      const detail = data?.error?.message || `Statuscode ${response.status}`;
+      return NextResponse.json({ error: `Der Lernplan-Dienst meldet: ${detail}` }, { status: 500 });
     }
 
     let inhalt = data.content[0].text.trim();
@@ -194,7 +200,8 @@ WICHTIGE REGELN:
     const html = buildHead(THEME_CSS[themeKey]) + inhalt + FOOT;
     return NextResponse.json({ html });
   } catch (error) {
-    console.error("Fehler:", error);
-    return NextResponse.json({ error: "Fehler beim Erstellen" }, { status: 500 });
+    console.error("Lernheld API Fehler:", error);
+    const meldung = error instanceof Error ? error.message : "unbekannter Fehler";
+    return NextResponse.json({ error: `Fehler beim Erstellen: ${meldung}` }, { status: 500 });
   }
 }

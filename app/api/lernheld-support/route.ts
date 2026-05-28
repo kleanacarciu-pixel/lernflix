@@ -13,6 +13,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Keine Nachricht" }, { status: 400 });
     }
 
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY fehlt in den Vercel Environment Variables");
+      return NextResponse.json({ error: "Der Lernhelfer ist gerade nicht erreichbar. Schreib Anna direkt ueber den WhatsApp-Button." }, { status: 500 });
+    }
+
     const system = `Du bist der Lernhelfer von Lernflix und hilfst Schuelerinnen und Schuelern bei Mathematik und Physik. Du antwortest so, wie eine geduldige Nachhilfelehrerin es tun wuerde: freundlich, natuerlich, direkt an den Schueler gerichtet.
 
 REGELN:
@@ -29,7 +34,7 @@ REGELN:
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -42,14 +47,14 @@ REGELN:
 
     const data = await response.json();
     if (!response.ok) {
-      console.error("API Fehler:", JSON.stringify(data));
-      return NextResponse.json({ error: "Fehler" }, { status: 500 });
+      console.error("Anthropic API Fehler:", response.status, JSON.stringify(data).slice(0, 800));
+      return NextResponse.json({ error: "Der Lernhelfer hat gerade Probleme. Schreib Anna ueber den WhatsApp-Button." }, { status: 500 });
     }
 
     const antwort = data.content[0].text;
     return NextResponse.json({ antwort });
   } catch (error) {
-    console.error("Fehler:", error);
+    console.error("Lernheld-Support API Fehler:", error);
     return NextResponse.json({ error: "Fehler" }, { status: 500 });
   }
 }

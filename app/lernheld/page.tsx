@@ -54,19 +54,53 @@ export default function LernheldPage() {
   const t = THEMES[theme];
   const bereit = name && klasse && datum && fotos.length > 0;
 
+  async function bildVerkleinern(file: File): Promise<{ media_type: string; data: string }> {
+    const bitmap = await createImageBitmap(file);
+    const maxKante = 1200;
+    const skala = Math.min(1, maxKante / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * skala);
+    const h = Math.round(bitmap.height * skala);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas nicht verfuegbar");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const dataUrl: string = await new Promise((res, rej) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return rej(new Error("blob leer"));
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.onerror = () => rej(new Error("lesen fehlgeschlagen"));
+          r.readAsDataURL(blob);
+        },
+        "image/jpeg",
+        0.7,
+      );
+    });
+    const base64 = dataUrl.split(",")[1];
+    return { media_type: "image/jpeg", data: base64 };
+  }
+
   async function fotosHinzufuegen(files: FileList | null) {
     if (!files) return;
     const neue: Foto[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file.type.startsWith("image/")) continue;
-      const data: string = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res((r.result as string).split(",")[1]);
-        r.onerror = () => rej(new Error("lesen fehlgeschlagen"));
-        r.readAsDataURL(file);
-      });
-      neue.push({ name: file.name, preview: URL.createObjectURL(file), media_type: file.type, data });
+      try {
+        const klein = await bildVerkleinern(file);
+        neue.push({
+          name: file.name,
+          preview: URL.createObjectURL(file),
+          media_type: klein.media_type,
+          data: klein.data,
+        });
+      } catch {
+        // Bild ueberspringen, wenn es nicht verarbeitet werden kann
+      }
     }
     setFotos((alt) => [...alt, ...neue].slice(0, 10));
   }
@@ -79,7 +113,7 @@ export default function LernheldPage() {
     setLaden(true);
     setFehler("");
     try {
-      const res = await fetch("/api/lernplan", {
+      const res = await fetch("/api/lernheld", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -87,12 +121,18 @@ export default function LernheldPage() {
           bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
         }),
       });
-      const data = await res.json();
-      if (data && data.html) {
-        setPlan(data.html);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      if (res.status === 413) {
+        setFehler("Deine Fotos sind zusammen zu gross. Probiere es mit weniger oder kleineren Bildern.");
       } else {
-        setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
+        const data = await res.json().catch(() => null);
+        if (data && data.html) {
+          setPlan(data.html);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (data && data.error) {
+          setFehler(data.error);
+        } else {
+          setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
+        }
       }
     } catch {
       setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
@@ -123,7 +163,7 @@ export default function LernheldPage() {
     setFrage("");
     setBotLaedt(true);
     try {
-      const res = await fetch("/api/support", {
+      const res = await fetch("/api/lernheld-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ verlauf: neuerChat }),
