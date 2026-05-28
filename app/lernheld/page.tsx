@@ -50,6 +50,8 @@ export default function LernheldPage() {
   const [chat, setChat] = useState<ChatNachricht[]>([]);
   const [frage, setFrage] = useState("");
   const [botLaedt, setBotLaedt] = useState(false);
+  const [ladeText, setLadeText] = useState("Dein Plan entsteht");
+  const [ladeSub, setLadeSub] = useState("Einen Moment — deine Unterlagen werden durchgesehen.");
 
   const t = THEMES[theme];
   const bereit = name && klasse && datum && fotos.length > 0;
@@ -112,27 +114,44 @@ export default function LernheldPage() {
   async function planErstellen() {
     setLaden(true);
     setFehler("");
+    setLadeText("Schritt 1 von 2 — Themen erkennen");
+    setLadeSub("Deine Fotos werden durchgesehen, jedes Thema wird erkannt.");
     try {
-      const res = await fetch("/api/lernheld", {
+      const bilder = fotos.map((f) => ({ media_type: f.media_type, data: f.data }));
+
+      const resThemen = await fetch("/api/lernheld-themen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name, klasse, fach, datum, theme,
-          bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
-        }),
+        body: JSON.stringify({ fach, klasse, bilder }),
       });
-      if (res.status === 413) {
+      if (resThemen.status === 413) {
         setFehler("Deine Fotos sind zusammen zu gross. Probiere es mit weniger oder kleineren Bildern.");
+        setLaden(false);
+        return;
+      }
+      const themenData = await resThemen.json().catch(() => null);
+      if (!themenData || !Array.isArray(themenData.themen) || themenData.themen.length === 0) {
+        setFehler(themenData?.error || "Die Themen konnten nicht erkannt werden. Bitte versuche es nochmal.");
+        setLaden(false);
+        return;
+      }
+
+      setLadeText("Schritt 2 von 2 — Dein Plan wird geschrieben");
+      setLadeSub(`${themenData.themen.length} Themen erkannt. Jetzt wird alles zu deinem Plan zusammengestellt.`);
+
+      const resPlan = await fetch("/api/lernheld", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, klasse, fach, datum, theme, themen: themenData.themen }),
+      });
+      const planData = await resPlan.json().catch(() => null);
+      if (planData && planData.html) {
+        setPlan(planData.html);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (planData && planData.error) {
+        setFehler(planData.error);
       } else {
-        const data = await res.json().catch(() => null);
-        if (data && data.html) {
-          setPlan(data.html);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        } else if (data && data.error) {
-          setFehler(data.error);
-        } else {
-          setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
-        }
+        setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
       }
     } catch {
       setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
@@ -265,9 +284,9 @@ export default function LernheldPage() {
       <div style={{ maxWidth: "640px", margin: "0 auto", padding: "26px 18px 70px" }}>
         {laden ? (
           <div style={{ textAlign: "center", padding: "90px 20px" }}>
-            <h2 style={{ fontFamily: serif, fontSize: "26px", fontWeight: 700, margin: "0 0 14px", color: t.ink }}>Dein Plan entsteht</h2>
+            <h2 style={{ fontFamily: serif, fontSize: "26px", fontWeight: 700, margin: "0 0 14px", color: t.ink }}>{ladeText}</h2>
             <p style={{ color: t.soft, fontSize: "16px", lineHeight: 1.6, maxWidth: "440px", margin: "0 auto" }}>
-              Einen Moment — deine Unterlagen werden durchgesehen und jedes Thema mit Erklärungen, Formeln, Beispielen und Übungen vorbereitet.
+              {ladeSub}
             </p>
             <div style={{ marginTop: "40px", width: "46px", height: "46px", border: `3px solid ${t.line}`, borderTopColor: t.dark, borderRadius: "50%", margin: "40px auto 0", animation: "spin 0.9s linear infinite" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
