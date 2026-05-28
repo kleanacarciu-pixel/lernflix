@@ -56,7 +56,7 @@ export default function LernheldPage() {
 
   async function bildVerkleinern(file: File): Promise<{ media_type: string; data: string }> {
     const bitmap = await createImageBitmap(file);
-    const maxKante = 1200;
+    const maxKante = 900;
     const skala = Math.min(1, maxKante / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * skala);
     const h = Math.round(bitmap.height * skala);

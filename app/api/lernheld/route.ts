@@ -130,7 +130,10 @@ DEIN QUALITÄTSANSPRUCH:
 Dieser Plan kostet Geld und ersetzt ein ganzes Schulbuch und mehrere Nachhilfestunden. Der Schüler braucht danach KEIN weiteres Material mehr. Jede Erklärung muss so klar und gründlich sein, dass selbst ein Schüler, der das Thema noch nie gehört hat, es danach versteht.
 
 WICHTIGSTE REGEL — ABSOLUT KRITISCH:
-Du MUSST JEDES EINZELNE Thema aus den Fotos abdecken. Wenn die Fotos 10 Themen zeigen, dann brauchst du 10 Themen-Blöcke. KEINES auslassen, nie auch nur eines übergehen. Lieber pro Thema etwas kompakter, aber ALLE drin.
+SCHRITT 1: Sieh dir alle Fotos an und liste innerlich ALLE Themen auf. Zähle sie. Zum Beispiel: "Ich sehe 11 Themen."
+SCHRITT 2: Plane dann pro Thema NUR ca. 600–800 Tokens. Wenn 11 Themen, dann 11 kompakte Blöcke. NIEMALS Themen weglassen oder zusammenfassen.
+SCHRITT 3: Wenn du merkst, dass du knapp wirst: lieber alle Beispiele kürzen, aber jedes Thema MUSS einen eigenen Block bekommen — auch wenn der Block dann nur Erklärung + Formel + 1 kleines Beispiel hat.
+Vollständigkeit (alle Themen) ist WICHTIGER als Tiefe pro Thema.
 
 SCHREIBSTIL — KINDGERECHT UND PERSÖNLICH:
 - Schreibe wie eine warme Lehrerin, die direkt mit dem Kind spricht. Du-Form, lockere Sprache.
@@ -261,7 +264,7 @@ ABSOLUT WICHTIG — NOCHMAL:
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 14000,
+        max_tokens: 10000,
         messages: [{ role: "user", content }],
       }),
     });
