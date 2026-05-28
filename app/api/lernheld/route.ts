@@ -20,62 +20,72 @@ function buildHead(themeCss: string) {
   :root{${themeCss}}
   *{box-sizing:border-box;margin:0;}
   html{-webkit-font-smoothing:antialiased;}
-  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;font-size:16px;}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.65;font-size:16px;}
   .serif{font-family:Georgia,"Times New Roman",serif;}
 
   .banner{background:var(--dark);color:#fff;padding:30px 24px 26px;}
   .banner .kick{font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.8;font-weight:700;margin-bottom:8px;}
   .banner h1{font-family:Georgia,serif;font-size:30px;font-weight:700;margin-bottom:8px;}
   .banner p{opacity:.9;font-size:15px;max-width:640px;}
-  .bar{height:8px;border-radius:99px;background:rgba(255,255,255,0.25);margin-top:18px;overflow:hidden;}
-  .bar>i{display:block;height:100%;width:0;background:#fff;border-radius:99px;}
 
   .wrap{max-width:780px;margin:0 auto;padding:24px 18px 70px;}
 
-  .hint{background:var(--badge3);border-radius:14px;padding:15px 18px;margin:18px 0;font-size:15px;color:var(--ink);display:flex;gap:10px;}
-  .steps{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0;}
-  .step-pill{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-size:14px;font-weight:600;}
-  .step-pill b{background:var(--dark);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .sec-title{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;margin:36px 0 16px;}
+  .sec-sub{color:var(--soft);font-size:14.5px;margin:-10px 0 18px;}
 
-  .method{background:var(--badge2);border-radius:16px;padding:18px 20px;margin:18px 0;}
-  .method h3{font-size:16px;margin-bottom:10px;display:flex;gap:8px;align-items:center;}
-  .method p{font-size:15px;margin:6px 0;}
-  .method b{color:var(--dark);}
+  .block{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin:14px 0;box-shadow:0 2px 10px rgba(0,0,0,0.03);}
+  .block-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .block .time{font-size:13px;color:var(--soft);font-weight:600;}
+  .block h4{font-size:19px;margin:2px 0 10px;display:flex;align-items:center;gap:10px;font-weight:700;}
+  .block .circle{width:22px;height:22px;border:2px solid var(--line);border-radius:50%;flex-shrink:0;cursor:pointer;display:inline-block;}
+  .block.done .circle{background:var(--dark);border-color:var(--dark);}
+  .block p{font-size:15.5px;color:var(--ink);margin:8px 0;line-height:1.65;}
+  .block p.soft{color:var(--soft);}
+  .block b{color:var(--dark);}
+  .block .erkl{font-size:16px;color:var(--ink);margin-bottom:14px;line-height:1.7;}
 
-  .sec-title{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;margin:34px 0 16px;}
+  .badge{font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;white-space:nowrap;}
+  .b-lernen{background:var(--badge2);color:var(--badge2t);}
+  .b-formel{background:var(--badge3);color:var(--badge3t);}
+  .b-uebung{background:var(--badge1);color:var(--badge1t);}
+
+  ol.nums{list-style:none;counter-reset:n;margin-top:8px;padding:0;}
+  ol.nums li{counter-increment:n;position:relative;padding-left:36px;font-size:15.5px;margin:10px 0;line-height:1.65;}
+  ol.nums li::before{content:counter(n);position:absolute;left:0;top:1px;background:var(--badge2);color:var(--badge2t);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+
+  .fx{font-family:Georgia,serif;background:var(--badge3);border-radius:8px;padding:6px 14px;display:inline-block;margin:5px 6px 5px 0;font-size:17px;color:var(--ink);font-weight:600;}
+  .fx-block{margin:10px 0 14px;}
+  .label-row{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dark);font-weight:700;margin:16px 0 6px;}
+
+  .example{background:var(--bg);border-left:3px solid var(--dark);border-radius:8px;padding:14px 18px;margin:10px 0;}
+  .example .lbl{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--dark);font-weight:700;margin-bottom:6px;}
+  .uebung{background:var(--badge1);border-radius:10px;padding:14px 18px;margin:10px 0;}
+  .uebung .lbl{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--badge1t);font-weight:700;margin-bottom:6px;}
+  .uebung .loesung{margin-top:8px;padding-top:8px;border-top:1px dashed rgba(0,0,0,0.12);}
+  .uebung .loesung b{color:var(--badge1t);}
+
+  .formel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .fcard h5{font-size:15px;color:var(--dark);margin-bottom:10px;font-weight:700;}
+  .fcard p{font-size:14.5px;color:var(--ink);margin:5px 0;line-height:1.6;}
+  .fcard .formel{font-family:Georgia,serif;font-weight:600;font-size:16px;color:var(--ink);}
+
+  .rules-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+  .rule{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:14px 18px;}
+  .rule b{color:var(--accent);}
+  .rule p{font-size:15px;color:var(--ink);margin:0;line-height:1.6;}
 
   .days{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
   .day-tab{padding:9px 16px;border-radius:99px;font-size:14px;font-weight:600;background:var(--card);border:1px solid var(--line);color:var(--soft);}
   .day-tab.on{background:var(--dark);color:#fff;border-color:var(--dark);}
 
-  .block{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin:12px 0;box-shadow:0 2px 10px rgba(0,0,0,0.03);}
-  .block-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
-  .block .time{font-size:13px;color:var(--soft);font-weight:600;}
-  .block h4{font-size:17px;margin:2px 0 6px;display:flex;align-items:center;gap:8px;}
-  .block .circle{width:22px;height:22px;border:2px solid var(--line);border-radius:50%;flex-shrink:0;cursor:pointer;display:inline-block;}
-  .block.done .circle{background:var(--dark);border-color:var(--dark);}
-  .block p{font-size:15px;color:var(--soft);margin-bottom:8px;}
-  .badge{font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px;white-space:nowrap;}
-  .b-lernen{background:var(--badge2);color:var(--badge2t);}
-  .b-formel{background:var(--badge3);color:var(--badge3t);}
-  .b-uebung{background:var(--badge1);color:var(--badge1t);}
-  ol.nums{list-style:none;counter-reset:n;margin-top:8px;}
-  ol.nums li{counter-increment:n;position:relative;padding-left:32px;font-size:15px;margin:9px 0;line-height:1.55;}
-  ol.nums li::before{content:counter(n);position:absolute;left:0;top:1px;background:var(--badge2);color:var(--badge2t);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
-  .fx{font-family:Georgia,serif;background:var(--badge3);border-radius:8px;padding:4px 12px;display:inline-block;margin:4px 5px 4px 0;font-size:16px;color:var(--ink);}
-
-  .formel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
-  .fcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
-  .fcard h5{font-size:15px;color:var(--dark);margin-bottom:8px;}
-  .fcard p{font-size:15px;color:var(--soft);margin:3px 0;}
-
   .tips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;}
   .tip{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
   .tip .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dark);font-weight:700;margin-bottom:6px;}
-  .tip p{font-size:14.5px;color:var(--soft);}
+  .tip p{font-size:14.5px;color:var(--ink);}
 
   .foot{text-align:center;margin-top:50px;padding-top:20px;border-top:1px solid var(--line);color:var(--soft);font-size:14px;}
-  @media print{body{background:#fff;}.block,.fcard,.tip,.method{break-inside:avoid;}}
+  @media print{body{background:#fff;}.block,.fcard,.tip,.rule,.example,.uebung{break-inside:avoid;}}
 </style>
 </head>
 <body>
@@ -114,58 +124,132 @@ export async function POST(request: Request) {
 
     const heute = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
 
-    const textPrompt = `Du bist eine erfahrene deutsche ${fach}-Lehrerin und schreibst fuer eine konkrete Schuelerin oder einen Schueler einen vollstaendigen Lernplan zur Vorbereitung auf eine Schulaufgabe. Du schreibst persoenlich, warm und direkt an den Schueler gerichtet.
+    const textPrompt = `Du bist eine erfahrene deutsche ${fach}-Lehrerin mit jahrelanger Nachhilfe-Praxis. Du erstellst für eine konkrete Schülerin oder einen Schüler einen vollständigen, hochwertigen Lernplan zur Vorbereitung auf eine Schulaufgabe.
 
-Der Schueler hat Fotos hochgeladen: Stofflisten, Buchseiten und/oder Uebungen. Schau dir ALLE Fotos genau an und erkenne, welche Themen drankommen.
+DEIN QUALITÄTSANSPRUCH:
+Dieser Plan kostet Geld und ersetzt ein ganzes Schulbuch und mehrere Nachhilfestunden. Der Schüler braucht danach KEIN weiteres Material mehr. Jede Erklärung muss so klar und gründlich sein, dass selbst ein Schüler, der das Thema noch nie gehört hat, es danach versteht. Du schreibst persönlich, warm und direkt an den Schüler gerichtet — wie eine echte Lehrerin im Einzelunterricht.
 
-DATEN:
-- Name: ${name || "Schueler"}
+SCHREIBREGELN:
+- Verwende IMMER korrekte deutsche Umlaute: ä, ö, ü, ß. NIEMALS "ae", "oe", "ue", "ss". Schreibe "für" nicht "fuer", "Schüler" nicht "Schueler", "übersicht" nicht "uebersicht", "groß" nicht "gross", "Lösung" nicht "Loesung".
+- Schreibe natürlich und persönlich wie eine echte Lehrerin im Gespräch: "Pass auf, hier kommt der Trick:", "Stell dir vor, du hast...", "Wenn du das einmal verstanden hast, geht der Rest von alleine.", "Achtung, hier passieren oft Fehler:"
+- Variiere die Sprache, schreibe nicht schablonenhaft.
+- Verwende mathematische Symbole: ², ³, √, ·, ÷, ≠, ≤, ≥, ±, ∠, π, °, ∞.
+- Erwähne NIEMALS künstliche Intelligenz, KI, AI, Sprachmodelle, automatische Erstellung, Anthropic oder Claude.
+- Keine Emojis.
+
+DATEN ZUM SCHÜLER:
+- Name: ${name || "Schüler"}
 - Klasse: ${klasse}
 - Fach: ${fach}
 - Schulaufgabe am: ${datum || "in einigen Wochen"}
-- Heute: ${heute}
+- Heute ist: ${heute}
 
-AUFGABE:
-Schreibe den INNEREN HTML-Inhalt (nur was zwischen <body> kommt, OHNE den aeusseren Banner - der wird automatisch hinzugefuegt). Der Plan muss so ausfuehrlich sein, dass der Schueler KEIN Schulbuch mehr braucht. Fuer JEDES Thema aus den Fotos: eine verstaendliche Erklaerung in einfacher Sprache mit Alltagsbeispiel, alle Formeln, ein durchgerechnetes Beispiel, eine Uebung mit Loesung.
+DEINE AUFGABE:
+Schau dir ALLE Fotos sehr genau an. Erkenne JEDES Thema und JEDES Unterthema, das drankommen kann. Erstelle dann den Lernplan in der folgenden Reihenfolge — mit klarem Schwerpunkt auf den Themen-Erklärungen (mindestens 60% des Plans).
 
-Beginne mit dem Banner-Block, dann der Wochenplan, dann die Themen, dann Formelsammlung, dann Tipps. Verwende GENAU diese Struktur und CSS-Klassen:
+STRUKTUR — verwende GENAU diese HTML-Klassen:
 
-<div class="banner"><div class="kick">Dein persoenlicher Plan</div><h1>Lernplan fuer ${name || "deine Schulaufgabe"}</h1><p>${fach} · Klasse ${klasse} · Schulaufgabe am ${datum}. Schritt fuer Schritt, mit System.</p><div class="bar"><i style="width:0"></i></div></div>
+(1) BANNER:
+<div class="banner"><div class="kick">Dein persönlicher Lernplan</div><h1>Lernplan für ${name || "deine Schulaufgabe"}</h1><p>${fach} · Klasse ${klasse} · Schulaufgabe am ${datum}. Schritt für Schritt durchgearbeitet, mit allem was du brauchst.</p></div>
 <div class="wrap">
 
-<div class="steps"><div class="step-pill"><b>1</b> Jeden Tag ein kleines Stueck</div><div class="step-pill"><b>2</b> Verstehen, dann ueben</div><div class="step-pill"><b>3</b> Vor der Schulaufgabe alles wiederholen</div></div>
+(2) THEMEN — DAS HERZSTÜCK. Pro Thema einen ausführlichen Block. Mindestens 4–8 Themen je nach Stoff. Jeder Block enthält:
 
-<div class="method"><h3>So lernst du richtig</h3><p>...2-3 konkrete Lerntipps zu den Themen, jeweils mit <b>Stichwort:</b> davor...</p></div>
+<div class="sec-title">Alles was du können musst</div>
+<p class="sec-sub">Hier ist jedes Thema verständlich erklärt — lies in Ruhe durch, dann mach die Übungen.</p>
 
-WOCHENPLAN:
-<div class="sec-title">Dein Wochenplan</div>
-<div class="days"><span class="day-tab on">Mo</span><span class="day-tab">Di</span><span class="day-tab">Mi</span><span class="day-tab">Do</span><span class="day-tab">Fr</span><span class="day-tab">Sa</span><span class="day-tab">So</span></div>
-Dann pro Lern-Einheit ein Block (berechne die Wochen zwischen heute ${heute} und ${datum}, plane realistisch):
-<div class="block"><div class="block-top"><span class="time">Woche 1 · Montag</span><span class="badge b-lernen">Lernen</span></div><h4><span class="circle"></span>Thema des Tages</h4><p>kurze Beschreibung</p><ol class="nums"><li>konkreter Schritt</li><li>noch ein Schritt</li></ol></div>
-Nutze die Badges: <span class="badge b-lernen">Lernen</span> fuer Lerneinheiten, <span class="badge b-uebung">Ueben</span> fuer Uebungstage, <span class="badge b-formel">Wiederholen</span> fuer Wiederholung.
+<div class="block">
+  <div class="block-top">
+    <h4><span class="circle"></span>Thema-Name (z.B. Satz des Pythagoras)</h4>
+    <span class="badge b-lernen">Thema 1</span>
+  </div>
 
-THEMEN (Herzstueck, sehr ausfuehrlich):
-<div class="sec-title">Alles, was du koennen musst</div>
-Pro Thema ein Block:
-<div class="block"><div class="block-top"><h4><span class="circle"></span>Themenname</h4><span class="badge b-lernen">Thema 1</span></div><p class="erkl">ausfuehrliche, einfache Erklaerung mit Alltagsbeispiel</p><span class="fx">a&sup2; + b&sup2; = c&sup2;</span><ol class="nums"><li><b>Beispiel:</b> durchgerechnet</li><li><b>Uebung:</b> Aufgabe — <b>Loesung:</b> ...</li></ol></div>
+  <div class="erkl">Hier eine wirklich gründliche Erklärung in einfacher Sprache. Was ist das Thema? Wo kommt es im Alltag vor? Wie funktioniert das Prinzip dahinter? Mindestens 4–7 Sätze. Mit einem konkreten Alltagsbeispiel ("Stell dir vor, du hast eine Leiter, die an einer Wand lehnt...").</div>
 
-FORMELSAMMLUNG:
-<div class="sec-title">Formelsammlung</div>
-<div class="formel-grid"><div class="fcard"><h5>Thema</h5><p>Formel</p></div> ...</div>
+  <div class="label-row">Die wichtigsten Formeln</div>
+  <div class="fx-block">
+    <span class="fx">a² + b² = c²</span>
+    <span class="fx">c = √(a² + b²)</span>
+    <span class="fx">a = √(c² − b²)</span>
+  </div>
 
-TIPPS:
-<div class="sec-title">Annas Tipps fuer dich</div>
-<div class="tips-grid"><div class="tip"><div class="lbl">Kurztitel</div><p>Tipp-Text</p></div> ...4-5 Tipps...</div>
+  <div class="label-row">Wichtige Regel</div>
+  <p>Hier die zentrale Regel oder das Gesetz dieses Themas in 1–2 Sätzen klar formuliert.</p>
 
-<div class="foot">Viel Erfolg, ${name || "du schaffst das"}!</div>
+  <div class="label-row">Beispiel 1 — Schritt für Schritt</div>
+  <div class="example">
+    <div class="lbl">Aufgabe</div>
+    <p>Konkrete Aufgabe mit Zahlen. (z.B. "Ein rechtwinkliges Dreieck hat die Katheten a = 3 cm und b = 4 cm. Wie lang ist die Hypotenuse?")</p>
+    <ol class="nums">
+      <li>Was ist gegeben, was gesucht? — gegeben: a = 3, b = 4. gesucht: c.</li>
+      <li>Welche Formel passt? — c = √(a² + b²).</li>
+      <li>Einsetzen: c = √(3² + 4²) = √(9 + 16) = √25.</li>
+      <li>Ausrechnen: c = 5 cm.</li>
+    </ol>
+  </div>
+
+  <div class="label-row">Beispiel 2 — Schritt für Schritt</div>
+  <div class="example">
+    <div class="lbl">Aufgabe</div>
+    <p>Eine zweite Aufgabe mit anderen Zahlen oder leicht anderem Aufbau.</p>
+    <ol class="nums"><li>Schritt</li><li>Schritt</li><li>Schritt</li></ol>
+  </div>
+
+  <div class="label-row">Jetzt du — Übungsaufgaben</div>
+  <div class="uebung">
+    <div class="lbl">Übung 1</div>
+    <p>Konkrete Übungsaufgabe.</p>
+    <div class="loesung"><b>Lösung:</b> ausführliche Lösung in 2–4 Schritten mit Rechnung.</div>
+  </div>
+  <div class="uebung">
+    <div class="lbl">Übung 2</div>
+    <p>Zweite Übungsaufgabe, etwas anders.</p>
+    <div class="loesung"><b>Lösung:</b> ausführliche Lösung.</div>
+  </div>
 </div>
 
-WICHTIGE REGELN:
-- Antworte AUSSCHLIESSLICH mit dem reinen HTML ab <div class="banner">. KEIN <html>, <head>, <body>, KEIN Markdown, KEINE Backticks, keine Vorrede.
-- Schreibe natuerlich und persoenlich wie eine echte Lehrerin. Variiere die Saetze.
-- Erwaehne NIEMALS kuenstliche Intelligenz, KI, AI, Sprachmodelle, automatische Erstellung, Anthropic oder Claude.
-- Keine Emojis.
-- Sei ausfuehrlich bei den Erklaerungen.`;
+(3) KOMPLETTE FORMELSAMMLUNG — ALLE Formeln aus den Fotos sauber sortiert:
+<div class="sec-title">Die komplette Formelsammlung</div>
+<p class="sec-sub">Druck dir diese Seite aus — das ist dein Spickzettel für die letzten Minuten vor der Schulaufgabe.</p>
+<div class="formel-grid">
+  <div class="fcard">
+    <h5>Pythagoras</h5>
+    <p class="formel">a² + b² = c²</p>
+    <p>Wenn c gesucht: c = √(a² + b²)</p>
+    <p>Wenn a gesucht: a = √(c² − b²)</p>
+    <p>Nur in rechtwinkligen Dreiecken!</p>
+  </div>
+  ... mindestens 8–14 Karten je nach Stoff, jede mit Formel UND kurzer Erklärung wann sie anzuwenden ist ...
+</div>
+
+(4) REGELN UND GESETZE — als klare Übersicht:
+<div class="sec-title">Die wichtigsten Regeln</div>
+<div class="rules-grid">
+  <div class="rule"><p><b>Punkt-vor-Strich:</b> Mal und Geteilt werden immer zuerst gerechnet, dann erst Plus und Minus.</p></div>
+  <div class="rule"><p><b>Pythagoras-Regel:</b> Gilt nur in rechtwinkligen Dreiecken. Die Hypotenuse ist immer die längste Seite, gegenüber dem rechten Winkel.</p></div>
+  ... mindestens 5–10 Regeln je nach Stoff ...
+</div>
+
+(5) WOCHENPLAN (kurz am Ende):
+<div class="sec-title">Dein Wochenplan</div>
+<p class="sec-sub">So teilst du dir die Themen über die Wochen ein bis zur Schulaufgabe.</p>
+<div class="days"><span class="day-tab on">Mo</span><span class="day-tab">Di</span><span class="day-tab">Mi</span><span class="day-tab">Do</span><span class="day-tab">Fr</span><span class="day-tab">Sa</span><span class="day-tab">So</span></div>
+Berechne realistisch die Wochen zwischen heute (${heute}) und dem Termin (${datum}). Pro Woche 3–5 kurze Blöcke wie:
+<div class="block"><div class="block-top"><span class="time">Woche 1 · Montag</span><span class="badge b-lernen">Lernen</span></div><h4><span class="circle"></span>Thema 1 verstehen</h4><p>Lies die Erklärung oben in Ruhe durch, schau dir die Beispiele an, dann mach Übung 1.</p></div>
+... 12–20 solche kurzen Blöcke insgesamt, am Ende eine Generalprobe-Woche ...
+
+(6) ANNAS TIPPS:
+<div class="sec-title">Annas Tipps für dich</div>
+<div class="tips-grid"><div class="tip"><div class="lbl">Kurztitel</div><p>Konkreter Tipp in 1–2 Sätzen.</p></div> ... 4–6 Tipps ...</div>
+
+<div class="foot">Viel Erfolg, ${name || "du schaffst das"}! Du hast jetzt alles in der Hand was du brauchst.</div>
+</div>
+
+ABSOLUT WICHTIG:
+- Antworte AUSSCHLIESSLICH mit reinem HTML, beginnend mit <div class="banner">. KEIN <html>, <head>, <body>. KEIN Markdown, KEINE Backticks, KEINE Vorrede, KEIN Abschluss.
+- Themen-Abschnitt ist das Herzstück — sei dort sehr ausführlich. Jedes Thema mit Erklärung, Formeln, Regel, 2 Beispielen Schritt-für-Schritt, 2 Übungen mit Lösungen.
+- Formelsammlung muss umfangreich sein, mit Erklärung pro Formel wann man sie verwendet.
+- Verwende echte Umlaute: ä ö ü ß. Niemals "ae oe ue ss".`;
 
     const content: unknown[] = bilder.map((b) => ({
       type: "image",
@@ -182,7 +266,7 @@ WICHTIGE REGELN:
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
+        max_tokens: 10000,
         messages: [{ role: "user", content }],
       }),
     });
