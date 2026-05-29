@@ -10,6 +10,20 @@ export function InhaltTrigonometrie() {
 
       <Sektion nr={1} titel="Sinus, Kosinus, Tangens — die Stars">
         <p>Im <b>rechtwinkligen Dreieck</b> verbindet Trigonometrie Seiten und Winkel. Bezogen auf einen Winkel α:</p>
+        <figure className="fig">
+          <div>
+            <svg width="280" height="200" viewBox="0 0 280 200">
+              <polygon points="40,170 240,170 240,40" fill="#cffafe" stroke="#06b6d4" strokeWidth="2.5"/>
+              <rect x="226" y="156" width="14" height="14" fill="none" stroke="#06b6d4" strokeWidth="2"/>
+              <path d="M 80 170 A 40 40 0 0 0 70 141" stroke="#ef4444" strokeWidth="2" fill="none"/>
+              <text x="72" y="158" fontSize="14" fontWeight="700" fill="#ef4444">α</text>
+              <text x="125" y="190" fontSize="13" fontWeight="700">Ankathete</text>
+              <text x="248" y="115" fontSize="13" fontWeight="700">Gegen­kathete</text>
+              <text x="110" y="100" fontSize="13" fontWeight="700" fill="#ef4444">Hypotenuse</text>
+            </svg>
+            <figcaption>Bezeichnungen im rechtwinkligen Dreieck, bezogen auf α</figcaption>
+          </div>
+        </figure>
         <div className="karten">
           <div className="karte"><h5>Hypotenuse</h5><p>Die längste Seite, gegenüber dem rechten Winkel</p></div>
           <div className="karte"><h5>Gegenkathete</h5><p>Die Seite gegenüber von α</p></div>
@@ -62,6 +76,19 @@ export function InhaltTrigonometrie() {
 
       <Sektion nr={5} titel="Trigonometrische Funktionen — die Wellen">
         <p>Wenn du sin(x) und cos(x) als <b>Graphen</b> zeichnest, bekommst du Wellen. Hin und her und hin und her.</p>
+        <figure className="fig">
+          <div>
+            <svg width="380" height="180" viewBox="0 0 380 180">
+              <line x1="20" y1="90" x2="370" y2="90" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="20" y1="20" x2="20" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <path d="M 20 90 Q 60 20, 100 90 T 180 90 T 260 90 T 340 90" fill="none" stroke="#06b6d4" strokeWidth="3"/>
+              <path d="M 20 20 Q 60 90, 100 20 Q 140 -50, 180 20 Q 220 90, 260 20 Q 300 -50, 340 20" fill="none" stroke="#8b5cf6" strokeWidth="3" strokeDasharray="6,4"/>
+              <text x="300" y="40" fontSize="13" fontWeight="700" fill="#06b6d4">sin(x)</text>
+              <text x="300" y="60" fontSize="13" fontWeight="700" fill="#8b5cf6">cos(x)</text>
+            </svg>
+            <figcaption>Sinus (durchgezogen) und Kosinus (gestrichelt) — gleiche Welle, nur verschoben</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Sinus-Welle" ausdruck={<>f(x) = a · sin(b·x + c) + d</>} />
           <Formel name="Amplitude" ausdruck={<>= |a|</>} hinweis="Höhe der Welle" />

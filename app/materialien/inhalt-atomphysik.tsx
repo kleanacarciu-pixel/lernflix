@@ -9,6 +9,26 @@ export function InhaltAtomphysik() {
       <Hook><b>Atome sind winzig kleine Universen.</b> In der Mitte ein Kern mit Protonen und Neutronen, drum herum sausen Elektronen. Wenn du diesem Mikro-System auf den Grund gehst, landest du irgendwann bei Strahlung, Atomkraft und Quantenphysik. Klingt wild — ist es auch.</Hook>
 
       <Sektion nr={1} titel="Der Aufbau der Atome">
+        <figure className="fig">
+          <div>
+            <svg width="240" height="240" viewBox="0 0 240 240">
+              <circle cx="120" cy="120" r="100" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="3,3"/>
+              <circle cx="120" cy="120" r="60" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="3,3"/>
+              <circle cx="120" cy="120" r="20" fill="#10b981"/>
+              <text x="113" y="116" fontSize="11" fontWeight="700" fill="#fff">p</text>
+              <text x="113" y="128" fontSize="11" fontWeight="700" fill="#fff">n</text>
+              <circle cx="180" cy="120" r="5" fill="#dc2626"/>
+              <circle cx="120" cy="60" r="5" fill="#dc2626"/>
+              <circle cx="60" cy="120" r="5" fill="#dc2626"/>
+              <circle cx="160" cy="180" r="5" fill="#dc2626"/>
+              <circle cx="220" cy="120" r="5" fill="#dc2626"/>
+              <circle cx="100" cy="40" r="5" fill="#dc2626"/>
+              <text x="186" y="125" fontSize="10" fontWeight="700" fill="#dc2626">e⁻</text>
+              <text x="195" y="40" fontSize="11" fontWeight="700" fill="#10b981">Kern</text>
+            </svg>
+            <figcaption>Atom-Modell nach Bohr: Kern (Protonen + Neutronen) und Elektronen auf Bahnen</figcaption>
+          </div>
+        </figure>
         <div className="karten">
           <div className="karte"><h5>Proton (p⁺)</h5><p>Positive Ladung. Im Kern.</p></div>
           <div className="karte"><h5>Neutron (n)</h5><p>Keine Ladung. Im Kern.</p></div>
@@ -51,6 +71,24 @@ export function InhaltAtomphysik() {
 
       <Sektion nr={4} titel="Halbwertszeit">
         <p>Nach einer <b>Halbwertszeit T</b> ist die Hälfte der radioaktiven Atome zerfallen. Nach zwei Halbwertszeiten ist nur noch ein Viertel da, nach drei ein Achtel usw.</p>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="200" viewBox="0 0 320 200">
+              <line x1="30" y1="170" x2="310" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="30" y1="20" x2="30" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <text x="13" y="25" fontSize="11" fill="#6e6e73">N</text>
+              <text x="305" y="188" fontSize="11" fill="#6e6e73">t</text>
+              <path d="M 30 20 Q 60 80, 100 95 Q 140 115, 180 135 Q 220 150, 260 160 Q 290 167, 310 170" fill="none" stroke="#10b981" strokeWidth="3"/>
+              <line x1="100" y1="170" x2="100" y2="95" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="30" y1="95" x2="100" y2="95" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <text x="93" y="185" fontSize="11" fontWeight="700" fill="#dc2626">T</text>
+              <text x="5" y="100" fontSize="11" fontWeight="700" fill="#dc2626">N/2</text>
+              <line x1="170" y1="170" x2="170" y2="135" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <text x="155" y="185" fontSize="11" fontWeight="700" fill="#dc2626">2T</text>
+            </svg>
+            <figcaption>Zerfallskurve — nach jeder Halbwertszeit halbiert sich N</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Zerfallsgesetz" ausdruck={<>N(t) = N₀ · (1/2)<sup>t/T</sup></>} hinweis="N = Anzahl, T = Halbwertszeit" />
           <Formel name="Aktivität" ausdruck={<>A = λ · N</>} hinweis="Einheit: Becquerel (Bq) = 1 Zerfall/s" />

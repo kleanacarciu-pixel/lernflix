@@ -17,6 +17,21 @@ export function InhaltFunktionen() {
 
       <Sektion nr={2} titel="Lineare Funktionen — die geraden Linien">
         <p>Eine <b>lineare Funktion</b> hat die Form <b>y = m·x + b</b>. Ihr Graph ist immer eine <b>gerade Linie</b>.</p>
+        <figure className="fig">
+          <div>
+            <svg width="280" height="200" viewBox="0 0 280 200">
+              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <text x="265" y="105" fontSize="11" fill="#6e6e73">x</text>
+              <text x="143" y="18" fontSize="11" fill="#6e6e73">y</text>
+              <line x1="40" y1="160" x2="240" y2="40" stroke="#5856d6" strokeWidth="3"/>
+              <circle cx="140" cy="100" r="4" fill="#5856d6"/>
+              <text x="146" y="116" fontSize="11" fill="#5856d6">b</text>
+              <text x="180" y="55" fontSize="13" fontWeight="700" fill="#5856d6">y = mx + b</text>
+            </svg>
+            <figcaption>Lineare Funktion — eine Gerade durch das Koordinatensystem</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Allgemeine Form" ausdruck={<>y = m · x + b</>} hinweis="m = Steigung, b = y-Achsenabschnitt" />
           <Formel name="Steigung" ausdruck={<>m = (y₂ − y₁) / (x₂ − x₁)</>} hinweis="aus 2 Punkten" />
@@ -48,6 +63,28 @@ export function InhaltFunktionen() {
 
       <Sektion nr={4} titel="Quadratische Funktionen — die Parabeln">
         <p>Eine <b>quadratische Funktion</b> hat ein x², z.B. f(x) = x². Ihr Graph ist eine <b>Parabel</b> — sieht aus wie ein U.</p>
+        <figure className="fig">
+          <div>
+            <svg width="280" height="200" viewBox="0 0 280 200">
+              <line x1="20" y1="160" x2="260" y2="160" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <path d="M 40 30 Q 140 250 240 30" fill="none" stroke="#5856d6" strokeWidth="3"/>
+              <circle cx="140" cy="150" r="5" fill="#ef4444"/>
+              <text x="148" y="155" fontSize="12" fontWeight="700" fill="#ef4444">Scheitel</text>
+              <text x="180" y="50" fontSize="13" fontWeight="700" fill="#5856d6">y = x²</text>
+            </svg>
+            <figcaption>Eine Parabel mit Scheitel im Ursprung</figcaption>
+          </div>
+          <div>
+            <svg width="280" height="200" viewBox="0 0 280 200">
+              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <path d="M 40 170 Q 140 -90 240 170" fill="none" stroke="#ef4444" strokeWidth="3"/>
+              <text x="170" y="40" fontSize="13" fontWeight="700" fill="#ef4444">y = −x²</text>
+            </svg>
+            <figcaption>a &lt; 0: Parabel ist nach unten geöffnet</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Normalform" ausdruck={<>f(x) = ax² + bx + c</>} />
           <Formel name="Scheitelform" ausdruck={<>f(x) = a(x − d)² + e</>} hinweis="Scheitel bei S(d|e)" />

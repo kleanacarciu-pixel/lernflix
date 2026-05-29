@@ -11,6 +11,20 @@ export function InhaltProzent() {
       <Sektion nr={1} titel="Was ist Prozent?">
         <p><b>1 Prozent (%) = 1 Hundertstel</b>. Genau wie 1 Cent ein Hundertstel von einem Euro ist.</p>
         <div className="gross">1% = 1/100 = 0,01</div>
+        <figure className="fig">
+          <div>
+            <svg width="220" height="220" viewBox="0 0 220 220">
+              {Array.from({ length: 10 }).map((_, i) =>
+                Array.from({ length: 10 }).map((_, j) => {
+                  const idx = i * 10 + j;
+                  const filled = idx < 25;
+                  return <rect key={`${i}-${j}`} x={10 + j * 20} y={10 + i * 20} width="18" height="18" fill={filled ? "#34c759" : "#fff"} stroke="#34c759" strokeWidth="1" />;
+                })
+              )}
+            </svg>
+            <figcaption>25 % = 25 von 100 Kästchen ausgefüllt</figcaption>
+          </div>
+        </figure>
         <p>Wenn du <b>50 % von etwas hast</b>, hast du die Hälfte. Wenn du <b>25 % hast</b>, hast du ein Viertel. Wenn du <b>100 % hast</b>, hast du alles. Wenn du <b>200 % gibst</b>, lügst du — mehr als 100 % geht nicht (außer beim Sport-Trainer).</p>
         <h3>Wichtige Begriffe</h3>
         <div className="karten">
@@ -60,6 +74,24 @@ export function InhaltProzent() {
 
       <Sektion nr={5} titel="Zinsrechnung — Mathe mit Geld">
         <p>Zinsen sind nichts anderes als Prozente, die du <b>für ein Jahr</b> bekommst (oder zahlst).</p>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="160" viewBox="0 0 320 160">
+              <line x1="20" y1="140" x2="300" y2="140" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="20" y1="20" x2="20" y2="140" stroke="#1d1d1f" strokeWidth="2"/>
+              <polyline points="20,130 70,125 120,118 170,108 220,93 270,72" fill="none" stroke="#34c759" strokeWidth="3"/>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <g key={i}>
+                  <line x1={20 + i * 50} y1="140" x2={20 + i * 50} y2="145" stroke="#1d1d1f" strokeWidth="1"/>
+                  <text x={20 + i * 50 - 4} y="158" fontSize="11" fill="#6e6e73">{i}</text>
+                </g>
+              ))}
+              <text x="120" y="14" fontSize="13" fontWeight="700" fill="#34c759">Zinseszins-Wachstum</text>
+              <text x="150" y="155" fontSize="11" fill="#6e6e73">Jahre</text>
+            </svg>
+            <figcaption>So wächst dein Geld mit Zinseszins</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Jahres-Zinsen" ausdruck={<>Z = K · p / 100</>} hinweis="K = Kapital, p = Zinssatz" />
           <Formel name="Monats-Zinsen" ausdruck={<>Z = K · p · m / (100 · 12)</>} hinweis="m = Monate" />

@@ -28,6 +28,20 @@ export function InhaltGleichungen() {
         <p>Eine <b>lineare Gleichung</b> sieht so aus: ax + b = c. Das x kommt nur einmal vor und nicht hochgehoben. Du musst nur das x „freistellen".</p>
         <h3>Die goldene Regel</h3>
         <div className="merke"><b>WICHTIG:</b> Was du auf der einen Seite machst, musst du auch auf der anderen Seite machen. Wie eine Waage: kommt links was weg, muss rechts auch was weg. Sonst kippt sie.</div>
+        <figure className="fig">
+          <div>
+            <svg width="340" height="200" viewBox="0 0 340 200">
+              <polygon points="170,180 150,195 190,195" fill="#1d1d1f"/>
+              <line x1="170" y1="80" x2="170" y2="180" stroke="#1d1d1f" strokeWidth="3"/>
+              <line x1="30" y1="80" x2="310" y2="80" stroke="#ff9500" strokeWidth="3"/>
+              <ellipse cx="60" cy="78" rx="40" ry="14" fill="#ff9500" opacity="0.3" stroke="#ff9500" strokeWidth="2"/>
+              <text x="50" y="55" fontSize="16" fontWeight="700" fill="#ff9500">3x+5</text>
+              <ellipse cx="280" cy="78" rx="40" ry="14" fill="#ff9500" opacity="0.3" stroke="#ff9500" strokeWidth="2"/>
+              <text x="271" y="55" fontSize="16" fontWeight="700" fill="#ff9500">20</text>
+            </svg>
+            <figcaption>Eine Gleichung ist wie eine Waage im Gleichgewicht</figcaption>
+          </div>
+        </figure>
         <h3>Vorgehen</h3>
         <ol style={{ marginLeft: "20px" }}>
           <li>Klammern auflösen</li>
@@ -71,6 +85,22 @@ export function InhaltGleichungen() {
 
       <Sektion nr={5} titel="Quadratische Gleichungen">
         <p>Hier steht das x <b>hochgehoben mit 2</b>. Gleichungen der Form ax² + bx + c = 0.</p>
+        <figure className="fig">
+          <div>
+            <svg width="280" height="200" viewBox="0 0 280 200">
+              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <text x="265" y="105" fontSize="11" fill="#6e6e73">x</text>
+              <text x="143" y="18" fontSize="11" fill="#6e6e73">y</text>
+              <path d="M 40 30 Q 140 250 240 30" fill="none" stroke="#ff9500" strokeWidth="3"/>
+              <circle cx="90" cy="100" r="5" fill="#ff9500"/>
+              <circle cx="190" cy="100" r="5" fill="#ff9500"/>
+              <text x="80" y="125" fontSize="13" fontWeight="700" fill="#ff9500">x₁</text>
+              <text x="186" y="125" fontSize="13" fontWeight="700" fill="#ff9500">x₂</text>
+            </svg>
+            <figcaption>Die Nullstellen sind die x-Werte, wo die Parabel die x-Achse kreuzt</figcaption>
+          </div>
+        </figure>
         <h3>Spezialfälle (ohne Formel)</h3>
         <div className="formeln">
           <Formel name="Reine quadratische" ausdruck={<>x² = a ⇒ x = ±√a</>} hinweis="zwei Lösungen!" />

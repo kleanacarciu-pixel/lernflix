@@ -34,6 +34,50 @@ export function InhaltElektrizitaet() {
       </Sektion>
 
       <Sektion nr={3} titel="Reihenschaltung und Parallelschaltung">
+        <figure className="fig">
+          <div>
+            <svg width="280" height="160" viewBox="0 0 280 160">
+              <line x1="20" y1="80" x2="60" y2="80" stroke="#1d1d1f" strokeWidth="2"/>
+              <rect x="60" y="70" width="40" height="20" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+              <line x1="100" y1="80" x2="140" y2="80" stroke="#1d1d1f" strokeWidth="2"/>
+              <rect x="140" y="70" width="40" height="20" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+              <line x1="180" y1="80" x2="240" y2="80" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="20" y1="80" x2="20" y2="120" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="240" y1="80" x2="240" y2="120" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="20" y1="120" x2="100" y2="120" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="120" y1="120" x2="240" y2="120" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="100" y1="110" x2="100" y2="130" stroke="#1d1d1f" strokeWidth="3"/>
+              <line x1="120" y1="115" x2="120" y2="125" stroke="#1d1d1f" strokeWidth="2"/>
+              <text x="68" y="65" fontSize="11" fontWeight="700">R₁</text>
+              <text x="148" y="65" fontSize="11" fontWeight="700">R₂</text>
+              <text x="100" y="148" fontSize="11" fontWeight="700">U</text>
+            </svg>
+            <figcaption>Reihenschaltung: R₁ und R₂ hintereinander</figcaption>
+          </div>
+          <div>
+            <svg width="280" height="160" viewBox="0 0 280 160">
+              <line x1="20" y1="60" x2="80" y2="60" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="80" y1="40" x2="80" y2="100" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="80" y1="40" x2="140" y2="40" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="80" y1="100" x2="140" y2="100" stroke="#1d1d1f" strokeWidth="2"/>
+              <rect x="140" y="30" width="40" height="20" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+              <rect x="140" y="90" width="40" height="20" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+              <line x1="180" y1="40" x2="200" y2="40" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="180" y1="100" x2="200" y2="100" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="200" y1="40" x2="200" y2="100" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="200" y1="60" x2="260" y2="60" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="20" y1="60" x2="20" y2="130" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="260" y1="60" x2="260" y2="130" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="20" y1="130" x2="130" y2="130" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="150" y1="130" x2="260" y2="130" stroke="#1d1d1f" strokeWidth="2"/>
+              <line x1="130" y1="120" x2="130" y2="140" stroke="#1d1d1f" strokeWidth="3"/>
+              <line x1="150" y1="125" x2="150" y2="135" stroke="#1d1d1f" strokeWidth="2"/>
+              <text x="148" y="25" fontSize="11" fontWeight="700">R₁</text>
+              <text x="148" y="125" fontSize="11" fontWeight="700">R₂</text>
+            </svg>
+            <figcaption>Parallelschaltung: R₁ und R₂ nebeneinander</figcaption>
+          </div>
+        </figure>
         <h3>Reihenschaltung (hintereinander)</h3>
         <div className="formeln">
           <Formel name="Stromstärke" ausdruck={<>I = I₁ = I₂ = …</>} hinweis="überall gleich" />

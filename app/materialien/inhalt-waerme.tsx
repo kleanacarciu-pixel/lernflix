@@ -10,6 +10,20 @@ export function InhaltWaerme() {
 
       <Sektion nr={1} titel="Temperatur und Skalen">
         <p>Temperatur misst, wie schnell Atome <b>herumzappeln</b>. Je heißer, desto schneller die Bewegung.</p>
+        <figure className="fig">
+          <div>
+            <svg width="100" height="280" viewBox="0 0 100 280">
+              <rect x="35" y="20" width="30" height="200" rx="8" fill="#fff" stroke="#dc2626" strokeWidth="2"/>
+              <rect x="35" y="120" width="30" height="100" fill="#fee2e2"/>
+              <circle cx="50" cy="240" r="22" fill="#dc2626"/>
+              <line x1="35" y1="20" x2="65" y2="20" stroke="#dc2626" strokeWidth="2"/>
+              <text x="72" y="25" fontSize="11" fill="#6e6e73">100°C</text>
+              <text x="72" y="125" fontSize="11" fill="#6e6e73">50°C</text>
+              <text x="72" y="225" fontSize="11" fill="#6e6e73">0°C</text>
+            </svg>
+            <figcaption>Thermometer</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Celsius → Kelvin" ausdruck={<>T(K) = T(°C) + 273,15</>} />
           <Formel name="Kelvin → Celsius" ausdruck={<>T(°C) = T(K) − 273,15</>} />
@@ -51,6 +65,26 @@ export function InhaltWaerme() {
 
       <Sektion nr={3} titel="Aggregatzustände und Phasenübergänge">
         <p>Stoffe können <b>fest, flüssig oder gasförmig</b> sein. Beim Wechsel braucht's Energie, ohne dass sich die Temperatur ändert.</p>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="160" viewBox="0 0 320 160">
+              <rect x="20" y="40" width="80" height="80" rx="6" fill="#dbeafe" stroke="#0071e3" strokeWidth="2"/>
+              <text x="40" y="135" fontSize="13" fontWeight="700">FEST</text>
+              {[35, 55, 75, 85].map((x, i) => [40, 60, 80, 100].map((y, j) => <circle key={`${i}-${j}`} cx={x + (i % 2) * 5} cy={y} r="3" fill="#0071e3"/>))}
+              <line x1="100" y1="80" x2="130" y2="80" stroke="#dc2626" strokeWidth="2"/>
+              <polygon points="128,76 138,80 128,84" fill="#dc2626"/>
+              <rect x="140" y="40" width="80" height="80" rx="6" fill="#cffafe" stroke="#06b6d4" strokeWidth="2"/>
+              <text x="155" y="135" fontSize="13" fontWeight="700">FLÜSSIG</text>
+              {[150, 165, 180, 195, 210].map((x, i) => [55, 75, 95, 110].map((y, j) => <circle key={`${i}-${j}`} cx={x + (j % 2) * 5} cy={y} r="3" fill="#06b6d4"/>))}
+              <line x1="220" y1="80" x2="250" y2="80" stroke="#dc2626" strokeWidth="2"/>
+              <polygon points="248,76 258,80 248,84" fill="#dc2626"/>
+              <rect x="260" y="40" width="50" height="80" rx="6" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2"/>
+              <text x="265" y="135" fontSize="13" fontWeight="700">GAS</text>
+              {[268, 278, 290, 285, 295, 275].map((x, i) => <circle key={i} cx={x} cy={50 + i * 12} r="3" fill="#f59e0b"/>)}
+            </svg>
+            <figcaption>Die drei Aggregatzustände — Atome werden mit mehr Energie freier</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Schmelzwärme" ausdruck={<>Q = q<sub>s</sub> · m</>} hinweis="q_s = spez. Schmelzwärme" />
           <Formel name="Verdampfungs­wärme" ausdruck={<>Q = q<sub>v</sub> · m</>} />

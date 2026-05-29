@@ -20,6 +20,26 @@ export function InhaltOptik() {
 
       <Sektion nr={2} titel="Reflexion am Spiegel">
         <div className="gross">Einfallswinkel = Reflexionswinkel</div>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="200" viewBox="0 0 320 200">
+              <line x1="40" y1="160" x2="280" y2="160" stroke="#8b5cf6" strokeWidth="3"/>
+              <text x="285" y="165" fontSize="11" fill="#8b5cf6">Spiegel</text>
+              <line x1="160" y1="160" x2="160" y2="40" stroke="#1d1d1f" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="50" y1="50" x2="160" y2="160" stroke="#ef4444" strokeWidth="2.5"/>
+              <polygon points="158,158 152,150 148,158" fill="#ef4444"/>
+              <line x1="160" y1="160" x2="270" y2="50" stroke="#ef4444" strokeWidth="2.5"/>
+              <polygon points="268,52 262,48 264,42" fill="#ef4444"/>
+              <path d="M 140 80 A 30 30 0 0 1 160 60" fill="none" stroke="#0071e3" strokeWidth="1.5"/>
+              <text x="125" y="86" fontSize="13" fontWeight="700" fill="#0071e3">α</text>
+              <path d="M 160 60 A 30 30 0 0 1 180 80" fill="none" stroke="#0071e3" strokeWidth="1.5"/>
+              <text x="183" y="86" fontSize="13" fontWeight="700" fill="#0071e3">β</text>
+              <text x="50" y="35" fontSize="12" fontWeight="700" fill="#ef4444">Einfallend</text>
+              <text x="222" y="35" fontSize="12" fontWeight="700" fill="#ef4444">Reflektiert</text>
+            </svg>
+            <figcaption>Strahl trifft Spiegel: α = β (Lot gestrichelt)</figcaption>
+          </div>
+        </figure>
         <p>Wenn Licht auf einen Spiegel trifft, prallt es im <b>gleichen Winkel</b> zurück, wie es ankam. Beide Winkel werden zum <b>Lot</b> (senkrecht zum Spiegel) gemessen.</p>
         <div className="karten">
           <div className="karte"><h5>Ebener Spiegel</h5><p>Aufrecht, gleich groß wie das Objekt, virtuell, seitenverkehrt</p></div>
@@ -53,6 +73,25 @@ export function InhaltOptik() {
       </Sektion>
 
       <Sektion nr={4} titel="Linsen">
+        <figure className="fig">
+          <div>
+            <svg width="320" height="200" viewBox="0 0 320 200">
+              <ellipse cx="160" cy="100" rx="20" ry="60" fill="#ede9fe" stroke="#8b5cf6" strokeWidth="2"/>
+              <line x1="20" y1="100" x2="300" y2="100" stroke="#1d1d1f" strokeWidth="1" strokeDasharray="3,2"/>
+              <circle cx="220" cy="100" r="4" fill="#ef4444"/>
+              <text x="225" y="120" fontSize="12" fontWeight="700" fill="#ef4444">F</text>
+              <circle cx="100" cy="100" r="4" fill="#ef4444"/>
+              <text x="80" y="120" fontSize="12" fontWeight="700" fill="#ef4444">F</text>
+              <line x1="40" y1="60" x2="160" y2="60" stroke="#06b6d4" strokeWidth="2"/>
+              <line x1="160" y1="60" x2="220" y2="100" stroke="#06b6d4" strokeWidth="2"/>
+              <polygon points="218,98 218,102 226,100" fill="#06b6d4"/>
+              <line x1="40" y1="140" x2="160" y2="140" stroke="#06b6d4" strokeWidth="2"/>
+              <line x1="160" y1="140" x2="220" y2="100" stroke="#06b6d4" strokeWidth="2"/>
+              <text x="135" y="40" fontSize="11" fontWeight="700">Sammellinse</text>
+            </svg>
+            <figcaption>Sammellinse bündelt parallele Strahlen im Brennpunkt F</figcaption>
+          </div>
+        </figure>
         <div className="karten">
           <div className="karte"><h5>Sammellinse (konvex)</h5><p>Bündelt Licht. Verwendet in Brillen für Weitsichtige, Lupen, Kameras.</p></div>
           <div className="karte"><h5>Zerstreuungslinse (konkav)</h5><p>Streut Licht. Brillen für Kurzsichtige.</p></div>

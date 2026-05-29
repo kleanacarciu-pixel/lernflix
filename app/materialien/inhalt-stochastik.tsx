@@ -11,6 +11,45 @@ export function InhaltStochastik() {
       <Sektion nr={1} titel="Was ist Wahrscheinlichkeit?">
         <p>Die <b>Wahrscheinlichkeit (P)</b> sagt, wie wahrscheinlich ein Ereignis ist. Sie liegt zwischen 0 (unmöglich) und 1 (sicher).</p>
         <div className="gross">P(A) = Anzahl günstige / Anzahl möglich</div>
+        <figure className="fig">
+          <div>
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
+              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="50" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="30" cy="50" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="50" r="5" fill="#ec4899"/>
+              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
+              <circle cx="50" cy="70" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
+            </svg>
+            <figcaption>Würfelseite mit 8 (gibt's nicht)</figcaption>
+          </div>
+          <div>
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
+              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="30" cy="50" r="5" fill="#ec4899"/>
+              <circle cx="50" cy="50" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="50" r="5" fill="#ec4899"/>
+              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
+            </svg>
+            <figcaption>Würfelseite mit 7 (gibt's auch nicht)</figcaption>
+          </div>
+          <div>
+            <svg width="100" height="100" viewBox="0 0 100 100">
+              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
+              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
+              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
+              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
+            </svg>
+            <figcaption>P(4) = 1/6 ≈ 16,7 %</figcaption>
+          </div>
+        </figure>
         <div className="karten">
           <div className="karte"><h5>P = 0</h5><p>unmöglich (z.B. „Würfel zeigt 7")</p></div>
           <div className="karte"><h5>P = 0,5</h5><p>50/50 (z.B. „Münze Kopf")</p></div>
@@ -23,6 +62,35 @@ export function InhaltStochastik() {
 
       <Sektion nr={2} titel="Mehrstufige Zufallsversuche">
         <p>Wenn du <b>nacheinander</b> mehrere Sachen machst (z.B. 2× würfeln), nutzt du ein <b>Baumdiagramm</b>.</p>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="200" viewBox="0 0 320 200">
+              <circle cx="160" cy="30" r="12" fill="#ec4899" opacity="0.3" stroke="#ec4899" strokeWidth="2"/>
+              <text x="155" y="35" fontSize="11" fontWeight="700">S</text>
+              <line x1="160" y1="42" x2="80" y2="80" stroke="#ec4899" strokeWidth="2"/>
+              <line x1="160" y1="42" x2="240" y2="80" stroke="#ec4899" strokeWidth="2"/>
+              <text x="105" y="65" fontSize="11" fill="#6e6e73">½ K</text>
+              <text x="195" y="65" fontSize="11" fill="#6e6e73">½ Z</text>
+              <circle cx="80" cy="90" r="10" fill="#ec4899" opacity="0.3" stroke="#ec4899" strokeWidth="2"/>
+              <text x="76" y="94" fontSize="10" fontWeight="700">K</text>
+              <circle cx="240" cy="90" r="10" fill="#ec4899" opacity="0.3" stroke="#ec4899" strokeWidth="2"/>
+              <text x="237" y="94" fontSize="10" fontWeight="700">Z</text>
+              <line x1="80" y1="100" x2="40" y2="150" stroke="#ec4899" strokeWidth="2"/>
+              <line x1="80" y1="100" x2="120" y2="150" stroke="#ec4899" strokeWidth="2"/>
+              <line x1="240" y1="100" x2="200" y2="150" stroke="#ec4899" strokeWidth="2"/>
+              <line x1="240" y1="100" x2="280" y2="150" stroke="#ec4899" strokeWidth="2"/>
+              <text x="20" y="170" fontSize="12" fontWeight="700">KK</text>
+              <text x="105" y="170" fontSize="12" fontWeight="700">KZ</text>
+              <text x="185" y="170" fontSize="12" fontWeight="700">ZK</text>
+              <text x="270" y="170" fontSize="12" fontWeight="700">ZZ</text>
+              <text x="20" y="190" fontSize="11" fill="#6e6e73">¼</text>
+              <text x="105" y="190" fontSize="11" fill="#6e6e73">¼</text>
+              <text x="185" y="190" fontSize="11" fill="#6e6e73">¼</text>
+              <text x="270" y="190" fontSize="11" fill="#6e6e73">¼</text>
+            </svg>
+            <figcaption>Baumdiagramm: 2 Mal Münze werfen</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Pfad-Multiplikation" ausdruck={<>P(Pfad) = P₁ · P₂ · …</>} hinweis="auf einem Pfad alles multiplizieren" />
           <Formel name="Pfad-Addition" ausdruck={<>P(A) = Summe der Pfade</>} hinweis="bei mehreren günstigen Pfaden" />

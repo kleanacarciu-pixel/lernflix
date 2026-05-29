@@ -11,6 +11,20 @@ export function InhaltBrueche() {
       <Sektion nr={1} titel="Was ist überhaupt ein Bruch?">
         <p>Ein Bruch hat <b>oben</b> eine Zahl (den <b>Zähler</b>) und <b>unten</b> eine Zahl (den <b>Nenner</b>). Dazwischen ist ein Strich — der Bruchstrich.</p>
         <div className="gross">3 / 4 → Zähler oben, Nenner unten</div>
+        <figure className="fig">
+          <div>
+            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 0 1 110 60 Z" fill="#0071e3" opacity="0.7"/></svg>
+            <figcaption>¼ der Pizza</figcaption>
+          </div>
+          <div>
+            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 1 1 10 60 Z" fill="#0071e3" opacity="0.7"/></svg>
+            <figcaption>½ der Pizza</figcaption>
+          </div>
+          <div>
+            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 1 1 10 60 Z" fill="#0071e3" opacity="0.7"/><path d="M60 60 L10 60 A50 50 0 0 1 26 25 Z" fill="#0071e3" opacity="0.7"/></svg>
+            <figcaption>¾ der Pizza</figcaption>
+          </div>
+        </figure>
         <p>Stell dir eine Pizza vor, die in <b>4 gleiche Stücke</b> geschnitten ist. Wenn du <b>3 davon</b> isst, hast du ¾ der Pizza weggeputzt.</p>
         <Joke>Wenn jemand sagt „Ich nehme die Hälfte", meint er ½. Wenn er sagt „Ich nehme nur ein Stückchen", schau besser nach — meistens war's mehr.</Joke>
         <h3>Wichtige Wörter</h3>
@@ -38,6 +52,24 @@ export function InhaltBrueche() {
 
       <Sektion nr={3} titel="Brüche addieren und subtrahieren">
         <p>Hier kommt die wichtigste Regel: <b>Brüche kannst du nur addieren oder subtrahieren, wenn der Nenner gleich ist!</b> Sind die Nenner verschieden, musst du sie erst auf einen <b>gemeinsamen Nenner</b> bringen.</p>
+        <figure className="fig">
+          <div>
+            <svg width="320" height="120" viewBox="0 0 320 120">
+              <rect x="10" y="40" width="80" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="10" y="40" width="40" height="50" fill="#0071e3" opacity="0.7"/>
+              <text x="36" y="110" fontSize="14" fontWeight="700">1/2</text>
+              <text x="105" y="72" fontSize="22" fontWeight="700" fill="#0071e3">+</text>
+              <rect x="130" y="40" width="80" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="130" y="40" width="20" height="50" fill="#0071e3" opacity="0.7"/>
+              <text x="160" y="110" fontSize="14" fontWeight="700">1/4</text>
+              <text x="225" y="72" fontSize="22" fontWeight="700" fill="#0071e3">=</text>
+              <rect x="250" y="40" width="60" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="250" y="40" width="45" height="50" fill="#0071e3" opacity="0.7"/>
+              <text x="265" y="110" fontSize="14" fontWeight="700">3/4</text>
+            </svg>
+            <figcaption>½ + ¼ = ¾ (auf gleichen Nenner gebracht)</figcaption>
+          </div>
+        </figure>
         <div className="formeln">
           <Formel name="Gleicher Nenner" ausdruck={<>a/n + b/n = (a + b)/n</>} hinweis="Zähler addieren, Nenner gleich lassen" />
           <Formel name="Verschiedener Nenner" ausdruck={<>a/b + c/d = (a·d + c·b) / (b·d)</>} hinweis="Über Kreuz erweitern" />
