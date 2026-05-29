@@ -124,12 +124,47 @@ function esc(s: unknown): string {
 }
 
 // Wandelt die einfache Bruch-Notation BRUCH(zaehler;nenner) in HTML um.
-// Klasse <= 6: "zaehler : nenner". Klasse >= 7: gestapelter Bruch.
+// Mit korrektem Parser, der Verschachtelung versteht.
 function bruecheUmwandeln(s: string, istUnterstufe: boolean): string {
-  return s.replace(/BRUCH\s*\(\s*([^;)]+?)\s*;\s*([^)]+?)\s*\)/g, (_match, a, b) => {
-    if (istUnterstufe) return `${a} : ${b}`;
-    return `<span class="frac"><span class="num">${a}</span><span class="den">${b}</span></span>`;
-  });
+  let out = s;
+  let safety = 50;
+  while (safety-- > 0) {
+    const start = out.indexOf("BRUCH(");
+    if (start < 0) break;
+
+    let depth = 1;
+    let i = start + 6;
+    let semi = -1;
+    while (i < out.length && depth > 0) {
+      const c = out[i];
+      if (c === "(") depth++;
+      else if (c === ")") {
+        depth--;
+        if (depth === 0) break;
+      } else if (c === ";" && depth === 1 && semi < 0) {
+        semi = i;
+      }
+      i++;
+    }
+
+    if (depth !== 0 || semi < 0) {
+      // Ungueltig — entferne "BRUCH(" als Schutz, damit Schleife terminiert
+      out = out.slice(0, start) + out.slice(start + 6);
+      continue;
+    }
+
+    const num = out.slice(start + 6, semi).trim();
+    const den = out.slice(semi + 1, i).trim();
+    const ersatz = istUnterstufe
+      ? `(${num}) : (${den})`
+      : `<span class="frac"><span class="num">${num}</span><span class="den">${den}</span></span>`;
+    out = out.slice(0, start) + ersatz + out.slice(i + 1);
+  }
+  // Klammern um simple Tokens wieder entfernen fuer Lesbarkeit ("(a) : (b)" -> "a : b")
+  if (istUnterstufe) {
+    out = out.replace(/\(([a-zA-Z0-9π₀-₉ⁿ⁰-⁹ₙ.\-+]+)\)\s*:\s*\(([a-zA-Z0-9π₀-₉ⁿ⁰-⁹ₙ.\-+]+)\)/g, "$1 : $2");
+  }
+  return out;
 }
 
 // Erlaubt nur <sup>, <sub> als Inline-HTML. Alles andere wird escapet.
@@ -223,7 +258,7 @@ MATHE-SCHREIBWEISE in allen Formeln und Texten:
 - Subscripts als Unicode: x₁, x₂, xₙ, xₙ₊₁ — oder <sub>...</sub>.
 - Superscripts als Unicode: x², x³, xⁿ — oder <sup>...</sup>.
 - Wurzel immer: √
-- BRÜCHE: schreibe sie IMMER als BRUCH(zaehler;nenner). Beispiel: statt "p/2" schreibe "BRUCH(p;2)". Statt "(a+b)/c" schreibe "BRUCH(a+b;c)". NIEMALS Schrägstrich /. NIEMALS <span class="frac">. Der Server baut den Bruch dann automatisch passend zur Klasse (${bruchHinweis}).
+- BRÜCHE — KRITISCH: JEDE Division/Teilung MUSS als BRUCH(zaehler;nenner) geschrieben sein. Verschachtelung erlaubt: BRUCH(a; BRUCH(b;c)). Beispiele: statt "p/2" schreibe "BRUCH(p;2)". Statt "(a+b)/c" schreibe "BRUCH(a+b;c)". NIEMALS Schrägstrich /. NIEMALS <span class="frac">. Der Server baut den Bruch passend zur Klasse: ${bruchHinweis}
 - Erlaubte HTML-Tags in deinen Texten: <sup>, <sub>. Sonst kein HTML in Formeln.
 
 ERSTELLE FOLGENDE ABSCHNITTE ALS REINES HTML:

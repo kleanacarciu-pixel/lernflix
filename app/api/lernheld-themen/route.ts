@@ -55,13 +55,15 @@ MATHE-SCHREIBWEISE — STRENG BEACHTEN (in ALLEN Feldern: formeln, erklaerung, r
 (3) Superscripts als Unicode: x², x³, xⁿ, x⁻¹, 10⁻³.
     Verfuegbare Unicode-Superscripts: ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁿ ⁱ
     Falls Unicode nicht reicht: <sup>...</sup>.
-(4) BRÜCHE (SEHR WICHTIG): schreibe sie IMMER als BRUCH(zaehler;nenner). Nichts anderes!
+(4) BRÜCHE — KRITISCH: JEDE Division/Teilung MUSS als BRUCH(zaehler;nenner) geschrieben sein. Verschachtelung erlaubt. KEINE Ausnahme.
     Beispiele:
-      "p halbe" -> BRUCH(p;2)
-      "a geteilt durch b" -> BRUCH(a;b)
-      "(x+1) durch (x-1)" -> BRUCH(x+1;x-1)
-      "minus p halbe plus minus Wurzel ..." -> "x = -BRUCH(p;2) ± √(BRUCH(p;2)² - q)"
-    NIEMALS Schrägstrich /. NIEMALS <span class="frac">.
+      "p halbe"                  -> BRUCH(p;2)
+      "a geteilt durch b"        -> BRUCH(a;b)
+      "(x+1) durch (x-1)"        -> BRUCH(x+1;x-1)
+      "x = -p/2 ± Wurzel(...)"   -> "x = -BRUCH(p;2) ± √(BRUCH(p;2)² - q)"
+      Newton: "xₙ₊₁ = (xₙ + a/xₙ)/2" -> "xₙ₊₁ = BRUCH(xₙ + BRUCH(a;xₙ); 2)"
+    VERBOTEN ueberall in Zaehler, Nenner und Texten: der Schraegstrich "/" als Bruchstrich.
+    VERBOTEN: das Wort "BRUCH" ohne Klammer, halbfertige BRUCH(... ohne zweites Argument.
     Der Server konvertiert BRUCH(...) automatisch passend: ${bruchHinweis}
 (5) Wurzel immer mit echtem Symbol: √. Niemals "sqrt(…)" oder "\\sqrt".
 (6) Weitere Symbole als Unicode: π · ÷ ± ∠ ° ∞ ≤ ≥ ≠ ⊥ ∥ ∈ Δ ∑.
