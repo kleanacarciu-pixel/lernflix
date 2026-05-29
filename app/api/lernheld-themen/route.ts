@@ -25,6 +25,12 @@ export async function POST(request: Request) {
       ? `\n\nDIE SCHÜLERIN HAT SCHWIERIGKEITEN ODER WÜNSCHE:\n"${schwierigkeiten}"\nBerücksichtige das. Bei den Themen, die sie als schwer empfindet, mach die Erklärung besonders einfach und die Beispiele konkreter. Wenn sie ein Thema als wichtig markiert, das in den Fotos vorkommt, gib ihm Priorität.`
       : "";
 
+    const klasseZahl = parseInt(klasse) || 0;
+    const istUnterstufe = klasseZahl > 0 && klasseZahl <= 6;
+    const bruchHinweis = istUnterstufe
+      ? `Klasse ${klasse}: Schreibe Teilungen IMMER mit Doppelpunkt " : ". NIEMALS mit Schrägstrich "/". Beispiel: 12 : 4 = 3, nicht 12/4 = 3.`
+      : `Klasse ${klasse}: Verwende für echte mathematische Brüche IMMER die HTML-Schreibweise <span class="frac"><span class="num">ZAEHLER</span><span class="den">NENNER</span></span>. NIEMALS Schrägstrich "/". Beispiel: x = -<span class="frac"><span class="num">p</span><span class="den">2</span></span> ± √((<span class="frac"><span class="num">p</span><span class="den">2</span></span>)² - q).`;
+
     const textPrompt = `Du bist eine deutsche ${fach}-Lehrerin. Schau dir alle Fotos sehr genau an (Stofflisten, Buchseiten, Übungen einer Klasse-${klasse}-Schülerin).
 
 DEINE AUFGABE:
@@ -33,17 +39,41 @@ Liste ALLE Themen und Unterthemen auf, die in den Fotos vorkommen. Sei vollstän
 Pro Thema gib mir kompakt aber konkret:
 - name: kurzer Themen-Name
 - erklaerung: 2–3 Sätze in einfacher kindgerechter Sprache, mit Alltagsbeispiel ("Stell dir vor...")
-- formeln: Liste der relevanten Formeln (echte Symbole: ², ³, √, ·, π, °)
+- formeln: Liste der relevanten Formeln
 - regel: die wichtigste Regel oder das Gesetz in 1 Satz
 - beispiel_aufgabe: konkrete kleine Beispielaufgabe mit Zahlen
 - beispiel_loesung: Schritt-für-Schritt-Lösung (3–4 kurze Schritte)
 - uebung_aufgabe: eine Übungsaufgabe für den Schüler
 - uebung_loesung: ausführliche Lösung der Übungsaufgabe
 
-WICHTIG:
+MATHE-SCHREIBWEISE — STRENG BEACHTEN (in ALLEN Feldern: formeln, erklaerung, regel, beispiel_loesung, uebung_loesung, …):
+
+(1) NIEMALS LaTeX-Notation, NIEMALS Underscores, NIEMALS Caret. Niemals "x_n", "x_{n+1}", "x^2", "\\sqrt{...}".
+(2) Tiefgestellte Zeichen (Subscripts) IMMER als Unicode: x₁, x₂, x₃, …, xₙ, xₙ₊₁, aₖ, vₐ.
+    Verfuegbare Unicode-Subscripts: ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₍ ₎ ₐ ₑ ᵢ ⱼ ₖ ₗ ₘ ₙ ₒ ₚ ᵣ ₛ ₜ ᵤ ᵥ ₓ
+    Falls Unicode nicht reicht: <sub>n+1</sub>.
+(3) Hochgestellte Zeichen (Superscripts) als Unicode: x², x³, x⁴, x⁵, xⁿ, x⁻¹, 10⁻³.
+    Verfuegbare Unicode-Superscripts: ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁿ ⁱ
+    Falls Unicode nicht reicht: <sup>...</sup>.
+(4) Brüche / Teilungen (SEHR WICHTIG, je nach Klasse unterschiedlich):
+    ${bruchHinweis}
+(5) Wurzel immer mit echtem Symbol: √. Niemals "sqrt(…)" oder "\\sqrt".
+(6) Weitere Symbole als Unicode: π · ÷ ± ∠ ° ∞ ≤ ≥ ≠ ⊥ ∥ ∈ Δ ∑.
+
+ERLAUBTE HTML-Tags in den Feldern (sonst kein HTML, kein Markdown):
+<span class="frac"><span class="num">…</span><span class="den">…</span></span>, <sup>…</sup>, <sub>…</sub>.
+
+BEISPIELE — RICHTIG vs FALSCH:
+  RICHTIG: x² + 4x + 3 = 0     FALSCH: x^2 + 4x + 3 = 0
+  RICHTIG: xₙ₊₁ = …            FALSCH: x_{n+1} = …
+  RICHTIG (${istUnterstufe ? "Klasse ≤6" : "Klasse ≥7"}): ${istUnterstufe ? "8 : 4 = 2" : '<span class="frac"><span class="num">8</span><span class="den">4</span></span> = 2'}
+  FALSCH: 8/4 = 2
+
+WEITERE REGELN:
 - Verwende echte deutsche Umlaute: ä ö ü ß. Niemals "ae oe ue ss".
 - Erwähne niemals KI, AI, Sprachmodelle, Anthropic, Claude.
-- Antworte AUSSCHLIESSLICH mit gültigem JSON in dieser Form, keine Vorrede, kein Markdown, keine Backticks:
+
+JSON-AUSGABE — nur das, keine Vorrede, kein Markdown, keine Backticks:
 
 {"themen":[{"name":"...","erklaerung":"...","formeln":["...","..."],"regel":"...","beispiel_aufgabe":"...","beispiel_loesung":"...","uebung_aufgabe":"...","uebung_loesung":"..."}]}`;
 

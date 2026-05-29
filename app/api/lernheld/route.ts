@@ -56,6 +56,13 @@ function buildHead(themeCss: string) {
   .fx-block{margin:10px 0 14px;}
   .label-row{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--dark);font-weight:700;margin:16px 0 6px;}
 
+  .frac{display:inline-block;vertical-align:-0.55em;text-align:center;margin:0 3px;line-height:1.05;font-size:0.95em;}
+  .frac > span{display:block;padding:0 4px;}
+  .frac .num{border-bottom:1.5px solid currentColor;padding-bottom:1px;}
+  .frac .den{padding-top:1px;}
+  sup{font-size:0.75em;vertical-align:super;line-height:0;}
+  sub{font-size:0.75em;vertical-align:sub;line-height:0;}
+
   .example{background:var(--bg);border-left:3px solid var(--dark);border-radius:8px;padding:14px 18px;margin:10px 0;}
   .example .lbl{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--dark);font-weight:700;margin-bottom:6px;}
   .uebung{background:var(--badge1);border-radius:10px;padding:14px 18px;margin:10px 0;}
@@ -116,19 +123,37 @@ function esc(s: unknown): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// Mathematische Felder duerfen <span class="frac">, <sup>, <sub> enthalten.
+// Wir parsen die Eingabe, behalten nur diese Tags, escapen alles andere.
+function mathHtml(s: unknown): string {
+  if (typeof s !== "string") return "";
+  // Erst alles HTML-escapen
+  let out = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  // Dann genau diese erlaubten Tags wieder freischalten
+  out = out.replace(/&lt;span class=&quot;frac&quot;&gt;/g, '<span class="frac">');
+  out = out.replace(/&lt;span class=&quot;num&quot;&gt;/g, '<span class="num">');
+  out = out.replace(/&lt;span class=&quot;den&quot;&gt;/g, '<span class="den">');
+  out = out.replace(/&lt;\/span&gt;/g, "</span>");
+  out = out.replace(/&lt;sup&gt;/g, "<sup>");
+  out = out.replace(/&lt;\/sup&gt;/g, "</sup>");
+  out = out.replace(/&lt;sub&gt;/g, "<sub>");
+  out = out.replace(/&lt;\/sub&gt;/g, "</sub>");
+  return out;
+}
+
 function baueThemenBlock(t: Thema, index: number): string {
   const formeln = Array.isArray(t.formeln) ? t.formeln : [];
   const formelnHtml = formeln.length
-    ? `<div class="label-row">Die wichtigsten Formeln</div><div class="fx-block">${formeln.map((f) => `<span class="fx">${esc(f)}</span>`).join("")}</div>`
+    ? `<div class="label-row">Die wichtigsten Formeln</div><div class="fx-block">${formeln.map((f) => `<span class="fx">${mathHtml(f)}</span>`).join("")}</div>`
     : "";
-  const regelHtml = t.regel ? `<div class="label-row">Merke dir</div><p>${esc(t.regel)}</p>` : "";
+  const regelHtml = t.regel ? `<div class="label-row">Merke dir</div><p>${mathHtml(t.regel)}</p>` : "";
   const beispiel = t.beispiel_aufgabe
-    ? `<div class="label-row">Beispiel Schritt für Schritt</div><div class="example"><div class="lbl">Aufgabe</div><p>${esc(t.beispiel_aufgabe)}</p>${t.beispiel_loesung ? `<p style="margin-top:8px"><b>Lösung:</b> ${esc(t.beispiel_loesung)}</p>` : ""}</div>`
+    ? `<div class="label-row">Beispiel Schritt für Schritt</div><div class="example"><div class="lbl">Aufgabe</div><p>${mathHtml(t.beispiel_aufgabe)}</p>${t.beispiel_loesung ? `<p style="margin-top:8px"><b>Lösung:</b> ${mathHtml(t.beispiel_loesung)}</p>` : ""}</div>`
     : "";
   const uebung = t.uebung_aufgabe
-    ? `<div class="uebung"><div class="lbl">Jetzt du — Übung</div><p>${esc(t.uebung_aufgabe)}</p>${t.uebung_loesung ? `<div class="loesung"><b>Lösung:</b> ${esc(t.uebung_loesung)}</div>` : ""}</div>`
+    ? `<div class="uebung"><div class="lbl">Jetzt du — Übung</div><p>${mathHtml(t.uebung_aufgabe)}</p>${t.uebung_loesung ? `<div class="loesung"><b>Lösung:</b> ${mathHtml(t.uebung_loesung)}</div>` : ""}</div>`
     : "";
-  return `<div class="block"><div class="block-top"><h4><span class="circle"></span>${esc(t.name || "Thema")}</h4><span class="badge b-lernen">Thema ${index + 1}</span></div><div class="erkl">${esc(t.erklaerung || "")}</div>${formelnHtml}${regelHtml}${beispiel}${uebung}</div>`;
+  return `<div class="block"><div class="block-top"><h4><span class="circle"></span>${esc(t.name || "Thema")}</h4><span class="badge b-lernen">Thema ${index + 1}</span></div><div class="erkl">${mathHtml(t.erklaerung || "")}</div>${formelnHtml}${regelHtml}${beispiel}${uebung}</div>`;
 }
 
 export async function POST(request: Request) {
@@ -158,6 +183,12 @@ export async function POST(request: Request) {
       .map((t, i) => `${i + 1}. ${t.name || "Thema"} — ${t.erklaerung || ""}${t.formeln?.length ? " | Formeln: " + t.formeln.join(", ") : ""}${t.regel ? " | Regel: " + t.regel : ""}`)
       .join("\n");
 
+    const klasseZahl = parseInt(klasse) || 0;
+    const istUnterstufe = klasseZahl > 0 && klasseZahl <= 6;
+    const bruchHinweis = istUnterstufe
+      ? `Klasse ${klasse}: Schreibe Teilungen IMMER mit Doppelpunkt " : ". NIEMALS mit Schrägstrich "/".`
+      : `Klasse ${klasse}: Echte Brüche immer als <span class="frac"><span class="num">…</span><span class="den">…</span></span>. NIEMALS mit Schrägstrich "/".`;
+
     const fokusAbschnittHinweis = schwierigkeiten
       ? `\n\nFOKUS-EINGABE DER SCHÜLERIN:\n"${schwierigkeiten}"\n\nERSTELLE ZUSÄTZLICH einen Block "Dein persönlicher Fokus" GANZ AM ANFANG (vor der Formelsammlung). In dem Block: gehe direkt auf das ein, was sie geschrieben hat, sprich sie persönlich an, gib 3–5 konkrete Lerntipps speziell für ihre Schwierigkeiten und nenne die Themen aus der Liste, auf die sie sich besonders konzentrieren sollte. Verwende dafür diese Struktur:
 <div class="sec-title">Dein persönlicher Fokus</div>
@@ -175,7 +206,14 @@ SCHREIBREGELN:
 - Kindgerechte, warme Sprache. Du-Form. "Stell dir vor...", "Das ist wie...", ermutigend.
 - Erwähne niemals KI, AI, Sprachmodelle, Anthropic, Claude.
 - Keine Emojis.
-- Mathematische Symbole: ², ³, √, ·, ÷, π, °, ±, ∠.
+
+MATHE-SCHREIBWEISE in allen Formeln und Texten:
+- NIEMALS Underscores oder LaTeX. Keine "x_n", "x_{n+1}", "x^2", "sqrt(...)".
+- Subscripts als Unicode: x₁, x₂, xₙ, xₙ₊₁ — oder <sub>...</sub>.
+- Superscripts als Unicode: x², x³, xⁿ — oder <sup>...</sup>.
+- Wurzel: √
+- ${bruchHinweis}
+- Erlaubte HTML-Tags: <span class="frac"><span class="num">…</span><span class="den">…</span></span>, <sup>, <sub>.
 
 ERSTELLE FOLGENDE ABSCHNITTE ALS REINES HTML:
 
