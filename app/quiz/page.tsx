@@ -1,22 +1,171 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-const THEMEN = [
-  { id: "pythagoras", name: "📐 Pythagoras", klasse: "Klasse 8-9", fach: "mathe" },
-  { id: "brueche", name: "➗ Brüche", klasse: "Klasse 6-7", fach: "mathe" },
-  { id: "prozent", name: "📊 Prozentrechnung", klasse: "Klasse 7-8", fach: "mathe" },
-  { id: "wahrscheinlichkeit", name: "🎲 Wahrscheinlichkeit", klasse: "Klasse 8-9", fach: "mathe" },
-  { id: "gleichungen", name: "⚖️ Gleichungen", klasse: "Klasse 7-8", fach: "mathe" },
-  { id: "einheiten", name: "📏 Einheiten", klasse: "Klasse 3-6", fach: "mathe" },
-  { id: "einheiten-umrechnen", name: "🔄 Einheiten umrechnen", klasse: "Klasse 4-6", fach: "mathe" },
-  { id: "multiplikation", name: "✖️ Multiplikation", klasse: "Klasse 2-3", fach: "mathe" },
-  { id: "division", name: "➗ Division", klasse: "Klasse 2-3", fach: "mathe" },
-  { id: "lichtbrechung", name: "💡 Lichtbrechung", klasse: "Klasse 7-9", fach: "physik" },
-  { id: "farben", name: "🌈 Farben & Licht", klasse: "Klasse 5-7", fach: "physik" },
-  { id: "temperatur", name: "🌡️ Temperatur", klasse: "Klasse 5-8", fach: "physik" },
-  { id: "strahlung", name: "☢️ Strahlung", klasse: "Klasse 8-10", fach: "physik" },
-  { id: "mechanik", name: "⚙️ Mechanik", klasse: "Klasse 8-9", fach: "physik" },
-];
+type Fach = "mathe" | "physik";
+
+// Katalog: pro Fach pro Klasse 15 Themen. Klasse 1-13.
+const KATALOG: Record<Fach, Record<number, string[]>> = {
+  mathe: {
+    1: [
+      "🔢 Zahlen bis 10", "🔢 Zahlen bis 20", "➕ Addition bis 10", "➖ Subtraktion bis 10",
+      "➕ Addition bis 20", "➖ Subtraktion bis 20", "🔁 Verdoppeln & Halbieren", "🔢 Zahlenreihen",
+      "⚖️ Mengen vergleichen", "🔷 Formen erkennen", "📏 Größenvergleich", "🕐 Uhrzeit (volle Stunden)",
+      "💶 Geld zählen", "🪞 Symmetrie erkennen", "📚 Sachaufgaben",
+    ],
+    2: [
+      "🔢 Zahlen bis 100", "🔢 Stellenwert (Zehner, Einer)", "➕ Addition bis 100", "➖ Subtraktion bis 100",
+      "✖️ Einmaleins 2er-Reihe", "✖️ Einmaleins 5er-Reihe", "✖️ Einmaleins 10er-Reihe", "✖️ Einmaleins gemischt",
+      "➗ Aufteilen & Verteilen", "➗ Division", "📏 Längen (cm, m)", "⚖️ Gewichte (g, kg)",
+      "💶 Geld rechnen", "🕐 Uhrzeit ablesen", "📦 Würfel und Quader",
+    ],
+    3: [
+      "🔢 Zahlen bis 1000", "🔢 Stellenwert (Hunderter)", "📝 Schriftliche Addition", "📝 Schriftliche Subtraktion",
+      "✖️ Großes Einmaleins", "📝 Halbschriftliche Multiplikation", "📝 Schriftliche Multiplikation", "📝 Schriftliche Division",
+      "📏 Einheiten (mm, cm, m, km)", "⚖️ Gewichte umrechnen", "🕐 Zeit (min, h)", "📦 Geometrische Körper",
+      "📐 Senkrechte & parallele Linien", "🪞 Spiegelungen", "📊 Diagramme lesen",
+    ],
+    4: [
+      "🔢 Zahlen bis Million", "📝 Schriftliche Addition (große Zahlen)", "📝 Schriftliche Subtraktion (große Zahlen)", "📝 Schriftliche Multiplikation",
+      "📝 Schriftliche Division", "⚡ Rechenvorteile / Klammern", "📏 Längen umrechnen", "⚖️ Gewichte umrechnen",
+      "🕐 Zeit umrechnen", "🗺️ Maßstab", "➗ Brüche (Halbe, Viertel)", "📦 Geometrische Körper",
+      "📊 Diagramme", "🎲 Wahrscheinlichkeit (einfach)", "📚 Sachaufgaben",
+    ],
+    5: [
+      "🔢 Natürliche Zahlen", "🔢 Stellenwertsystem", "📝 Schriftliches Rechnen", "➗ Brüche — Einführung",
+      "🔢 Dezimalzahlen — Einführung", "📏 Größen & Einheiten", "🔄 Einheiten umrechnen", "🪞 Achsenspiegelung",
+      "📐 Winkel zeichnen", "📐 Winkel messen", "🟦 Flächen Rechteck/Quadrat", "📦 Volumen Würfel/Quader",
+      "🔢 Teiler und Vielfache", "🔢 Primzahlen", "📊 Diagramme",
+    ],
+    6: [
+      "➗ Brüche — Grundlagen", "➕ Brüche addieren & subtrahieren", "✖️ Brüche multiplizieren & dividieren", "🔁 Brüche kürzen & erweitern",
+      "🔢 Dezimalzahlen", "🧮 Dezimalzahlen rechnen (× ÷)", "🔟 Multiplizieren mit Zehnerpotenzen", "🔟 Dividieren mit Zehnerpotenzen",
+      "⚡ Rechenvorteile", "➖ Negative Zahlen", "🔢 Rationale Zahlen", "📊 Prozent — Grundlagen",
+      "📐 Winkel", "📐 Dreieckskonstruktion", "🪞 Symmetrie & Verschiebung",
+    ],
+    7: [
+      "📊 Prozentrechnung", "💰 Zinsrechnung", "🔣 Terme aufstellen", "🔣 Terme vereinfachen",
+      "🔣 Klammerregeln", "⚖️ Gleichungen lösen", "⚖️ Lineare Gleichungen", "📊 Proportionen",
+      "🧮 Dreisatz", "📈 Direkte Proportionalität", "📉 Umgekehrte Proportionalität", "🎲 Wahrscheinlichkeit",
+      "📐 Dreiecke konstruieren", "🔺 Flächen Dreieck", "📦 Volumen Prisma",
+    ],
+    8: [
+      "📈 Lineare Funktionen", "🧩 Lineare Gleichungssysteme", "📐 Binomische Formeln", "➗ Bruchgleichungen",
+      "√ Wurzeln", "🔢 Potenzen", "📐 Satz des Pythagoras", "⭕ Kreis: Umfang",
+      "⭕ Kreis: Flächeninhalt", "🎲 Wahrscheinlichkeit (mehrstufig)", "📊 Statistik: Mittelwert & Median", "≠ Ungleichungen",
+      "💰 Zinseszins", "📦 Volumen Zylinder", "🔢 Reelle Zahlen",
+    ],
+    9: [
+      "📉 Quadratische Funktionen", "📊 pq-Formel", "📊 Mitternachtsformel", "📏 Strahlensätze",
+      "📐 Ähnlichkeit", "📐 Trigonometrie — Sinus", "📐 Trigonometrie — Cosinus & Tangens", "📐 Höhensatz & Kathetensatz",
+      "📦 Volumen Pyramide", "🔺 Volumen Kegel", "🌐 Volumen Kugel", "📦 Oberfläche Körper",
+      "📈 Exponentialfunktionen — Einstieg", "🎲 Wahrscheinlichkeit vertieft", "📊 Quadratische Gleichungen Anwendung",
+    ],
+    10: [
+      "📈 Exponentialfunktionen", "📉 Logarithmen", "📊 Wachstum & Zerfall", "📐 Trigonometrische Funktionen",
+      "📐 Sinussatz", "📐 Kosinussatz", "➡️ Vektoren — Grundlagen", "⭕ Kreisgleichung",
+      "🔢 Folgen", "🔢 Reihen", "🔣 Polynomdivision", "📊 Funktionsuntersuchung",
+      "💰 Zinseszins-Anwendungen", "🎲 Stochastik vertieft", "📊 Beschreibende Statistik",
+    ],
+    11: [
+      "📊 Ableitungen — Grundlagen", "📊 Ableitungsregeln", "📊 Produkt- & Kettenregel", "📈 Extremstellen",
+      "📉 Wendepunkte", "📊 Kurvendiskussion", "📈 Funktionsfamilien", "📐 Tangenten",
+      "∫ Stammfunktionen", "∫ Integralrechnung — Grundlagen", "🟦 Flächeninhalte mit Integralen", "➡️ Vektoren — Skalarprodukt",
+      "📐 Geraden im Raum", "🎲 Binomialverteilung", "🎲 Hypothesentests",
+    ],
+    12: [
+      "∫ Integralrechnung vertieft", "📦 Volumenintegrale", "📊 e-Funktion ableiten", "📊 ln-Funktion ableiten",
+      "📈 Differentialgleichungen", "➡️ Vektoren im Raum", "📐 Geraden und Ebenen", "📐 Schnittgeraden",
+      "📐 Schnittwinkel", "📐 Lagebeziehungen", "🔢 Matrizen — Grundlagen", "📊 Normalverteilung",
+      "🎲 Stochastische Prozesse", "📚 Abi: Analysis", "📚 Abi: Geometrie",
+    ],
+    13: [
+      "📊 Komplette Kurvendiskussion", "📈 Komplexe Funktionsfamilien", "∫ Integrationsverfahren", "📦 Volumenberechnung",
+      "📈 Differentialgleichungen vertieft", "➡️ Vektorgeometrie komplett", "🔢 Matrizen vertieft", "🔢 Eigenwerte",
+      "🧩 Gauß-Verfahren", "🎲 Stochastik komplett", "🎲 Hypothesentests vertieft", "📊 Konfidenzintervalle",
+      "📊 Markov-Ketten", "🔢 Komplexe Zahlen", "📚 Abi-Mischaufgaben",
+    ],
+  },
+  physik: {
+    1: [
+      "💧 Wasser und Eis", "🌤 Wetter", "🌙 Tag und Nacht", "🔥 Wärme und Kälte",
+      "☀️ Sonne, Mond, Sterne", "🛟 Schwimmen und Sinken", "🧲 Magnete", "💡 Licht und Schatten",
+      "🪞 Spiegel", "🔊 Schall (Hören)", "🌱 Pflanzen wachsen", "👁️ Meine fünf Sinne",
+      "🍂 Jahreszeiten", "💡 Strom (Lampe, Schalter)", "🌍 Unsere Erde",
+    ],
+    2: [
+      "💧 Aggregatzustände (fest, flüssig, gas)", "🧲 Magnetismus — was zieht an?", "🔌 Stromkreis — einfach", "🪞 Reflexion am Spiegel",
+      "🔊 Schall und Wellen", "🛟 Schwimmen und Sinken vertieft", "🔥 Wärmeausdehnung", "🌈 Licht und Farben",
+      "🌤 Wetter beobachten", "🪐 Sonnensystem", "👁️ Sinne vertieft", "🌱 Pflanzen und Sonne",
+      "🧭 Magnetfeld der Erde", "🌖 Mond und Sterne", "💧 Wasser-Kreislauf",
+    ],
+    3: [
+      "💧 Aggregatzustände vertieft", "❄️ Schmelzen und Erstarren", "💨 Verdunsten und Kondensieren", "🔥 Wärmequellen",
+      "🌡️ Wärmeleiter", "🔌 Stromkreis bauen", "💡 Schalter & Leiter", "🧲 Magnete vertieft",
+      "🪨 Eisen und Magnete", "🌒 Licht und Schatten vertieft", "🪞 Spiegel und Reflexion", "🔍 Linsen — Einführung",
+      "🔊 Schall — wie hört man?", "🎵 Töne erzeugen", "🌦️ Wetterphänomene",
+    ],
+    4: [
+      "🛟 Auftrieb", "💧 Schwimmen und Sinken vertieft", "🪨 Dichte — was ist das?", "🌡️ Wärme messen",
+      "🌡️ Thermometer", "🔌 Stromkreis vertieft", "💡 Reihenschaltung", "💡 Lichtbrechung — Einstieg",
+      "🌈 Regenbogen", "🔍 Lupe", "🔊 Schallausbreitung", "🧲 Magnete und Eisen",
+      "🧭 Kompass", "🪐 Sonnensystem", "🌖 Mondphasen",
+    ],
+    5: [
+      "💧 Aggregatzustände", "🌡️ Wärme und Temperatur", "🌡️ Thermometer und Skalen", "🧲 Magnetismus",
+      "🧲 Magnetpole", "🔌 Stromkreis", "📐 Schaltzeichen", "💡 Licht und Schatten",
+      "🪞 Spiegel", "💡 Lichtbrechung — Einstieg", "🔊 Schall — Grundlagen", "🌈 Farben",
+      "👁️ Auge und Sehen", "⚡ Energie — Einführung", "📏 Einheiten in der Physik",
+    ],
+    6: [
+      "🔥 Wärmeausdehnung", "💧 Aggregatzustände vertieft", "🔌 Stromkreis vertieft", "📐 Schaltbilder",
+      "💡 Reihen- & Parallelschaltung", "🧲 Magnetfeld", "💡 Lichtausbreitung", "🪞 Reflexionsgesetz",
+      "🔍 Linsen (Sammel-/Zerstreuungslinse)", "🎵 Schall: Frequenz & Tonhöhe", "💡 Lichtbrechung", "🌈 Farben (Spektrum)",
+      "👁️ Auge und Sehen vertieft", "⚡ Energieformen", "🌡️ Wärmeleitung",
+    ],
+    7: [
+      "🏃 Geschwindigkeit", "🚗 Bewegung", "🏃 Gleichförmige Bewegung", "💪 Kräfte",
+      "👢 Reibung", "🌍 Schwerkraft", "⚙️ Hebel", "📐 Schiefe Ebene",
+      "🪢 Rolle (fest, lose)", "🪨 Dichte", "💨 Druck", "⚡ Spannung und Stromstärke",
+      "💡 Lichtbrechung vertieft", "🔬 Optische Geräte", "🔊 Schallausbreitung",
+    ],
+    8: [
+      "⚙️ Mechanik", "⚡ Energie und Arbeit", "💪 Leistung", "🔋 Wirkungsgrad",
+      "🔥 Wärmelehre", "🌡️ Wärmekapazität", "⚡ Ohm'sches Gesetz", "🔌 Elektrische Widerstände",
+      "🔌 Reihenschaltung", "🔌 Parallelschaltung", "🔊 Akustik (Schallwellen)", "🎵 Frequenz, Tonhöhe, Lautstärke",
+      "🔬 Optik vertieft", "🔍 Linsen und Bilder", "🪐 Sonnensystem & Astronomie",
+    ],
+    9: [
+      "🏃 Beschleunigung", "📐 Kinematik", "💪 Dynamik", "📜 Newton'sche Gesetze",
+      "🎯 Impuls", "⚡ Energieerhaltung", "🌡️ Wärmeübertragung", "💧 Aggregatzustandsänderungen",
+      "🧲 Elektromagnetismus", "🧲 Magnetfeld eines Stromleiters", "⚡ Induktion", "🔧 Generator und Motor",
+      "⚡ Wechselstrom", "☢️ Radioaktivität — Einstieg", "🔬 Halbleiter — Einstieg",
+    ],
+    10: [
+      "🌊 Schwingungen", "🌊 Wellen", "🌊 Mechanische Wellen", "📡 Elektromagnetische Wellen",
+      "🔊 Akustik vertieft", "💡 Optik: Beugung", "💡 Optik: Interferenz", "⚛️ Atombau",
+      "⚛️ Atomphysik", "🌌 Quantenphysik — Einstieg", "💡 Photoeffekt", "☢️ Kernphysik",
+      "☢️ Radioaktiver Zerfall", "🔬 Halbleiter (Diode, Transistor)", "⚡ Energieumwandlung",
+    ],
+    11: [
+      "⚙️ Mechanik vertieft (Vektoren)", "🌊 Schwingungen vertieft", "🌊 Wellen vertieft", "⚡ Elektrisches Feld",
+      "🧲 Magnetfeld vertieft", "⚡ Induktion vertieft", "🔌 Wechselstromkreise", "💡 Photonen",
+      "💡 Compton-Effekt", "🌌 Quantenphysik vertieft", "⚛️ Bohr'sches Atommodell", "🌈 Spektrallinien",
+      "⚛️ Atomphysik vertieft", "☢️ Radioaktivität vertieft", "🌠 Astrophysik — Einstieg",
+    ],
+    12: [
+      "🌌 Schrödinger-Gleichung", "🌌 Heisenberg-Unschärferelation", "🌌 Quantenmechanik", "☢️ Kernspaltung",
+      "☢️ Kernfusion", "🌠 Spezielle Relativitätstheorie", "⏱️ Zeitdilatation", "📏 Längenkontraktion",
+      "⚖️ Massendefekt", "⭐ Astrophysik (Sterne)", "🌌 Astrophysik (Galaxien)", "🌌 Kosmologie",
+      "📡 Maxwell-Gleichungen", "🔬 Halbleitertechnik", "📚 Abi: Mechanik",
+    ],
+    13: [
+      "🌌 Quantenmechanik vertieft", "💻 Quantencomputing — Einstieg", "🌠 Allgemeine Relativitätstheorie", "🕳 Schwarze Löcher",
+      "⚛️ Standardmodell der Teilchen", "🔬 Festkörperphysik", "⚛️ Atomphysik komplett", "☢️ Kernphysik komplett",
+      "📡 Komplette Elektrodynamik", "🌊 Komplette Wellenlehre", "🔥 Komplette Wärmelehre", "💡 Komplette Optik",
+      "⚙️ Komplette Mechanik", "🧮 Stringtheorie — Einblick", "📚 Abi-Mischaufgaben",
+    ],
+  },
+};
 
 const SCHWIERIGKEITEN = [
   { id: "leicht", name: "😊 Leicht", farbe: "#22c55e" },
@@ -47,15 +196,17 @@ export default function QuizPage() {
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
   const [zufallsEmoji, setZufallsEmoji] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
+  const [klassenFilter, setKlassenFilter] = useState<number | null>(null);
   const vorgeladeneRef = useRef<Frage[]>([]);
 
   useEffect(() => {
     if (thema && schwierigkeit) {
       vorgeladeneRef.current = [];
+      const themaPlain = thema.replace(/^[^a-zA-ZÄÖÜäöüß0-9]+/, "").trim();
       fetch("/api/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ thema, schwierigkeit }),
+        body: JSON.stringify({ thema: themaPlain, schwierigkeit, klasse: klassenFilter, fach: aktiverTab }),
       })
         .then(res => res.json())
         .then(data => {
@@ -65,7 +216,7 @@ export default function QuizPage() {
         })
         .catch(() => {});
     }
-  }, [thema, schwierigkeit]);
+  }, [thema, schwierigkeit, klassenFilter, aktiverTab]);
 
   function startQuiz() {
     if (!thema || !schwierigkeit) return;
@@ -117,6 +268,7 @@ export default function QuizPage() {
     setSchritt("auswahl");
     setThema("");
     setSchwierigkeit("");
+    setKlassenFilter(null);
     setFragen([]);
     vorgeladeneRef.current = [];
     setAktuelle(0);
@@ -128,8 +280,12 @@ export default function QuizPage() {
 
   const gesamtFragen = fragen && fragen.length > 0 ? fragen.length : 1;
   const prozent = Math.round((punkte / gesamtFragen) * 100);
-  const mathThemen = THEMEN.filter(t => t.fach === "mathe");
-  const physikThemen = THEMEN.filter(t => t.fach === "physik");
+
+  const aktiveThemen: string[] =
+    klassenFilter !== null && KATALOG[aktiverTab][klassenFilter]
+      ? KATALOG[aktiverTab][klassenFilter]
+      : [];
+  const verfuegbareKlassen = Array.from({ length: 13 }, (_, i) => i + 1); // 1..13
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f0e8", fontFamily: "Arial, sans-serif" }}>
@@ -142,27 +298,43 @@ export default function QuizPage() {
 
         {schritt === "auswahl" && (
           <div>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-              <button onClick={() => { setAktiverTab("mathe"); setThema(""); }}
+            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+              <button onClick={() => { setAktiverTab("mathe"); setThema(""); setKlassenFilter(null); }}
                 style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5" }}>
                 📐 Mathe
               </button>
-              <button onClick={() => { setAktiverTab("physik"); setThema(""); }}
+              <button onClick={() => { setAktiverTab("physik"); setThema(""); setKlassenFilter(null); }}
                 style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5" }}>
                 ⚡ Physik
               </button>
             </div>
 
-            <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Wähle dein Thema!</h2>
-            <div style={{ display: "grid", gap: "10px", marginBottom: "28px" }}>
-              {(aktiverTab === "mathe" ? mathThemen : physikThemen).map((t) => (
-                <div key={t.id} onClick={() => setThema(t.id)}
-                  style={{ background: thema === t.id ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: thema === t.id ? "white" : "#1a1a2e", padding: "16px 20px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${thema === t.id ? "#2d6da8" : "#e0d8cc"}`, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "17px", fontWeight: "600", transition: "all 0.2s" }}>
-                  <span>{t.name}</span>
-                  <span style={{ fontSize: "13px", opacity: 0.8 }}>{t.klasse}</span>
-                </div>
+            <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "20px", marginBottom: "12px" }}>Welche Klasse bist du?</h2>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px", justifyContent: "center" }}>
+              {verfuegbareKlassen.map((k) => (
+                <button key={k} onClick={() => { setKlassenFilter(k); setThema(""); }}
+                  style={{ padding: "10px 14px", borderRadius: "10px", border: `2px solid ${klassenFilter === k ? "#2d6da8" : "#e0d8cc"}`, background: klassenFilter === k ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: klassenFilter === k ? "white" : "#1a1a2e", cursor: "pointer", fontWeight: 700, fontSize: "14px", minWidth: "44px" }}>
+                  {k}
+                </button>
               ))}
             </div>
+            <p style={{ color: "#6e6e73", fontSize: "13px", textAlign: "center", margin: "0 0 24px" }}>
+              {klassenFilter === null ? "Klick auf deine Klasse, dann siehst du deine 15 Themen." : `15 Themen für Klasse ${klassenFilter}`}
+            </p>
+
+            {klassenFilter !== null && (
+              <>
+                <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Wähle dein Thema!</h2>
+                <div style={{ display: "grid", gap: "10px", marginBottom: "28px" }}>
+                  {aktiveThemen.map((t) => (
+                    <div key={t} onClick={() => setThema(t)}
+                      style={{ background: thema === t ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: thema === t ? "white" : "#1a1a2e", padding: "16px 20px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${thema === t ? "#2d6da8" : "#e0d8cc"}`, fontSize: "17px", fontWeight: "600", transition: "all 0.2s" }}>
+                      {t}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Schwierigkeit?</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "28px" }}>

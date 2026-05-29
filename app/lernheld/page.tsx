@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const KLASSEN = ["5", "6", "7", "8", "9", "10", "11", "12", "13"];
 const WHATSAPP_NUMMER = "4917624700519";
@@ -42,6 +42,7 @@ export default function LernheldPage() {
   const [fach, setFach] = useState<"mathe" | "physik">("mathe");
   const [datum, setDatum] = useState("");
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [schwierigkeiten, setSchwierigkeiten] = useState("");
   const [laden, setLaden] = useState(false);
   const [plan, setPlan] = useState("");
   const [fehler, setFehler] = useState("");
@@ -50,9 +51,50 @@ export default function LernheldPage() {
   const [chat, setChat] = useState<ChatNachricht[]>([]);
   const [frage, setFrage] = useState("");
   const [botLaedt, setBotLaedt] = useState(false);
+  const [ladeText, setLadeText] = useState("Dein Plan entsteht");
+  const [ladeSub, setLadeSub] = useState("Einen Moment — deine Unterlagen werden durchgesehen.");
+  const [testModus, setTestModus] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const host = window.location.hostname;
+    const istVorschau = host.endsWith(".vercel.app") || host === "localhost";
+    const wuenscht = new URLSearchParams(window.location.search).get("test") === "ja";
+    if (istVorschau && wuenscht) setTestModus(true);
+  }, []);
 
   const t = THEMES[theme];
   const bereit = name && klasse && datum && fotos.length > 0;
+
+  async function bildVerkleinern(file: File): Promise<{ media_type: string; data: string }> {
+    const bitmap = await createImageBitmap(file);
+    const maxKante = 700;
+    const skala = Math.min(1, maxKante / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * skala);
+    const h = Math.round(bitmap.height * skala);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas nicht verfuegbar");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const dataUrl: string = await new Promise((res, rej) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return rej(new Error("blob leer"));
+          const r = new FileReader();
+          r.onload = () => res(r.result as string);
+          r.onerror = () => rej(new Error("lesen fehlgeschlagen"));
+          r.readAsDataURL(blob);
+        },
+        "image/jpeg",
+        0.7,
+      );
+    });
+    const base64 = dataUrl.split(",")[1];
+    return { media_type: "image/jpeg", data: base64 };
+  }
 
   async function fotosHinzufuegen(files: FileList | null) {
     if (!files) return;
@@ -60,13 +102,17 @@ export default function LernheldPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file.type.startsWith("image/")) continue;
-      const data: string = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res((r.result as string).split(",")[1]);
-        r.onerror = () => rej(new Error("lesen fehlgeschlagen"));
-        r.readAsDataURL(file);
-      });
-      neue.push({ name: file.name, preview: URL.createObjectURL(file), media_type: file.type, data });
+      try {
+        const klein = await bildVerkleinern(file);
+        neue.push({
+          name: file.name,
+          preview: URL.createObjectURL(file),
+          media_type: klein.media_type,
+          data: klein.data,
+        });
+      } catch {
+        // Bild ueberspringen, wenn es nicht verarbeitet werden kann
+      }
     }
     setFotos((alt) => [...alt, ...neue].slice(0, 10));
   }
@@ -75,30 +121,140 @@ export default function LernheldPage() {
     setFotos((alt) => alt.filter((_, i) => i !== index));
   }
 
-  async function planErstellen() {
-    setLaden(true);
-    setFehler("");
+  type Daten = {
+    name: string; klasse: string; fach: "mathe" | "physik"; datum: string;
+    theme: ThemeKey; schwierigkeiten: string;
+    bilder: { media_type: string; data: string }[];
+  };
+
+  async function planErzeugen(d: Daten) {
+    setLadeText("Schritt 1 von 2 — Themen erkennen");
+    setLadeSub("Deine Fotos werden durchgesehen, jedes Thema wird erkannt.");
     try {
-      const res = await fetch("/api/lernplan", {
+      const resThemen = await fetch("/api/lernheld-themen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fach: d.fach, klasse: d.klasse, schwierigkeiten: d.schwierigkeiten, bilder: d.bilder }),
+      });
+      if (resThemen.status === 413) {
+        setFehler("Deine Fotos sind zusammen zu gross. Probiere es mit weniger oder kleineren Bildern.");
+        return;
+      }
+      const themenData = await resThemen.json().catch(() => null);
+      if (!themenData || !Array.isArray(themenData.themen) || themenData.themen.length === 0) {
+        setFehler(themenData?.error || "Die Themen konnten nicht erkannt werden. Bitte versuche es nochmal.");
+        return;
+      }
+
+      setLadeText("Schritt 2 von 2 — Dein Plan wird geschrieben");
+      setLadeSub(`${themenData.themen.length} Themen erkannt. Jetzt wird alles zu deinem Plan zusammengestellt.`);
+
+      const resPlan = await fetch("/api/lernheld", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name, klasse, fach, datum, theme,
-          bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
+          name: d.name, klasse: d.klasse, fach: d.fach, datum: d.datum, theme: d.theme,
+          schwierigkeiten: d.schwierigkeiten, themen: themenData.themen,
         }),
       });
-      const data = await res.json();
-      if (data && data.html) {
-        setPlan(data.html);
+      const planData = await resPlan.json().catch(() => null);
+      if (planData && planData.html) {
+        setPlan(planData.html);
         window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (planData && planData.error) {
+        setFehler(planData.error);
       } else {
         setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
       }
     } catch {
       setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
     }
-    setLaden(false);
   }
+
+  async function zahlungStarten() {
+    if (!bereit) return;
+    setFehler("");
+    const daten: Daten = {
+      name, klasse, fach, datum, theme, schwierigkeiten,
+      bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
+    };
+    try {
+      sessionStorage.setItem("lernheld_pending", JSON.stringify(daten));
+    } catch {
+      setFehler("Deine Fotos sind zu gross fuer deinen Browser. Bitte nimm weniger.");
+      return;
+    }
+    setLaden(true);
+    setLadeText("Du wirst zur Bezahlung weitergeleitet");
+    setLadeSub("Einen Moment bitte — sicher bezahlen mit Karte ueber Stripe.");
+    try {
+      const res = await fetch("/api/checkout-lernheld", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        setFehler(data?.error || "Die Bezahlung konnte nicht gestartet werden.");
+        setLaden(false);
+      }
+    } catch {
+      setFehler("Die Bezahlung konnte nicht gestartet werden.");
+      setLaden(false);
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("session_id");
+    if (!sid) return;
+
+    (async () => {
+      setLaden(true);
+      setFehler("");
+      setLadeText("Bezahlung wird geprueft");
+      setLadeSub("Einen Moment bitte...");
+      try {
+        const verifyRes = await fetch("/api/verify-lernheld", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sid }),
+        });
+        const verifyData = await verifyRes.json().catch(() => null);
+        if (!verifyData || !verifyData.ok) {
+          setFehler("Die Bezahlung konnte nicht bestaetigt werden. Falls du gerade bezahlt hast, lade die Seite kurz neu.");
+          setLaden(false);
+          return;
+        }
+
+        const stored = sessionStorage.getItem("lernheld_pending");
+        sessionStorage.removeItem("lernheld_pending");
+        window.history.replaceState({}, "", "/lernheld");
+
+        if (!stored) {
+          setFehler("Deine Daten wurden in deinem Browser nicht gefunden. Bitte fuelle das Formular noch einmal aus.");
+          setLaden(false);
+          return;
+        }
+
+        let d: Daten | null = null;
+        try { d = JSON.parse(stored) as Daten; } catch { d = null; }
+        if (!d || !d.bilder?.length) {
+          setFehler("Deine Daten konnten nicht gelesen werden. Bitte fuelle das Formular neu aus.");
+          setLaden(false);
+          return;
+        }
+
+        setName(d.name); setKlasse(d.klasse); setFach(d.fach); setDatum(d.datum);
+        setTheme(d.theme); setSchwierigkeiten(d.schwierigkeiten || "");
+
+        await planErzeugen(d);
+      } catch {
+        setFehler("Etwas ist schiefgegangen. Bitte fuelle das Formular neu aus.");
+      }
+      setLaden(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function herunterladen() {
     const blob = new Blob([plan], { type: "text/html" });
@@ -123,7 +279,7 @@ export default function LernheldPage() {
     setFrage("");
     setBotLaedt(true);
     try {
-      const res = await fetch("/api/support", {
+      const res = await fetch("/api/lernheld-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ verlauf: neuerChat }),
@@ -225,9 +381,9 @@ export default function LernheldPage() {
       <div style={{ maxWidth: "640px", margin: "0 auto", padding: "26px 18px 70px" }}>
         {laden ? (
           <div style={{ textAlign: "center", padding: "90px 20px" }}>
-            <h2 style={{ fontFamily: serif, fontSize: "26px", fontWeight: 700, margin: "0 0 14px", color: t.ink }}>Dein Plan entsteht</h2>
+            <h2 style={{ fontFamily: serif, fontSize: "26px", fontWeight: 700, margin: "0 0 14px", color: t.ink }}>{ladeText}</h2>
             <p style={{ color: t.soft, fontSize: "16px", lineHeight: 1.6, maxWidth: "440px", margin: "0 auto" }}>
-              Einen Moment — deine Unterlagen werden durchgesehen und jedes Thema mit Erklärungen, Formeln, Beispielen und Übungen vorbereitet.
+              {ladeSub}
             </p>
             <div style={{ marginTop: "40px", width: "46px", height: "46px", border: `3px solid ${t.line}`, borderTopColor: t.dark, borderRadius: "50%", margin: "40px auto 0", animation: "spin 0.9s linear infinite" }} />
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -303,16 +459,39 @@ export default function LernheldPage() {
                 </div>
               )}
 
+              <label style={labelStil(t.ink)}>Womit hast du besonders Schwierigkeiten? <span style={{ color: t.soft, fontWeight: 400 }}>(optional)</span></label>
+              <p style={{ color: t.soft, fontSize: "14px", margin: "-6px 0 12px", lineHeight: 1.5 }}>Schreib hier auf, welche Themen dir besonders schwer fallen oder welche dir besonders wichtig sind — dann bekommst du dafür einen extra Fokus-Block in deinem Plan.</p>
+              <textarea value={schwierigkeiten} onChange={(e) => setSchwierigkeiten(e.target.value.slice(0, 500))} placeholder="z. B. Bei Bruchrechnen blicke ich nicht durch, und Textaufgaben sind schwer für mich."
+                rows={3}
+                style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", border: `1px solid ${t.line}`, fontSize: "15px", fontFamily: "inherit", color: t.ink, background: t.bg, marginBottom: "22px", outline: "none", resize: "vertical" }} />
+
+
               {fehler && (
                 <div style={{ background: "#fdecea", border: "1px solid #f0bdb6", borderRadius: "12px", padding: "14px", marginBottom: "16px", color: "#b3392c", textAlign: "center", fontSize: "14px" }}>
                   {fehler}
                 </div>
               )}
 
-              <button onClick={planErstellen} disabled={!bereit}
+              <button
+                onClick={() => {
+                  if (testModus) {
+                    const daten: Daten = {
+                      name, klasse, fach, datum, theme, schwierigkeiten,
+                      bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
+                    };
+                    setLaden(true); setFehler("");
+                    planErzeugen(daten).finally(() => setLaden(false));
+                  } else {
+                    zahlungStarten();
+                  }
+                }}
+                disabled={!bereit}
                 style={{ width: "100%", background: bereit ? t.dark : t.line, color: "#fff", border: "none", padding: "16px", borderRadius: "14px", fontSize: "17px", cursor: bereit ? "pointer" : "default", fontWeight: 700, fontFamily: sans }}>
-                Zum Plan →
+                {testModus ? "Plan erstellen (Test ohne Bezahlung) →" : "Plan erstellen für 1,99 € →"}
               </button>
+              <p style={{ textAlign: "center", color: t.soft, fontSize: "13px", marginTop: "10px", lineHeight: 1.5 }}>
+                {testModus ? "Test-Modus aktiv. Auf der Live-Seite wird normal bezahlt." : "Einmalige Zahlung. Sichere Bezahlung über Stripe."}
+              </p>
             </div>
           </div>
         )}
