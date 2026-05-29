@@ -22,7 +22,15 @@ export async function POST(request: NextRequest) {
         },
       ],
       mode: 'payment',
-     success_url: `${request.headers.get('origin')}/success?produkt=${encodeURIComponent(productName)}`,
+      billing_address_collection: 'required',
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: productName,
+          footer: 'Vielen Dank fuer deinen Kauf bei Lernflix - lernemitanna.de',
+        },
+      },
+      success_url: `${request.headers.get('origin')}/success?produkt=${encodeURIComponent(productName)}`,
       cancel_url: `${request.headers.get('origin')}/`,
     });
 

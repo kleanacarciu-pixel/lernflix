@@ -45,6 +45,14 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
+      billing_address_collection: "required",
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: material.name,
+          footer: "Vielen Dank fuer deinen Kauf bei Lernflix - lernemitanna.de",
+        },
+      },
       success_url: `${origin}/materialien/${id}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/materialien/${id}`,
     });

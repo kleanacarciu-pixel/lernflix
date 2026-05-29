@@ -27,6 +27,14 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
+      billing_address_collection: "required",
+      invoice_creation: {
+        enabled: true,
+        invoice_data: {
+          description: "Lernheld-Plan - dein persoenlicher Lernplan",
+          footer: "Vielen Dank fuer deinen Kauf bei Lernflix - lernemitanna.de",
+        },
+      },
       success_url: `${origin}/lernheld?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/lernheld`,
     });
