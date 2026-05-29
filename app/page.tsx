@@ -60,6 +60,7 @@ const THEMA: Record<string, { bg: string; render: () => React.ReactElement }> = 
 
 export default function Home() {
   const [ausgewaehlt, setAusgewaehlt] = useState<Produkt | null>(null);
+  const [filter, setFilter] = useState<'alle' | 'mathe' | 'physik'>('alle');
   const [breite, setBreite] = useState(1200);
   const [scrolled, setScrolled] = useState(false);
 
@@ -105,6 +106,7 @@ export default function Home() {
 
   const mathe = produkte.filter((p) => p.kategorie === 'mathe');
   const physik = produkte.filter((p) => p.kategorie === 'physik');
+  const angezeigt = filter === 'alle' ? produkte : produkte.filter((p) => p.kategorie === filter);
 
   return (
     <main style={{ minHeight: '100vh', background: F.bg, fontFamily: SANS, color: F.ink, overflowX: 'hidden' }}>
@@ -182,24 +184,29 @@ export default function Home() {
       </header>
 
       {/* ====== SECTION 1: HERO ====== */}
-      <section className="fade-up" style={{ background: F.bgCream, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '90px', paddingLeft: mobil ? '22px' : '60px', paddingRight: mobil ? '22px' : '60px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,107,107,0.12)' }}>
-            ✦ Deine Lern-Bibliothek
-          </span>
-          <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '52px' : '94px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 24px', color: F.ink, letterSpacing: '-0.03em' }}>
-            Mathe und Physik,<br /><span style={{ fontStyle: 'italic', color: F.coral }}>endlich entspannt</span>.
-          </h1>
-          <p style={{ fontSize: mobil ? '17px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: '0 auto 38px', maxWidth: '580px' }}>
-            13 schöne Lernpakete, dein eigener Lernplan und ein kostenloses Quiz — für jede Klasse von 1 bis 13.
-          </p>
-          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/lernheld" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              Lernheld starten →
-            </a>
-            <a href="#mathe" className="btn-ghost" style={{ background: 'transparent', color: F.ink, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, border: `1.5px solid ${F.ink}` }}>
-              Pakete ansehen
-            </a>
+      <section className="fade-up" style={{ background: F.bgCream, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '100px', paddingLeft: mobil ? '22px' : '60px', paddingRight: mobil ? '22px' : '60px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center' }}>
+          <div>
+            <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', boxShadow: '0 4px 14px rgba(255,107,107,0.12)' }}>
+              ✦ Deine Lern-Bibliothek
+            </span>
+            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '50px' : '80px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
+              Mathe und Physik,<br /><span style={{ fontStyle: 'italic', color: F.coral }}>endlich entspannt</span>.
+            </h1>
+            <p style={{ fontSize: mobil ? '16.5px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 34px', maxWidth: '500px' }}>
+              13 schöne Lernpakete, dein eigener Lernplan und ein kostenloses Quiz — für jede Klasse von 1 bis 13.
+            </p>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              <a href="/lernheld" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                Lernheld starten →
+              </a>
+              <a href="#bibliothek" className="btn-ghost" style={{ background: 'transparent', color: F.ink, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, border: `1.5px solid ${F.ink}` }}>
+                Pakete ansehen
+              </a>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <BuchstapelBild size={mobil ? 280 : 420} />
           </div>
         </div>
       </section>
@@ -208,52 +215,48 @@ export default function Home() {
       <section style={{ background: F.bg, padding: mobil ? '70px 22px' : '110px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: mobil ? '36px' : '52px' }}>
-            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>1. Wähle aus</span>
+            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>1. Was suchst du?</span>
             <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: 0, letterSpacing: '-0.02em' }}>
-              Was möchtest du heute lernen?
+              Vier einfache Wege zu deinem Ziel.
             </h2>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: mobil ? '14px' : '20px' }}>
-            <KatTile href="#mathe" farbe={F.sky} titel="Mathematik" sub={`${mathe.length} Pakete`} icon={(<svg width="32" height="32" viewBox="0 0 40 40"><rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/><rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>)} />
-            <KatTile href="#physik" farbe={F.lavender} titel="Physik" sub={`${physik.length} Pakete`} icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="5" fill="white"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/></svg>)} />
+            <KatTile href="#bibliothek" farbe={F.sky} titel="Lernpakete" sub={`${produkte.length} Themen verfügbar`} icon={(<svg width="32" height="32" viewBox="0 0 40 40"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
             <KatTile href="/lernheld" farbe={F.coral} titel="Lernheld" sub="Premium · 1,99 €" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>)} />
             <KatTile href="/quiz" farbe={F.sun} titelDark titel="Quiz" sub="Kostenlos · 61 Themen" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="#2d3436" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="#2d3436" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="#2d3436"/></svg>)} />
+            <KatTile href="https://wa.me/4917624700519" farbe={F.mint} titel="Hilfe" sub="Schreib direkt Anna" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M14 18c2 2 4 4 8 4M14 14h12M14 22h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
           </div>
         </div>
       </section>
 
-      {/* ====== SECTION 3: MATHEMATIK ====== */}
-      <section id="mathe" style={{ background: F.bgSky, padding: mobil ? '70px 22px' : '110px 60px' }}>
+      {/* ====== SECTION 3: BIBLIOTHEK (Mathe + Physik kombiniert mit Filter) ====== */}
+      <section id="bibliothek" style={{ background: F.bgSky, padding: mobil ? '70px 22px' : '110px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: mobil ? '32px' : '46px', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.sky, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>2. Mathematik</span>
-              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: 0, lineHeight: 1.0, letterSpacing: '-0.02em' }}>
-                Alle Themen, klar erklärt.
-              </h2>
-            </div>
-            <p style={{ fontSize: '14.5px', color: F.inkMuted, margin: 0 }}>{mathe.length} Pakete · ab 0,99 €</p>
+          <div style={{ textAlign: 'center', marginBottom: mobil ? '28px' : '40px' }}>
+            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.skyDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>2. Die Bibliothek</span>
+            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+              Alle Lernpakete an einem Ort.
+            </h2>
+            <p style={{ fontSize: '15px', color: F.inkSoft, margin: 0 }}>{produkte.length} Pakete · ab 0,99 € · sofort verfügbar</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: mobil ? '14px' : '22px' }}>
-            {mathe.map((p) => (<ProduktKarte key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
-          </div>
-        </div>
-      </section>
 
-      {/* ====== SECTION 4: PHYSIK ====== */}
-      <section id="physik" style={{ background: F.bgMint, padding: mobil ? '70px 22px' : '110px 60px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: mobil ? '32px' : '46px', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.mintDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>3. Physik</span>
-              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: 0, lineHeight: 1.0, letterSpacing: '-0.02em' }}>
-                Von Kraft bis Quanten.
-              </h2>
-            </div>
-            <p style={{ fontSize: '14.5px', color: F.inkMuted, margin: 0 }}>{physik.length} Pakete · ab 0,99 €</p>
+          {/* FILTER TABS */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: mobil ? '28px' : '40px', flexWrap: 'wrap' }}>
+            {([
+              { id: 'alle' as const, t: 'Alle', n: produkte.length },
+              { id: 'mathe' as const, t: 'Mathematik', n: mathe.length },
+              { id: 'physik' as const, t: 'Physik', n: physik.length },
+            ]).map((tab) => (
+              <button key={tab.id} onClick={() => setFilter(tab.id)} style={{ background: filter === tab.id ? F.ink : F.white, color: filter === tab.id ? F.white : F.ink, border: `1.5px solid ${filter === tab.id ? F.ink : F.border}`, padding: '12px 22px', borderRadius: '999px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: SANS, display: 'inline-flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s ease' }}>
+                {tab.t}
+                <span style={{ background: filter === tab.id ? 'rgba(255,255,255,0.18)' : F.bgCream, color: filter === tab.id ? F.white : F.inkMuted, fontSize: '12px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px' }}>{tab.n}</span>
+              </button>
+            ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: mobil ? '14px' : '22px' }}>
-            {physik.map((p) => (<ProduktKarte key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
+
+          {/* GRID */}
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: mobil ? '14px' : '22px' }}>
+            {angezeigt.map((p) => (<ProduktKarte key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
           </div>
         </div>
       </section>
@@ -263,7 +266,7 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '40px' : '70px', alignItems: 'center' }}>
             <div>
-              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>4. Premium · 1,99 €</span>
+              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>3. Premium · 1,99 €</span>
               <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '64px', fontWeight: 600, color: F.ink, margin: '0 0 22px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
                 Dein eigener<br /><span style={{ fontStyle: 'italic', color: F.coral }}>Lernheld</span>-Plan.
               </h2>
@@ -298,7 +301,7 @@ export default function Home() {
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ background: F.bgMint, borderRadius: '28px', padding: mobil ? '40px 28px' : '70px 60px', textAlign: 'center' }}>
             <span style={{ display: 'inline-block', background: F.white, color: F.mintDeep, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '20px' }}>
-              5. Kostenlos
+              4. Kostenlos
             </span>
             <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '56px', fontWeight: 600, color: F.ink, margin: '0 0 18px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
               Teste dein <span style={{ fontStyle: 'italic', color: F.mintDeep }}>Wissen</span>.
@@ -349,6 +352,93 @@ export default function Home() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function BuchstapelBild({ size }: { size: number }) {
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} viewBox="0 0 440 440" style={{ overflow: 'visible' }}>
+        <defs>
+          <radialGradient id="bgGlow" cx="50%" cy="55%" r="50%">
+            <stop offset="0%" stopColor="#ffe8d6" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#ffe8d6" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        {/* Soft background */}
+        <circle cx="220" cy="240" r="200" fill="url(#bgGlow)" />
+
+        {/* Floating math symbols */}
+        <text x="60" y="110" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="46" fill="#ff6b6b" opacity="0.4" fontStyle="italic">π</text>
+        <text x="350" y="130" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="40" fill="#4ecdc4" opacity="0.45" fontStyle="italic">√</text>
+        <text x="370" y="320" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="44" fill="#a18ee0" opacity="0.4" fontStyle="italic">x²</text>
+        <text x="40" y="340" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="42" fill="#ffd166" opacity="0.55" fontStyle="italic">∑</text>
+
+        {/* Tisch-Schatten */}
+        <ellipse cx="220" cy="408" rx="160" ry="14" fill="#2d3436" opacity="0.10" />
+
+        {/* Buchstapel — von unten nach oben */}
+        {/* Buch 1 (unten, sky-blue) */}
+        <g transform="translate(70, 330)">
+          <rect x="0" y="0" width="300" height="46" rx="4" fill="#5cabd6" />
+          <rect x="0" y="0" width="300" height="6" rx="4" fill="#4691bc" />
+          <rect x="6" y="14" width="60" height="4" rx="2" fill="rgba(255,255,255,0.5)" />
+          <rect x="6" y="24" width="100" height="4" rx="2" fill="rgba(255,255,255,0.5)" />
+          <text x="240" y="32" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="22" fontStyle="italic" fontWeight="700" fill="rgba(255,255,255,0.85)">M</text>
+        </g>
+        {/* Buch 2 (lavender) */}
+        <g transform="translate(60, 282) rotate(-2)">
+          <rect x="0" y="0" width="290" height="50" rx="4" fill="#a18ee0" />
+          <rect x="0" y="0" width="290" height="6" rx="4" fill="#876fc4" />
+          <rect x="8" y="16" width="80" height="4" rx="2" fill="rgba(255,255,255,0.6)" />
+          <rect x="8" y="28" width="110" height="4" rx="2" fill="rgba(255,255,255,0.5)" />
+          <text x="225" y="34" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="22" fontStyle="italic" fontWeight="700" fill="rgba(255,255,255,0.85)">P</text>
+        </g>
+        {/* Buch 3 (coral) */}
+        <g transform="translate(80, 232) rotate(2)">
+          <rect x="0" y="0" width="280" height="48" rx="4" fill="#ff6b6b" />
+          <rect x="0" y="0" width="280" height="6" rx="4" fill="#e55454" />
+          <rect x="8" y="16" width="70" height="4" rx="2" fill="rgba(255,255,255,0.65)" />
+          <rect x="8" y="26" width="100" height="4" rx="2" fill="rgba(255,255,255,0.5)" />
+          <text x="220" y="32" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="20" fontStyle="italic" fontWeight="700" fill="rgba(255,255,255,0.92)">¾</text>
+        </g>
+        {/* Buch 4 (mint) — vertikal stehend */}
+        <g transform="translate(110, 80)">
+          <rect x="0" y="0" width="130" height="160" rx="6" fill="#4ecdc4" />
+          <rect x="0" y="0" width="14" height="160" fill="#3aada4" />
+          <text x="72" y="50" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="22" fontWeight="700" fill="#ffffff" textAnchor="middle">Mathe</text>
+          <text x="72" y="74" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="14" fill="rgba(255,255,255,0.75)" textAnchor="middle">Klasse 6–9</text>
+          {/* Dreieck-icon */}
+          <polygon points="50,100 94,100 72,120" fill="rgba(255,255,255,0.92)" />
+          <rect x="6" y="146" width="118" height="8" rx="2" fill="rgba(255,255,255,0.25)" />
+        </g>
+        {/* Buch 5 (sun yellow) — lehnt sich an */}
+        <g transform="translate(252, 85) rotate(6)">
+          <rect x="0" y="0" width="120" height="150" rx="6" fill="#ffd166" />
+          <rect x="0" y="0" width="120" height="14" fill="#e8b94e" />
+          <text x="60" y="50" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="20" fontWeight="700" fill="#2d3436" textAnchor="middle">Physik</text>
+          <text x="60" y="72" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="13" fill="#5a5045" textAnchor="middle">Klasse 8–10</text>
+          {/* Atom-icon */}
+          <circle cx="60" cy="102" r="5" fill="#2d3436" />
+          <ellipse cx="60" cy="102" rx="22" ry="8" fill="none" stroke="#2d3436" strokeWidth="1.5" />
+          <ellipse cx="60" cy="102" rx="22" ry="8" fill="none" stroke="#2d3436" strokeWidth="1.5" transform="rotate(60 60 102)" />
+          <ellipse cx="60" cy="102" rx="22" ry="8" fill="none" stroke="#2d3436" strokeWidth="1.5" transform="rotate(-60 60 102)" />
+          <rect x="6" y="134" width="108" height="8" rx="2" fill="rgba(45,52,54,0.2)" />
+        </g>
+
+        {/* Lesezeichen auf dem mint Buch */}
+        <rect x="220" y="80" width="14" height="44" fill="#ff6b6b" />
+        <polygon points="220,124 234,124 227,134" fill="#ff6b6b" />
+
+        {/* Apfel als Akzent oben drauf */}
+        <g transform="translate(180, 50)">
+          <circle cx="20" cy="20" r="18" fill="#ff6b6b" />
+          <ellipse cx="14" cy="14" rx="5" ry="4" fill="rgba(255,255,255,0.5)" />
+          <rect x="19" y="0" width="2" height="6" fill="#2d3436" />
+          <ellipse cx="24" cy="3" rx="6" ry="3" fill="#4ecdc4" transform="rotate(20 24 3)" />
+        </g>
+      </svg>
+    </div>
   );
 }
 
