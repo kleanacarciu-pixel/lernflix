@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     const klasseZahl = parseInt(klasse) || 0;
     const istUnterstufe = klasseZahl > 0 && klasseZahl <= 6;
     const bruchHinweis = istUnterstufe
-      ? `Klasse ${klasse}: Schreibe Teilungen IMMER mit Doppelpunkt " : ". NIEMALS mit Schrägstrich "/". Beispiel: 12 : 4 = 3, nicht 12/4 = 3.`
-      : `Klasse ${klasse}: Verwende für echte mathematische Brüche IMMER die HTML-Schreibweise <span class="frac"><span class="num">ZAEHLER</span><span class="den">NENNER</span></span>. NIEMALS Schrägstrich "/". Beispiel: x = -<span class="frac"><span class="num">p</span><span class="den">2</span></span> ± √((<span class="frac"><span class="num">p</span><span class="den">2</span></span>)² - q).`;
+      ? `Klasse ${klasse}: BRUCH(zaehler;nenner) wird auf dem Server zu "zaehler : nenner". Beispiel: BRUCH(12;4) wird zu "12 : 4".`
+      : `Klasse ${klasse}: BRUCH(zaehler;nenner) wird auf dem Server zu einem schoen gestapelten Bruch. Beispiel: BRUCH(p;2) wird zu einem echten Bruch mit p oben und 2 unten.`;
 
     const textPrompt = `Du bist eine deutsche ${fach}-Lehrerin. Schau dir alle Fotos sehr genau an (Stofflisten, Buchseiten, Übungen einer Klasse-${klasse}-Schülerin).
 
@@ -48,26 +48,30 @@ Pro Thema gib mir kompakt aber konkret:
 
 MATHE-SCHREIBWEISE — STRENG BEACHTEN (in ALLEN Feldern: formeln, erklaerung, regel, beispiel_loesung, uebung_loesung, …):
 
-(1) NIEMALS LaTeX-Notation, NIEMALS Underscores, NIEMALS Caret. Niemals "x_n", "x_{n+1}", "x^2", "\\sqrt{...}".
-(2) Tiefgestellte Zeichen (Subscripts) IMMER als Unicode: x₁, x₂, x₃, …, xₙ, xₙ₊₁, aₖ, vₐ.
+(1) NIEMALS LaTeX, NIEMALS Underscores, NIEMALS Caret. Verboten: "x_n", "x_{n+1}", "x^2", "\\sqrt{...}", "/" als Bruchstrich.
+(2) Subscripts IMMER als Unicode: x₁, x₂, …, xₙ, xₙ₊₁, aₖ.
     Verfuegbare Unicode-Subscripts: ₀ ₁ ₂ ₃ ₄ ₅ ₆ ₇ ₈ ₉ ₊ ₋ ₌ ₍ ₎ ₐ ₑ ᵢ ⱼ ₖ ₗ ₘ ₙ ₒ ₚ ᵣ ₛ ₜ ᵤ ᵥ ₓ
     Falls Unicode nicht reicht: <sub>n+1</sub>.
-(3) Hochgestellte Zeichen (Superscripts) als Unicode: x², x³, x⁴, x⁵, xⁿ, x⁻¹, 10⁻³.
+(3) Superscripts als Unicode: x², x³, xⁿ, x⁻¹, 10⁻³.
     Verfuegbare Unicode-Superscripts: ⁰ ¹ ² ³ ⁴ ⁵ ⁶ ⁷ ⁸ ⁹ ⁺ ⁻ ⁼ ⁽ ⁾ ⁿ ⁱ
     Falls Unicode nicht reicht: <sup>...</sup>.
-(4) Brüche / Teilungen (SEHR WICHTIG, je nach Klasse unterschiedlich):
-    ${bruchHinweis}
+(4) BRÜCHE (SEHR WICHTIG): schreibe sie IMMER als BRUCH(zaehler;nenner). Nichts anderes!
+    Beispiele:
+      "p halbe" -> BRUCH(p;2)
+      "a geteilt durch b" -> BRUCH(a;b)
+      "(x+1) durch (x-1)" -> BRUCH(x+1;x-1)
+      "minus p halbe plus minus Wurzel ..." -> "x = -BRUCH(p;2) ± √(BRUCH(p;2)² - q)"
+    NIEMALS Schrägstrich /. NIEMALS <span class="frac">.
+    Der Server konvertiert BRUCH(...) automatisch passend: ${bruchHinweis}
 (5) Wurzel immer mit echtem Symbol: √. Niemals "sqrt(…)" oder "\\sqrt".
 (6) Weitere Symbole als Unicode: π · ÷ ± ∠ ° ∞ ≤ ≥ ≠ ⊥ ∥ ∈ Δ ∑.
 
-ERLAUBTE HTML-Tags in den Feldern (sonst kein HTML, kein Markdown):
-<span class="frac"><span class="num">…</span><span class="den">…</span></span>, <sup>…</sup>, <sub>…</sub>.
+ERLAUBTE HTML-Tags in den Feldern (sonst kein HTML, kein Markdown): <sup>…</sup>, <sub>…</sub>.
 
 BEISPIELE — RICHTIG vs FALSCH:
-  RICHTIG: x² + 4x + 3 = 0     FALSCH: x^2 + 4x + 3 = 0
-  RICHTIG: xₙ₊₁ = …            FALSCH: x_{n+1} = …
-  RICHTIG (${istUnterstufe ? "Klasse ≤6" : "Klasse ≥7"}): ${istUnterstufe ? "8 : 4 = 2" : '<span class="frac"><span class="num">8</span><span class="den">4</span></span> = 2'}
-  FALSCH: 8/4 = 2
+  RICHTIG: x² + 4x + 3 = 0       FALSCH: x^2 + 4x + 3 = 0
+  RICHTIG: xₙ₊₁ = BRUCH(xₙ+a;2)  FALSCH: x_{n+1} = (x_n+a)/2
+  RICHTIG: BRUCH(8;4) = 2        FALSCH: 8/4 = 2
 
 WEITERE REGELN:
 - Verwende echte deutsche Umlaute: ä ö ü ß. Niemals "ae oe ue ss".

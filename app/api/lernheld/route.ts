@@ -123,37 +123,48 @@ function esc(s: unknown): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Mathematische Felder duerfen <span class="frac">, <sup>, <sub> enthalten.
-// Wir parsen die Eingabe, behalten nur diese Tags, escapen alles andere.
-function mathHtml(s: unknown): string {
+// Wandelt die einfache Bruch-Notation BRUCH(zaehler;nenner) in HTML um.
+// Klasse <= 6: "zaehler : nenner". Klasse >= 7: gestapelter Bruch.
+function bruecheUmwandeln(s: string, istUnterstufe: boolean): string {
+  return s.replace(/BRUCH\s*\(\s*([^;)]+?)\s*;\s*([^)]+?)\s*\)/g, (_match, a, b) => {
+    if (istUnterstufe) return `${a} : ${b}`;
+    return `<span class="frac"><span class="num">${a}</span><span class="den">${b}</span></span>`;
+  });
+}
+
+// Erlaubt nur <sup>, <sub> als Inline-HTML. Alles andere wird escapet.
+// Anschliessend werden BRUCH(...)-Stellen serverseitig konvertiert.
+function mathHtml(s: unknown, istUnterstufe: boolean): string {
   if (typeof s !== "string") return "";
-  // Erst alles HTML-escapen
-  let out = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  // Dann genau diese erlaubten Tags wieder freischalten
-  out = out.replace(/&lt;span class=&quot;frac&quot;&gt;/g, '<span class="frac">');
-  out = out.replace(/&lt;span class=&quot;num&quot;&gt;/g, '<span class="num">');
-  out = out.replace(/&lt;span class=&quot;den&quot;&gt;/g, '<span class="den">');
-  out = out.replace(/&lt;\/span&gt;/g, "</span>");
-  out = out.replace(/&lt;sup&gt;/g, "<sup>");
-  out = out.replace(/&lt;\/sup&gt;/g, "</sup>");
-  out = out.replace(/&lt;sub&gt;/g, "<sub>");
-  out = out.replace(/&lt;\/sub&gt;/g, "</sub>");
+  const PH = "";
+  let out = s
+    .replace(/<sup>/g, `${PH}SUPo${PH}`)
+    .replace(/<\/sup>/g, `${PH}SUPc${PH}`)
+    .replace(/<sub>/g, `${PH}SUBo${PH}`)
+    .replace(/<\/sub>/g, `${PH}SUBc${PH}`);
+  out = out.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  out = out
+    .replace(new RegExp(`${PH}SUPo${PH}`, "g"), "<sup>")
+    .replace(new RegExp(`${PH}SUPc${PH}`, "g"), "</sup>")
+    .replace(new RegExp(`${PH}SUBo${PH}`, "g"), "<sub>")
+    .replace(new RegExp(`${PH}SUBc${PH}`, "g"), "</sub>");
+  out = bruecheUmwandeln(out, istUnterstufe);
   return out;
 }
 
-function baueThemenBlock(t: Thema, index: number): string {
+function baueThemenBlock(t: Thema, index: number, istUnterstufe: boolean): string {
   const formeln = Array.isArray(t.formeln) ? t.formeln : [];
   const formelnHtml = formeln.length
-    ? `<div class="label-row">Die wichtigsten Formeln</div><div class="fx-block">${formeln.map((f) => `<span class="fx">${mathHtml(f)}</span>`).join("")}</div>`
+    ? `<div class="label-row">Die wichtigsten Formeln</div><div class="fx-block">${formeln.map((f) => `<span class="fx">${mathHtml(f, istUnterstufe)}</span>`).join("")}</div>`
     : "";
-  const regelHtml = t.regel ? `<div class="label-row">Merke dir</div><p>${mathHtml(t.regel)}</p>` : "";
+  const regelHtml = t.regel ? `<div class="label-row">Merke dir</div><p>${mathHtml(t.regel, istUnterstufe)}</p>` : "";
   const beispiel = t.beispiel_aufgabe
-    ? `<div class="label-row">Beispiel Schritt für Schritt</div><div class="example"><div class="lbl">Aufgabe</div><p>${mathHtml(t.beispiel_aufgabe)}</p>${t.beispiel_loesung ? `<p style="margin-top:8px"><b>Lösung:</b> ${mathHtml(t.beispiel_loesung)}</p>` : ""}</div>`
+    ? `<div class="label-row">Beispiel Schritt für Schritt</div><div class="example"><div class="lbl">Aufgabe</div><p>${mathHtml(t.beispiel_aufgabe, istUnterstufe)}</p>${t.beispiel_loesung ? `<p style="margin-top:8px"><b>Lösung:</b> ${mathHtml(t.beispiel_loesung, istUnterstufe)}</p>` : ""}</div>`
     : "";
   const uebung = t.uebung_aufgabe
-    ? `<div class="uebung"><div class="lbl">Jetzt du — Übung</div><p>${mathHtml(t.uebung_aufgabe)}</p>${t.uebung_loesung ? `<div class="loesung"><b>Lösung:</b> ${mathHtml(t.uebung_loesung)}</div>` : ""}</div>`
+    ? `<div class="uebung"><div class="lbl">Jetzt du — Übung</div><p>${mathHtml(t.uebung_aufgabe, istUnterstufe)}</p>${t.uebung_loesung ? `<div class="loesung"><b>Lösung:</b> ${mathHtml(t.uebung_loesung, istUnterstufe)}</div>` : ""}</div>`
     : "";
-  return `<div class="block"><div class="block-top"><h4><span class="circle"></span>${esc(t.name || "Thema")}</h4><span class="badge b-lernen">Thema ${index + 1}</span></div><div class="erkl">${mathHtml(t.erklaerung || "")}</div>${formelnHtml}${regelHtml}${beispiel}${uebung}</div>`;
+  return `<div class="block"><div class="block-top"><h4><span class="circle"></span>${esc(t.name || "Thema")}</h4><span class="badge b-lernen">Thema ${index + 1}</span></div><div class="erkl">${mathHtml(t.erklaerung || "", istUnterstufe)}</div>${formelnHtml}${regelHtml}${beispiel}${uebung}</div>`;
 }
 
 export async function POST(request: Request) {
@@ -176,18 +187,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Der Server ist nicht richtig eingerichtet." }, { status: 500 });
     }
 
-    const themenBloecke = themen.map((t, i) => baueThemenBlock(t, i)).join("\n");
+    const klasseZahl = parseInt(klasse) || 0;
+    const istUnterstufe = klasseZahl > 0 && klasseZahl <= 6;
+    const bruchHinweis = istUnterstufe
+      ? `Klasse ${klasse}: Verwende bei Teilungen den Doppelpunkt " : ". Beispiel: BRUCH(8;4) wird automatisch zu "8 : 4".`
+      : `Klasse ${klasse}: Echte Brüche werden serverseitig schön gestapelt aus BRUCH(zaehler;nenner) gebaut.`;
+
+    const themenBloecke = themen.map((t, i) => baueThemenBlock(t, i, istUnterstufe)).join("\n");
     const heute = new Date().toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
 
     const themenAlsText = themen
       .map((t, i) => `${i + 1}. ${t.name || "Thema"} — ${t.erklaerung || ""}${t.formeln?.length ? " | Formeln: " + t.formeln.join(", ") : ""}${t.regel ? " | Regel: " + t.regel : ""}`)
       .join("\n");
-
-    const klasseZahl = parseInt(klasse) || 0;
-    const istUnterstufe = klasseZahl > 0 && klasseZahl <= 6;
-    const bruchHinweis = istUnterstufe
-      ? `Klasse ${klasse}: Schreibe Teilungen IMMER mit Doppelpunkt " : ". NIEMALS mit Schrägstrich "/".`
-      : `Klasse ${klasse}: Echte Brüche immer als <span class="frac"><span class="num">…</span><span class="den">…</span></span>. NIEMALS mit Schrägstrich "/".`;
 
     const fokusAbschnittHinweis = schwierigkeiten
       ? `\n\nFOKUS-EINGABE DER SCHÜLERIN:\n"${schwierigkeiten}"\n\nERSTELLE ZUSÄTZLICH einen Block "Dein persönlicher Fokus" GANZ AM ANFANG (vor der Formelsammlung). In dem Block: gehe direkt auf das ein, was sie geschrieben hat, sprich sie persönlich an, gib 3–5 konkrete Lerntipps speziell für ihre Schwierigkeiten und nenne die Themen aus der Liste, auf die sie sich besonders konzentrieren sollte. Verwende dafür diese Struktur:
@@ -208,12 +219,12 @@ SCHREIBREGELN:
 - Keine Emojis.
 
 MATHE-SCHREIBWEISE in allen Formeln und Texten:
-- NIEMALS Underscores oder LaTeX. Keine "x_n", "x_{n+1}", "x^2", "sqrt(...)".
+- NIEMALS Underscores, NIEMALS LaTeX. Keine "x_n", "x_{n+1}", "x^2", "sqrt(...)".
 - Subscripts als Unicode: x₁, x₂, xₙ, xₙ₊₁ — oder <sub>...</sub>.
 - Superscripts als Unicode: x², x³, xⁿ — oder <sup>...</sup>.
-- Wurzel: √
-- ${bruchHinweis}
-- Erlaubte HTML-Tags: <span class="frac"><span class="num">…</span><span class="den">…</span></span>, <sup>, <sub>.
+- Wurzel immer: √
+- BRÜCHE: schreibe sie IMMER als BRUCH(zaehler;nenner). Beispiel: statt "p/2" schreibe "BRUCH(p;2)". Statt "(a+b)/c" schreibe "BRUCH(a+b;c)". NIEMALS Schrägstrich /. NIEMALS <span class="frac">. Der Server baut den Bruch dann automatisch passend zur Klasse (${bruchHinweis}).
+- Erlaubte HTML-Tags in deinen Texten: <sup>, <sub>. Sonst kein HTML in Formeln.
 
 ERSTELLE FOLGENDE ABSCHNITTE ALS REINES HTML:
 
@@ -275,6 +286,7 @@ ABSOLUT WICHTIG:
 
     let zusatz = (data.content[0]?.text || "").trim();
     zusatz = zusatz.replace(/```html/gi, "").replace(/```/g, "").trim();
+    zusatz = bruecheUmwandeln(zusatz, istUnterstufe);
 
     const banner = `<div class="banner"><div class="kick">Dein persönlicher Lernplan</div><h1>Lernplan für ${esc(name) || "deine Schulaufgabe"}</h1><p>${fach} · Klasse ${esc(klasse)} · Schulaufgabe am ${esc(datum)}. Alles erklärt — du brauchst nichts anderes mehr.</p></div>`;
     const themenIntro = `<div class="sec-title">Alles was du können musst</div><p class="sec-sub">Hier ist jedes Thema verständlich erklärt — Schritt für Schritt, mit Beispielen die du nachmachen kannst.</p>`;
