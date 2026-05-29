@@ -14,33 +14,57 @@ type Produkt = {
   vorschau: string;
 };
 
+const F = {
+  bg: '#0c0c10',
+  bgSoft: '#13131a',
+  bgDeep: '#08080d',
+  card: 'rgba(255,255,255,0.04)',
+  cardHover: 'rgba(255,255,255,0.08)',
+  ink: '#ffffff',
+  inkSoft: 'rgba(255,255,255,0.78)',
+  inkMuted: 'rgba(255,255,255,0.52)',
+  white: '#ffffff',
+  border: 'rgba(255,255,255,0.10)',
+  borderSoft: 'rgba(255,255,255,0.06)',
+  accent: '#e6354f',
+  accentDeep: '#c4263e',
+  accentSoft: 'rgba(230, 53, 79, 0.12)',
+  glow: 'rgba(230, 53, 79, 0.4)',
+};
+
+const SERIF = '"Cormorant Garamond", Georgia, serif';
+const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
+
+const THEMA: Record<string, { bg: string; bgEnd?: string; render: () => React.ReactElement }> = {
+  geometrie: { bg: '#1e4a82', bgEnd: '#2c6bb8', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><polygon points="20,75 120,75 70,15" fill="rgba(255,255,255,0.95)"/><rect x="55" y="63" width="12" height="12" fill="none" stroke="#1d1d1f" strokeWidth="1.5"/></svg>) },
+  brueche: { bg: '#c4395f', bgEnd: '#e85278', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><text x="70" y="50" fontSize="42" fontWeight="700" fill="#ffffff" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif">¾</text><line x1="36" y1="58" x2="104" y2="58" stroke="#ffffff" strokeWidth="2.5"/></svg>) },
+  prozent: { bg: '#1f7a52', bgEnd: '#38a273', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><text x="70" y="62" fontSize="54" fontWeight="700" fill="#ffffff" textAnchor="middle">%</text></svg>) },
+  gleichungen: { bg: '#c47b1f', bgEnd: '#e8a83b', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><text x="70" y="58" fontSize="36" fontWeight="700" fill="#ffffff" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif"><tspan fontStyle="italic">x</tspan> = ?</text></svg>) },
+  funktionen: { bg: '#5a2d7c', bgEnd: '#7a4d92', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><line x1="20" y1="45" x2="120" y2="45" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/><line x1="70" y1="10" x2="70" y2="80" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/><path d="M 25 75 Q 70 -12 115 75" fill="none" stroke="#ffffff" strokeWidth="3.5"/></svg>) },
+  stochastik: { bg: '#1f5a8a', bgEnd: '#3a7bb8', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><rect x="50" y="22" width="44" height="44" rx="7" fill="#ffffff"/><circle cx="62" cy="34" r="3.5" fill="#1d1d1f"/><circle cx="82" cy="34" r="3.5" fill="#1d1d1f"/><circle cx="62" cy="54" r="3.5" fill="#1d1d1f"/><circle cx="82" cy="54" r="3.5" fill="#1d1d1f"/></svg>) },
+  trigonometrie: { bg: '#1f7a52', bgEnd: '#4a9a72', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><polygon points="20,75 120,75 120,22" fill="rgba(255,255,255,0.95)"/><rect x="106" y="61" width="14" height="14" fill="none" stroke="#1d1d1f" strokeWidth="1.5"/><text x="40" y="68" fontSize="16" fontStyle="italic" fontWeight="700" fill="#1d1d1f">α</text></svg>) },
+  potenzen: { bg: '#5a2d7c', bgEnd: '#7a4d92', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><text x="60" y="62" fontSize="44" fontWeight="700" fill="#ffffff" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontStyle="italic">x</text><text x="92" y="38" fontSize="26" fontWeight="700" fill="#ffffff" fontFamily="Cormorant Garamond, Georgia, serif">2</text></svg>) },
+  mechanik: { bg: '#c47b1f', bgEnd: '#e8a83b', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><circle cx="48" cy="55" r="16" fill="#ffffff"/><line x1="64" y1="55" x2="108" y2="55" stroke="#ffffff" strokeWidth="5"/><polygon points="104,48 118,55 104,62" fill="#ffffff"/></svg>) },
+  elektrizitaet: { bg: '#c47b1f', bgEnd: '#e8a83b', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><polygon points="64,14 42,52 64,52 52,80 96,34 72,34 84,14" fill="#1d1d1f"/></svg>) },
+  optik: { bg: '#5a2d7c', bgEnd: '#7a4d92', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><circle cx="70" cy="45" r="24" fill="#e8a83b"/><line x1="70" y1="8" x2="70" y2="14" stroke="#ffffff" strokeWidth="2.5"/><line x1="70" y1="76" x2="70" y2="82" stroke="#ffffff" strokeWidth="2.5"/><line x1="32" y1="45" x2="38" y2="45" stroke="#ffffff" strokeWidth="2.5"/><line x1="102" y1="45" x2="108" y2="45" stroke="#ffffff" strokeWidth="2.5"/></svg>) },
+  waerme: { bg: '#c4395f', bgEnd: '#e85278', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><rect x="65" y="14" width="10" height="44" rx="5" fill="#ffffff" stroke="#1d1d1f" strokeWidth="1.5"/><rect x="65" y="34" width="10" height="24" fill="#1d1d1f"/><circle cx="70" cy="66" r="12" fill="#1d1d1f"/></svg>) },
+  atomphysik: { bg: '#1f7a52', bgEnd: '#4a9a72', render: () => (<svg viewBox="0 0 140 90" width="100%" height="100%"><circle cx="70" cy="45" r="7" fill="#ffffff"/><ellipse cx="70" cy="45" rx="34" ry="11" fill="none" stroke="#ffffff" strokeWidth="2.5"/><ellipse cx="70" cy="45" rx="34" ry="11" fill="none" stroke="#ffffff" strokeWidth="2.5" transform="rotate(60 70 45)"/><ellipse cx="70" cy="45" rx="34" ry="11" fill="none" stroke="#ffffff" strokeWidth="2.5" transform="rotate(-60 70 45)"/></svg>) },
+};
+
 export default function Home() {
   const [ausgewaehlt, setAusgewaehlt] = useState<Produkt | null>(null);
-  const [phase, setPhase] = useState<'kratzen' | 'weglaufen' | 'zurueck' | 'schild'>('kratzen');
-  const [scrolled, setScrolled] = useState(false);
   const [breite, setBreite] = useState(1200);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const run = () => {
-      setPhase('kratzen');
-      setTimeout(() => setPhase('weglaufen'), 3500);
-      setTimeout(() => setPhase('zurueck'), 5500);
-      setTimeout(() => setPhase('schild'), 7200);
-    };
-    run();
-    const loop = setInterval(run, 12000);
-    return () => clearInterval(loop);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    const handleResize = () => setBreite(window.innerWidth);
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    const onResize = () => setBreite(window.innerWidth);
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll);
+    onResize();
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
@@ -51,206 +75,97 @@ export default function Home() {
       window.location.href = `/materialien/${produkt.slug}`;
       return;
     }
-    // Fallback alter PDF-Flow
-    const response = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productName: produkt.titel, price: produkt.preis }),
-    });
-    const data = await response.json();
-    if (data.url) window.location.href = data.url;
+    const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productName: produkt.titel, price: produkt.preis }) });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
   };
 
   const produkte: Produkt[] = [
-    {
-      id: 1, slug: 'geometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Geometrie Klasse 6–9',
-      beschreibung: 'Alle Geometrie-Themen — Dreiecke, Vierecke, Kreis, Körper. Mit beschrifteten Figuren und durchgerechneten Beispielen.',
-      details: ['13 Sektionen mit SVG-Skizzen', 'Pythagoras + Höhensatz + Kathetensatz', 'Komplette Trigonometrie', 'Alle Vierecke & Körper', 'Strahlensätze & Ähnlichkeit', 'Schnellübersicht am Ende'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 2, slug: 'brueche', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Brüche & Bruchrechnung',
-      beschreibung: 'Brüche endlich verstehen — kürzen, erweitern, addieren, multiplizieren. Mit Beispielen aus dem Alltag und kleinen Witzen.',
-      details: ['Was ist ein Bruch?', 'Kürzen & Erweitern', 'Plus, Minus, Mal, Geteilt', 'Gemischte Brüche, Dezimalzahlen', 'Eselsbrücken und Witze', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 3, slug: 'prozent', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Prozent & Zinsen',
-      beschreibung: 'Rabatte verstehen, Mehrwertsteuer rechnen, Zinsen und Zinseszins — alles mit einfachen Tricks erklärt.',
-      details: ['Die Grundformel der Prozentrechnung', '3 klassische Aufgabentypen', 'Aufschlag & Rabatt', 'Zinsrechnung & Zinseszins', 'Promille und ppm', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 4, slug: 'gleichungen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Gleichungen & Terme',
-      beschreibung: 'Vom einfachen x = 5 bis zur pq-Formel — Gleichungen lösen Schritt für Schritt mit klaren Tipps.',
-      details: ['Terme vereinfachen', 'Lineare Gleichungen', 'Gleichungssysteme (3 Methoden)', 'Quadratische Gleichungen', 'pq-Formel & Mitternachtsformel', 'Ungleichungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 5, slug: 'funktionen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Funktionen — linear & quadratisch',
-      beschreibung: 'Geraden, Parabeln, Hyperbeln, Wurzeln — alle Funktionstypen mit Skizzen und Beispielen.',
-      details: ['Lineare Funktionen (Gerade)', 'Quadratische Funktionen (Parabel)', 'pq-Formel anwenden', 'Schnittpunkte, Steigung, Scheitel', 'Spezielle Funktionen kurz vorgestellt', 'Symmetrie und Monotonie'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 6, slug: 'stochastik', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Wahrscheinlichkeit & Statistik',
-      beschreibung: 'Würfel, Münze, Karten und Mittelwert — Wahrscheinlichkeit verstehen mit Baumdiagrammen und vielen Beispielen.',
-      details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik & Anordnungen', 'Statistik: Mittelwert, Median, Modus', 'Binomialverteilung'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 7, slug: 'trigonometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Trigonometrie',
-      beschreibung: 'sin, cos, tan kein Geheimnis mehr — mit Eselsbrücken und durchgerechneten Beispielen.',
-      details: ['Sinus, Kosinus, Tangens', 'Eselsbrücke GAGA HUDI', 'Sinussatz & Kosinussatz', 'Wertetabelle wichtiger Winkel', 'Trigonometrische Funktionen', 'Bogenmaß und Grad'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 8, slug: 'potenzen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Potenzen',
-      beschreibung: 'Die fünf Potenzgesetze leicht erklärt — mit Beispielen, Übungen und Tipps.',
-      details: ['Alle 5 Potenzgesetze', 'Negative & gebrochene Exponenten', 'Wurzeln und Wurzelgesetze', 'Wissenschaftliche Schreibweise', 'Wachstum und Zerfall', 'Logarithmen'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
-    },
-    {
-      id: 9, slug: 'mechanik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Mechanik',
-      beschreibung: 'Alle Mechanik-Themen — Geschwindigkeit, Kraft, Energie, Hebel, Reibung mit Skizzen aus dem Alltag.',
-      details: ['Bewegung & freier Fall', 'Newton-Gesetze', 'Schiefe Ebene', 'Energie, Arbeit, Leistung', 'Hebel & Flaschenzug', 'Dichte, Druck, Auftrieb'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 10, slug: 'elektrizitaet', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Elektrizität & Stromkreise',
-      beschreibung: 'Ohm, Spannung, Stromstärke — Elektrizität kapieren und die Stromrechnung verstehen.',
-      details: ['Ohm´sches Gesetz', 'Reihen- und Parallelschaltung', 'Elektrische Arbeit & Leistung', 'Spezifischer Widerstand', 'Gefahren des Stroms', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 11, slug: 'optik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Optik & Wellen',
-      beschreibung: 'Licht, Spiegel, Linsen, Regenbogen — alles zum Thema Sehen, Brechen und Strahlen.',
-      details: ['Lichtausbreitung & Schatten', 'Reflexion am Spiegel', 'Lichtbrechung & Snellius', 'Linsen und Linsenformel', 'Spektrum und Farben', 'Wellen und Welleneigenschaften'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 12, slug: 'waerme', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Wärmelehre',
-      beschreibung: 'Temperatur, Wärme, Aggregatzustände, Gase — alles über das Zappeln der Atome.',
-      details: ['Temperatur und Skalen', 'Wärmekapazität', 'Aggregatzustände & Phasenübergänge', 'Wärmeübertragung', 'Längenausdehnung', 'Gasgesetze'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 13, slug: 'atomphysik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Atomphysik & Strahlung',
-      beschreibung: 'Atome, Isotope, Radioaktivität, Kernspaltung — die kleinen Bausteine der Welt einfach erklärt.',
-      details: ['Atomaufbau & Isotope', 'Periodensystem', 'α-, β-, γ-Strahlung', 'Halbwertszeit', 'Kernspaltung & Kernfusion', 'Quantenphysik im Überblick'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
+    { id: 1, slug: 'geometrie', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Geometrie Klasse 6–9', beschreibung: 'Alle Geometrie-Themen — Dreiecke, Vierecke, Kreis, Körper. Mit beschrifteten Figuren und durchgerechneten Beispielen.', details: ['13 Sektionen mit SVG-Skizzen', 'Pythagoras + Höhensatz + Kathetensatz', 'Komplette Trigonometrie', 'Alle Vierecke & Körper', 'Strahlensätze & Ähnlichkeit', 'Schnellübersicht am Ende'], seiten: 'HTML', preis: 1.99, vorschau: '' },
+    { id: 2, slug: 'brueche', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Brüche & Bruchrechnung', beschreibung: 'Brüche endlich verstehen — kürzen, erweitern, addieren, multiplizieren. Mit Beispielen aus dem Alltag.', details: ['Was ist ein Bruch?', 'Kürzen & Erweitern', 'Plus, Minus, Mal, Geteilt', 'Gemischte Brüche, Dezimalzahlen', 'Eselsbrücken', 'Übungen mit Lösungen'], seiten: 'HTML', preis: 1.99, vorschau: '' },
+    { id: 3, slug: 'prozent', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Prozent & Zinsen', beschreibung: 'Rabatte verstehen, Mehrwertsteuer rechnen, Zinsen und Zinseszins — alles mit einfachen Tricks.', details: ['Die Grundformel der Prozentrechnung', '3 klassische Aufgabentypen', 'Aufschlag & Rabatt', 'Zinsrechnung & Zinseszins', 'Promille und ppm', 'Übungen mit Lösungen'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 4, slug: 'gleichungen', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Gleichungen & Terme', beschreibung: 'Vom einfachen x = 5 bis zur pq-Formel — Gleichungen lösen Schritt für Schritt.', details: ['Terme vereinfachen', 'Lineare Gleichungen', 'Gleichungssysteme', 'Quadratische Gleichungen', 'pq-Formel & Mitternachtsformel', 'Ungleichungen'], seiten: 'HTML', preis: 1.99, vorschau: '' },
+    { id: 5, slug: 'funktionen', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Funktionen', beschreibung: 'Geraden, Parabeln, Hyperbeln, Wurzeln — alle Funktionstypen mit Skizzen und Beispielen.', details: ['Lineare Funktionen', 'Quadratische Funktionen', 'pq-Formel anwenden', 'Schnittpunkte, Steigung, Scheitel', 'Spezielle Funktionen', 'Symmetrie und Monotonie'], seiten: 'HTML', preis: 1.99, vorschau: '' },
+    { id: 6, slug: 'stochastik', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Wahrscheinlichkeit & Statistik', beschreibung: 'Würfel, Münze, Karten und Mittelwert — Wahrscheinlichkeit mit Baumdiagrammen.', details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik & Anordnungen', 'Statistik: Mittelwert, Median', 'Binomialverteilung'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 7, slug: 'trigonometrie', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Trigonometrie', beschreibung: 'sin, cos, tan kein Geheimnis mehr — mit Eselsbrücken und durchgerechneten Beispielen.', details: ['Sinus, Kosinus, Tangens', 'Eselsbrücke GAGA HUDI', 'Sinussatz & Kosinussatz', 'Wertetabelle wichtiger Winkel', 'Trigonometrische Funktionen', 'Bogenmaß und Grad'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 8, slug: 'potenzen', kategorie: 'mathe', typ: 'Lernpaket', titel: 'Potenzen', beschreibung: 'Die fünf Potenzgesetze leicht erklärt — mit Beispielen, Übungen und Tipps.', details: ['Alle 5 Potenzgesetze', 'Negative & gebrochene Exponenten', 'Wurzeln und Wurzelgesetze', 'Wissenschaftliche Schreibweise', 'Wachstum und Zerfall', 'Logarithmen'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 9, slug: 'mechanik', kategorie: 'physik', typ: 'Lernpaket', titel: 'Mechanik', beschreibung: 'Alle Mechanik-Themen — Geschwindigkeit, Kraft, Energie, Hebel, Reibung mit Skizzen.', details: ['Bewegung & freier Fall', 'Newton-Gesetze', 'Schiefe Ebene', 'Energie, Arbeit, Leistung', 'Hebel & Flaschenzug', 'Dichte, Druck, Auftrieb'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 10, slug: 'elektrizitaet', kategorie: 'physik', typ: 'Lernpaket', titel: 'Elektrizität & Stromkreise', beschreibung: 'Ohm, Spannung, Stromstärke — Elektrizität kapieren und die Stromrechnung verstehen.', details: ['Ohm´sches Gesetz', 'Reihen- und Parallelschaltung', 'Elektrische Arbeit & Leistung', 'Spezifischer Widerstand', 'Gefahren des Stroms', 'Übungen mit Lösungen'], seiten: 'HTML', preis: 1.99, vorschau: '' },
+    { id: 11, slug: 'optik', kategorie: 'physik', typ: 'Lernpaket', titel: 'Optik & Wellen', beschreibung: 'Licht, Spiegel, Linsen, Regenbogen — alles zum Thema Sehen, Brechen und Strahlen.', details: ['Lichtausbreitung & Schatten', 'Reflexion am Spiegel', 'Lichtbrechung & Snellius', 'Linsen und Linsenformel', 'Spektrum und Farben', 'Wellen und Welleneigenschaften'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 12, slug: 'waerme', kategorie: 'physik', typ: 'Lernpaket', titel: 'Wärmelehre', beschreibung: 'Temperatur, Wärme, Aggregatzustände, Gase — alles über das Zappeln der Atome.', details: ['Temperatur und Skalen', 'Wärmekapazität', 'Aggregatzustände & Phasenübergänge', 'Wärmeübertragung', 'Längenausdehnung', 'Gasgesetze'], seiten: 'HTML', preis: 0.99, vorschau: '' },
+    { id: 13, slug: 'atomphysik', kategorie: 'physik', typ: 'Lernpaket', titel: 'Atomphysik & Strahlung', beschreibung: 'Atome, Isotope, Radioaktivität, Kernspaltung — die kleinen Bausteine der Welt einfach erklärt.', details: ['Atomaufbau & Isotope', 'Periodensystem', 'α-, β-, γ-Strahlung', 'Halbwertszeit', 'Kernspaltung & Kernfusion', 'Quantenphysik im Überblick'], seiten: 'HTML', preis: 0.99, vorschau: '' },
   ];
 
-  const mathe = produkte.filter(p => p.kategorie === 'mathe');
-  const physik = produkte.filter(p => p.kategorie === 'physik');
-
-  const ProduktKarte = ({ p }: { p: Produkt }) => (
-    <div
-      onClick={() => setAusgewaehlt(p)}
-      style={{backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e5e5ea', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,113,227,0.15)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
-    >
-      <div style={{background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)', height: '160px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
-        <span style={{fontSize: '52px'}}>{p.kategorie === 'mathe' ? '📐' : '⚡'}</span>
-        <span style={{fontSize: '11px', fontWeight: '700', color: '#0071e3', textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(0,113,227,0.1)', padding: '3px 10px', borderRadius: '20px'}}>{p.typ}</span>
-      </div>
-      <div style={{padding: '18px 20px'}}>
-        <h4 style={{margin: '0 0 8px', fontSize: '17px', fontWeight: '700', color: '#1d1d1f'}}>{p.titel}</h4>
-        <p style={{margin: '0 0 14px', fontSize: '14px', color: '#6e6e73', lineHeight: '1.5'}}>{p.beschreibung}</p>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f5', paddingTop: '12px'}}>
-          <span style={{fontSize: '22px', fontWeight: '700', color: '#0071e3'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-          <span style={{fontSize: '13px', color: '#0071e3', fontWeight: '600', backgroundColor: '#e8f0fe', padding: '6px 14px', borderRadius: '20px'}}>Details →</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const kategorien = [
-    {
-      href: '#mathe', titel: 'Mathematik', desc: 'Formeln, Übungen & Erklärungen',
-      gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/><rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>),
-    },
-    {
-      href: '#physik', titel: 'Physik', desc: 'Gesetze, Formeln & Experimente',
-      gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="5" fill="white"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/></svg>),
-    },
-    {
-      href: '#pakete', titel: 'Lernpakete', desc: 'Abitur, Sommer & Spezialthemen',
-      gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
-    },
-    {
-      href: '/lernheld', titel: 'Lernheld', desc: 'Dein Plan aus deinen Unterlagen',
-      gradient: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>),
-    },
-    {
-      href: '/quiz', titel: 'Quizze', desc: 'Kostenlos Wissen testen',
-      gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="white"/></svg>),
-    },
-    {
-      href: '/lernplan', titel: 'Mein Lernplan', desc: 'Persönlicher Lernplan nach Annas Methode',
-      gradient: 'linear-gradient(135deg, #2A7A78 0%, #1d5654 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="6" width="28" height="28" rx="4" stroke="white" strokeWidth="2" fill="none"/><path d="M12 14h16M12 20h16M12 26h10" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
-    },
-  ];
+  const mathe = produkte.filter((p) => p.kategorie === 'mathe');
+  const physik = produkte.filter((p) => p.kategorie === 'physik');
+  const top = [produkte[0], produkte[1], produkte[8], produkte[9], produkte[3], produkte[12]];
 
   return (
-    <main style={{minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif'}}>
+    <main style={{ minHeight: '100vh', background: F.bg, fontFamily: SANS, color: F.ink, overflowX: 'hidden' }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" />
 
       <style>{`
-        @keyframes beinLinks { 0%,100%{transform:rotate(-28deg)}50%{transform:rotate(28deg)} }
-        @keyframes beinRechts { 0%,100%{transform:rotate(28deg)}50%{transform:rotate(-28deg)} }
-        @keyframes frage1 { 0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-18px) scale(1.2);opacity:0.4} }
-        @keyframes frage2 { 0%,100%{transform:translateY(0) scale(1);opacity:0.8}50%{transform:translateY(-14px) scale(1.15);opacity:0.3} }
-        @keyframes frage3 { 0%,100%{transform:translateY(0) scale(1);opacity:0.6}50%{transform:translateY(-10px) scale(1.1);opacity:0.2} }
-        @keyframes schildRein { 0%{transform:scale(0) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1} }
-        @keyframes blinzeln { 0%,85%,100%{transform:scaleY(1)}92%{transform:scaleY(0.05)} }
-        @keyframes schweben { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
-        @keyframes schildSchaukeln { 0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)} }
-        @keyframes formelSchweben1 { 0%,100%{transform:translateY(0) rotate(-5deg);opacity:0.1}50%{transform:translateY(-20px) rotate(5deg);opacity:0.2} }
-        @keyframes formelSchweben2 { 0%,100%{transform:translateY(0) rotate(3deg);opacity:0.08}50%{transform:translateY(-15px) rotate(-3deg);opacity:0.16} }
-        @keyframes formelSchweben3 { 0%,100%{transform:translateY(0);opacity:0.06}50%{transform:translateY(-25px);opacity:0.14} }
-        @keyframes gradientMove { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
+        * { -webkit-font-smoothing: antialiased; }
+        body { background: ${F.bg}; }
+        ::selection { background: ${F.accent}; color: ${F.white}; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 0 rgba(230,53,79,0.4); } 50% { box-shadow: 0 0 24px rgba(230,53,79,0.5); } }
+        @keyframes bgShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .fade-up { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+        .scroll-row { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 12px; scroll-behavior: smooth; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .scroll-row::-webkit-scrollbar { height: 6px; }
+        .scroll-row::-webkit-scrollbar-track { background: ${F.borderSoft}; border-radius: 3px; }
+        .scroll-row::-webkit-scrollbar-thumb { background: ${F.border}; border-radius: 3px; }
+        .scroll-row::-webkit-scrollbar-thumb:hover { background: ${F.accent}; }
+        .scroll-row > * { scroll-snap-align: start; flex-shrink: 0; }
+
+        .poster { transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease; cursor: pointer; }
+        .poster:hover { transform: translateY(-8px) scale(1.03); z-index: 10; box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px ${F.accent}; }
+        .poster:hover .poster-arrow { transform: translateX(6px); color: ${F.accent}; }
+
+        .kat-tile { transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease; }
+        .kat-tile:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 28px 60px rgba(0,0,0,0.45); }
+
+        .btn-primary { transition: all 0.25s ease; }
+        .btn-primary:hover { background: ${F.accentDeep}; transform: translateY(-2px); box-shadow: 0 14px 40px ${F.glow}; }
+        .btn-ghost { transition: all 0.25s ease; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.14); }
+
+        .pulse-dot { animation: glowPulse 2.5s ease-in-out infinite; }
       `}</style>
 
+      {/* MODAL */}
       {ausgewaehlt && (
-        <div onClick={() => setAusgewaehlt(null)} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(20px)'}}>
-          <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '24px', maxWidth: '680px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 100px rgba(0,0,0,0.3)'}}>
-            <div style={{position: 'relative', height: mobil ? '200px' : '280px', background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)'}}>
-              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
-              <div style={{position: 'absolute', top: '16px', left: '16px', backgroundColor: '#0071e3', color: 'white', fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase'}}>{ausgewaehlt.typ}</div>
+        <div onClick={() => setAusgewaehlt(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(14px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: F.bgSoft, border: `1px solid ${F.border}`, borderRadius: '24px', maxWidth: '600px', width: '100%', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 40px 80px rgba(0,0,0,0.6)' }}>
+            <div style={{ height: '180px', position: 'relative', overflow: 'hidden', borderRadius: '24px 24px 0 0' }}>
+              {(() => { const t = ausgewaehlt.slug && THEMA[ausgewaehlt.slug]; return t ? (<div style={{ background: t.bgEnd ? `linear-gradient(135deg, ${t.bg}, ${t.bgEnd})` : t.bg, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>{t.render()}</div>) : null; })()}
+              <button onClick={() => setAusgewaehlt(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(0,0,0,0.5)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '16px', cursor: 'pointer', color: F.white, backdropFilter: 'blur(10px)' }}>✕</button>
             </div>
-            <div style={{padding: mobil ? '20px' : '32px'}}>
-              <h2 style={{margin: '0 0 8px', fontSize: mobil ? '20px' : '24px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.titel}</h2>
-              <p style={{margin: '0 0 20px', fontSize: '15px', color: '#6e6e73', lineHeight: '1.6'}}>{ausgewaehlt.beschreibung}</p>
-              <div style={{backgroundColor: '#f5f5f7', borderRadius: '12px', padding: '18px', marginBottom: '20px'}}>
-                <p style={{margin: '0 0 10px', fontSize: '14px', fontWeight: '700', color: '#1d1d1f'}}>Was ist drin:</p>
+            <div style={{ padding: mobil ? '28px 24px' : '36px 40px' }}>
+              <span style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700 }}>{ausgewaehlt.typ}</span>
+              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '30px' : '38px', fontWeight: 600, margin: '8px 0 12px', color: F.white, lineHeight: 1.05, letterSpacing: '-0.02em' }}>{ausgewaehlt.titel}</h2>
+              <p style={{ fontSize: '15.5px', color: F.inkSoft, lineHeight: 1.65, margin: '0 0 24px' }}>{ausgewaehlt.beschreibung}</p>
+              <div style={{ background: F.card, border: `1px solid ${F.border}`, borderRadius: '16px', padding: '22px 24px', marginBottom: '28px' }}>
+                <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 14px' }}>Inhalt</p>
                 {ausgewaehlt.details.map((d, i) => (
-                  <div key={i} style={{display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px'}}>
-                    <span style={{color: '#0071e3', fontWeight: '700', fontSize: '14px', flexShrink: 0}}>✓</span>
-                    <span style={{fontSize: '14px', color: '#1d1d1f'}}>{d}</span>
+                  <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <span style={{ color: F.accent, fontWeight: 700, fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✓</span>
+                    <span style={{ fontSize: '14.5px', color: F.ink, lineHeight: 1.5 }}>{d}</span>
                   </div>
                 ))}
               </div>
-              <div style={{display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap'}}>
-                {['📄 ' + ausgewaehlt.seiten, '⬇️ Sofort-Download', '🔒 Sicher via Stripe'].map((t, i) => (
-                  <span key={i} style={{fontSize: '12px', color: '#6e6e73', backgroundColor: '#f5f5f7', padding: '6px 12px', borderRadius: '20px'}}>{t}</span>
-                ))}
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e5e5ea', paddingTop: '20px'}}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '24px', borderTop: `1px solid ${F.border}` }}>
                 <div>
-                  <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
-                  <p style={{margin: '0', fontSize: '30px', fontWeight: '800', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
+                  <p style={{ margin: 0, fontSize: '11.5px', color: F.inkMuted, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Einmalig</p>
+                  <p style={{ margin: '4px 0 0', fontFamily: SERIF, fontSize: '40px', fontWeight: 600, color: F.white, letterSpacing: '-0.02em' }}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
-                  {ausgewaehlt.slug ? 'Jetzt freischalten' : 'Jetzt kaufen'}
+                <button onClick={() => kaufen(ausgewaehlt)} className="btn-primary" style={{ background: F.accent, color: F.white, border: 'none', borderRadius: '999px', padding: '15px 30px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: SANS, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  ▶ {ausgewaehlt.slug ? 'Freischalten' : 'Kaufen'}
                 </button>
               </div>
             </div>
@@ -258,210 +173,288 @@ export default function Home() {
         </div>
       )}
 
-      <header style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: scrolled ? 'rgba(255,255,255,0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none', padding: mobil ? '12px 16px' : '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease'}}>
-        <img src="/logo.jpg?v=1" alt="Lerne mit Anna" style={{height: mobil ? '40px' : '48px', borderRadius: '10px'}} />
-        <nav style={{display: 'flex', gap: mobil ? '10px' : '28px', alignItems: 'center'}}>
-          {!mobil && <>
-            <a href="#mathe" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Mathe</a>
-            <a href="#physik" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Physik</a>
-            <a href="#pakete" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernpakete</a>
-            <a href="/lernplan" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernplan</a>
-          </>}
-          <a href="/lernplan" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: '8px 18px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Lernplan erstellen</a>
+      {/* HEADER */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'linear-gradient(180deg, rgba(12,12,16,0.98) 0%, rgba(12,12,16,0.85) 100%)' : 'linear-gradient(180deg, rgba(12,12,16,0.7) 0%, transparent 100%)', backdropFilter: scrolled ? 'blur(20px)' : 'none', padding: mobil ? '14px 22px' : '18px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+        <a href="#" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '34px', fontWeight: 700, color: F.white, letterSpacing: '-0.025em' }}>
+            Lern<span style={{ color: F.accent }}>flix</span>
+          </span>
+        </a>
+        <nav style={{ display: 'flex', gap: mobil ? '14px' : '32px', alignItems: 'center' }}>
+          {!mobil && (
+            <>
+              <a href="#mathe" style={{ color: F.inkSoft, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Mathematik</a>
+              <a href="#physik" style={{ color: F.inkSoft, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Physik</a>
+              <a href="/quiz" style={{ color: F.inkSoft, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Quiz</a>
+              <a href="#pakete" style={{ color: F.inkSoft, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Pakete</a>
+            </>
+          )}
+          <a href="/lernheld" className="btn-primary" style={{ background: F.accent, color: F.white, textDecoration: 'none', fontSize: '13.5px', fontWeight: 700, padding: '10px 20px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            ▶ Lernheld
+          </a>
         </nav>
       </header>
 
-      <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: mobil ? '90px 16px 40px' : '100px 24px 60px', overflow: 'hidden'}}>
-        <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #e8f0ff 0%, #ffffff 25%, #f0e8ff 50%, #e8f8ff 75%, #fff0e8 100%)', backgroundSize: '400% 400%', animation: 'gradientMove 10s ease infinite', zIndex: 0}}></div>
-        <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: mobil ? '300px' : '600px', height: mobil ? '300px' : '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none'}}></div>
-
+      {/* HERO — Netflix-Style Banner */}
+      <section className="fade-up" style={{ position: 'relative', minHeight: mobil ? '90vh' : '92vh', display: 'flex', alignItems: 'center', overflow: 'hidden', padding: mobil ? '100px 22px 60px' : '100px 60px 80px' }}>
+        {/* Gradient Banner Background */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0f1c 0%, #0c0c10 40%, #0c0c10 60%, #1c0f15 100%)', zIndex: 0 }} />
+        {/* Subtle Glow */}
+        <div style={{ position: 'absolute', top: '20%', left: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(230,53,79,0.20) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '10%', right: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(120,69,180,0.18) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        {/* Math symbols floating */}
         {!mobil && (
-          <div style={{position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden'}}>
-            {[
-              {text: 'x²', top: '12%', left: '7%', size: '42px', anim: 'formelSchweben1 4s ease-in-out infinite'},
-              {text: 'E=mc²', top: '18%', right: '8%', size: '30px', anim: 'formelSchweben2 5s ease-in-out infinite 1s'},
-              {text: 'π', top: '68%', left: '5%', size: '48px', anim: 'formelSchweben3 4.5s ease-in-out infinite 0.5s'},
-              {text: 'a²+b²=c²', top: '10%', left: '28%', size: '24px', anim: 'formelSchweben1 6s ease-in-out infinite 2s'},
-              {text: 'F=ma', top: '72%', right: '7%', size: '28px', anim: 'formelSchweben2 5.5s ease-in-out infinite 1.5s'},
-              {text: '∫', top: '40%', right: '4%', size: '40px', anim: 'formelSchweben2 4.8s ease-in-out infinite 0.8s'},
-            ].map((f, i) => (
-              <div key={i} style={{position: 'absolute', top: f.top, left: (f as {left?: string}).left, right: (f as {right?: string}).right, fontSize: f.size, fontWeight: '700', color: '#0071e3', fontFamily: 'Georgia, serif', animation: f.anim}}>
-                {f.text}
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{ position: 'absolute', top: '18%', right: '8%', fontFamily: SERIF, fontSize: '160px', color: 'rgba(255,255,255,0.04)', fontStyle: 'italic', pointerEvents: 'none' }}>π</div>
+            <div style={{ position: 'absolute', bottom: '15%', left: '6%', fontFamily: SERIF, fontSize: '140px', color: 'rgba(230,53,79,0.06)', fontStyle: 'italic', pointerEvents: 'none' }}>∫</div>
+            <div style={{ position: 'absolute', top: '60%', right: '20%', fontFamily: SERIF, fontSize: '90px', color: 'rgba(255,255,255,0.04)', fontStyle: 'italic', pointerEvents: 'none' }}>√x</div>
+          </>
         )}
 
-        <div style={{position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: mobil ? '200px' : '280px', marginBottom: mobil ? '32px' : '48px', width: '100%'}}>
-          <div style={{transform: phase === 'weglaufen' ? `translateX(${mobil ? '300px' : '700px'})` : 'translateX(0px)', opacity: phase === 'weglaufen' ? 0 : 1, transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out', position: 'relative'}}>
-
-            {phase === 'kratzen' && (<>
-              <div style={{position: 'absolute', top: mobil ? '-55px' : '-75px', left: '50%', transform: 'translateX(-50%)', fontSize: mobil ? '36px' : '52px', fontWeight: '900', color: '#0071e3', animation: 'frage1 1.2s ease-in-out infinite'}}>?</div>
-              <div style={{position: 'absolute', top: mobil ? '-42px' : '-58px', left: mobil ? '-25px' : '-38px', fontSize: mobil ? '24px' : '34px', fontWeight: '900', color: '#0071e3', opacity: 0.6, animation: 'frage2 1.5s ease-in-out infinite 0.3s'}}>?</div>
-              <div style={{position: 'absolute', top: mobil ? '-42px' : '-58px', right: mobil ? '-25px' : '-38px', fontSize: mobil ? '24px' : '34px', fontWeight: '900', color: '#0071e3', opacity: 0.4, animation: 'frage3 1.8s ease-in-out infinite 0.6s'}}>?</div>
-            </>)}
-
-            <div style={{width: mobil ? '110px' : '150px', height: mobil ? '135px' : '185px', background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', borderRadius: mobil ? '10px 16px 16px 10px' : '14px 22px 22px 14px', position: 'relative', boxShadow: '0 24px 70px rgba(0,113,227,0.4)', animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none'}}>
-              <div style={{position: 'absolute', left: '5px', top: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: mobil ? '111px' : '155px'}}>
-                {[0,1,2,3,4,5,6,7].map(i => (
-                  <div key={i} style={{width: mobil ? '10px' : '13px', height: mobil ? '10px' : '13px', borderRadius: '50%', backgroundColor: '#1d1d1f', border: '2px solid rgba(255,255,255,0.85)'}}></div>
-                ))}
-              </div>
-              <div style={{position: 'absolute', top: mobil ? '24px' : '34px', left: mobil ? '28px' : '38px', display: 'flex', gap: mobil ? '16px' : '24px'}}>
-                <div style={{width: mobil ? '18px' : '24px', height: mobil ? '18px' : '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite'}}>
-                  <div style={{width: mobil ? '9px' : '12px', height: mobil ? '9px' : '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
-                </div>
-                <div style={{width: mobil ? '18px' : '24px', height: mobil ? '18px' : '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
-                  <div style={{width: mobil ? '9px' : '12px', height: mobil ? '9px' : '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
-                </div>
-              </div>
-              <div style={{position: 'absolute', top: mobil ? '52px' : '74px', left: mobil ? '22px' : '30px', width: mobil ? '66px' : '90px', height: mobil ? '28px' : '38px', borderBottom: '5px solid white', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderRadius: '0 0 50px 50px'}}></div>
-              <div style={{position: 'absolute', top: mobil ? '48px' : '68px', left: mobil ? '18px' : '24px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
-              <div style={{position: 'absolute', top: mobil ? '48px' : '68px', right: mobil ? '12px' : '17px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
-              <div style={{position: 'absolute', bottom: mobil ? '22px' : '32px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
-              <div style={{position: 'absolute', bottom: mobil ? '34px' : '50px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
-            </div>
-
-            <div style={{display: 'flex', justifyContent: 'center', gap: mobil ? '22px' : '30px', marginTop: '5px'}}>
-              <div style={{width: mobil ? '11px' : '15px', height: mobil ? '36px' : '50px', backgroundColor: '#1d1d1f', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
-              <div style={{width: mobil ? '11px' : '15px', height: mobil ? '36px' : '50px', backgroundColor: '#1d1d1f', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
-            </div>
+        <div style={{ position: 'relative', maxWidth: '1240px', margin: '0 auto', width: '100%', zIndex: 1 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.accentSoft, color: F.accent, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '28px', border: `1px solid rgba(230,53,79,0.3)` }}>
+            <span className="pulse-dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.accent }} />
+            Neu · 13 Lernpakete verfügbar
           </div>
-
-          {phase === 'schild' && (
-            <div style={{position: 'absolute', right: mobil ? 'calc(50% - 155px)' : 'calc(50% - 250px)', bottom: mobil ? '40px' : '55px', animation: 'schildRein 0.7s ease-out forwards'}}>
-              <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
-                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: mobil ? '14px 22px' : '20px 44px', borderRadius: '18px', fontSize: mobil ? '26px' : '40px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)'}}>
-                  LERNFLIX
-                </div>
-                <div style={{width: '8px', height: mobil ? '36px' : '55px', backgroundColor: '#1d1d1f', margin: '0 auto', borderRadius: '4px'}}></div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{position: 'relative', zIndex: 2, opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '20px', minHeight: '32px'}}>
-          <p style={{fontSize: mobil ? '17px' : '22px', color: '#6e6e73', fontWeight: '400', margin: 0}}>Dein Lernstream. Deine Regeln.</p>
-        </div>
-
-        <div style={{position: 'relative', zIndex: 2, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}>
-          <a href="#mathe" style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(0,113,227,0.4)'}}>
-            Materialien ansehen
-          </a>
-          <a href="/quiz" style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(88,86,214,0.4)'}}>
-            Kostenlose Quizze
-          </a>
+          <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '54px' : '116px', fontWeight: 600, lineHeight: 0.96, margin: '0 0 28px', color: F.white, letterSpacing: '-0.045em', maxWidth: '1000px' }}>
+            Mathe und Physik,<br />
+            <span style={{ fontStyle: 'italic', background: `linear-gradient(135deg, ${F.accent} 0%, #ff8aa9 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>endlich verstanden</span>.
+          </h1>
+          <p style={{ fontSize: mobil ? '17px' : '22px', color: F.inkSoft, lineHeight: 1.5, margin: '0 0 42px', maxWidth: '620px', fontWeight: 400 }}>
+            Deine Lern-Bibliothek mit hochwertigen Paketen, persönlichen Plänen und Quizzes für jede Klassenstufe. Streamen statt pauken.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            <a href="/lernheld" className="btn-primary" style={{ background: F.accent, color: F.white, textDecoration: 'none', padding: '17px 36px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: `0 16px 40px ${F.glow}` }}>
+              ▶ Lernheld-Plan starten
+            </a>
+            <a href="#mathe" className="btn-ghost" style={{ background: 'rgba(255,255,255,0.10)', color: F.white, textDecoration: 'none', padding: '17px 36px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, border: '1px solid rgba(255,255,255,0.18)', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+              ⓘ Pakete entdecken
+            </a>
+          </div>
         </div>
       </section>
 
-      {/* Kategorien — MIT SVG Icons */}
-      <section style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px', textAlign: 'center'}}>Alle Kategorien</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', textAlign: 'center', marginBottom: '36px'}}>Wähle dein Fach und starte durch</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px'}}>
-            {kategorien.map((k) => (
-              <a key={k.titel} href={k.href} style={{textDecoration: 'none'}}>
-                <div
-                  style={{background: k.gradient, borderRadius: '20px', padding: mobil ? '20px 16px' : '32px 28px', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative', overflow: 'hidden'}}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.22)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}
-                >
-                  <div style={{marginBottom: mobil ? '12px' : '20px'}}>{k.icon}</div>
-                  <h4 style={{margin: '0 0 6px', fontSize: mobil ? '15px' : '20px', fontWeight: '700', color: 'white'}}>{k.titel}</h4>
-                  <p style={{margin: 0, fontSize: mobil ? '11px' : '14px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4'}}>{k.desc}</p>
-                  <div style={{position: 'absolute', bottom: '16px', right: '16px', fontSize: '16px', color: 'rgba(255,255,255,0.5)'}}>→</div>
-                </div>
+      {/* KATEGORIEN */}
+      <section style={{ padding: mobil ? '40px 22px 30px' : '60px 60px 40px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '32px', fontWeight: 600, color: F.white, margin: '0 0 24px', letterSpacing: '-0.02em' }}>Was möchtest du heute lernen?</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: mobil ? '12px' : '18px' }}>
+            <KatTile href="#mathe" titel="Mathematik" desc="Formeln, Aufgaben, Erklärungen" gradient="linear-gradient(135deg, #1e4a82 0%, #2c6bb8 100%)" icon={(<svg width="36" height="36" viewBox="0 0 40 40"><rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/><rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>)} />
+            <KatTile href="#physik" titel="Physik" desc="Gesetze, Formeln, Experimente" gradient="linear-gradient(135deg, #5a2d7c 0%, #7a4d92 100%)" icon={(<svg width="36" height="36" viewBox="0 0 40 40"><circle cx="20" cy="20" r="5" fill="white"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/></svg>)} />
+            <KatTile href="/lernheld" titel="Lernheld" badge="Premium" desc="Dein eigener Lernplan" gradient="linear-gradient(135deg, #c4263e 0%, #e6354f 100%)" icon={(<svg width="36" height="36" viewBox="0 0 40 40"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>)} />
+            <KatTile href="/quiz" titel="Quiz" desc="Kostenlos · 61 Themen" gradient="linear-gradient(135deg, #c47b1f 0%, #e8a83b 100%)" icon={(<svg width="36" height="36" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="white"/></svg>)} />
+          </div>
+        </div>
+      </section>
+
+      {/* TOP HEUTE */}
+      <section style={{ padding: mobil ? '40px 0 30px 22px' : '60px 0 40px 60px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px', paddingRight: mobil ? '22px' : '60px' }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '36px', fontWeight: 600, color: F.white, margin: 0, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ background: F.accent, color: F.white, padding: '2px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.1em' }}>TOP</span>
+            Beliebt diese Woche
+          </h2>
+          <span style={{ fontSize: '13px', color: F.inkMuted }}>← scrollen →</span>
+        </div>
+        <div className="scroll-row" style={{ paddingRight: mobil ? '22px' : '60px' }}>
+          {top.map((p, i) => (<PosterBig key={p.id} p={p} rang={i + 1} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
+        </div>
+      </section>
+
+      {/* MATHEMATIK */}
+      <section id="mathe" style={{ padding: mobil ? '40px 0 30px 22px' : '60px 0 40px 60px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px', paddingRight: mobil ? '22px' : '60px' }}>
+          <div>
+            <p style={{ fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 6px' }}>Kategorie</p>
+            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '32px' : '44px', fontWeight: 600, color: F.white, margin: 0, letterSpacing: '-0.02em' }}>Mathematik</h2>
+          </div>
+          <span style={{ fontSize: '13px', color: F.inkMuted }}>{mathe.length} Pakete</span>
+        </div>
+        <div className="scroll-row" style={{ paddingRight: mobil ? '22px' : '60px' }}>
+          {mathe.map((p) => (<Poster key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
+        </div>
+      </section>
+
+      {/* PHYSIK */}
+      <section id="physik" style={{ padding: mobil ? '40px 0 30px 22px' : '60px 0 40px 60px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px', paddingRight: mobil ? '22px' : '60px' }}>
+          <div>
+            <p style={{ fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 6px' }}>Kategorie</p>
+            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '32px' : '44px', fontWeight: 600, color: F.white, margin: 0, letterSpacing: '-0.02em' }}>Physik</h2>
+          </div>
+          <span style={{ fontSize: '13px', color: F.inkMuted }}>{physik.length} Pakete</span>
+        </div>
+        <div className="scroll-row" style={{ paddingRight: mobil ? '22px' : '60px' }}>
+          {physik.map((p) => (<Poster key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
+        </div>
+      </section>
+
+      {/* LERNHELD FEATURE BANNER */}
+      <section style={{ padding: mobil ? '60px 22px' : '100px 60px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto', background: 'linear-gradient(135deg, #1a0f1c 0%, #2a0f1d 50%, #1a0a14 100%)', borderRadius: '24px', padding: mobil ? '40px 28px' : '70px 80px', position: 'relative', overflow: 'hidden', border: `1px solid ${F.border}` }}>
+          <div style={{ position: 'absolute', top: '-30%', right: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(230,53,79,0.25) 0%, transparent 60%)' }} />
+          <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.4fr 1fr', gap: '40px', alignItems: 'center' }}>
+            <div>
+              <span style={{ display: 'inline-block', background: F.accentSoft, color: F.accent, padding: '6px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '20px', border: '1px solid rgba(230,53,79,0.3)' }}>
+                Premium · 1,99 €
+              </span>
+              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '60px', fontWeight: 600, color: F.white, margin: '0 0 20px', lineHeight: 1.0, letterSpacing: '-0.03em' }}>
+                Dein eigener<br /><span style={{ fontStyle: 'italic', color: F.accent }}>Lernheld</span>-Plan.
+              </h2>
+              <p style={{ fontSize: mobil ? '15.5px' : '17px', color: F.inkSoft, lineHeight: 1.6, margin: '0 0 32px', maxWidth: '460px' }}>
+                Foto vom Stoff hochladen, Klasse wählen, fertig. Dein persönlicher Lernplan zur Schulaufgabe — mit allen Themen, Erklärungen, Übungen und Lösungen.
+              </p>
+              <a href="/lernheld" className="btn-primary" style={{ background: F.accent, color: F.white, textDecoration: 'none', padding: '15px 32px', borderRadius: '8px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                ▶ Plan jetzt erstellen
               </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Mathe */}
-      <section id="mathe" style={{backgroundColor: '#ffffff', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Mathematik</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Formeln, Übungen und Erklärungen für die Schule</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
-            {mathe.map(p => <ProduktKarte key={p.id} p={p} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* Physik */}
-      <section id="physik" style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Physik</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Gesetze, Formeln und Experimente verständlich erklärt</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
-            {physik.map(p => <ProduktKarte key={p.id} p={p} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* Lernpakete */}
-      <section id="pakete" style={{backgroundColor: '#ffffff', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Lernpakete</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Spezielle Pakete für besondere Lernsituationen</p>
-          <div style={{background: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)', borderRadius: '20px', padding: mobil ? '40px 24px' : '60px', textAlign: 'center', boxShadow: '0 8px 32px rgba(52,199,89,0.25)'}}>
-            <div style={{fontSize: '56px', marginBottom: '16px'}}>🚀</div>
-            <h4 style={{margin: '0 0 8px', fontSize: mobil ? '20px' : '24px', fontWeight: '700', color: 'white'}}>Bald verfügbar!</h4>
-            <p style={{margin: 0, fontSize: '15px', color: 'rgba(255,255,255,0.85)'}}>Spezielle Lernpakete für Abitur, Sommer und mehr kommen bald!</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Quiz */}
-      <section id="quiz" style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Kostenlose Quizze</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Teste dein Wissen — direkt hier in der App!</p>
-          <div style={{background: 'linear-gradient(135deg, #0071e3 0%, #5856d6 100%)', borderRadius: '20px', padding: mobil ? '36px 24px' : '56px', boxShadow: '0 8px 32px rgba(0,113,227,0.25)'}}>
-            <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1fr', gap: '40px', alignItems: 'center'}}>
-              <div>
-                <h3 style={{margin: '0 0 12px', fontSize: mobil ? '22px' : '28px', fontWeight: '800', color: 'white'}}>Lerne mit Spaß!</h3>
-                <p style={{margin: '0 0 20px', fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.7'}}>Teste dein Wissen mit interaktiven Quizzen. Jedes Mal neue Fragen — kostenlos und ohne Anmeldung!</p>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px'}}>
-                  {['Über 10 verschiedene Themen', 'Leicht, Mittel & Schwer', 'Sofortige Erklärungen', 'Kostenlos & ohne Anmeldung'].map((f, i) => (
-                    <div key={i} style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <div style={{width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                      <span style={{fontSize: '15px', color: 'rgba(255,255,255,0.9)', fontWeight: '500'}}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => window.location.href = '/quiz'} style={{backgroundColor: 'white', color: '#0071e3', border: 'none', borderRadius: '980px', padding: '14px 32px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.15)'}}>
-                  Jetzt Quiz starten
-                </button>
-              </div>
-              {!mobil && (
-                <div style={{background: 'rgba(255,255,255,0.1)', borderRadius: '20px', padding: '32px', backdropFilter: 'blur(10px)'}}>
-                  <div style={{fontSize: '72px', textAlign: 'center', marginBottom: '20px'}}>🧠</div>
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
-                    {[{n: '10+', t: 'Themen'}, {n: '3', t: 'Stufen'}, {n: '∞', t: 'Fragen'}, {n: '0€', t: 'Kostenlos'}].map((s, i) => (
-                      <div key={i} style={{backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                        <div style={{fontSize: '24px', fontWeight: '800', color: 'white', marginBottom: '4px'}}>{s.n}</div>
-                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.75)', fontWeight: '500'}}>{s.t}</div>
-                      </div>
-                    ))}
+            </div>
+            <div>
+              {[
+                { n: '01', t: 'Fotos hochladen', d: 'Stoffliste, Buchseiten, Übungen' },
+                { n: '02', t: 'Klasse & Datum wählen', d: 'Wann ist die Schulaufgabe?' },
+                { n: '03', t: 'Dein Plan ist fertig', d: 'Komplette Erklärungen + Lösungen' },
+              ].map((s) => (
+                <div key={s.n} style={{ display: 'flex', gap: '16px', padding: '16px 0', borderBottom: `1px solid ${F.border}` }}>
+                  <span style={{ fontFamily: SERIF, fontSize: '28px', fontStyle: 'italic', color: F.accent, fontWeight: 600, minWidth: '40px' }}>{s.n}</span>
+                  <div>
+                    <p style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 600, color: F.white, margin: '0 0 2px' }}>{s.t}</p>
+                    <p style={{ fontSize: '13.5px', color: F.inkMuted, margin: 0 }}>{s.d}</p>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      <footer style={{textAlign: 'center', padding: '32px 16px', backgroundColor: '#ffffff', borderTop: '1px solid #e5e5ea', color: '#6e6e73', fontSize: '13px'}}>
-        © 2025 Lerne mit Anna ·
-        <a href="/impressum" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>Impressum</a> ·
-        <a href="/datenschutz" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>Datenschutz</a> ·
-        <a href="/agb" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>AGB</a>
-      </footer>
+      {/* QUIZ + LERNPAKETE - 2 Spalten */}
+      <section id="pakete" style={{ padding: mobil ? '20px 22px 70px' : '40px 60px 100px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1fr', gap: mobil ? '18px' : '24px' }}>
+          {/* QUIZ */}
+          <div style={{ background: 'linear-gradient(135deg, #1e4a82 0%, #2c6bb8 100%)', borderRadius: '20px', padding: mobil ? '32px 28px' : '48px 44px', position: 'relative', overflow: 'hidden' }}>
+            <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', color: F.white, padding: '6px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '18px' }}>
+              Kostenlos
+            </span>
+            <h3 style={{ fontFamily: SERIF, fontSize: mobil ? '32px' : '40px', fontWeight: 600, color: F.white, margin: '0 0 14px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+              Teste dein <span style={{ fontStyle: 'italic' }}>Wissen</span>.
+            </h3>
+            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: '0 0 28px' }}>
+              61 Themen, Klasse 1 bis 13. Wähle Fach und Klasse — jede Runde neue Fragen.
+            </p>
+            <a href="/quiz" className="btn-ghost" style={{ background: F.white, color: '#1e4a82', textDecoration: 'none', padding: '13px 26px', borderRadius: '999px', fontSize: '14.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              ▶ Quiz starten
+            </a>
+          </div>
+          {/* LERNPAKETE COMING SOON */}
+          <div style={{ background: 'linear-gradient(135deg, #1f7a52 0%, #4a9a72 100%)', borderRadius: '20px', padding: mobil ? '32px 28px' : '48px 44px', position: 'relative', overflow: 'hidden' }}>
+            <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.18)', color: F.white, padding: '6px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '18px' }}>
+              Bald
+            </span>
+            <h3 style={{ fontFamily: SERIF, fontSize: mobil ? '32px' : '40px', fontWeight: 600, color: F.white, margin: '0 0 14px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+              Komplett-<span style={{ fontStyle: 'italic' }}>Pakete</span>.
+            </h3>
+            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, margin: '0 0 28px' }}>
+              Abi-Vorbereitung, Sommer-Programme, Klassenarbeitstraining. Coming soon.
+            </p>
+            <span style={{ color: F.white, padding: '13px 26px', borderRadius: '999px', fontSize: '14.5px', fontWeight: 700, border: '1.5px solid rgba(255,255,255,0.4)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              Benachrichtigung folgt
+            </span>
+          </div>
+        </div>
+      </section>
 
+      {/* FOOTER */}
+      <footer style={{ background: F.bgDeep, color: F.white, padding: mobil ? '60px 22px 30px' : '80px 60px 40px', borderTop: `1px solid ${F.border}` }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '2fr 1fr 1fr 1fr', gap: '40px', marginBottom: '50px' }}>
+            <div>
+              <span style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 700, color: F.white, letterSpacing: '-0.025em', display: 'block', marginBottom: '14px' }}>
+                Lern<span style={{ color: F.accent }}>flix</span>
+              </span>
+              <p style={{ fontSize: '14px', color: F.inkMuted, lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
+                Deine Lern-Bibliothek für Mathematik und Physik. Klasse 1 bis 13.
+              </p>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 18px' }}>Lernen</p>
+              <a href="#mathe" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Mathematik</a>
+              <a href="#physik" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Physik</a>
+              <a href="/lernheld" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Lernheld</a>
+              <a href="/quiz" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Quiz</a>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 18px' }}>Rechtliches</p>
+              <a href="/impressum" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Impressum</a>
+              <a href="/datenschutz" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>Datenschutz</a>
+              <a href="/agb" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>AGB</a>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.accent, fontWeight: 700, margin: '0 0 18px' }}>Kontakt</p>
+              <a href="https://wa.me/4917624700519" style={{ display: 'block', color: F.inkSoft, textDecoration: 'none', fontSize: '14px', marginBottom: '12px' }}>WhatsApp</a>
+            </div>
+          </div>
+          <div style={{ borderTop: `1px solid ${F.border}`, paddingTop: '24px', textAlign: 'center', fontSize: '13px', color: F.inkMuted }}>
+            © {new Date().getFullYear()} Lernflix · lernflix.lernemitanna.de
+          </div>
+        </div>
+      </footer>
     </main>
+  );
+}
+
+function KatTile({ href, titel, desc, gradient, icon, badge }: { href: string; titel: string; desc: string; gradient: string; icon: React.ReactNode; badge?: string }) {
+  return (
+    <a href={href} className="kat-tile" style={{ background: gradient, borderRadius: '16px', padding: '24px 22px', textDecoration: 'none', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: '160px', justifyContent: 'space-between', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+      {badge && <span style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '6px', letterSpacing: '0.1em' }}>{badge}</span>}
+      <div>{icon}</div>
+      <div>
+        <h3 style={{ fontFamily: SERIF, fontSize: '22px', fontWeight: 700, color: 'white', margin: '0 0 4px', letterSpacing: '-0.01em' }}>{titel}</h3>
+        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', margin: 0, lineHeight: 1.4 }}>{desc}</p>
+      </div>
+    </a>
+  );
+}
+
+function PosterBig({ p, rang, onClick, mobil }: { p: Produkt; rang: number; onClick: () => void; mobil: boolean }) {
+  const t = (p.slug && THEMA[p.slug]) || { bg: '#3a7bb8', bgEnd: '#5a9bd8', render: () => null };
+  const breite = mobil ? 220 : 280;
+  return (
+    <div className="poster" onClick={onClick} style={{ width: breite, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 12px 30px rgba(0,0,0,0.45)' }}>
+        <div style={{ background: t.bgEnd ? `linear-gradient(135deg, ${t.bg}, ${t.bgEnd})` : t.bg, height: mobil ? 280 : 340, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
+          {t.render()}
+        </div>
+        <div style={{ position: 'absolute', top: '14px', left: '14px', background: F.accent, color: F.white, padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em' }}>#{rang}</div>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 18px', background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%)' }}>
+          <p style={{ fontSize: '10.5px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', fontWeight: 700, margin: '0 0 4px' }}>{p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}</p>
+          <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, color: F.white, margin: 0, lineHeight: 1.15, letterSpacing: '-0.01em' }}>{p.titel}</h3>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px' }}>
+        <span style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, color: F.white }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+        <span className="poster-arrow" style={{ fontSize: '13px', color: F.inkSoft, fontWeight: 600, transition: 'all 0.25s ease' }}>Ansehen →</span>
+      </div>
+    </div>
+  );
+}
+
+function Poster({ p, onClick, mobil }: { p: Produkt; onClick: () => void; mobil: boolean }) {
+  const t = (p.slug && THEMA[p.slug]) || { bg: '#3a7bb8', bgEnd: '#5a9bd8', render: () => null };
+  const breite = mobil ? 190 : 230;
+  return (
+    <div className="poster" onClick={onClick} style={{ width: breite, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 8px 22px rgba(0,0,0,0.35)' }}>
+        <div style={{ background: t.bgEnd ? `linear-gradient(135deg, ${t.bg}, ${t.bgEnd})` : t.bg, height: mobil ? 240 : 290, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          {t.render()}
+        </div>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px 16px', background: 'linear-gradient(0deg, rgba(0,0,0,0.82) 0%, transparent 100%)' }}>
+          <h3 style={{ fontFamily: SERIF, fontSize: '17px', fontWeight: 700, color: F.white, margin: 0, lineHeight: 1.15, letterSpacing: '-0.01em' }}>{p.titel}</h3>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px' }}>
+        <span style={{ fontFamily: SERIF, fontSize: '17px', fontWeight: 700, color: F.white }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+        <span className="poster-arrow" style={{ fontSize: '12.5px', color: F.inkSoft, fontWeight: 600, transition: 'all 0.25s ease' }}>Ansehen →</span>
+      </div>
+    </div>
   );
 }
