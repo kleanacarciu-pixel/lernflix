@@ -53,6 +53,15 @@ export default function LernheldPage() {
   const [botLaedt, setBotLaedt] = useState(false);
   const [ladeText, setLadeText] = useState("Dein Plan entsteht");
   const [ladeSub, setLadeSub] = useState("Einen Moment — deine Unterlagen werden durchgesehen.");
+  const [testModus, setTestModus] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const host = window.location.hostname;
+    const istVorschau = host.endsWith(".vercel.app") || host === "localhost";
+    const wuenscht = new URLSearchParams(window.location.search).get("test") === "ja";
+    if (istVorschau && wuenscht) setTestModus(true);
+  }, []);
 
   const t = THEMES[theme];
   const bereit = name && klasse && datum && fotos.length > 0;
@@ -463,12 +472,25 @@ export default function LernheldPage() {
                 </div>
               )}
 
-              <button onClick={zahlungStarten} disabled={!bereit}
+              <button
+                onClick={() => {
+                  if (testModus) {
+                    const daten: Daten = {
+                      name, klasse, fach, datum, theme, schwierigkeiten,
+                      bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
+                    };
+                    setLaden(true); setFehler("");
+                    planErzeugen(daten).finally(() => setLaden(false));
+                  } else {
+                    zahlungStarten();
+                  }
+                }}
+                disabled={!bereit}
                 style={{ width: "100%", background: bereit ? t.dark : t.line, color: "#fff", border: "none", padding: "16px", borderRadius: "14px", fontSize: "17px", cursor: bereit ? "pointer" : "default", fontWeight: 700, fontFamily: sans }}>
-                Plan erstellen für 1,99 € →
+                {testModus ? "Plan erstellen (Test ohne Bezahlung) →" : "Plan erstellen für 1,99 € →"}
               </button>
               <p style={{ textAlign: "center", color: t.soft, fontSize: "13px", marginTop: "10px", lineHeight: 1.5 }}>
-                Einmalige Zahlung. Sichere Bezahlung über Stripe.
+                {testModus ? "Test-Modus aktiv. Auf der Live-Seite wird normal bezahlt." : "Einmalige Zahlung. Sichere Bezahlung über Stripe."}
               </p>
             </div>
           </div>
