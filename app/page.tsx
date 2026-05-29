@@ -15,22 +15,22 @@ type Produkt = {
 };
 
 const FARBEN = {
-  cream: '#fdf8ec',
-  creamDeep: '#f5ecd6',
-  ink: '#1c1a17',
-  inkSoft: '#5a5045',
-  inkMuted: '#8c8377',
+  cream: '#ffffff',
+  creamDeep: '#fbf8f1',
+  ink: '#161616',
+  inkSoft: '#4a4a4a',
+  inkMuted: '#8a8a8a',
   white: '#ffffff',
-  border: '#ece1c8',
-  forest: '#2d5f5d',
-  forestDeep: '#1f4544',
-  gold: '#e8b94e',
-  goldDeep: '#c9982e',
-  blush: '#e89580',
-  sky: '#5b9bd5',
-  berry: '#c47ab8',
-  mint: '#7fc4a4',
-  sun: '#f5c45c',
+  border: '#ececec',
+  forest: '#0a3d2e',
+  forestDeep: '#062318',
+  gold: '#f5a623',
+  goldDeep: '#d4881c',
+  blush: '#ffb6a3',
+  sky: '#4a90e2',
+  coral: '#ff6b5a',
+  mint: '#52b788',
+  sun: '#ffd166',
 };
 
 const SERIF = '"Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif';
@@ -177,7 +177,7 @@ export default function Home() {
           <div>
             <span style={{ display: 'inline-block', background: FARBEN.ink, color: FARBEN.sun, padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '20px' }}>▶ DEINE LERN-BIBLIOTHEK</span>
             <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '48px' : '82px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: FARBEN.ink, letterSpacing: '-0.025em' }}>
-              Lernen wie <span style={{ fontStyle: 'italic', color: FARBEN.berry }}>streamen</span>.
+              Lernen wie <span style={{ fontStyle: 'italic', color: FARBEN.coral }}>streamen</span>.
             </h1>
             <p style={{ fontSize: mobil ? '17px' : '19px', color: FARBEN.inkSoft, lineHeight: 1.6, margin: '0 0 30px', maxWidth: '460px' }}>
               Mathe und Physik in der Bibliothek, die Spaß macht. Schöne Lernpakete, persönliche Pläne und ein Quiz für deine Klasse.
@@ -214,7 +214,7 @@ export default function Home() {
             <div style={{ position: 'absolute', top: '-2%', left: '0%', background: FARBEN.sun, color: FARBEN.ink, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(-8deg)', animation: 'schweben 6s ease-in-out infinite', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
               Episode 1
             </div>
-            <div style={{ position: 'absolute', bottom: '4%', right: '-2%', background: FARBEN.berry, color: FARBEN.white, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(6deg)', animation: 'schweben 7s ease-in-out infinite 0.5s', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
+            <div style={{ position: 'absolute', bottom: '4%', right: '-2%', background: FARBEN.coral, color: FARBEN.white, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(6deg)', animation: 'schweben 7s ease-in-out infinite 0.5s', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
               ▶ jetzt!
             </div>
           </div>
@@ -317,7 +317,7 @@ export default function Home() {
       <section id="warum" style={{ padding: mobil ? '60px 20px' : '90px 60px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: FARBEN.ink, margin: '0 0 50px', textAlign: 'center', letterSpacing: '-0.02em' }}>
-            Warum <span style={{ fontStyle: 'italic', color: FARBEN.berry }}>Lernflix</span>?
+            Warum <span style={{ fontStyle: 'italic', color: FARBEN.coral }}>Lernflix</span>?
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
@@ -328,7 +328,7 @@ export default function Home() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <span style={{ background: FARBEN.berry, color: FARBEN.white, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>♥</span>
+              <span style={{ background: FARBEN.coral, color: FARBEN.white, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>♥</span>
               <div>
                 <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '6px 0 6px', color: FARBEN.ink }}>Für deine Klasse</h3>
                 <p style={{ fontSize: '15px', color: FARBEN.inkSoft, margin: 0, lineHeight: 1.55 }}>Quiz und Pläne passend zu deiner Klassenstufe — nicht zu schwer, nicht zu leicht.</p>
@@ -436,140 +436,49 @@ function ProduktKarteEdel({ p, onClick }: { p: Produkt; onClick: () => void }) {
 }
 
 function BibliothekIllustration({ size }: { size: number }) {
+  const cards = [
+    { x: 0, y: 30, w: 150, h: 200, bg: '#ff6b5a', titel: 'Brüche', sub: 'Mathe · Klasse 5–7', icon: '¾', iconColor: '#fff' },
+    { x: 165, y: 0, w: 150, h: 230, bg: '#4a90e2', titel: 'Geometrie', sub: 'Mathe · Klasse 6–9', svgIcon: 'triangle', iconColor: '#fff' },
+    { x: 0, y: 250, w: 150, h: 200, bg: '#52b788', titel: 'Optik', sub: 'Physik · Klasse 8–10', svgIcon: 'sun', iconColor: '#fff' },
+    { x: 165, y: 250, w: 150, h: 200, bg: '#ffd166', titel: 'Funktionen', sub: 'Mathe · Klasse 8–10', svgIcon: 'parabola', iconColor: '#161616' },
+  ];
   return (
-    <svg width={size} height={size} viewBox="0 0 440 440" style={{ filter: 'drop-shadow(0 24px 50px rgba(31, 28, 25, 0.18))' }}>
-      <defs>
-        <radialGradient id="bgKreis" cx="50%" cy="40%" r="60%">
-          <stop offset="0%" stopColor="#fff5d6" />
-          <stop offset="100%" stopColor="#f5ecd6" />
-        </radialGradient>
-      </defs>
-      <circle cx="220" cy="220" r="200" fill="url(#bgKreis)" />
-
-      {/* Floating Mathe-Symbole */}
-      <text x="50" y="80" fontFamily="Georgia, serif" fontSize="34" fill="#c47ab8" opacity="0.7" fontStyle="italic">π</text>
-      <text x="370" y="90" fontFamily="Georgia, serif" fontSize="28" fill="#5b9bd5" opacity="0.7" fontStyle="italic">√</text>
-      <text x="380" y="320" fontFamily="Georgia, serif" fontSize="30" fill="#7fc4a4" opacity="0.7" fontStyle="italic">∑</text>
-      <text x="60" y="350" fontFamily="Georgia, serif" fontSize="26" fill="#e8b94e" opacity="0.7" fontStyle="italic">x²</text>
-
-      {/* TV / Tablet — Lernflix Browse-Screen */}
-      <g transform="translate(70, 100)">
-        <rect x="0" y="0" width="300" height="220" rx="18" fill="#1c1a17" />
-        {/* Browser-Bar */}
-        <rect x="0" y="0" width="300" height="32" rx="18" fill="#1c1a17" />
-        <rect x="0" y="14" width="300" height="18" fill="#1c1a17" />
-        <circle cx="16" cy="16" r="3.5" fill="#e89580" />
-        <circle cx="28" cy="16" r="3.5" fill="#e8b94e" />
-        <circle cx="40" cy="16" r="3.5" fill="#7fc4a4" />
-        <rect x="120" y="9" width="60" height="14" rx="7" fill="#fdf8ec" opacity="0.15" />
-        <text x="244" y="20" fontFamily="Georgia, serif" fontSize="13" fontWeight="800" fill="#e8b94e">▶ lernflix</text>
-
-        {/* Empfohlen-Zeile */}
-        <text x="16" y="54" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#fdf8ec" opacity="0.6">★ FÜR DICH</text>
-        <rect x="16" y="60" width="64" height="80" rx="6" fill="#5b9bd5" />
-        <polygon points="32,86 64,86 48,68" fill="#fff" opacity="0.9"/>
-        <text x="22" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Geo­metrie</text>
-        <text x="22" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 6–9</text>
-
-        <rect x="86" y="60" width="64" height="80" rx="6" fill="#e89580" />
-        <text x="118" y="100" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">¾</text>
-        <text x="92" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Brüche</text>
-        <text x="92" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 5–7</text>
-
-        <rect x="156" y="60" width="64" height="80" rx="6" fill="#e8b94e" />
-        <circle cx="180" cy="90" r="10" fill="#fff"/>
-        <line x1="190" y1="90" x2="208" y2="90" stroke="#fff" strokeWidth="3"/>
-        <polygon points="205,86 212,90 205,94" fill="#fff"/>
-        <text x="162" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#1c1a17">Mecha­nik</text>
-        <text x="162" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#1c1a17" opacity="0.8">Klasse 8–10</text>
-
-        <rect x="226" y="60" width="64" height="80" rx="6" fill="#c47ab8" />
-        <text x="258" y="100" fontSize="30" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic">x</text>
-        <text x="232" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Funk­tionen</text>
-        <text x="232" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 8–10</text>
-
-        {/* Quiz-Zeile */}
-        <text x="16" y="160" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#fdf8ec" opacity="0.6">⚡ QUIZ — WÄHLE DEINE KLASSE</text>
-        <g>
-          <rect x="16" y="170" width="36" height="32" rx="8" fill="#7fc4a4" />
-          <text x="34" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#1c1a17" textAnchor="middle">5</text>
-          <rect x="58" y="170" width="36" height="32" rx="8" fill="#5b9bd5" />
-          <text x="76" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">6</text>
-          <rect x="100" y="170" width="36" height="32" rx="8" fill="#e89580" />
-          <text x="118" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">7</text>
-          <rect x="142" y="170" width="36" height="32" rx="8" fill="#e8b94e" />
-          <text x="160" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#1c1a17" textAnchor="middle">8</text>
-          <rect x="184" y="170" width="36" height="32" rx="8" fill="#c47ab8" />
-          <text x="202" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">9</text>
-          <rect x="226" y="170" width="36" height="32" rx="8" fill="#fdf8ec" opacity="0.2" />
-          <text x="244" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">10</text>
-        </g>
-      </g>
-
-      {/* Popcorn-Eimer als süßer Akzent */}
-      <g transform="translate(330, 250)">
-        <polygon points="0,80 60,80 54,30 6,30" fill="#e89580" />
-        <rect x="0" y="20" width="60" height="14" rx="2" fill="#e89580" />
-        <rect x="6" y="22" width="6" height="10" fill="#fff" />
-        <rect x="18" y="22" width="6" height="10" fill="#fff" />
-        <rect x="30" y="22" width="6" height="10" fill="#fff" />
-        <rect x="42" y="22" width="6" height="10" fill="#fff" />
-        <rect x="54" y="22" width="6" height="10" fill="#fff" />
-        <circle cx="14" cy="22" r="7" fill="#fff5d6" />
-        <circle cx="26" cy="18" r="6" fill="#fff" />
-        <circle cx="40" cy="22" r="7" fill="#fff5d6" />
-        <circle cx="50" cy="16" r="5" fill="#fff" />
-        <circle cx="20" cy="14" r="5" fill="#fff5d6" />
-      </g>
-    </svg>
+    <div style={{ position: 'relative', width: size, height: size, maxWidth: '100%' }}>
+      <svg width={size} height={size} viewBox="0 0 360 480" style={{ overflow: 'visible' }}>
+        {cards.map((c, i) => (
+          <g key={i} transform={`translate(${c.x}, ${c.y}) rotate(${i % 2 === 0 ? -2 : 2} ${c.w / 2} ${c.h / 2})`}>
+            <rect x="0" y="0" width={c.w} height={c.h} rx="20" fill={c.bg} style={{ filter: 'drop-shadow(0 18px 40px rgba(0,0,0,0.18))' }} />
+            <text x="20" y="36" fontFamily="Inter, sans-serif" fontSize="11" fontWeight="700" fill={c.iconColor} opacity="0.85" letterSpacing="1.5">{c.sub.toUpperCase()}</text>
+            <text x="20" y={c.h - 24} fontFamily="Cormorant Garamond, Georgia, serif" fontSize="28" fontWeight="700" fill={c.iconColor}>{c.titel}</text>
+            <g transform={`translate(${c.w / 2 - 30}, ${c.h / 2 - 30})`}>
+              {c.icon && <text x="30" y="44" fontSize="56" fontWeight="800" fill={c.iconColor} textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif">{c.icon}</text>}
+              {c.svgIcon === 'triangle' && <polygon points="6,52 56,52 31,8" fill={c.iconColor} opacity="0.9" />}
+              {c.svgIcon === 'sun' && <g><circle cx="30" cy="30" r="14" fill={c.iconColor} /><g stroke={c.iconColor} strokeWidth="2.5" strokeLinecap="round"><line x1="30" y1="6" x2="30" y2="12" /><line x1="30" y1="48" x2="30" y2="54" /><line x1="6" y1="30" x2="12" y2="30" /><line x1="48" y1="30" x2="54" y2="30" /><line x1="13" y1="13" x2="17" y2="17" /><line x1="43" y1="43" x2="47" y2="47" /><line x1="13" y1="47" x2="17" y2="43" /><line x1="43" y1="17" x2="47" y2="13" /></g></g>}
+              {c.svgIcon === 'parabola' && <path d="M 6 52 Q 30 -10 54 52" fill="none" stroke={c.iconColor} strokeWidth="4" strokeLinecap="round" />}
+            </g>
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 }
 
 function LernheldIllustration() {
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: '420px', margin: '0 auto', aspectRatio: '1' }}>
-      <svg viewBox="0 0 400 400" width="100%" height="100%">
-        {/* Hintere Karte */}
-        <g transform="translate(60, 80) rotate(-6 130 140)">
-          <rect x="0" y="0" width="260" height="280" rx="14" fill="#faf5ef" />
-          <rect x="0" y="0" width="260" height="40" fill="#1f4544" />
-          <text x="20" y="26" fontFamily="Georgia, serif" fontSize="14" fill="#c9a85c" fontWeight="700">DEIN LERNHELD-PLAN</text>
-          <text x="20" y="70" fontFamily="Georgia, serif" fontSize="22" fontWeight="700" fill="#1f1c19">Mathe · Klasse 9</text>
-          <line x1="20" y1="86" x2="240" y2="86" stroke="#e8dfd0" strokeWidth="1" />
-          <rect x="20" y="100" width="80" height="10" rx="3" fill="#2d5f5d" />
-          <rect x="20" y="120" width="180" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="134" width="200" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="148" width="140" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="170" width="80" height="10" rx="3" fill="#c9a85c" />
-          <rect x="20" y="190" width="190" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="204" width="160" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="218" width="200" height="6" rx="2" fill="#e8dfd0" />
-          <rect x="20" y="240" width="100" height="22" rx="11" fill="#2d5f5d" />
-          <text x="44" y="255" fontFamily="Inter, sans-serif" fontSize="11" fill="#faf5ef" fontWeight="600">Lernen</text>
-        </g>
-        {/* Vordere Karte */}
-        <g transform="translate(130, 130) rotate(4 130 140)">
-          <rect x="0" y="0" width="240" height="240" rx="14" fill="#ffffff" />
-          <rect x="0" y="0" width="240" height="36" fill="#c9a85c" />
-          <text x="18" y="24" fontFamily="Georgia, serif" fontSize="13" fill="#faf5ef" fontWeight="700">WOCHE 1 · MONTAG</text>
-          <text x="18" y="62" fontFamily="Georgia, serif" fontSize="18" fontWeight="700" fill="#1f1c19">Satz des Pythagoras</text>
-          {/* Mini Dreieck */}
-          <polygon points="30,90 30,160 130,160" fill="#e6f0fe" stroke="#2d5f5d" strokeWidth="2" />
-          <text x="20" y="130" fontFamily="Georgia, serif" fontSize="12" fontWeight="700" fill="#2d5f5d">a</text>
-          <text x="75" y="175" fontFamily="Georgia, serif" fontSize="12" fontWeight="700" fill="#2d5f5d">b</text>
-          <text x="80" y="120" fontFamily="Georgia, serif" fontSize="12" fontWeight="700" fill="#c97a96">c</text>
-          {/* Formel */}
-          <rect x="145" y="95" width="80" height="34" rx="6" fill="#faf5ef" stroke="#e8dfd0" strokeWidth="1" />
-          <text x="156" y="118" fontFamily="Georgia, serif" fontSize="15" fontWeight="700" fill="#1f1c19">a² + b² = c²</text>
-          <rect x="145" y="138" width="80" height="20" rx="4" fill="#2d5f5d" />
-          <text x="159" y="152" fontFamily="Inter, sans-serif" fontSize="10" fill="#faf5ef" fontWeight="600">Beispiel ✓</text>
-          <line x1="18" y1="190" x2="222" y2="190" stroke="#e8dfd0" strokeWidth="1" />
-          <circle cx="32" cy="208" r="6" fill="none" stroke="#2d5f5d" strokeWidth="2" />
-          <text x="48" y="212" fontFamily="Inter, sans-serif" fontSize="11" fill="#5a5045">Verstehen</text>
-          <circle cx="120" cy="208" r="6" fill="#2d5f5d" />
-          <text x="136" y="212" fontFamily="Inter, sans-serif" fontSize="11" fill="#5a5045">Üben</text>
-        </g>
-      </svg>
+    <div style={{ width: '100%', maxWidth: '460px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {[
+        { n: 1, farbe: '#fdc94c', titel: 'Fotos hochladen', text: 'Vom Schulbuch, der Stoffliste, den Übungen.' },
+        { n: 2, farbe: '#ff7a5c', titel: 'Klasse & Datum wählen', text: 'Wann ist die Schulaufgabe? Was fällt dir schwer?' },
+        { n: 3, farbe: '#6cc99c', titel: 'Plan ist fertig', text: 'Mit Themen, Übungen, Lösungen und Wochenplan.' },
+      ].map((s) => (
+        <div key={s.n} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '18px', padding: '22px 24px', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid rgba(255,255,255,0.14)' }}>
+          <div style={{ width: '54px', height: '54px', borderRadius: '14px', background: s.farbe, color: '#1c1a17', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 800, flexShrink: 0 }}>{s.n}</div>
+          <div>
+            <p style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '22px', fontWeight: 700, color: '#fefcf7', margin: '0 0 4px' }}>{s.titel}</p>
+            <p style={{ fontSize: '14px', color: 'rgba(254,252,247,0.75)', margin: 0, lineHeight: 1.5 }}>{s.text}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
