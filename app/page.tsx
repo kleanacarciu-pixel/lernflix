@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 type Produkt = {
   id: number;
+  slug?: string;
   kategorie: string;
   typ: string;
   titel: string;
@@ -45,11 +46,16 @@ export default function Home() {
 
   const mobil = breite < 768;
 
-  const kaufen = async (productName: string, price: number) => {
+  const kaufen = async (produkt: Produkt) => {
+    if (produkt.slug) {
+      window.location.href = `/materialien/${produkt.slug}`;
+      return;
+    }
+    // Fallback alter PDF-Flow
     const response = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productName, price }),
+      body: JSON.stringify({ productName: produkt.titel, price: produkt.preis }),
     });
     const data = await response.json();
     if (data.url) window.location.href = data.url;
@@ -57,22 +63,22 @@ export default function Home() {
 
   const produkte: Produkt[] = [
     {
-      id: 1, kategorie: 'mathe', typ: 'Formelsammlung', titel: 'Geometrie Klasse 6–9',
-      beschreibung: 'Alle Geometrie-Formeln von Klasse 6 bis 9 — mit Figuren, Beispielen und Erklärungen.',
-      details: ['8 vollständige Kapitel', 'Alle Formeln für Vierecke, Dreiecke, Kreis', 'Alle 3D-Körper: Würfel, Zylinder, Kegel, Kugel', 'Satz des Pythagoras mit Erklärung', 'Ähnlichkeit und Strahlensätze', 'Übersichtstabelle am Ende', 'Mit Witzen und Tipps — kinderfreundlich!'],
-      seiten: '12 Seiten', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
+      id: 1, slug: 'geometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Geometrie Klasse 6–9',
+      beschreibung: 'Alle Geometrie-Themen verständlich erklärt — mit beschrifteten Figuren, Formeln und durchgerechneten Beispielen. Jetzt als schönes HTML statt PDF.',
+      details: ['9 Themen mit beschrifteten SVG-Skizzen', 'Dreiecke + Pythagoras-Beweis', 'Alle Vierecke (Quadrat, Rechteck, Parallelogramm, Trapez, Raute)', 'Kreis: Umfang & Fläche', 'Würfel, Quader, Prisma, Zylinder', 'Pyramide, Kegel, Kugel', 'Schnellübersicht aller Formeln am Ende', 'Auf Handy, Tablet, PC — auch druckbar'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
     },
     {
-      id: 2, kategorie: 'mathe', typ: 'Arbeitsblatt', titel: 'Potenzen',
-      beschreibung: 'Alles über Potenzen — Regeln, Beispiele und Übungen. Perfekt für Klasse 7–9.',
-      details: ['Potenzregeln vollständig erklärt', 'Negative Exponenten', 'Potenzieren mit Brüchen', 'Übungsaufgaben mit Lösungen', 'Einfache und verständliche Sprache'],
-      seiten: 'PDF', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
+      id: 2, slug: 'potenzen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Potenzen',
+      beschreibung: 'Die fünf Potenzgesetze leicht erklärt — mit Beispielen, Übungen und Tipps. Perfekt für Klasse 7–9.',
+      details: ['Alle 5 Potenzgesetze mit Beispielen', 'Negative & gebrochene Exponenten', 'Wurzeln und Zehnerpotenzen', 'Wissenschaftliche Schreibweise', 'Übungsaufgaben mit Schritt-für-Schritt-Lösung', 'Auf Handy, Tablet, PC — auch druckbar'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
     },
     {
-      id: 3, kategorie: 'physik', typ: 'Formelsammlung', titel: 'Mechanik',
-      beschreibung: 'Alle wichtigen Mechanik-Formeln — Kraft, Geschwindigkeit, Energie und mehr.',
-      details: ['Kraft, Masse, Beschleunigung', 'Geschwindigkeit und Bewegung', 'Energie und Arbeit', 'Hebel und Drehmoment', 'Mit Beispielen und Erklärungen'],
-      seiten: 'PDF', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
+      id: 3, slug: 'mechanik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Mechanik',
+      beschreibung: 'Alle Mechanik-Themen verständlich — Kraft, Geschwindigkeit, Energie, Hebel und Reibung mit Skizzen und Beispielen.',
+      details: ['Geschwindigkeit & Beschleunigung', 'Kraft mit Newton-Gesetzen', 'Energie (kinetisch + potentiell)', 'Arbeit & Leistung', 'Hebelgesetz mit Skizze', 'Reibung & Wirkungsgrad', 'Schnellübersicht aller Formeln am Ende'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
     },
   ];
 
@@ -183,8 +189,8 @@ export default function Home() {
                   <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
                   <p style={{margin: '0', fontSize: '30px', fontWeight: '800', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
-                  Jetzt kaufen
+                <button onClick={() => kaufen(ausgewaehlt)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
+                  {ausgewaehlt.slug ? 'Jetzt freischalten' : 'Jetzt kaufen'}
                 </button>
               </div>
             </div>
