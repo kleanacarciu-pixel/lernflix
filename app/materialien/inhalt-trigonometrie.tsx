@@ -81,8 +81,15 @@ export function InhaltTrigonometrie() {
             <svg width="380" height="180" viewBox="0 0 380 180">
               <line x1="20" y1="90" x2="370" y2="90" stroke="#1d1d1f" strokeWidth="1.5"/>
               <line x1="20" y1="20" x2="20" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <path d="M 20 90 Q 60 20, 100 90 T 180 90 T 260 90 T 340 90" fill="none" stroke="#06b6d4" strokeWidth="3"/>
-              <path d="M 20 20 Q 60 90, 100 20 Q 140 -50, 180 20 Q 220 90, 260 20 Q 300 -50, 340 20" fill="none" stroke="#8b5cf6" strokeWidth="3" strokeDasharray="6,4"/>
+              <polygon points="365,86 372,90 365,94" fill="#1d1d1f"/>
+              <text x="362" y="108" fontSize="11" fill="#6e6e73">x</text>
+              <text x="6" y="24" fontSize="11" fill="#6e6e73">y</text>
+              <line x1="18" y1="40" x2="22" y2="40" stroke="#1d1d1f" strokeWidth="1"/>
+              <text x="2" y="44" fontSize="10" fill="#6e6e73">1</text>
+              <line x1="18" y1="140" x2="22" y2="140" stroke="#1d1d1f" strokeWidth="1"/>
+              <text x="-2" y="144" fontSize="10" fill="#6e6e73">−1</text>
+              <polyline fill="none" stroke="#06b6d4" strokeWidth="3" points={Array.from({ length: 71 }).map((_, i) => { const x = 20 + i * 5; const a = (i * 5) * (Math.PI * 2 / 160); const y = 90 - 50 * Math.sin(a); return `${x},${y.toFixed(1)}`; }).join(" ")}/>
+              <polyline fill="none" stroke="#8b5cf6" strokeWidth="3" strokeDasharray="6,4" points={Array.from({ length: 71 }).map((_, i) => { const x = 20 + i * 5; const a = (i * 5) * (Math.PI * 2 / 160); const y = 90 - 50 * Math.cos(a); return `${x},${y.toFixed(1)}`; }).join(" ")}/>
               <text x="300" y="40" fontSize="13" fontWeight="700" fill="#06b6d4">sin(x)</text>
               <text x="300" y="60" fontSize="13" fontWeight="700" fill="#8b5cf6">cos(x)</text>
             </svg>

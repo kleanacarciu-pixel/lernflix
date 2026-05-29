@@ -73,20 +73,33 @@ export function InhaltAtomphysik() {
         <p>Nach einer <b>Halbwertszeit T</b> ist die Hälfte der radioaktiven Atome zerfallen. Nach zwei Halbwertszeiten ist nur noch ein Viertel da, nach drei ein Achtel usw.</p>
         <figure className="fig">
           <div>
-            <svg width="320" height="200" viewBox="0 0 320 200">
-              <line x1="30" y1="170" x2="310" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <line x1="30" y1="20" x2="30" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <text x="13" y="25" fontSize="11" fill="#6e6e73">N</text>
-              <text x="305" y="188" fontSize="11" fill="#6e6e73">t</text>
-              <path d="M 30 20 Q 60 80, 100 95 Q 140 115, 180 135 Q 220 150, 260 160 Q 290 167, 310 170" fill="none" stroke="#10b981" strokeWidth="3"/>
-              <line x1="100" y1="170" x2="100" y2="95" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
-              <line x1="30" y1="95" x2="100" y2="95" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
-              <text x="93" y="185" fontSize="11" fontWeight="700" fill="#dc2626">T</text>
-              <text x="5" y="100" fontSize="11" fontWeight="700" fill="#dc2626">N/2</text>
-              <line x1="170" y1="170" x2="170" y2="135" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
-              <text x="155" y="185" fontSize="11" fontWeight="700" fill="#dc2626">2T</text>
+            <svg width="380" height="220" viewBox="0 0 380 220">
+              <line x1="40" y1="180" x2="370" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="40" y1="20" x2="40" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <polygon points="365,176 372,180 365,184" fill="#1d1d1f"/>
+              <polygon points="36,25 40,18 44,25" fill="#1d1d1f"/>
+              <text x="20" y="30" fontSize="11" fill="#6e6e73">N</text>
+              <text x="362" y="200" fontSize="11" fill="#6e6e73">t</text>
+              <line x1="40" y1="100" x2="120" y2="100" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="120" y1="100" x2="120" y2="180" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="40" y1="140" x2="200" y2="140" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="200" y1="140" x2="200" y2="180" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="40" y1="160" x2="280" y2="160" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <line x1="280" y1="160" x2="280" y2="180" stroke="#dc2626" strokeWidth="1" strokeDasharray="3,2"/>
+              <polyline points="40,20 50,32 60,44 70,54 80,64 90,73 100,81 110,88 120,100 140,113 160,123 180,131 200,140 220,148 240,154 260,158 280,160 300,164 320,168 340,172 360,176" fill="none" stroke="#10b981" strokeWidth="3"/>
+              <circle cx="40" cy="20" r="4" fill="#10b981"/>
+              <circle cx="120" cy="100" r="4" fill="#10b981"/>
+              <circle cx="200" cy="140" r="4" fill="#10b981"/>
+              <circle cx="280" cy="160" r="4" fill="#10b981"/>
+              <text x="8" y="24" fontSize="11" fontWeight="700" fill="#1d1d1f">N₀</text>
+              <text x="8" y="104" fontSize="11" fontWeight="700" fill="#dc2626">N/2</text>
+              <text x="8" y="144" fontSize="11" fontWeight="700" fill="#dc2626">N/4</text>
+              <text x="8" y="164" fontSize="11" fontWeight="700" fill="#dc2626">N/8</text>
+              <text x="116" y="198" fontSize="11" fontWeight="700" fill="#dc2626">T</text>
+              <text x="192" y="198" fontSize="11" fontWeight="700" fill="#dc2626">2T</text>
+              <text x="272" y="198" fontSize="11" fontWeight="700" fill="#dc2626">3T</text>
             </svg>
-            <figcaption>Zerfallskurve — nach jeder Halbwertszeit halbiert sich N</figcaption>
+            <figcaption>Zerfallskurve — nach T noch N/2, nach 2T noch N/4, nach 3T noch N/8</figcaption>
           </div>
         </figure>
         <div className="formeln">

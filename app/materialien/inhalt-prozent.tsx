@@ -76,20 +76,25 @@ export function InhaltProzent() {
         <p>Zinsen sind nichts anderes als Prozente, die du <b>für ein Jahr</b> bekommst (oder zahlst).</p>
         <figure className="fig">
           <div>
-            <svg width="320" height="160" viewBox="0 0 320 160">
-              <line x1="20" y1="140" x2="300" y2="140" stroke="#1d1d1f" strokeWidth="2"/>
-              <line x1="20" y1="20" x2="20" y2="140" stroke="#1d1d1f" strokeWidth="2"/>
-              <polyline points="20,130 70,125 120,118 170,108 220,93 270,72" fill="none" stroke="#34c759" strokeWidth="3"/>
-              {[0, 1, 2, 3, 4, 5].map((i) => (
+            <svg width="340" height="200" viewBox="0 0 340 200">
+              <line x1="30" y1="170" x2="330" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="30" y1="20" x2="30" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <polygon points="325,166 332,170 325,174" fill="#1d1d1f"/>
+              <text x="322" y="190" fontSize="11" fill="#6e6e73">Jahre</text>
+              <text x="6" y="24" fontSize="11" fill="#6e6e73">€</text>
+              <polyline fill="none" stroke="#34c759" strokeWidth="3" points={Array.from({ length: 11 }).map((_, i) => { const x = 30 + i * 30; const wachstum = Math.pow(1.05, i); const y = 170 - (wachstum - 1) * 200; return `${x},${y.toFixed(1)}`; }).join(" ")}/>
+              {Array.from({ length: 11 }).map((_, i) => (
+                <circle key={i} cx={30 + i * 30} cy={170 - (Math.pow(1.05, i) - 1) * 200} r="3" fill="#34c759"/>
+              ))}
+              {[0, 2, 4, 6, 8, 10].map((i) => (
                 <g key={i}>
-                  <line x1={20 + i * 50} y1="140" x2={20 + i * 50} y2="145" stroke="#1d1d1f" strokeWidth="1"/>
-                  <text x={20 + i * 50 - 4} y="158" fontSize="11" fill="#6e6e73">{i}</text>
+                  <line x1={30 + i * 30} y1="170" x2={30 + i * 30} y2="174" stroke="#1d1d1f" strokeWidth="1"/>
+                  <text x={30 + i * 30 - 4} y="186" fontSize="10" fill="#6e6e73">{i}</text>
                 </g>
               ))}
-              <text x="120" y="14" fontSize="13" fontWeight="700" fill="#34c759">Zinseszins-Wachstum</text>
-              <text x="150" y="155" fontSize="11" fill="#6e6e73">Jahre</text>
+              <text x="100" y="40" fontSize="13" fontWeight="700" fill="#34c759">100 € · 5 % Zinseszins</text>
             </svg>
-            <figcaption>So wächst dein Geld mit Zinseszins</figcaption>
+            <figcaption>Aus 100 € werden mit 5 % Zinseszins nach 10 Jahren ca. 163 €</figcaption>
           </div>
         </figure>
         <div className="formeln">

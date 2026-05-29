@@ -20,16 +20,20 @@ export function InhaltFunktionen() {
         <figure className="fig">
           <div>
             <svg width="280" height="200" viewBox="0 0 280 200">
-              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="20" y1="160" x2="260" y2="160" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <polygon points="255,156 262,160 255,164" fill="#1d1d1f"/>
               <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <text x="265" y="105" fontSize="11" fill="#6e6e73">x</text>
-              <text x="143" y="18" fontSize="11" fill="#6e6e73">y</text>
-              <line x1="40" y1="160" x2="240" y2="40" stroke="#5856d6" strokeWidth="3"/>
-              <circle cx="140" cy="100" r="4" fill="#5856d6"/>
-              <text x="146" y="116" fontSize="11" fill="#5856d6">b</text>
-              <text x="180" y="55" fontSize="13" fontWeight="700" fill="#5856d6">y = mx + b</text>
+              <polygon points="136,25 140,18 144,25" fill="#1d1d1f"/>
+              {[-3, -2, -1, 1, 2, 3].map((x) => (<g key={`x${x}`}><line x1={140 + x * 20} y1="158" x2={140 + x * 20} y2="162" stroke="#1d1d1f" strokeWidth="1"/><text x={140 + x * 20 - 4} y="175" fontSize="10" fill="#6e6e73">{x}</text></g>))}
+              {[1, 2, 3, 4, 5, 6].map((y) => (<g key={`y${y}`}><line x1="138" y1={160 - y * 20} x2="142" y2={160 - y * 20} stroke="#1d1d1f" strokeWidth="1"/><text x="124" y={163 - y * 20} fontSize="10" fill="#6e6e73">{y}</text></g>))}
+              <text x="263" y="174" fontSize="11" fill="#6e6e73">x</text>
+              <text x="146" y="20" fontSize="11" fill="#6e6e73">y</text>
+              <line x1="60" y1="180" x2="240" y2="0" stroke="#5856d6" strokeWidth="3"/>
+              <circle cx="140" cy="120" r="5" fill="#5856d6"/>
+              <text x="148" y="118" fontSize="12" fontWeight="700" fill="#5856d6">b = 2</text>
+              <text x="180" y="65" fontSize="13" fontWeight="700" fill="#5856d6">y = x + 2</text>
             </svg>
-            <figcaption>Lineare Funktion — eine Gerade durch das Koordinatensystem</figcaption>
+            <figcaption>Lineare Funktion y = x + 2: Steigung m = 1, y-Achsenabschnitt b = 2</figcaption>
           </div>
         </figure>
         <div className="formeln">
@@ -66,23 +70,25 @@ export function InhaltFunktionen() {
         <figure className="fig">
           <div>
             <svg width="280" height="200" viewBox="0 0 280 200">
-              <line x1="20" y1="160" x2="260" y2="160" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <path d="M 40 30 Q 140 250 240 30" fill="none" stroke="#5856d6" strokeWidth="3"/>
-              <circle cx="140" cy="150" r="5" fill="#ef4444"/>
-              <text x="148" y="155" fontSize="12" fontWeight="700" fill="#ef4444">Scheitel</text>
-              <text x="180" y="50" fontSize="13" fontWeight="700" fill="#5856d6">y = x²</text>
+              <line x1="20" y1="170" x2="260" y2="170" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="185" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <polyline points="60,30 80,60 100,90 120,120 140,170 160,120 180,90 200,60 220,30" fill="none" stroke="#5856d6" strokeWidth="3"/>
+              <circle cx="140" cy="170" r="5" fill="#ef4444"/>
+              <text x="148" y="180" fontSize="12" fontWeight="700" fill="#ef4444">Scheitel</text>
+              <text x="180" y="55" fontSize="13" fontWeight="700" fill="#5856d6">y = x²</text>
             </svg>
-            <figcaption>Eine Parabel mit Scheitel im Ursprung</figcaption>
+            <figcaption>y = x² · nach oben geöffnet (a &gt; 0)</figcaption>
           </div>
           <div>
             <svg width="280" height="200" viewBox="0 0 280 200">
-              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <path d="M 40 170 Q 140 -90 240 170" fill="none" stroke="#ef4444" strokeWidth="3"/>
-              <text x="170" y="40" fontSize="13" fontWeight="700" fill="#ef4444">y = −x²</text>
+              <line x1="20" y1="30" x2="260" y2="30" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="15" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <polyline points="60,170 80,140 100,110 120,80 140,30 160,80 180,110 200,140 220,170" fill="none" stroke="#ef4444" strokeWidth="3"/>
+              <circle cx="140" cy="30" r="5" fill="#5856d6"/>
+              <text x="148" y="22" fontSize="12" fontWeight="700" fill="#5856d6">Scheitel</text>
+              <text x="170" y="160" fontSize="13" fontWeight="700" fill="#ef4444">y = −x²</text>
             </svg>
-            <figcaption>a &lt; 0: Parabel ist nach unten geöffnet</figcaption>
+            <figcaption>y = −x² · nach unten geöffnet (a &lt; 0)</figcaption>
           </div>
         </figure>
         <div className="formeln">

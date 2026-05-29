@@ -12,44 +12,24 @@ export function InhaltStochastik() {
         <p>Die <b>Wahrscheinlichkeit (P)</b> sagt, wie wahrscheinlich ein Ereignis ist. Sie liegt zwischen 0 (unmöglich) und 1 (sicher).</p>
         <div className="gross">P(A) = Anzahl günstige / Anzahl möglich</div>
         <figure className="fig">
-          <div>
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
-              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="50" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="30" cy="50" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="50" r="5" fill="#ec4899"/>
-              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
-              <circle cx="50" cy="70" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
-            </svg>
-            <figcaption>Würfelseite mit 8 (gibt's nicht)</figcaption>
-          </div>
-          <div>
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
-              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="30" cy="50" r="5" fill="#ec4899"/>
-              <circle cx="50" cy="50" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="50" r="5" fill="#ec4899"/>
-              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
-            </svg>
-            <figcaption>Würfelseite mit 7 (gibt's auch nicht)</figcaption>
-          </div>
-          <div>
-            <svg width="100" height="100" viewBox="0 0 100 100">
-              <rect x="10" y="10" width="80" height="80" rx="14" fill="#ec4899" opacity="0.15" stroke="#ec4899" strokeWidth="2"/>
-              <circle cx="30" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="30" r="5" fill="#ec4899"/>
-              <circle cx="30" cy="70" r="5" fill="#ec4899"/>
-              <circle cx="70" cy="70" r="5" fill="#ec4899"/>
-            </svg>
-            <figcaption>P(4) = 1/6 ≈ 16,7 %</figcaption>
-          </div>
+          {[
+            { n: 1, dots: [[50, 50]] },
+            { n: 2, dots: [[30, 30], [70, 70]] },
+            { n: 3, dots: [[30, 30], [50, 50], [70, 70]] },
+            { n: 4, dots: [[30, 30], [70, 30], [30, 70], [70, 70]] },
+            { n: 5, dots: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]] },
+            { n: 6, dots: [[30, 30], [70, 30], [30, 50], [70, 50], [30, 70], [70, 70]] },
+          ].map((w) => (
+            <div key={w.n}>
+              <svg width="90" height="90" viewBox="0 0 100 100">
+                <rect x="10" y="10" width="80" height="80" rx="14" fill={w.n === 4 ? "#ec4899" : "#fff"} opacity={w.n === 4 ? 0.25 : 1} stroke="#ec4899" strokeWidth="2.5"/>
+                {w.dots.map(([x, y], i) => (<circle key={i} cx={x} cy={y} r="6" fill="#ec4899"/>))}
+              </svg>
+              <figcaption>{w.n === 4 ? "Die 4 = günstig" : ""}</figcaption>
+            </div>
+          ))}
         </figure>
+        <p style={{ textAlign: "center", marginTop: "-6px", fontSize: "14px", color: "#6e6e73" }}>P(„Würfel zeigt 4") = 1 günstig / 6 möglich = <b>1/6 ≈ 16,7 %</b></p>
         <div className="karten">
           <div className="karte"><h5>P = 0</h5><p>unmöglich (z.B. „Würfel zeigt 7")</p></div>
           <div className="karte"><h5>P = 0,5</h5><p>50/50 (z.B. „Münze Kopf")</p></div>

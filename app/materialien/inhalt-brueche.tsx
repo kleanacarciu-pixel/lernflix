@@ -13,16 +13,57 @@ export function InhaltBrueche() {
         <div className="gross">3 / 4 → Zähler oben, Nenner unten</div>
         <figure className="fig">
           <div>
-            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 0 1 110 60 Z" fill="#0071e3" opacity="0.7"/></svg>
-            <figcaption>¼ der Pizza</figcaption>
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="64" fill="#92400e"/>
+              <circle cx="70" cy="70" r="58" fill="#dc2626"/>
+              <circle cx="48" cy="42" r="7" fill="#fde047"/>
+              <circle cx="92" cy="48" r="7" fill="#fde047"/>
+              <circle cx="38" cy="82" r="7" fill="#fde047"/>
+              <circle cx="100" cy="92" r="7" fill="#fde047"/>
+              <circle cx="64" cy="108" r="7" fill="#fde047"/>
+              <circle cx="78" cy="68" r="5" fill="#7f1d1d"/>
+              <circle cx="56" cy="60" r="5" fill="#7f1d1d"/>
+              <circle cx="90" cy="78" r="4" fill="#7f1d1d"/>
+              <line x1="70" y1="14" x2="70" y2="126" stroke="#fef3c7" strokeWidth="2.5"/>
+              <line x1="14" y1="70" x2="126" y2="70" stroke="#fef3c7" strokeWidth="2.5"/>
+              <path d="M70 70 L70 14 A56 56 0 0 1 126 70 Z" fill="#0071e3" opacity="0.5" stroke="#0071e3" strokeWidth="2"/>
+            </svg>
+            <figcaption>¼ — ein Stück von vier</figcaption>
           </div>
           <div>
-            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 1 1 10 60 Z" fill="#0071e3" opacity="0.7"/></svg>
-            <figcaption>½ der Pizza</figcaption>
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="64" fill="#92400e"/>
+              <circle cx="70" cy="70" r="58" fill="#dc2626"/>
+              <circle cx="48" cy="42" r="7" fill="#fde047"/>
+              <circle cx="92" cy="48" r="7" fill="#fde047"/>
+              <circle cx="38" cy="82" r="7" fill="#fde047"/>
+              <circle cx="100" cy="92" r="7" fill="#fde047"/>
+              <circle cx="64" cy="108" r="7" fill="#fde047"/>
+              <circle cx="78" cy="68" r="5" fill="#7f1d1d"/>
+              <circle cx="56" cy="60" r="5" fill="#7f1d1d"/>
+              <circle cx="90" cy="78" r="4" fill="#7f1d1d"/>
+              <line x1="70" y1="14" x2="70" y2="126" stroke="#fef3c7" strokeWidth="2.5"/>
+              <path d="M70 70 L70 14 A56 56 0 0 0 70 126 Z" fill="#0071e3" opacity="0.5" stroke="#0071e3" strokeWidth="2"/>
+            </svg>
+            <figcaption>½ — die halbe Pizza</figcaption>
           </div>
           <div>
-            <svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/><path d="M60 60 L60 10 A50 50 0 1 1 10 60 Z" fill="#0071e3" opacity="0.7"/><path d="M60 60 L10 60 A50 50 0 0 1 26 25 Z" fill="#0071e3" opacity="0.7"/></svg>
-            <figcaption>¾ der Pizza</figcaption>
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="64" fill="#92400e"/>
+              <circle cx="70" cy="70" r="58" fill="#dc2626"/>
+              <circle cx="48" cy="42" r="7" fill="#fde047"/>
+              <circle cx="92" cy="48" r="7" fill="#fde047"/>
+              <circle cx="38" cy="82" r="7" fill="#fde047"/>
+              <circle cx="100" cy="92" r="7" fill="#fde047"/>
+              <circle cx="64" cy="108" r="7" fill="#fde047"/>
+              <circle cx="78" cy="68" r="5" fill="#7f1d1d"/>
+              <circle cx="56" cy="60" r="5" fill="#7f1d1d"/>
+              <circle cx="90" cy="78" r="4" fill="#7f1d1d"/>
+              <line x1="70" y1="14" x2="70" y2="126" stroke="#fef3c7" strokeWidth="2.5"/>
+              <line x1="14" y1="70" x2="126" y2="70" stroke="#fef3c7" strokeWidth="2.5"/>
+              <path d="M70 70 L70 14 A56 56 0 1 0 126 70 Z" fill="#0071e3" opacity="0.5" stroke="#0071e3" strokeWidth="2"/>
+            </svg>
+            <figcaption>¾ — drei Stücke von vier</figcaption>
           </div>
         </figure>
         <p>Stell dir eine Pizza vor, die in <b>4 gleiche Stücke</b> geschnitten ist. Wenn du <b>3 davon</b> isst, hast du ¾ der Pizza weggeputzt.</p>
@@ -54,20 +95,27 @@ export function InhaltBrueche() {
         <p>Hier kommt die wichtigste Regel: <b>Brüche kannst du nur addieren oder subtrahieren, wenn der Nenner gleich ist!</b> Sind die Nenner verschieden, musst du sie erst auf einen <b>gemeinsamen Nenner</b> bringen.</p>
         <figure className="fig">
           <div>
-            <svg width="320" height="120" viewBox="0 0 320 120">
-              <rect x="10" y="40" width="80" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
-              <rect x="10" y="40" width="40" height="50" fill="#0071e3" opacity="0.7"/>
-              <text x="36" y="110" fontSize="14" fontWeight="700">1/2</text>
-              <text x="105" y="72" fontSize="22" fontWeight="700" fill="#0071e3">+</text>
-              <rect x="130" y="40" width="80" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
-              <rect x="130" y="40" width="20" height="50" fill="#0071e3" opacity="0.7"/>
-              <text x="160" y="110" fontSize="14" fontWeight="700">1/4</text>
-              <text x="225" y="72" fontSize="22" fontWeight="700" fill="#0071e3">=</text>
-              <rect x="250" y="40" width="60" height="50" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
-              <rect x="250" y="40" width="45" height="50" fill="#0071e3" opacity="0.7"/>
-              <text x="265" y="110" fontSize="14" fontWeight="700">3/4</text>
+            <svg width="360" height="130" viewBox="0 0 360 130">
+              <rect x="10" y="30" width="80" height="60" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="10" y="30" width="40" height="60" fill="#0071e3" opacity="0.6"/>
+              <line x1="50" y1="30" x2="50" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <text x="36" y="110" fontSize="15" fontWeight="700">½</text>
+              <text x="105" y="68" fontSize="24" fontWeight="700" fill="#0071e3">+</text>
+              <rect x="140" y="30" width="80" height="60" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="140" y="30" width="20" height="60" fill="#0071e3" opacity="0.6"/>
+              <line x1="160" y1="30" x2="160" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <line x1="180" y1="30" x2="180" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <line x1="200" y1="30" x2="200" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <text x="170" y="110" fontSize="15" fontWeight="700">¼</text>
+              <text x="235" y="68" fontSize="24" fontWeight="700" fill="#0071e3">=</text>
+              <rect x="270" y="30" width="80" height="60" fill="#fff" stroke="#0071e3" strokeWidth="2"/>
+              <rect x="270" y="30" width="60" height="60" fill="#0071e3" opacity="0.6"/>
+              <line x1="290" y1="30" x2="290" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <line x1="310" y1="30" x2="310" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <line x1="330" y1="30" x2="330" y2="90" stroke="#0071e3" strokeWidth="1"/>
+              <text x="296" y="110" fontSize="15" fontWeight="700">¾</text>
             </svg>
-            <figcaption>½ + ¼ = ¾ (auf gleichen Nenner gebracht)</figcaption>
+            <figcaption>½ + ¼ = ¾ · alles in Viertel umgerechnet</figcaption>
           </div>
         </figure>
         <div className="formeln">

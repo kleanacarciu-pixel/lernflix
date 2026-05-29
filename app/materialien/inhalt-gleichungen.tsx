@@ -30,14 +30,22 @@ export function InhaltGleichungen() {
         <div className="merke"><b>WICHTIG:</b> Was du auf der einen Seite machst, musst du auch auf der anderen Seite machen. Wie eine Waage: kommt links was weg, muss rechts auch was weg. Sonst kippt sie.</div>
         <figure className="fig">
           <div>
-            <svg width="340" height="200" viewBox="0 0 340 200">
-              <polygon points="170,180 150,195 190,195" fill="#1d1d1f"/>
-              <line x1="170" y1="80" x2="170" y2="180" stroke="#1d1d1f" strokeWidth="3"/>
-              <line x1="30" y1="80" x2="310" y2="80" stroke="#ff9500" strokeWidth="3"/>
-              <ellipse cx="60" cy="78" rx="40" ry="14" fill="#ff9500" opacity="0.3" stroke="#ff9500" strokeWidth="2"/>
-              <text x="50" y="55" fontSize="16" fontWeight="700" fill="#ff9500">3x+5</text>
-              <ellipse cx="280" cy="78" rx="40" ry="14" fill="#ff9500" opacity="0.3" stroke="#ff9500" strokeWidth="2"/>
-              <text x="271" y="55" fontSize="16" fontWeight="700" fill="#ff9500">20</text>
+            <svg width="340" height="220" viewBox="0 0 340 220">
+              <rect x="160" y="180" width="20" height="20" fill="#1d1d1f"/>
+              <polygon points="140,180 200,180 170,150" fill="#1d1d1f"/>
+              <line x1="170" y1="150" x2="170" y2="100" stroke="#1d1d1f" strokeWidth="3"/>
+              <line x1="40" y1="100" x2="300" y2="100" stroke="#ff9500" strokeWidth="4"/>
+              <line x1="60" y1="100" x2="60" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="100" y1="100" x2="100" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="60" y1="120" x2="100" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <ellipse cx="80" cy="130" rx="32" ry="10" fill="#fef3c7" stroke="#ff9500" strokeWidth="2"/>
+              <text x="62" y="135" fontSize="16" fontWeight="700" fill="#1d1d1f">3x+5</text>
+              <line x1="240" y1="100" x2="240" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="280" y1="100" x2="280" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="240" y1="120" x2="280" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <ellipse cx="260" cy="130" rx="32" ry="10" fill="#fef3c7" stroke="#ff9500" strokeWidth="2"/>
+              <text x="252" y="135" fontSize="16" fontWeight="700" fill="#1d1d1f">20</text>
+              <text x="155" y="40" fontSize="14" fontWeight="700" fill="#1d1d1f">=</text>
             </svg>
             <figcaption>Eine Gleichung ist wie eine Waage im Gleichgewicht</figcaption>
           </div>
@@ -88,17 +96,17 @@ export function InhaltGleichungen() {
         <figure className="fig">
           <div>
             <svg width="280" height="200" viewBox="0 0 280 200">
-              <line x1="20" y1="100" x2="260" y2="100" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <line x1="140" y1="20" x2="140" y2="180" stroke="#1d1d1f" strokeWidth="1.5"/>
-              <text x="265" y="105" fontSize="11" fill="#6e6e73">x</text>
-              <text x="143" y="18" fontSize="11" fill="#6e6e73">y</text>
-              <path d="M 40 30 Q 140 250 240 30" fill="none" stroke="#ff9500" strokeWidth="3"/>
-              <circle cx="90" cy="100" r="5" fill="#ff9500"/>
-              <circle cx="190" cy="100" r="5" fill="#ff9500"/>
-              <text x="80" y="125" fontSize="13" fontWeight="700" fill="#ff9500">x₁</text>
-              <text x="186" y="125" fontSize="13" fontWeight="700" fill="#ff9500">x₂</text>
+              <line x1="20" y1="120" x2="260" y2="120" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <line x1="140" y1="20" x2="140" y2="185" stroke="#1d1d1f" strokeWidth="1.5"/>
+              <text x="263" y="135" fontSize="11" fill="#6e6e73">x</text>
+              <text x="146" y="20" fontSize="11" fill="#6e6e73">y</text>
+              <polyline points="60,40 80,75 100,100 120,115 140,120 160,115 180,100 200,75 220,40" fill="none" stroke="#ff9500" strokeWidth="3"/>
+              <circle cx="100" cy="120" r="6" fill="#ff9500"/>
+              <circle cx="180" cy="120" r="6" fill="#ff9500"/>
+              <text x="86" y="142" fontSize="13" fontWeight="700" fill="#ff9500">x₁</text>
+              <text x="172" y="142" fontSize="13" fontWeight="700" fill="#ff9500">x₂</text>
             </svg>
-            <figcaption>Die Nullstellen sind die x-Werte, wo die Parabel die x-Achse kreuzt</figcaption>
+            <figcaption>Nullstellen x₁ und x₂ sind dort, wo die Parabel die x-Achse kreuzt</figcaption>
           </div>
         </figure>
         <h3>Spezialfälle (ohne Formel)</h3>
