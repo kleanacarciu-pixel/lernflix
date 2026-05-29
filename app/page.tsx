@@ -16,21 +16,21 @@ type Produkt = {
 
 const FARBEN = {
   cream: '#ffffff',
-  creamDeep: '#fbf8f1',
-  ink: '#161616',
-  inkSoft: '#4a4a4a',
-  inkMuted: '#8a8a8a',
+  creamDeep: '#f8f6f1',
+  ink: '#0c0c0c',
+  inkSoft: '#3d3d3d',
+  inkMuted: '#7a7a7a',
   white: '#ffffff',
   border: '#ececec',
-  forest: '#0a3d2e',
-  forestDeep: '#062318',
-  gold: '#f5a623',
-  goldDeep: '#d4881c',
-  blush: '#ffb6a3',
+  forest: '#0c2818',
+  forestDeep: '#08180e',
+  gold: '#e83d3d',
+  goldDeep: '#c93030',
+  blush: '#fde4dc',
   sky: '#4a90e2',
-  coral: '#ff6b5a',
+  coral: '#e83d3d',
   mint: '#52b788',
-  sun: '#ffd166',
+  sun: '#f5c542',
 };
 
 const SERIF = '"Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif';
@@ -146,76 +146,57 @@ export default function Home() {
       )}
 
       {/* HEADER */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(253, 248, 236, 0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(14px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '14px 20px' : '20px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
-        <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-          <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: FARBEN.ink, color: FARBEN.gold, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>▶</span>
-          <span style={{ fontFamily: SERIF, fontSize: mobil ? '24px' : '28px', fontWeight: 700, color: FARBEN.ink, letterSpacing: '-0.01em' }}>Lernflix</span>
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent', backdropFilter: scrolled ? 'blur(14px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '16px 22px' : '22px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+        <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <span style={{ fontFamily: SERIF, fontSize: mobil ? '26px' : '32px', fontWeight: 700, color: FARBEN.ink, letterSpacing: '-0.02em' }}>
+            Lern<span style={{ color: FARBEN.coral }}>flix</span>
+          </span>
         </a>
-        <nav style={{ display: 'flex', gap: mobil ? '14px' : '32px', alignItems: 'center' }}>
+        <nav style={{ display: 'flex', gap: mobil ? '14px' : '34px', alignItems: 'center' }}>
           {!mobil && (
             <>
-              <a href="#materialien" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Materialien</a>
-              <a href="/quiz" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Quiz</a>
-              <a href="#warum" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Warum Lernflix</a>
+              <a href="#materialien" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Materialien</a>
+              <a href="/quiz" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Quiz</a>
+              <a href="#warum" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Warum Lernflix</a>
             </>
           )}
-          <a href="/lernheld" style={{ background: FARBEN.ink, color: FARBEN.cream, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '10px 22px', borderRadius: '999px', letterSpacing: '0.01em' }}>Lernheld starten</a>
+          <a href="/lernheld" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '11px 22px', borderRadius: '999px' }}>Lernheld starten</a>
         </nav>
       </header>
 
-      {/* HERO */}
-      <section style={{ paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '20px' : '60px', paddingRight: mobil ? '20px' : '60px', position: 'relative' }}>
-        {!mobil && (
-          <>
-            <div style={{ position: 'absolute', top: '14%', left: '6%', fontFamily: SERIF, fontSize: '60px', color: FARBEN.gold, opacity: 0.15, fontStyle: 'italic', pointerEvents: 'none' }}>π</div>
-            <div style={{ position: 'absolute', top: '60%', left: '3%', fontFamily: SERIF, fontSize: '48px', color: FARBEN.forest, opacity: 0.13, fontStyle: 'italic', pointerEvents: 'none' }}>√</div>
-            <div style={{ position: 'absolute', top: '20%', right: '4%', fontFamily: SERIF, fontSize: '52px', color: FARBEN.blush, opacity: 0.18, fontStyle: 'italic', pointerEvents: 'none' }}>x²</div>
-            <div style={{ position: 'absolute', top: '70%', right: '7%', fontFamily: SERIF, fontSize: '46px', color: FARBEN.gold, opacity: 0.15, fontStyle: 'italic', pointerEvents: 'none' }}>∫</div>
-          </>
-        )}
-        <div className="anim-fadein" style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center' }}>
-          <div>
-            <span style={{ display: 'inline-block', background: FARBEN.ink, color: FARBEN.sun, padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '20px' }}>▶ DEINE LERN-BIBLIOTHEK</span>
-            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '48px' : '82px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: FARBEN.ink, letterSpacing: '-0.025em' }}>
-              Lernen wie <span style={{ fontStyle: 'italic', color: FARBEN.coral }}>streamen</span>.
-            </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: FARBEN.inkSoft, lineHeight: 1.6, margin: '0 0 30px', maxWidth: '460px' }}>
-              Mathe und Physik in der Bibliothek, die Spaß macht. Schöne Lernpakete, persönliche Pläne und ein Quiz für deine Klasse.
-            </p>
-            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.ink, color: FARBEN.cream, textDecoration: 'none', padding: '16px 30px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                Lernheld starten <span style={{ fontSize: '18px' }}>→</span>
-              </a>
-              <a href="#materialien" className="btn-rand" style={{ background: 'transparent', color: FARBEN.ink, textDecoration: 'none', padding: '16px 30px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, border: `1.5px solid ${FARBEN.ink}` }}>
-                Bibliothek ansehen
-              </a>
-            </div>
-            <div style={{ display: 'flex', gap: '32px', marginTop: '46px', flexWrap: 'wrap' }}>
-              <div>
-                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>13</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Lernpakete</p>
-              </div>
-              <div style={{ width: '1px', background: FARBEN.border }} />
-              <div>
-                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>61</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Quiz-Themen</p>
-              </div>
-              <div style={{ width: '1px', background: FARBEN.border }} />
-              <div>
-                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>1–13</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Klassen</p>
-              </div>
-            </div>
+      {/* HERO — zentriert, ohne Illustration */}
+      <section style={{ paddingTop: mobil ? '120px' : '170px', paddingBottom: mobil ? '70px' : '110px', paddingLeft: mobil ? '24px' : '60px', paddingRight: mobil ? '24px' : '60px', position: 'relative', textAlign: 'center' }}>
+        <div className="anim-fadein" style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <span style={{ display: 'inline-block', background: FARBEN.blush, color: FARBEN.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.14em', marginBottom: '28px' }}>DEINE LERN-BIBLIOTHEK</span>
+          <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '52px' : '96px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 24px', color: FARBEN.ink, letterSpacing: '-0.035em' }}>
+            Lernen wie<br />
+            <span style={{ fontStyle: 'italic', color: FARBEN.coral }}>streamen.</span>
+          </h1>
+          <p style={{ fontSize: mobil ? '17px' : '20px', color: FARBEN.inkSoft, lineHeight: 1.5, margin: '0 auto 40px', maxWidth: '620px' }}>
+            Mathe und Physik in der Bibliothek, die Spaß macht. Schöne Lernpakete, persönliche Pläne und Quizzes für jede Klasse.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+              Lernheld starten <span style={{ fontSize: '18px' }}>→</span>
+            </a>
+            <a href="#materialien" className="btn-rand" style={{ background: 'transparent', color: FARBEN.ink, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, border: `1.5px solid ${FARBEN.ink}` }}>
+              Bibliothek ansehen
+            </a>
           </div>
-
-          {/* HERO-ILLUSTRATION */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <BibliothekIllustration size={mobil ? 320 : 440} />
-            <div style={{ position: 'absolute', top: '-2%', left: '0%', background: FARBEN.sun, color: FARBEN.ink, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(-8deg)', animation: 'schweben 6s ease-in-out infinite', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
-              Episode 1
+          <div style={{ display: 'inline-flex', gap: '40px', marginTop: '64px', flexWrap: 'wrap', justifyContent: 'center', padding: '24px 36px', background: FARBEN.creamDeep, borderRadius: '20px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>13</p>
+              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Lernpakete</p>
             </div>
-            <div style={{ position: 'absolute', bottom: '4%', right: '-2%', background: FARBEN.coral, color: FARBEN.white, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(6deg)', animation: 'schweben 7s ease-in-out infinite 0.5s', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
-              ▶ jetzt!
+            <div style={{ width: '1px', background: FARBEN.border }} />
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>61</p>
+              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Quiz-Themen</p>
+            </div>
+            <div style={{ width: '1px', background: FARBEN.border }} />
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>1–13</p>
+              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Klassen</p>
             </div>
           </div>
         </div>
@@ -346,15 +327,14 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ background: FARBEN.ink, color: FARBEN.creamDeep, padding: mobil ? '60px 20px 30px' : '80px 60px 40px' }}>
+      <footer style={{ background: FARBEN.ink, color: FARBEN.white, padding: mobil ? '60px 20px 30px' : '80px 60px 40px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '2fr 1fr 1fr 1fr', gap: '40px', marginBottom: '50px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: FARBEN.gold, color: FARBEN.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>▶</span>
-                <p style={{ fontFamily: SERIF, fontSize: '26px', fontWeight: 700, color: FARBEN.cream, margin: 0 }}>Lernflix</p>
-              </div>
-              <p style={{ fontSize: '14px', color: FARBEN.creamDeep, opacity: 0.7, lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
+              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.white, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+                Lern<span style={{ color: FARBEN.coral }}>flix</span>
+              </p>
+              <p style={{ fontSize: '14px', color: FARBEN.white, opacity: 0.7, lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
                 Deine Lern-Bibliothek für Mathe und Physik. Klar, warm und ohne Stress.
               </p>
             </div>
