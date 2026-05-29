@@ -15,22 +15,25 @@ type Produkt = {
 };
 
 const FARBEN = {
-  cream: '#ffffff',
-  creamDeep: '#f8f6f1',
-  ink: '#0c0c0c',
-  inkSoft: '#3d3d3d',
-  inkMuted: '#7a7a7a',
+  cream: '#0a0a14',
+  creamDeep: '#13131f',
+  ink: '#ffffff',
+  inkSoft: 'rgba(255,255,255,0.78)',
+  inkMuted: 'rgba(255,255,255,0.55)',
   white: '#ffffff',
-  border: '#ececec',
-  forest: '#0c2818',
-  forestDeep: '#08180e',
-  gold: '#e83d3d',
-  goldDeep: '#c93030',
-  blush: '#fde4dc',
-  sky: '#4a90e2',
-  coral: '#e83d3d',
-  mint: '#52b788',
-  sun: '#f5c542',
+  border: 'rgba(255,255,255,0.10)',
+  forest: '#1a1a2e',
+  forestDeep: '#0d0d18',
+  gold: '#ff3d77',
+  goldDeep: '#cc2e5f',
+  blush: 'rgba(255, 61, 119, 0.15)',
+  sky: '#3da9ff',
+  coral: '#ff3d77',
+  mint: '#3ad29f',
+  sun: '#ffc94c',
+  glassBg: 'rgba(255,255,255,0.05)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  glow: 'rgba(255, 61, 119, 0.35)',
 };
 
 const SERIF = '"Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif';
@@ -111,32 +114,32 @@ export default function Home() {
       `}</style>
 
       {ausgewaehlt && (
-        <div onClick={() => setAusgewaehlt(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(31, 28, 25, 0.55)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: FARBEN.white, borderRadius: '20px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 30px 80px rgba(0,0,0,0.3)' }}>
+        <div onClick={() => setAusgewaehlt(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#13131f', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '20px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}>
             <div style={{ padding: mobil ? '28px 24px' : '40px 44px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
                 <div>
-                  <span style={{ fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: FARBEN.forest, fontWeight: 700 }}>{ausgewaehlt.typ}</span>
-                  <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '34px', fontWeight: 600, margin: '8px 0 4px', color: FARBEN.ink, lineHeight: 1.1 }}>{ausgewaehlt.titel}</h2>
+                  <span style={{ fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: FARBEN.coral, fontWeight: 700 }}>{ausgewaehlt.typ}</span>
+                  <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '34px', fontWeight: 600, margin: '8px 0 4px', color: '#ffffff', lineHeight: 1.1 }}>{ausgewaehlt.titel}</h2>
                 </div>
-                <button onClick={() => setAusgewaehlt(null)} style={{ background: FARBEN.creamDeep, border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '18px', cursor: 'pointer', color: FARBEN.ink, flexShrink: 0 }}>✕</button>
+                <button onClick={() => setAusgewaehlt(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', width: '36px', height: '36px', borderRadius: '50%', fontSize: '18px', cursor: 'pointer', color: '#ffffff', flexShrink: 0 }}>✕</button>
               </div>
-              <p style={{ fontSize: '15px', color: FARBEN.inkSoft, lineHeight: 1.7, margin: '0 0 24px' }}>{ausgewaehlt.beschreibung}</p>
-              <div style={{ background: FARBEN.cream, borderRadius: '14px', padding: '20px 22px', marginBottom: '28px' }}>
-                <p style={{ fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: FARBEN.forest, fontWeight: 700, margin: '0 0 14px' }}>Was drin ist</p>
+              <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, margin: '0 0 24px' }}>{ausgewaehlt.beschreibung}</p>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '20px 22px', marginBottom: '28px' }}>
+                <p style={{ fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase', color: FARBEN.coral, fontWeight: 700, margin: '0 0 14px' }}>Was drin ist</p>
                 {ausgewaehlt.details.map((d, i) => (
                   <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '10px' }}>
-                    <span style={{ color: FARBEN.gold, fontWeight: 700, fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>✓</span>
-                    <span style={{ fontSize: '14.5px', color: FARBEN.ink, lineHeight: 1.5 }}>{d}</span>
+                    <span style={{ color: FARBEN.coral, fontWeight: 700, fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>✓</span>
+                    <span style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{d}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '24px', borderTop: `1px solid ${FARBEN.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.10)' }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: '12px', color: FARBEN.inkMuted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Einmalig</p>
-                  <p style={{ margin: '2px 0 0', fontFamily: SERIF, fontSize: '36px', fontWeight: 600, color: FARBEN.ink }}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Einmalig</p>
+                  <p style={{ margin: '2px 0 0', fontFamily: SERIF, fontSize: '36px', fontWeight: 600, color: '#ffffff' }}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt)} className="btn-haupt" style={{ background: FARBEN.ink, color: FARBEN.cream, border: 'none', borderRadius: '999px', padding: '14px 30px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: SANS, letterSpacing: '0.02em' }}>
+                <button onClick={() => kaufen(ausgewaehlt)} className="btn-haupt" style={{ background: FARBEN.coral, color: '#ffffff', border: 'none', borderRadius: '999px', padding: '14px 30px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', fontFamily: SANS, boxShadow: `0 14px 30px ${FARBEN.glow}` }}>
                   {ausgewaehlt.slug ? 'Jetzt freischalten' : 'Jetzt kaufen'}
                 </button>
               </div>
@@ -146,58 +149,72 @@ export default function Home() {
       )}
 
       {/* HEADER */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent', backdropFilter: scrolled ? 'blur(14px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '16px 22px' : '22px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(10,10,20,0.85)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '16px 22px' : '22px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
         <a href="#" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <span style={{ fontFamily: SERIF, fontSize: mobil ? '26px' : '32px', fontWeight: 700, color: FARBEN.ink, letterSpacing: '-0.02em' }}>
+          <span style={{ fontFamily: SERIF, fontSize: mobil ? '26px' : '32px', fontWeight: 700, color: FARBEN.white, letterSpacing: '-0.02em' }}>
             Lern<span style={{ color: FARBEN.coral }}>flix</span>
           </span>
         </a>
         <nav style={{ display: 'flex', gap: mobil ? '14px' : '34px', alignItems: 'center' }}>
           {!mobil && (
             <>
-              <a href="#materialien" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Materialien</a>
-              <a href="/quiz" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Quiz</a>
-              <a href="#warum" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '15px', fontWeight: 500 }}>Warum Lernflix</a>
+              <a href="#materialien" style={{ color: FARBEN.white, textDecoration: 'none', fontSize: '15px', fontWeight: 500, opacity: 0.85 }}>Materialien</a>
+              <a href="/quiz" style={{ color: FARBEN.white, textDecoration: 'none', fontSize: '15px', fontWeight: 500, opacity: 0.85 }}>Quiz</a>
+              <a href="#warum" style={{ color: FARBEN.white, textDecoration: 'none', fontSize: '15px', fontWeight: 500, opacity: 0.85 }}>Warum Lernflix</a>
             </>
           )}
-          <a href="/lernheld" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '11px 22px', borderRadius: '999px' }}>Lernheld starten</a>
+          <a href="/lernheld" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '11px 22px', borderRadius: '999px', boxShadow: `0 8px 30px ${FARBEN.glow}` }}>Lernheld starten</a>
         </nav>
       </header>
 
-      {/* HERO — zentriert, ohne Illustration */}
-      <section style={{ paddingTop: mobil ? '120px' : '170px', paddingBottom: mobil ? '70px' : '110px', paddingLeft: mobil ? '24px' : '60px', paddingRight: mobil ? '24px' : '60px', position: 'relative', textAlign: 'center' }}>
-        <div className="anim-fadein" style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <span style={{ display: 'inline-block', background: FARBEN.blush, color: FARBEN.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.14em', marginBottom: '28px' }}>DEINE LERN-BIBLIOTHEK</span>
-          <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '52px' : '96px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 24px', color: FARBEN.ink, letterSpacing: '-0.035em' }}>
-            Lernen wie<br />
-            <span style={{ fontStyle: 'italic', color: FARBEN.coral }}>streamen.</span>
-          </h1>
-          <p style={{ fontSize: mobil ? '17px' : '20px', color: FARBEN.inkSoft, lineHeight: 1.5, margin: '0 auto 40px', maxWidth: '620px' }}>
-            Mathe und Physik in der Bibliothek, die Spaß macht. Schöne Lernpakete, persönliche Pläne und Quizzes für jede Klasse.
-          </p>
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-              Lernheld starten <span style={{ fontSize: '18px' }}>→</span>
-            </a>
-            <a href="#materialien" className="btn-rand" style={{ background: 'transparent', color: FARBEN.ink, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, border: `1.5px solid ${FARBEN.ink}` }}>
-              Bibliothek ansehen
-            </a>
+      {/* HERO — Dark Premium mit Schüler-Charakter */}
+      <section style={{ paddingTop: mobil ? '120px' : '150px', paddingBottom: mobil ? '70px' : '110px', paddingLeft: mobil ? '24px' : '60px', paddingRight: mobil ? '24px' : '60px', position: 'relative', overflow: 'hidden' }}>
+        {/* Glow Effekte im Hintergrund */}
+        <div style={{ position: 'absolute', top: '-20%', left: '-10%', width: '60%', height: '80%', background: 'radial-gradient(circle, rgba(255,61,119,0.18) 0%, transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '20%', right: '-15%', width: '60%', height: '80%', background: 'radial-gradient(circle, rgba(61,169,255,0.12) 0%, transparent 60%)', pointerEvents: 'none' }} />
+
+        <div className="anim-fadein" style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center', position: 'relative' }}>
+          <div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,61,119,0.12)', color: FARBEN.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.14em', marginBottom: '28px', border: '1px solid rgba(255,61,119,0.25)' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: FARBEN.coral, boxShadow: `0 0 12px ${FARBEN.coral}` }} />
+              DEINE LERN-BIBLIOTHEK
+            </span>
+            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '52px' : '90px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 24px', color: FARBEN.white, letterSpacing: '-0.035em' }}>
+              Lernen wie<br />
+              <span style={{ fontStyle: 'italic', background: `linear-gradient(135deg, ${FARBEN.coral} 0%, #ff8aa9 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>streamen.</span>
+            </h1>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: FARBEN.inkSoft, lineHeight: 1.6, margin: '0 0 38px', maxWidth: '480px' }}>
+              Mathe und Physik in einer Bibliothek, die du gerne öffnest. Schöne Lernpakete, persönliche Pläne und Quizzes für jede Klasse.
+            </p>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.coral, color: FARBEN.white, textDecoration: 'none', padding: '17px 32px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: `0 14px 40px ${FARBEN.glow}` }}>
+                Lernheld starten <span style={{ fontSize: '18px' }}>→</span>
+              </a>
+              <a href="#materialien" className="btn-rand" style={{ background: 'rgba(255,255,255,0.06)', color: FARBEN.white, textDecoration: 'none', padding: '17px 32px', borderRadius: '999px', fontSize: '16px', fontWeight: 700, border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>
+                Bibliothek ansehen
+              </a>
+            </div>
+            <div style={{ display: 'flex', gap: '32px', marginTop: '50px', flexWrap: 'wrap' }}>
+              <div>
+                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 700, color: FARBEN.white, margin: 0, lineHeight: 1 }}>13</p>
+                <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Lernpakete</p>
+              </div>
+              <div style={{ width: '1px', background: FARBEN.border }} />
+              <div>
+                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 700, color: FARBEN.white, margin: 0, lineHeight: 1 }}>61</p>
+                <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Quiz-Themen</p>
+              </div>
+              <div style={{ width: '1px', background: FARBEN.border }} />
+              <div>
+                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 700, color: FARBEN.white, margin: 0, lineHeight: 1 }}>1–13</p>
+                <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Klassen</p>
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'inline-flex', gap: '40px', marginTop: '64px', flexWrap: 'wrap', justifyContent: 'center', padding: '24px 36px', background: FARBEN.creamDeep, borderRadius: '20px' }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>13</p>
-              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Lernpakete</p>
-            </div>
-            <div style={{ width: '1px', background: FARBEN.border }} />
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>61</p>
-              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Quiz-Themen</p>
-            </div>
-            <div style={{ width: '1px', background: FARBEN.border }} />
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontFamily: SERIF, fontSize: '32px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>1–13</p>
-              <p style={{ fontSize: '12px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Klassen</p>
-            </div>
+
+          {/* HERO-CHARAKTER */}
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+            <SchuelerCharakter size={mobil ? 320 : 460} />
           </div>
         </div>
       </section>
@@ -395,22 +412,132 @@ const THEMA_SVGS: Record<string, { bg: string; render: () => React.ReactElement 
 };
 
 function ProduktKarteEdel({ p, onClick }: { p: Produkt; onClick: () => void }) {
-  const svg = (p.slug && THEMA_SVGS[p.slug]) || { bg: FARBEN.forest, render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="50" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">π</text></svg>) };
+  const svg = (p.slug && THEMA_SVGS[p.slug]) || { bg: '#3da9ff', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="50" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">π</text></svg>) };
   return (
-    <div onClick={onClick} className="karte-hover" style={{ background: FARBEN.white, borderRadius: '18px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(31, 28, 25, 0.04)', border: `1px solid ${FARBEN.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ background: svg.bg, height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+    <div onClick={onClick} className="karte-hover" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '20px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', flexDirection: 'column', overflow: 'hidden', backdropFilter: 'blur(10px)' }}>
+      <div style={{ background: svg.bg, height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
         {svg.render()}
       </div>
       <div style={{ padding: '20px 22px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <p style={{ fontSize: '10.5px', letterSpacing: '0.18em', textTransform: 'uppercase', color: FARBEN.inkMuted, fontWeight: 700, margin: '0 0 8px' }}>{p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}</p>
-        <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '0 0 16px', color: FARBEN.ink, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{p.titel}</h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '12px', borderTop: `1px solid ${FARBEN.border}` }}>
-          <span style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, color: FARBEN.ink }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-          <span style={{ fontSize: '13px', color: FARBEN.ink, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <p style={{ fontSize: '10.5px', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)', fontWeight: 700, margin: '0 0 8px' }}>{p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}</p>
+        <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '0 0 16px', color: '#ffffff', letterSpacing: '-0.01em', lineHeight: 1.2 }}>{p.titel}</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.10)' }}>
+          <span style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, color: '#ffffff' }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+          <span style={{ fontSize: '13px', color: '#ff3d77', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             Ansehen <span className="pfeil-hover">→</span>
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SchuelerCharakter({ size }: { size: number }) {
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} viewBox="0 0 460 460" style={{ overflow: 'visible' }}>
+        <defs>
+          <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ff3d77" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#ff3d77" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="hoodieGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3da9ff" />
+            <stop offset="100%" stopColor="#1f6fc4" />
+          </linearGradient>
+          <linearGradient id="phoneGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#1a1a2e" />
+            <stop offset="100%" stopColor="#0a0a14" />
+          </linearGradient>
+        </defs>
+
+        {/* Glow Hintergrund */}
+        <circle cx="230" cy="230" r="220" fill="url(#glow1)" />
+
+        {/* Floating Math-Symbole */}
+        <g opacity="0.7">
+          <text x="40" y="80" fontFamily="Georgia, serif" fontSize="38" fill="#ff3d77" fontStyle="italic">π</text>
+          <text x="380" y="100" fontFamily="Georgia, serif" fontSize="32" fill="#3da9ff" fontStyle="italic">√</text>
+          <text x="400" y="340" fontFamily="Georgia, serif" fontSize="34" fill="#ffc94c" fontStyle="italic">x²</text>
+          <text x="30" y="370" fontFamily="Georgia, serif" fontSize="36" fill="#3ad29f" fontStyle="italic">∑</text>
+        </g>
+
+        {/* Floating Karten (subtle) */}
+        <g transform="translate(40, 200) rotate(-12)">
+          <rect x="0" y="0" width="70" height="90" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" />
+          <rect x="10" y="14" width="40" height="8" rx="2" fill="rgba(255,61,119,0.6)" />
+          <rect x="10" y="28" width="50" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+          <rect x="10" y="38" width="44" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+          <rect x="10" y="48" width="48" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+        </g>
+        <g transform="translate(360, 240) rotate(10)">
+          <rect x="0" y="0" width="70" height="90" rx="10" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" />
+          <rect x="10" y="14" width="40" height="8" rx="2" fill="rgba(61,169,255,0.7)" />
+          <rect x="10" y="28" width="50" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+          <rect x="10" y="38" width="44" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+          <rect x="10" y="48" width="48" height="4" rx="2" fill="rgba(255,255,255,0.25)" />
+        </g>
+
+        {/* Charakter */}
+        <g transform="translate(230, 240)">
+          {/* Hoodie */}
+          <path d="M -90 130 Q -90 70 -50 60 L 50 60 Q 90 70 90 130 L 90 200 L -90 200 Z" fill="url(#hoodieGrad)" />
+          {/* Hoodie-Kapuze */}
+          <path d="M -70 80 Q -70 40 0 35 Q 70 40 70 80 L 60 90 Q 60 60 0 55 Q -60 60 -60 90 Z" fill="#1f6fc4" />
+          {/* Hoodie String */}
+          <line x1="-12" y1="80" x2="-12" y2="115" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="12" y1="80" x2="12" y2="115" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="-12" cy="118" r="3" fill="#ffffff" />
+          <circle cx="12" cy="118" r="3" fill="#ffffff" />
+
+          {/* Hals */}
+          <rect x="-12" y="40" width="24" height="22" fill="#f4d4b8" />
+
+          {/* Kopf */}
+          <ellipse cx="0" cy="0" rx="48" ry="55" fill="#f4d4b8" />
+
+          {/* Haare — modern bob */}
+          <path d="M -52 -10 Q -52 -50 0 -55 Q 52 -50 52 -10 L 52 25 Q 50 20 46 18 L 46 -5 Q 46 -28 0 -32 Q -46 -28 -46 -5 L -46 18 Q -50 20 -52 25 Z" fill="#2a1f2e" />
+
+          {/* Headphones */}
+          <path d="M -52 -10 Q -52 -45 0 -50 Q 52 -45 52 -10" fill="none" stroke="#ff3d77" strokeWidth="6" strokeLinecap="round" />
+          <ellipse cx="-50" cy="0" rx="14" ry="20" fill="#ff3d77" />
+          <ellipse cx="-50" cy="0" rx="10" ry="16" fill="#161616" />
+          <ellipse cx="50" cy="0" rx="14" ry="20" fill="#ff3d77" />
+          <ellipse cx="50" cy="0" rx="10" ry="16" fill="#161616" />
+
+          {/* Brille */}
+          <circle cx="-18" cy="0" r="14" fill="none" stroke="#0a0a14" strokeWidth="2.5" />
+          <circle cx="18" cy="0" r="14" fill="none" stroke="#0a0a14" strokeWidth="2.5" />
+          <line x1="-4" y1="0" x2="4" y2="0" stroke="#0a0a14" strokeWidth="2.5" />
+
+          {/* Augen (geschlossen lächelnd) */}
+          <path d="M -22 1 Q -18 -3 -14 1" fill="none" stroke="#0a0a14" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M 14 1 Q 18 -3 22 1" fill="none" stroke="#0a0a14" strokeWidth="2.5" strokeLinecap="round" />
+
+          {/* Wangen */}
+          <ellipse cx="-30" cy="14" rx="8" ry="4" fill="#ff8aa9" opacity="0.6" />
+          <ellipse cx="30" cy="14" rx="8" ry="4" fill="#ff8aa9" opacity="0.6" />
+
+          {/* Lächeln */}
+          <path d="M -10 20 Q 0 30 10 20" fill="none" stroke="#0a0a14" strokeWidth="2.5" strokeLinecap="round" />
+
+          {/* Phone in Hand */}
+          <g transform="translate(60, 150) rotate(-8)">
+            <rect x="-22" y="-40" width="44" height="80" rx="8" fill="url(#phoneGrad)" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" />
+            <rect x="-18" y="-32" width="36" height="60" rx="3" fill="#1a1a2e" />
+            <text x="0" y="-14" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="11" fontWeight="700" fill="#ff3d77" textAnchor="middle">▶ lernflix</text>
+            <rect x="-14" y="-6" width="28" height="6" rx="2" fill="#ff3d77" />
+            <rect x="-14" y="4" width="20" height="3" rx="1" fill="#ffffff" opacity="0.4" />
+            <rect x="-14" y="10" width="24" height="3" rx="1" fill="#ffffff" opacity="0.4" />
+            <rect x="-14" y="16" width="18" height="3" rx="1" fill="#ffffff" opacity="0.4" />
+            <circle cx="0" cy="34" r="2" fill="#ffffff" opacity="0.6" />
+          </g>
+
+          {/* Hand */}
+          <ellipse cx="60" cy="155" rx="14" ry="11" fill="#f4d4b8" />
+        </g>
+      </svg>
     </div>
   );
 }
