@@ -3,8 +3,10 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const thema = body.thema || "Mathematik";
+    const thema = (body.thema || "Mathematik").toString().slice(0, 120);
     const schwierigkeit = body.schwierigkeit || "mittel";
+    const klasse = body.klasse ? `Klasse ${body.klasse}` : "passende Klassenstufe";
+    const fach = body.fach === "physik" ? "Physik" : "Mathematik";
 
     let schwierigkeitText = "einfach";
     if (schwierigkeit === "mittel") schwierigkeitText = "mittelschwer";
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
         messages: [
           {
             role: "user",
-            content: `Erstelle 5 Multiple-Choice-Fragen zu "${thema}" auf Deutsch. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat 4 Antworten. Nur eine ist richtig. Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
+            content: `Erstelle 5 Multiple-Choice-Fragen zum Thema "${thema}" für ${fach} in ${klasse}. Schwierigkeit: ${schwierigkeitText}. Jede Frage hat 4 Antworten, nur eine ist richtig. Die Fragen müssen genau zur Klassenstufe passen — nicht zu schwer, nicht zu leicht. Verwende echte deutsche Umlaute (ä ö ü ß), niemals "ae oe ue ss". Erwähne niemals KI/AI/Sprachmodelle/Claude/Anthropic. Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
           },
         ],
       }),
