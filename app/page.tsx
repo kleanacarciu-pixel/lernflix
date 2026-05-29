@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 
 type Produkt = {
   id: number;
+  slug?: string;
   kategorie: string;
   typ: string;
   titel: string;
@@ -45,11 +46,16 @@ export default function Home() {
 
   const mobil = breite < 768;
 
-  const kaufen = async (productName: string, price: number) => {
+  const kaufen = async (produkt: Produkt) => {
+    if (produkt.slug) {
+      window.location.href = `/materialien/${produkt.slug}`;
+      return;
+    }
+    // Fallback alter PDF-Flow
     const response = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productName, price }),
+      body: JSON.stringify({ productName: produkt.titel, price: produkt.preis }),
     });
     const data = await response.json();
     if (data.url) window.location.href = data.url;
@@ -57,22 +63,82 @@ export default function Home() {
 
   const produkte: Produkt[] = [
     {
-      id: 1, kategorie: 'mathe', typ: 'Formelsammlung', titel: 'Geometrie Klasse 6–9',
-      beschreibung: 'Alle Geometrie-Formeln von Klasse 6 bis 9 — mit Figuren, Beispielen und Erklärungen.',
-      details: ['8 vollständige Kapitel', 'Alle Formeln für Vierecke, Dreiecke, Kreis', 'Alle 3D-Körper: Würfel, Zylinder, Kegel, Kugel', 'Satz des Pythagoras mit Erklärung', 'Ähnlichkeit und Strahlensätze', 'Übersichtstabelle am Ende', 'Mit Witzen und Tipps — kinderfreundlich!'],
-      seiten: '12 Seiten', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
+      id: 1, slug: 'geometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Geometrie Klasse 6–9',
+      beschreibung: 'Alle Geometrie-Themen — Dreiecke, Vierecke, Kreis, Körper. Mit beschrifteten Figuren und durchgerechneten Beispielen.',
+      details: ['13 Sektionen mit SVG-Skizzen', 'Pythagoras + Höhensatz + Kathetensatz', 'Komplette Trigonometrie', 'Alle Vierecke & Körper', 'Strahlensätze & Ähnlichkeit', 'Schnellübersicht am Ende'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
     },
     {
-      id: 2, kategorie: 'mathe', typ: 'Arbeitsblatt', titel: 'Potenzen',
-      beschreibung: 'Alles über Potenzen — Regeln, Beispiele und Übungen. Perfekt für Klasse 7–9.',
-      details: ['Potenzregeln vollständig erklärt', 'Negative Exponenten', 'Potenzieren mit Brüchen', 'Übungsaufgaben mit Lösungen', 'Einfache und verständliche Sprache'],
-      seiten: 'PDF', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
+      id: 2, slug: 'brueche', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Brüche & Bruchrechnung',
+      beschreibung: 'Brüche endlich verstehen — kürzen, erweitern, addieren, multiplizieren. Mit Beispielen aus dem Alltag und kleinen Witzen.',
+      details: ['Was ist ein Bruch?', 'Kürzen & Erweitern', 'Plus, Minus, Mal, Geteilt', 'Gemischte Brüche, Dezimalzahlen', 'Eselsbrücken und Witze', 'Übungen mit Lösungen'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
     },
     {
-      id: 3, kategorie: 'physik', typ: 'Formelsammlung', titel: 'Mechanik',
-      beschreibung: 'Alle wichtigen Mechanik-Formeln — Kraft, Geschwindigkeit, Energie und mehr.',
-      details: ['Kraft, Masse, Beschleunigung', 'Geschwindigkeit und Bewegung', 'Energie und Arbeit', 'Hebel und Drehmoment', 'Mit Beispielen und Erklärungen'],
-      seiten: 'PDF', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
+      id: 3, slug: 'prozent', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Prozent & Zinsen',
+      beschreibung: 'Rabatte verstehen, Mehrwertsteuer rechnen, Zinsen und Zinseszins — alles mit einfachen Tricks erklärt.',
+      details: ['Die Grundformel der Prozentrechnung', '3 klassische Aufgabentypen', 'Aufschlag & Rabatt', 'Zinsrechnung & Zinseszins', 'Promille und ppm', 'Übungen mit Lösungen'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
+    },
+    {
+      id: 4, slug: 'gleichungen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Gleichungen & Terme',
+      beschreibung: 'Vom einfachen x = 5 bis zur pq-Formel — Gleichungen lösen Schritt für Schritt mit klaren Tipps.',
+      details: ['Terme vereinfachen', 'Lineare Gleichungen', 'Gleichungssysteme (3 Methoden)', 'Quadratische Gleichungen', 'pq-Formel & Mitternachtsformel', 'Ungleichungen'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
+    },
+    {
+      id: 5, slug: 'funktionen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Funktionen — linear & quadratisch',
+      beschreibung: 'Geraden, Parabeln, Hyperbeln, Wurzeln — alle Funktionstypen mit Skizzen und Beispielen.',
+      details: ['Lineare Funktionen (Gerade)', 'Quadratische Funktionen (Parabel)', 'pq-Formel anwenden', 'Schnittpunkte, Steigung, Scheitel', 'Spezielle Funktionen kurz vorgestellt', 'Symmetrie und Monotonie'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
+    },
+    {
+      id: 6, slug: 'stochastik', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Wahrscheinlichkeit & Statistik',
+      beschreibung: 'Würfel, Münze, Karten und Mittelwert — Wahrscheinlichkeit verstehen mit Baumdiagrammen und vielen Beispielen.',
+      details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik & Anordnungen', 'Statistik: Mittelwert, Median, Modus', 'Binomialverteilung'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
+    },
+    {
+      id: 7, slug: 'trigonometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Trigonometrie',
+      beschreibung: 'sin, cos, tan kein Geheimnis mehr — mit Eselsbrücken und durchgerechneten Beispielen.',
+      details: ['Sinus, Kosinus, Tangens', 'Eselsbrücke GAGA HUDI', 'Sinussatz & Kosinussatz', 'Wertetabelle wichtiger Winkel', 'Trigonometrische Funktionen', 'Bogenmaß und Grad'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
+    },
+    {
+      id: 8, slug: 'potenzen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Potenzen',
+      beschreibung: 'Die fünf Potenzgesetze leicht erklärt — mit Beispielen, Übungen und Tipps.',
+      details: ['Alle 5 Potenzgesetze', 'Negative & gebrochene Exponenten', 'Wurzeln und Wurzelgesetze', 'Wissenschaftliche Schreibweise', 'Wachstum und Zerfall', 'Logarithmen'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
+    },
+    {
+      id: 9, slug: 'mechanik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Mechanik',
+      beschreibung: 'Alle Mechanik-Themen — Geschwindigkeit, Kraft, Energie, Hebel, Reibung mit Skizzen aus dem Alltag.',
+      details: ['Bewegung & freier Fall', 'Newton-Gesetze', 'Schiefe Ebene', 'Energie, Arbeit, Leistung', 'Hebel & Flaschenzug', 'Dichte, Druck, Auftrieb'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
+    },
+    {
+      id: 10, slug: 'elektrizitaet', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Elektrizität & Stromkreise',
+      beschreibung: 'Ohm, Spannung, Stromstärke — Elektrizität kapieren und die Stromrechnung verstehen.',
+      details: ['Ohm´sches Gesetz', 'Reihen- und Parallelschaltung', 'Elektrische Arbeit & Leistung', 'Spezifischer Widerstand', 'Gefahren des Stroms', 'Übungen mit Lösungen'],
+      seiten: 'HTML', preis: 1.99, vorschau: '/mechanik-vorschau.jpeg',
+    },
+    {
+      id: 11, slug: 'optik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Optik & Wellen',
+      beschreibung: 'Licht, Spiegel, Linsen, Regenbogen — alles zum Thema Sehen, Brechen und Strahlen.',
+      details: ['Lichtausbreitung & Schatten', 'Reflexion am Spiegel', 'Lichtbrechung & Snellius', 'Linsen und Linsenformel', 'Spektrum und Farben', 'Wellen und Welleneigenschaften'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
+    },
+    {
+      id: 12, slug: 'waerme', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Wärmelehre',
+      beschreibung: 'Temperatur, Wärme, Aggregatzustände, Gase — alles über das Zappeln der Atome.',
+      details: ['Temperatur und Skalen', 'Wärmekapazität', 'Aggregatzustände & Phasenübergänge', 'Wärmeübertragung', 'Längenausdehnung', 'Gasgesetze'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
+    },
+    {
+      id: 13, slug: 'atomphysik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Atomphysik & Strahlung',
+      beschreibung: 'Atome, Isotope, Radioaktivität, Kernspaltung — die kleinen Bausteine der Welt einfach erklärt.',
+      details: ['Atomaufbau & Isotope', 'Periodensystem', 'α-, β-, γ-Strahlung', 'Halbwertszeit', 'Kernspaltung & Kernfusion', 'Quantenphysik im Überblick'],
+      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
     },
   ];
 
@@ -183,8 +249,8 @@ export default function Home() {
                   <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
                   <p style={{margin: '0', fontSize: '30px', fontWeight: '800', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt.titel, ausgewaehlt.preis)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
-                  Jetzt kaufen
+                <button onClick={() => kaufen(ausgewaehlt)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
+                  {ausgewaehlt.slug ? 'Jetzt freischalten' : 'Jetzt kaufen'}
                 </button>
               </div>
             </div>
