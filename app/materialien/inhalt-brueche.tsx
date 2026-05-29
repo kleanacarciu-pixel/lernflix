@@ -130,7 +130,7 @@ export function InhaltBrueche() {
       </Sektion>
 
       <Sektion nr={4} titel="Brüche multiplizieren">
-        <p>Das hier ist <b>endlich mal easy</b>: Zähler mal Zähler, Nenner mal Nenner. Fertig.</p>
+        <p>Das hier ist <b>endlich mal einfach</b>: Zähler mal Zähler, Nenner mal Nenner. Fertig.</p>
         <div className="formeln">
           <Formel name="Bruch · Bruch" ausdruck={<>a/b · c/d = (a · c) / (b · d)</>} hinweis="oben mit oben, unten mit unten" />
           <Formel name="Bruch · ganze Zahl" ausdruck={<>n · a/b = (n · a) / b</>} />

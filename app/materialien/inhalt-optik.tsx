@@ -6,7 +6,7 @@ export function InhaltOptik() {
     <div className="mat">
       <style>{SHARED_STIL("#8b5cf6", "#f5f3ff", "#ede9fe")}</style>
 
-      <Hook><b>Licht ist verrückt.</b> Es ist gleichzeitig Welle und Teilchen, raast mit 300 000 km/s, biegt sich, spaltet sich in Farben und macht Regenbögen. Hier erfährst du, wie das alles funktioniert.</Hook>
+      <Hook><b>Licht ist erstaunlich.</b> Es ist gleichzeitig Welle und Teilchen, rast mit 300 000 km/s, biegt sich, spaltet sich in Farben und macht Regenbögen. Hier erfährst du, wie das alles funktioniert.</Hook>
 
       <Sektion nr={1} titel="Lichtausbreitung und Schatten">
         <p>Licht breitet sich in <b>geraden Linien</b> aus — solange es nichts unterbricht. Wo Licht fehlt, gibt es Schatten.</p>

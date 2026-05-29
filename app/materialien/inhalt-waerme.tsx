@@ -113,7 +113,7 @@ export function InhaltWaerme() {
           <div className="karte"><h5>Konvektion</h5><p>Strömungen tragen die Wärme weiter (heiße Luft steigt auf)</p></div>
           <div className="karte"><h5>Wärmestrahlung</h5><p>Wärme als Infrarotstrahlung (Sonne, Lagerfeuer)</p></div>
         </div>
-        <Joke>Warum wird der Mond nachts so kalt? Weil keine Atmosphäre da ist, die die Wärme behält. Auf der Erde sind wir lucky — wir haben eine wärmende Decke namens „Atmosphäre".</Joke>
+        <Joke>Warum wird der Mond nachts so kalt? Weil keine Atmosphäre da ist, die die Wärme festhält. Auf der Erde haben wir Glück — wir haben eine wärmende Decke, die nennt man Atmosphäre.</Joke>
       </Sektion>
 
       <Sektion nr={5} titel="Längen- und Volumenausdehnung">

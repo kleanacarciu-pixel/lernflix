@@ -115,10 +115,10 @@ export function InhaltProzent() {
       <Sektion nr={6} titel="Promille und ppm">
         <p>Manchmal sind Prozente zu grob. Dann gibt es:</p>
         <div className="karten">
-          <div className="karte"><h5>Promille (‰)</h5><p>1 Tausendstel = 0,1 %</p><p>z.B. bei Alkohol im Blut</p></div>
-          <div className="karte"><h5>ppm</h5><p>parts per million = 1 Millionstel</p><p>z.B. bei Schadstoffen</p></div>
+          <div className="karte"><h5>Promille (‰)</h5><p>1 Tausendstel = 0,1 %</p><p>z.B. der Salzgehalt im Meerwasser</p></div>
+          <div className="karte"><h5>ppm</h5><p>parts per million = 1 Millionstel</p><p>z.B. bei Schadstoffen in der Luft</p></div>
         </div>
-        <Beispiel aufgabe={<>1,3 ‰ Alkohol — wie viel Prozent?</>}
+        <Beispiel aufgabe={<>1,3 ‰ — wie viel Prozent?</>}
           schritte={[<>1,3 ‰ = 0,13 %</>]} />
       </Sektion>
 

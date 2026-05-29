@@ -126,7 +126,7 @@ export function InhaltAtomphysik() {
         <div className="formeln">
           <Formel name="Einstein" ausdruck={<>E = m · c²</>} hinweis="Masse verschwindet, wird zu Energie" />
         </div>
-        <p><b>Anwendung:</b> Kernkraftwerke, Atombombe.</p>
+        <p><b>Anwendung:</b> Energiegewinnung in Kernkraftwerken.</p>
         <h3>Kernfusion</h3>
         <p>Zwei leichte Kerne verschmelzen — z.B. Wasserstoff zu Helium. Noch mehr Energie als Spaltung.</p>
         <p><b>Anwendung:</b> Sonne und Sterne, Wasserstoffbombe, zukünftig Fusionsreaktoren.</p>
@@ -151,7 +151,7 @@ export function InhaltAtomphysik() {
       </Sektion>
 
       <Sektion nr={7} titel="Quantenphysik — die Welt der ganz Kleinen">
-        <p>In der Welt der Atome wird's komisch. Hier ein paar verrückte Fakten:</p>
+        <p>In der Welt der Atome wird's komisch. Hier ein paar erstaunliche Fakten:</p>
         <div className="karten">
           <div className="karte"><h5>Welle-Teilchen-Dualismus</h5><p>Licht ist Welle UND Teilchen. Elektronen auch. Frage „was denn nun?" — Antwort: beides.</p></div>
           <div className="karte"><h5>Heisenberg-Unschärfe</h5><p>Ort und Impuls kannst du nie gleichzeitig genau wissen. Δx · Δp ≥ ℏ/2</p></div>

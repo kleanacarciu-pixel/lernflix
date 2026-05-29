@@ -6,7 +6,7 @@ export function InhaltFunktionen() {
     <div className="mat">
       <style>{SHARED_STIL("#5856d6", "#f3f0ff", "#e9e3ff")}</style>
 
-      <Hook><b>Eine Funktion ist eine Maschine.</b> Du steckst eine Zahl rein (x), sie spuckt eine andere Zahl raus (y). Welche Zahl rauskommt, hängt davon ab, was für eine Maschine du gerade hast. Klingt easy? Ist es auch.</Hook>
+      <Hook><b>Eine Funktion ist eine Maschine.</b> Du steckst eine Zahl rein (x), sie spuckt eine andere Zahl raus (y). Welche Zahl rauskommt, hängt davon ab, was für eine Maschine du gerade hast. Klingt einfach? Ist es auch.</Hook>
 
       <Sektion nr={1} titel="Was ist eine Funktion?">
         <p>Eine Funktion ist eine Vorschrift, die jedem x-Wert <b>genau einen</b> y-Wert zuordnet. Geschrieben als <b>f(x)</b> oder <b>y = …</b>.</p>

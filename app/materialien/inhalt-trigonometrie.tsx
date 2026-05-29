@@ -6,7 +6,7 @@ export function InhaltTrigonometrie() {
     <div className="mat">
       <style>{SHARED_STIL("#06b6d4", "#ecfeff", "#cffafe")}</style>
 
-      <Hook><b>Trigonometrie klingt nach Horror, ist aber super-cool.</b> Du musst dir nur drei Wörter merken: Sinus, Kosinus, Tangens. Der Rest sind Tricks. Mit denen kannst du Bäume vermessen, ohne hochklettern zu müssen. Echt jetzt.</Hook>
+      <Hook><b>Trigonometrie klingt schwierig, ist aber gar nicht so wild.</b> Du musst dir nur drei Wörter merken: Sinus, Kosinus, Tangens. Der Rest sind kleine Tricks. Mit denen kannst du sogar Bäume vermessen, ohne hochzuklettern. Wirklich.</Hook>
 
       <Sektion nr={1} titel="Sinus, Kosinus, Tangens — die Stars">
         <p>Im <b>rechtwinkligen Dreieck</b> verbindet Trigonometrie Seiten und Winkel. Bezogen auf einen Winkel α:</p>

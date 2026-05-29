@@ -94,8 +94,8 @@ export default function Home() {
     },
     {
       id: 6, slug: 'stochastik', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Wahrscheinlichkeit & Statistik',
-      beschreibung: 'Würfel, Lotto, Münze und Mittelwert — Wahrscheinlichkeit verstehen mit Baumdiagrammen und Aha-Effekten.',
-      details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik (Lotto, Anordnungen)', 'Statistik: Mittelwert, Median, Modus', 'Binomialverteilung'],
+      beschreibung: 'Würfel, Münze, Karten und Mittelwert — Wahrscheinlichkeit verstehen mit Baumdiagrammen und vielen Beispielen.',
+      details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik & Anordnungen', 'Statistik: Mittelwert, Median, Modus', 'Binomialverteilung'],
       seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
     },
     {

@@ -6,7 +6,7 @@ export function InhaltStochastik() {
     <div className="mat">
       <style>{SHARED_STIL("#ec4899", "#fdf2f7", "#fce7f0")}</style>
 
-      <Hook><b>Wahrscheinlichkeit ist Mathe mit Zufall.</b> Wie oft fällt eine Sechs? Wie oft regnet es im Juli? Wenn du das verstehst, hast du auch ein gutes Argument, warum du im Lotto nie gewinnst.</Hook>
+      <Hook><b>Wahrscheinlichkeit ist Mathe mit Zufall.</b> Wie oft fällt eine Sechs? Wie oft regnet es im Juli? Wie oft ziehst du beim Mensch-ärgere-dich-nicht eine Sechs zum Rauskommen? Hier lernst du alles dazu.</Hook>
 
       <Sektion nr={1} titel="Was ist Wahrscheinlichkeit?">
         <p>Die <b>Wahrscheinlichkeit (P)</b> sagt, wie wahrscheinlich ein Ereignis ist. Sie liegt zwischen 0 (unmöglich) und 1 (sicher).</p>
@@ -37,7 +37,7 @@ export function InhaltStochastik() {
         </div>
         <Beispiel aufgabe={<>P(„Würfel zeigt 6")?</>}
           schritte={[<>1 günstig (die 6), 6 mögliche Zahlen</>, <>= 1/6 ≈ <b>16,7 %</b></>]} />
-        <Joke>„Es ist zu 50 % wahrscheinlich, dass ich morgen mit einem Drachen frühstücke." Mathematisch falsch — aber klingt cool.</Joke>
+        <Joke>„Es ist zu 50 % wahrscheinlich, dass ich morgen einen Drachen treffe." Mathematisch falsch — aber als Satz klingt es lustig.</Joke>
       </Sektion>
 
       <Sektion nr={2} titel="Mehrstufige Zufallsversuche">
@@ -94,14 +94,14 @@ export function InhaltStochastik() {
         <div className="formeln">
           <Formel name="Permutation (alle anordnen)" ausdruck={<>n!</>} hinweis="n-Fakultät" />
           <Formel name="Variation (k aus n, mit Reihenfolge)" ausdruck={<>n! / (n−k)!</>} />
-          <Formel name="Kombination (k aus n, ohne Reihenfolge)" ausdruck={<>n! / (k! · (n−k)!)</>} hinweis="Binomialkoeffizient · Lotto" />
+          <Formel name="Kombination (k aus n, ohne Reihenfolge)" ausdruck={<>n! / (k! · (n−k)!)</>} hinweis="Binomialkoeffizient" />
           <Formel name="Mit Wdh. erlaubt" ausdruck={<>n<sup>k</sup></>} />
         </div>
         <Beispiel aufgabe={<>Wie viele Möglichkeiten gibt es, 5 Bücher in eine Reihe zu stellen?</>}
           schritte={[<>5! = 5 · 4 · 3 · 2 · 1 = <b>120</b></>]} />
-        <Beispiel aufgabe={<>Lotto 6 aus 49 — wie viele Möglichkeiten?</>}
-          schritte={[<>49! / (6! · 43!) = <b>13 983 816</b></>]} />
-        <Joke>Mit fast 14 Millionen Möglichkeiten ist es 100× wahrscheinlicher, dass dich ein Blitz trifft als dass du 6 Richtige hast. Trotzdem spielen jedes Wochenende Millionen. Mathe ist halt nicht für alle Trost.</Joke>
+        <Beispiel aufgabe={<>In einer Eisdiele gibt es 10 Sorten. Du wählst 3 verschiedene. Wie viele Möglichkeiten?</>}
+          schritte={[<>10! / (3! · 7!) = 120</>, <>= <b>120 Möglichkeiten</b></>]} />
+        <Joke>Bei den meisten Glücksspielen ist die Wahrscheinlichkeit zu gewinnen winzig klein. Mit guter Mathematik kannst du das ausrechnen — und merkst dann, dass Sparen meist die bessere Wahl ist.</Joke>
       </Sektion>
 
       <Sektion nr={5} titel="Statistik — was bedeuten die Zahlen?">
