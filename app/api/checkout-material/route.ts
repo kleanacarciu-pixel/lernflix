@@ -9,6 +9,16 @@ const MATERIALIEN: Record<string, { name: string; preis: number }> = {
   geometrie: { name: "Geometrie Formelsammlung — Klasse 6 bis 9", preis: 199 },
   potenzen: { name: "Potenzen — Komplettes Lernpaket", preis: 99 },
   mechanik: { name: "Mechanik — Komplettes Lernpaket", preis: 99 },
+  brueche: { name: "Brüche & Bruchrechnung — Lernpaket", preis: 199 },
+  prozent: { name: "Prozent- & Zinsrechnung — Lernpaket", preis: 99 },
+  gleichungen: { name: "Gleichungen & Terme — Lernpaket", preis: 199 },
+  funktionen: { name: "Funktionen (linear & quadratisch) — Lernpaket", preis: 199 },
+  stochastik: { name: "Wahrscheinlichkeit & Statistik — Lernpaket", preis: 99 },
+  trigonometrie: { name: "Trigonometrie — Lernpaket", preis: 99 },
+  elektrizitaet: { name: "Elektrizität & Stromkreise — Lernpaket", preis: 199 },
+  optik: { name: "Optik & Wellen — Lernpaket", preis: 99 },
+  waerme: { name: "Wärmelehre — Lernpaket", preis: 99 },
+  atomphysik: { name: "Atomphysik & Strahlung — Lernpaket", preis: 99 },
 };
 
 export async function POST(request: Request) {

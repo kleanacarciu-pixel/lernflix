@@ -1,0 +1,99 @@
+"use client";
+import { SHARED_STIL, Sektion, Formel, Beispiel, Joke, Hook } from "./_helfer";
+
+export function InhaltStochastik() {
+  return (
+    <div className="mat">
+      <style>{SHARED_STIL("#ec4899", "#fdf2f7", "#fce7f0")}</style>
+
+      <Hook><b>Wahrscheinlichkeit ist Mathe mit Zufall.</b> Wie oft fällt eine Sechs? Wie oft regnet es im Juli? Wenn du das verstehst, hast du auch ein gutes Argument, warum du im Lotto nie gewinnst.</Hook>
+
+      <Sektion nr={1} titel="Was ist Wahrscheinlichkeit?">
+        <p>Die <b>Wahrscheinlichkeit (P)</b> sagt, wie wahrscheinlich ein Ereignis ist. Sie liegt zwischen 0 (unmöglich) und 1 (sicher).</p>
+        <div className="gross">P(A) = Anzahl günstige / Anzahl möglich</div>
+        <div className="karten">
+          <div className="karte"><h5>P = 0</h5><p>unmöglich (z.B. „Würfel zeigt 7")</p></div>
+          <div className="karte"><h5>P = 0,5</h5><p>50/50 (z.B. „Münze Kopf")</p></div>
+          <div className="karte"><h5>P = 1</h5><p>sicher (z.B. „die Sonne geht morgen auf")</p></div>
+        </div>
+        <Beispiel aufgabe={<>P(„Würfel zeigt 6")?</>}
+          schritte={[<>1 günstig (die 6), 6 mögliche Zahlen</>, <>= 1/6 ≈ <b>16,7 %</b></>]} />
+        <Joke>„Es ist zu 50 % wahrscheinlich, dass ich morgen mit einem Drachen frühstücke." Mathematisch falsch — aber klingt cool.</Joke>
+      </Sektion>
+
+      <Sektion nr={2} titel="Mehrstufige Zufallsversuche">
+        <p>Wenn du <b>nacheinander</b> mehrere Sachen machst (z.B. 2× würfeln), nutzt du ein <b>Baumdiagramm</b>.</p>
+        <div className="formeln">
+          <Formel name="Pfad-Multiplikation" ausdruck={<>P(Pfad) = P₁ · P₂ · …</>} hinweis="auf einem Pfad alles multiplizieren" />
+          <Formel name="Pfad-Addition" ausdruck={<>P(A) = Summe der Pfade</>} hinweis="bei mehreren günstigen Pfaden" />
+        </div>
+        <Beispiel aufgabe={<>Münze 2× werfen. P(2× Kopf)?</>}
+          schritte={[<>P(K) = 1/2 für jeden Wurf</>, <>P(KK) = 1/2 · 1/2 = <b>1/4</b></>]} />
+        <Beispiel aufgabe={<>Würfel 2× werfen. P(mindestens 1× Sechs)?</>}
+          schritte={[<>Gegenwahrscheinlichkeit: P(keine 6) = 5/6 · 5/6 = 25/36</>, <>P(mindestens 1× 6) = 1 − 25/36 = <b>11/36 ≈ 30,6 %</b></>]} />
+        <div className="tipp"><b>Gegenwahrscheinlichkeit:</b> P(A) = 1 − P(nicht A). Oft viel einfacher zu rechnen!</div>
+      </Sektion>
+
+      <Sektion nr={3} titel="Mit oder ohne Zurücklegen">
+        <p>Ziehen aus einer Urne mit Kugeln: <b>mit Zurücklegen</b> bleibt die Wahrscheinlichkeit gleich, <b>ohne Zurücklegen</b> ändert sie sich nach jedem Zug.</p>
+        <Beispiel aufgabe={<>Urne: 3 rote, 2 blaue Kugeln. Ziehe 2 mit Zurücklegen. P(beide rot)?</>}
+          schritte={[<>P(rot) = 3/5 (bleibt gleich)</>, <>= 3/5 · 3/5 = <b>9/25</b></>]} />
+        <Beispiel aufgabe={<>Gleiche Urne, ohne Zurücklegen. P(beide rot)?</>}
+          schritte={[<>1. Zug: 3/5. 2. Zug: nur noch 2 rote von 4 → 2/4</>, <>= 3/5 · 2/4 = <b>6/20 = 3/10</b></>]} />
+      </Sektion>
+
+      <Sektion nr={4} titel="Kombinatorik — wie viele Möglichkeiten?">
+        <div className="formeln">
+          <Formel name="Permutation (alle anordnen)" ausdruck={<>n!</>} hinweis="n-Fakultät" />
+          <Formel name="Variation (k aus n, mit Reihenfolge)" ausdruck={<>n! / (n−k)!</>} />
+          <Formel name="Kombination (k aus n, ohne Reihenfolge)" ausdruck={<>n! / (k! · (n−k)!)</>} hinweis="Binomialkoeffizient · Lotto" />
+          <Formel name="Mit Wdh. erlaubt" ausdruck={<>n<sup>k</sup></>} />
+        </div>
+        <Beispiel aufgabe={<>Wie viele Möglichkeiten gibt es, 5 Bücher in eine Reihe zu stellen?</>}
+          schritte={[<>5! = 5 · 4 · 3 · 2 · 1 = <b>120</b></>]} />
+        <Beispiel aufgabe={<>Lotto 6 aus 49 — wie viele Möglichkeiten?</>}
+          schritte={[<>49! / (6! · 43!) = <b>13 983 816</b></>]} />
+        <Joke>Mit fast 14 Millionen Möglichkeiten ist es 100× wahrscheinlicher, dass dich ein Blitz trifft als dass du 6 Richtige hast. Trotzdem spielen jedes Wochenende Millionen. Mathe ist halt nicht für alle Trost.</Joke>
+      </Sektion>
+
+      <Sektion nr={5} titel="Statistik — was bedeuten die Zahlen?">
+        <h3>Lagemaße</h3>
+        <div className="formeln">
+          <Formel name="Arithm. Mittel (Durchschnitt)" ausdruck={<>x̄ = (x₁ + x₂ + … + xₙ) / n</>} />
+          <Formel name="Median" ausdruck={<>mittlerer Wert</>} hinweis="der Wert in der Mitte, wenn alles sortiert ist" />
+          <Formel name="Modus" ausdruck={<>häufigster Wert</>} />
+        </div>
+        <h3>Streumaße</h3>
+        <div className="formeln">
+          <Formel name="Spannweite" ausdruck={<>R = x<sub>max</sub> − x<sub>min</sub></>} />
+          <Formel name="Varianz" ausdruck={<>σ² = (1/n) · Σ(x<sub>i</sub> − x̄)²</>} />
+          <Formel name="Standardabweichung" ausdruck={<>σ = √(Varianz)</>} />
+        </div>
+        <Beispiel aufgabe={<>Mathe-Noten der Klasse: 2, 3, 3, 4, 5. Durchschnitt? Median?</>}
+          schritte={[<>x̄ = (2+3+3+4+5)/5 = 17/5 = <b>3,4</b></>, <>Sortiert ist's schon. Mitte: <b>Median = 3</b></>, <>Häufigster Wert: <b>Modus = 3</b></>]} />
+      </Sektion>
+
+      <Sektion nr={6} titel="Binomialverteilung — wenn dasselbe oft wiederholt wird">
+        <p>Wenn du etwas <b>n-mal</b> wiederholst und immer dieselbe Erfolgswahrscheinlichkeit p hast, ist die Anzahl der Erfolge <b>binomialverteilt</b>.</p>
+        <div className="formeln">
+          <Formel name="Wahrscheinlichkeit für k Erfolge" ausdruck={<>P(X = k) = C(n,k) · p<sup>k</sup> · (1−p)<sup>n−k</sup></>} hinweis="C(n,k) = Binomialkoeffizient" />
+          <Formel name="Erwartungswert" ausdruck={<>E(X) = n · p</>} />
+          <Formel name="Standardabweichung" ausdruck={<>σ = √(n · p · (1−p))</>} />
+        </div>
+        <Beispiel aufgabe={<>10 mal Münze werfen. Erwartungswert für Kopf?</>}
+          schritte={[<>E = 10 · 0,5 = <b>5 mal</b></>]} />
+      </Sektion>
+
+      <Sektion nr={7} titel="Übungen mit Lösungen">
+        <Beispiel aufgabe={<>P(Würfel zeigt gerade)?</>} schritte={[<>3 gerade Zahlen (2, 4, 6) von 6 → <b>1/2</b></>]} />
+        <Beispiel aufgabe={<>P(2× hintereinander Sechs)?</>} schritte={[<>1/6 · 1/6 = <b>1/36</b></>]} />
+        <Beispiel aufgabe={<>Durchschnitt von 4, 7, 5, 8, 6?</>} schritte={[<>30/5 = <b>6</b></>]} />
+        <Beispiel aufgabe={<>Wie viele Anordnungen aus 4 Buchstaben?</>} schritte={[<>4! = <b>24</b></>]} />
+        <Beispiel aufgabe={<>P(mindestens 1× Kopf bei 3 Würfen)?</>}
+          schritte={[<>P(0× Kopf) = (1/2)³ = 1/8</>, <>P(mind. 1×) = 1 − 1/8 = <b>7/8</b></>]} />
+      </Sektion>
+
+      <p style={{ textAlign: "center", marginTop: "30px", color: "#6e6e73", fontSize: "14px" }}>Wahrscheinlichkeit ist deine Superkraft — auch im Alltag! — Anna</p>
+    </div>
+  );
+}

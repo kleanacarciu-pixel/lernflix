@@ -4,34 +4,33 @@ import { useParams } from "next/navigation";
 import { InhaltGeometrie } from "../inhalt-geometrie";
 import { InhaltPotenzen } from "../inhalt-potenzen";
 import { InhaltMechanik } from "../inhalt-mechanik";
+import { InhaltBrueche } from "../inhalt-brueche";
+import { InhaltProzent } from "../inhalt-prozent";
+import { InhaltGleichungen } from "../inhalt-gleichungen";
+import { InhaltFunktionen } from "../inhalt-funktionen";
+import { InhaltStochastik } from "../inhalt-stochastik";
+import { InhaltTrigonometrie } from "../inhalt-trigonometrie";
+import { InhaltElektrizitaet } from "../inhalt-elektrizitaet";
+import { InhaltOptik } from "../inhalt-optik";
+import { InhaltWaerme } from "../inhalt-waerme";
+import { InhaltAtomphysik } from "../inhalt-atomphysik";
 
 type Material = { id: string; titel: string; untertitel: string; preis: number; farbe: string; render: () => ReactNode };
 
 const MATERIALIEN: Record<string, Material> = {
-  geometrie: {
-    id: "geometrie",
-    titel: "Geometrie — Komplette Formelsammlung",
-    untertitel: "Klasse 6 bis 9 · mit Figuren, Formeln und Beispielen",
-    preis: 199,
-    farbe: "#0071e3",
-    render: () => <InhaltGeometrie />,
-  },
-  potenzen: {
-    id: "potenzen",
-    titel: "Potenzen — Komplettes Lernpaket",
-    untertitel: "Klasse 7 bis 9 · alle Regeln, Tricks und Übungen",
-    preis: 99,
-    farbe: "#5856d6",
-    render: () => <InhaltPotenzen />,
-  },
-  mechanik: {
-    id: "mechanik",
-    titel: "Mechanik — Komplettes Lernpaket",
-    untertitel: "Klasse 8 bis 10 · Kraft, Energie, Bewegung mit Skizzen",
-    preis: 99,
-    farbe: "#ef4444",
-    render: () => <InhaltMechanik />,
-  },
+  geometrie: { id: "geometrie", titel: "Geometrie — Komplette Formelsammlung", untertitel: "Klasse 6 bis 9 · mit Figuren, Formeln und Beispielen", preis: 199, farbe: "#0071e3", render: () => <InhaltGeometrie /> },
+  potenzen: { id: "potenzen", titel: "Potenzen — Komplettes Lernpaket", untertitel: "Klasse 7 bis 9 · alle Regeln, Tricks und Übungen", preis: 99, farbe: "#5856d6", render: () => <InhaltPotenzen /> },
+  mechanik: { id: "mechanik", titel: "Mechanik — Komplettes Lernpaket", untertitel: "Klasse 8 bis 10 · Kraft, Energie, Bewegung mit Skizzen", preis: 99, farbe: "#ef4444", render: () => <InhaltMechanik /> },
+  brueche: { id: "brueche", titel: "Brüche & Bruchrechnung", untertitel: "Klasse 5 bis 7 · einfach erklärt mit Beispielen", preis: 199, farbe: "#0071e3", render: () => <InhaltBrueche /> },
+  prozent: { id: "prozent", titel: "Prozent- & Zinsrechnung", untertitel: "Klasse 7 bis 9 · vom Rabatt bis zum Zinseszins", preis: 99, farbe: "#34c759", render: () => <InhaltProzent /> },
+  gleichungen: { id: "gleichungen", titel: "Gleichungen & Terme", untertitel: "Klasse 7 bis 10 · von linear bis pq-Formel", preis: 199, farbe: "#ff9500", render: () => <InhaltGleichungen /> },
+  funktionen: { id: "funktionen", titel: "Funktionen — linear & quadratisch", untertitel: "Klasse 8 bis 10 · Geraden, Parabeln und mehr", preis: 199, farbe: "#5856d6", render: () => <InhaltFunktionen /> },
+  stochastik: { id: "stochastik", titel: "Wahrscheinlichkeit & Statistik", untertitel: "Klasse 8 bis 10 · Würfel, Lotto und Mittelwert", preis: 99, farbe: "#ec4899", render: () => <InhaltStochastik /> },
+  trigonometrie: { id: "trigonometrie", titel: "Trigonometrie — sin, cos, tan", untertitel: "Klasse 9 bis 10 · vom Dreieck bis zur Welle", preis: 99, farbe: "#06b6d4", render: () => <InhaltTrigonometrie /> },
+  elektrizitaet: { id: "elektrizitaet", titel: "Elektrizität & Stromkreise", untertitel: "Klasse 8 bis 10 · Ohm, Schaltungen und Strompreise", preis: 199, farbe: "#f59e0b", render: () => <InhaltElektrizitaet /> },
+  optik: { id: "optik", titel: "Optik & Wellen", untertitel: "Klasse 8 bis 10 · Linsen, Spiegel und Regenbögen", preis: 99, farbe: "#8b5cf6", render: () => <InhaltOptik /> },
+  waerme: { id: "waerme", titel: "Wärmelehre", untertitel: "Klasse 8 bis 10 · Temperatur, Wärme und Gasgesetze", preis: 99, farbe: "#dc2626", render: () => <InhaltWaerme /> },
+  atomphysik: { id: "atomphysik", titel: "Atomphysik & Strahlung", untertitel: "Klasse 9 bis 10 · Atome, Zerfall und Quantenwelt", preis: 99, farbe: "#10b981", render: () => <InhaltAtomphysik /> },
 };
 
 export default function MaterialPage() {
@@ -47,25 +46,16 @@ export default function MaterialPage() {
   useEffect(() => {
     if (typeof window === "undefined" || !material) return;
 
-    // Test-Bypass nur auf der Preview-Domain
     const host = window.location.hostname;
     const istVorschau = host.endsWith(".vercel.app") || host === "localhost";
     const wuenscht = new URLSearchParams(window.location.search).get("test") === "ja";
-    if (istVorschau && wuenscht) {
-      setEntsperrt(true);
-      return;
-    }
+    if (istVorschau && wuenscht) { setEntsperrt(true); return; }
 
-    // Lokale Freischaltung (gleicher Browser, ein Mal bezahlt)
     try {
       const local = localStorage.getItem(`material_${id}_entsperrt`);
-      if (local === "ja") {
-        setEntsperrt(true);
-        return;
-      }
+      if (local === "ja") { setEntsperrt(true); return; }
     } catch {}
 
-    // Nach Stripe-Rueckkehr verifizieren
     const sid = new URLSearchParams(window.location.search).get("session_id");
     if (!sid) return;
 
@@ -143,7 +133,6 @@ export default function MaterialPage() {
     );
   }
 
-  // Paywall
   return (
     <main style={{ minHeight: "100vh", background: "#fafafa", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", color: "#1d1d1f" }}>
       <div style={{ maxWidth: "560px", margin: "0 auto", padding: "60px 20px" }}>
@@ -158,11 +147,11 @@ export default function MaterialPage() {
           <h2 style={{ fontSize: "17px", fontWeight: 700, margin: "8px 0 12px" }}>Was du bekommst</h2>
           <ul style={{ paddingLeft: "20px", margin: "0 0 22px", color: "#3d3d40", fontSize: "15px", lineHeight: 1.7 }}>
             <li>Alle Themen mit beschrifteten Skizzen und Figuren</li>
-            <li>Schritt-für-Schritt-Erklärungen wie eine Lehrerin am Tisch</li>
+            <li>Schritt-für-Schritt-Erklärungen in einfacher Sprache</li>
             <li>Durchgerechnete Beispiele mit kompletter Lösung</li>
             <li>Übungsaufgaben zum Selbstrechnen mit Lösung</li>
-            <li>Schöne HTML-Seite — auf Handy, Tablet, PC druckbar</li>
-            <li>Einmal bezahlt, kannst du sie immer wieder öffnen</li>
+            <li>Witze und Eselsbrücken, damit du dir alles merkst</li>
+            <li>Einmal bezahlt, kannst du es immer wieder öffnen</li>
           </ul>
 
           {fehler && (
