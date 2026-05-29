@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const KLASSEN = ["5", "6", "7", "8", "9", "10", "11", "12", "13"];
 const WHATSAPP_NUMMER = "4917624700519";
@@ -42,6 +42,7 @@ export default function LernheldPage() {
   const [fach, setFach] = useState<"mathe" | "physik">("mathe");
   const [datum, setDatum] = useState("");
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [schwierigkeiten, setSchwierigkeiten] = useState("");
   const [laden, setLaden] = useState(false);
   const [plan, setPlan] = useState("");
   const [fehler, setFehler] = useState("");
@@ -58,7 +59,7 @@ export default function LernheldPage() {
 
   async function bildVerkleinern(file: File): Promise<{ media_type: string; data: string }> {
     const bitmap = await createImageBitmap(file);
-    const maxKante = 900;
+    const maxKante = 700;
     const skala = Math.min(1, maxKante / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * skala);
     const h = Math.round(bitmap.height * skala);
@@ -111,28 +112,28 @@ export default function LernheldPage() {
     setFotos((alt) => alt.filter((_, i) => i !== index));
   }
 
-  async function planErstellen() {
-    setLaden(true);
-    setFehler("");
+  type Daten = {
+    name: string; klasse: string; fach: "mathe" | "physik"; datum: string;
+    theme: ThemeKey; schwierigkeiten: string;
+    bilder: { media_type: string; data: string }[];
+  };
+
+  async function planErzeugen(d: Daten) {
     setLadeText("Schritt 1 von 2 — Themen erkennen");
     setLadeSub("Deine Fotos werden durchgesehen, jedes Thema wird erkannt.");
     try {
-      const bilder = fotos.map((f) => ({ media_type: f.media_type, data: f.data }));
-
       const resThemen = await fetch("/api/lernheld-themen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fach, klasse, bilder }),
+        body: JSON.stringify({ fach: d.fach, klasse: d.klasse, schwierigkeiten: d.schwierigkeiten, bilder: d.bilder }),
       });
       if (resThemen.status === 413) {
         setFehler("Deine Fotos sind zusammen zu gross. Probiere es mit weniger oder kleineren Bildern.");
-        setLaden(false);
         return;
       }
       const themenData = await resThemen.json().catch(() => null);
       if (!themenData || !Array.isArray(themenData.themen) || themenData.themen.length === 0) {
         setFehler(themenData?.error || "Die Themen konnten nicht erkannt werden. Bitte versuche es nochmal.");
-        setLaden(false);
         return;
       }
 
@@ -142,7 +143,10 @@ export default function LernheldPage() {
       const resPlan = await fetch("/api/lernheld", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, klasse, fach, datum, theme, themen: themenData.themen }),
+        body: JSON.stringify({
+          name: d.name, klasse: d.klasse, fach: d.fach, datum: d.datum, theme: d.theme,
+          schwierigkeiten: d.schwierigkeiten, themen: themenData.themen,
+        }),
       });
       const planData = await resPlan.json().catch(() => null);
       if (planData && planData.html) {
@@ -156,8 +160,92 @@ export default function LernheldPage() {
     } catch {
       setFehler("Es hat leider nicht geklappt. Bitte versuche es nochmal.");
     }
-    setLaden(false);
   }
+
+  async function zahlungStarten() {
+    if (!bereit) return;
+    setFehler("");
+    const daten: Daten = {
+      name, klasse, fach, datum, theme, schwierigkeiten,
+      bilder: fotos.map((f) => ({ media_type: f.media_type, data: f.data })),
+    };
+    try {
+      sessionStorage.setItem("lernheld_pending", JSON.stringify(daten));
+    } catch {
+      setFehler("Deine Fotos sind zu gross fuer deinen Browser. Bitte nimm weniger.");
+      return;
+    }
+    setLaden(true);
+    setLadeText("Du wirst zur Bezahlung weitergeleitet");
+    setLadeSub("Einen Moment bitte — sicher bezahlen mit Karte ueber Stripe.");
+    try {
+      const res = await fetch("/api/checkout-lernheld", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (data && data.url) {
+        window.location.href = data.url;
+      } else {
+        setFehler(data?.error || "Die Bezahlung konnte nicht gestartet werden.");
+        setLaden(false);
+      }
+    } catch {
+      setFehler("Die Bezahlung konnte nicht gestartet werden.");
+      setLaden(false);
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("session_id");
+    if (!sid) return;
+
+    (async () => {
+      setLaden(true);
+      setFehler("");
+      setLadeText("Bezahlung wird geprueft");
+      setLadeSub("Einen Moment bitte...");
+      try {
+        const verifyRes = await fetch("/api/verify-lernheld", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sid }),
+        });
+        const verifyData = await verifyRes.json().catch(() => null);
+        if (!verifyData || !verifyData.ok) {
+          setFehler("Die Bezahlung konnte nicht bestaetigt werden. Falls du gerade bezahlt hast, lade die Seite kurz neu.");
+          setLaden(false);
+          return;
+        }
+
+        const stored = sessionStorage.getItem("lernheld_pending");
+        sessionStorage.removeItem("lernheld_pending");
+        window.history.replaceState({}, "", "/lernheld");
+
+        if (!stored) {
+          setFehler("Deine Daten wurden in deinem Browser nicht gefunden. Bitte fuelle das Formular noch einmal aus.");
+          setLaden(false);
+          return;
+        }
+
+        let d: Daten | null = null;
+        try { d = JSON.parse(stored) as Daten; } catch { d = null; }
+        if (!d || !d.bilder?.length) {
+          setFehler("Deine Daten konnten nicht gelesen werden. Bitte fuelle das Formular neu aus.");
+          setLaden(false);
+          return;
+        }
+
+        setName(d.name); setKlasse(d.klasse); setFach(d.fach); setDatum(d.datum);
+        setTheme(d.theme); setSchwierigkeiten(d.schwierigkeiten || "");
+
+        await planErzeugen(d);
+      } catch {
+        setFehler("Etwas ist schiefgegangen. Bitte fuelle das Formular neu aus.");
+      }
+      setLaden(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function herunterladen() {
     const blob = new Blob([plan], { type: "text/html" });
@@ -362,16 +450,26 @@ export default function LernheldPage() {
                 </div>
               )}
 
+              <label style={labelStil(t.ink)}>Womit hast du besonders Schwierigkeiten? <span style={{ color: t.soft, fontWeight: 400 }}>(optional)</span></label>
+              <p style={{ color: t.soft, fontSize: "14px", margin: "-6px 0 12px", lineHeight: 1.5 }}>Schreib hier auf, welche Themen dir besonders schwer fallen oder welche dir besonders wichtig sind — dann bekommst du dafür einen extra Fokus-Block in deinem Plan.</p>
+              <textarea value={schwierigkeiten} onChange={(e) => setSchwierigkeiten(e.target.value.slice(0, 500))} placeholder="z. B. Bei Bruchrechnen blicke ich nicht durch, und Textaufgaben sind schwer für mich."
+                rows={3}
+                style={{ width: "100%", padding: "14px 16px", borderRadius: "12px", border: `1px solid ${t.line}`, fontSize: "15px", fontFamily: "inherit", color: t.ink, background: t.bg, marginBottom: "22px", outline: "none", resize: "vertical" }} />
+
+
               {fehler && (
                 <div style={{ background: "#fdecea", border: "1px solid #f0bdb6", borderRadius: "12px", padding: "14px", marginBottom: "16px", color: "#b3392c", textAlign: "center", fontSize: "14px" }}>
                   {fehler}
                 </div>
               )}
 
-              <button onClick={planErstellen} disabled={!bereit}
+              <button onClick={zahlungStarten} disabled={!bereit}
                 style={{ width: "100%", background: bereit ? t.dark : t.line, color: "#fff", border: "none", padding: "16px", borderRadius: "14px", fontSize: "17px", cursor: bereit ? "pointer" : "default", fontWeight: 700, fontFamily: sans }}>
-                Zum Plan →
+                Plan erstellen für 1,99 € →
               </button>
+              <p style={{ textAlign: "center", color: t.soft, fontSize: "13px", marginTop: "10px", lineHeight: 1.5 }}>
+                Einmalige Zahlung. Sichere Bezahlung über Stripe.
+              </p>
             </div>
           </div>
         )}

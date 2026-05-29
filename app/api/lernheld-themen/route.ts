@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const fach = body.fach === "physik" ? "Physik" : "Mathematik";
     const klasse = (body.klasse || "").toString().slice(0, 20);
+    const schwierigkeiten = (body.schwierigkeiten || "").toString().slice(0, 500);
     const bilder: Bild[] = Array.isArray(body.bilder) ? body.bilder.slice(0, 10) : [];
 
     if (bilder.length === 0) {
@@ -20,18 +21,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Der Server ist nicht richtig eingerichtet." }, { status: 500 });
     }
 
+    const fokusHinweis = schwierigkeiten
+      ? `\n\nDIE SCHÜLERIN HAT SCHWIERIGKEITEN ODER WÜNSCHE:\n"${schwierigkeiten}"\nBerücksichtige das. Bei den Themen, die sie als schwer empfindet, mach die Erklärung besonders einfach und die Beispiele konkreter. Wenn sie ein Thema als wichtig markiert, das in den Fotos vorkommt, gib ihm Priorität.`
+      : "";
+
     const textPrompt = `Du bist eine deutsche ${fach}-Lehrerin. Schau dir alle Fotos sehr genau an (Stofflisten, Buchseiten, Übungen einer Klasse-${klasse}-Schülerin).
 
 DEINE AUFGABE:
-Liste ALLE Themen und Unterthemen auf, die in den Fotos vorkommen. Sei vollständig — kein Thema auslassen. Auch wenn es 15 sind: alle.
+Liste ALLE Themen und Unterthemen auf, die in den Fotos vorkommen. Sei vollständig — kein Thema auslassen.${fokusHinweis}
 
-Pro Thema gib mir:
+Pro Thema gib mir kompakt aber konkret:
 - name: kurzer Themen-Name
-- erklaerung: 2–3 Sätze in einfacher Sprache, was dieses Thema ist (kindgerecht, mit Alltagsbeispiel)
-- formeln: Liste der relevanten Formeln (mit echten mathematischen Symbolen: ², ³, √, ·, π, °)
-- regel: die wichtigste Regel oder das wichtigste Gesetz dieses Themas in 1 Satz
+- erklaerung: 2–3 Sätze in einfacher kindgerechter Sprache, mit Alltagsbeispiel ("Stell dir vor...")
+- formeln: Liste der relevanten Formeln (echte Symbole: ², ³, √, ·, π, °)
+- regel: die wichtigste Regel oder das Gesetz in 1 Satz
 - beispiel_aufgabe: konkrete kleine Beispielaufgabe mit Zahlen
-- beispiel_loesung: Schritt-für-Schritt-Lösung der Beispielaufgabe (3–5 kurze Schritte)
+- beispiel_loesung: Schritt-für-Schritt-Lösung (3–4 kurze Schritte)
 - uebung_aufgabe: eine Übungsaufgabe für den Schüler
 - uebung_loesung: ausführliche Lösung der Übungsaufgabe
 
@@ -57,7 +62,7 @@ WICHTIG:
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
+        max_tokens: 6000,
         messages: [
           { role: "user", content },
           { role: "assistant", content: "{" },

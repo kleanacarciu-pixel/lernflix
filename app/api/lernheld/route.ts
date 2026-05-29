@@ -139,6 +139,7 @@ export async function POST(request: Request) {
     const fach = body.fach === "physik" ? "Physik" : "Mathematik";
     const datum = (body.datum || "").toString().slice(0, 40);
     const themeKey: ThemeKey = (["rosa", "navy", "gold"] as ThemeKey[]).includes(body.theme) ? body.theme : "navy";
+    const schwierigkeiten = (body.schwierigkeiten || "").toString().slice(0, 500);
     const themen: Thema[] = Array.isArray(body.themen) ? body.themen.slice(0, 20) : [];
 
     if (themen.length === 0) {
@@ -157,11 +158,17 @@ export async function POST(request: Request) {
       .map((t, i) => `${i + 1}. ${t.name || "Thema"} — ${t.erklaerung || ""}${t.formeln?.length ? " | Formeln: " + t.formeln.join(", ") : ""}${t.regel ? " | Regel: " + t.regel : ""}`)
       .join("\n");
 
+    const fokusAbschnittHinweis = schwierigkeiten
+      ? `\n\nFOKUS-EINGABE DER SCHÜLERIN:\n"${schwierigkeiten}"\n\nERSTELLE ZUSÄTZLICH einen Block "Dein persönlicher Fokus" GANZ AM ANFANG (vor der Formelsammlung). In dem Block: gehe direkt auf das ein, was sie geschrieben hat, sprich sie persönlich an, gib 3–5 konkrete Lerntipps speziell für ihre Schwierigkeiten und nenne die Themen aus der Liste, auf die sie sich besonders konzentrieren sollte. Verwende dafür diese Struktur:
+<div class="sec-title">Dein persönlicher Fokus</div>
+<div class="block"><h4><span class="circle"></span>Genau für dich</h4><div class="erkl">persönlicher Einstieg, der direkt auf ihre Eingabe eingeht ("Du hast geschrieben...")</div><div class="label-row">So gehst du es an</div><ol class="nums"><li>konkreter Schritt</li><li>konkreter Schritt</li><li>konkreter Schritt</li></ol><div class="label-row">Diese Themen brauchen besonders viel Übung</div><p>Themen-Namen aus der Liste, kommagetrennt, mit kurzer Begründung.</p></div>`
+      : "";
+
     const textPrompt = `Du bist eine erfahrene deutsche ${fach}-Lehrerin. Du erstellst für eine Klasse-${klasse}-Schülerin ${name ? `namens ${name}` : ""} ergänzende Inhalte zu einem Lernplan: Formelsammlung, Regeln, Wochenplan und Tipps.
 
 Die Themen (mit Erklärungen, Formeln, Beispielen) sind bereits fertig vorbereitet — du musst sie NICHT mehr neu schreiben. Hier eine Übersicht der Themen:
 
-${themenAlsText}
+${themenAlsText}${fokusAbschnittHinweis}
 
 SCHREIBREGELN:
 - Verwende echte deutsche Umlaute: ä ö ü ß. Niemals "ae oe ue ss".
@@ -170,9 +177,9 @@ SCHREIBREGELN:
 - Keine Emojis.
 - Mathematische Symbole: ², ³, √, ·, ÷, π, °, ±, ∠.
 
-ERSTELLE FOLGENDE 4 ABSCHNITTE ALS REINES HTML:
+ERSTELLE FOLGENDE ABSCHNITTE ALS REINES HTML:
 
-(A) KOMPLETTE FORMELSAMMLUNG (1 Karte pro Thema, sortiert):
+${schwierigkeiten ? "(0) DEIN PERSÖNLICHER FOKUS-BLOCK (siehe oben)\n\n" : ""}(A) KOMPLETTE FORMELSAMMLUNG (1 Karte pro Thema, sortiert):
 <div class="sec-title">Die komplette Formelsammlung</div>
 <p class="sec-sub">Druck dir das aus — dein Spickzettel fürs Lernen.</p>
 <div class="formel-grid">
@@ -203,9 +210,9 @@ ERSTELLE FOLGENDE 4 ABSCHNITTE ALS REINES HTML:
 <div class="tips-grid"><div class="tip"><div class="lbl">Kurztitel</div><p>Tipp.</p></div> ... 4 Tipps ...</div>
 
 ABSOLUT WICHTIG:
-- Antworte AUSSCHLIESSLICH mit dem reinen HTML der 4 Abschnitte (A, B, C, D nacheinander).
+- Antworte AUSSCHLIESSLICH mit dem reinen HTML der Abschnitte nacheinander.
 - KEIN <html>, <head>, <body>. KEIN Markdown, KEINE Backticks, KEINE Vorrede.
-- Beginne direkt mit <div class="sec-title">Die komplette Formelsammlung</div>.`;
+- ${schwierigkeiten ? 'Beginne direkt mit <div class="sec-title">Dein persönlicher Fokus</div>.' : 'Beginne direkt mit <div class="sec-title">Die komplette Formelsammlung</div>.'}`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
