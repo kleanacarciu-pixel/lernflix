@@ -98,6 +98,7 @@ export default function QuizPage() {
   const [antwortGezeigt, setAntwortGezeigt] = useState(false);
   const [zufallsEmoji, setZufallsEmoji] = useState("");
   const [aktiverTab, setAktiverTab] = useState<"mathe" | "physik">("mathe");
+  const [klassenFilter, setKlassenFilter] = useState<number | null>(null);
   const vorgeladeneRef = useRef<Frage[]>([]);
 
   useEffect(() => {
@@ -179,8 +180,20 @@ export default function QuizPage() {
 
   const gesamtFragen = fragen && fragen.length > 0 ? fragen.length : 1;
   const prozent = Math.round((punkte / gesamtFragen) * 100);
-  const mathThemen = THEMEN.filter(t => t.fach === "mathe");
-  const physikThemen = THEMEN.filter(t => t.fach === "physik");
+
+  function passtZuKlasse(themaKlasse: string, gewaehlteKlasse: number | null): boolean {
+    if (gewaehlteKlasse === null) return true;
+    const match = themaKlasse.match(/(\d+)(?:\s*-\s*(\d+))?/);
+    if (!match) return false;
+    const start = parseInt(match[1]);
+    const ende = match[2] ? parseInt(match[2]) : start;
+    return gewaehlteKlasse >= start && gewaehlteKlasse <= ende;
+  }
+
+  const aktiveThemen = THEMEN.filter((t) => t.fach === aktiverTab && passtZuKlasse(t.klasse, klassenFilter));
+  const mathThemen = aktiveThemen;
+  const physikThemen = aktiveThemen;
+  const verfuegbareKlassen = Array.from({ length: 11 }, (_, i) => i + 2); // 2..12
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f0e8", fontFamily: "Arial, sans-serif" }}>
@@ -193,19 +206,41 @@ export default function QuizPage() {
 
         {schritt === "auswahl" && (
           <div>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-              <button onClick={() => { setAktiverTab("mathe"); setThema(""); }}
+            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+              <button onClick={() => { setAktiverTab("mathe"); setThema(""); setKlassenFilter(null); }}
                 style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5" }}>
                 📐 Mathe
               </button>
-              <button onClick={() => { setAktiverTab("physik"); setThema(""); }}
+              <button onClick={() => { setAktiverTab("physik"); setThema(""); setKlassenFilter(null); }}
                 style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5" }}>
                 ⚡ Physik
               </button>
             </div>
 
+            <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "20px", marginBottom: "12px" }}>Welche Klasse bist du?</h2>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px", justifyContent: "center" }}>
+              <button onClick={() => { setKlassenFilter(null); setThema(""); }}
+                style={{ padding: "10px 16px", borderRadius: "10px", border: `2px solid ${klassenFilter === null ? "#2d6da8" : "#e0d8cc"}`, background: klassenFilter === null ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: klassenFilter === null ? "white" : "#1a1a2e", cursor: "pointer", fontWeight: 700, fontSize: "14px" }}>
+                Alle
+              </button>
+              {verfuegbareKlassen.map((k) => (
+                <button key={k} onClick={() => { setKlassenFilter(k); setThema(""); }}
+                  style={{ padding: "10px 14px", borderRadius: "10px", border: `2px solid ${klassenFilter === k ? "#2d6da8" : "#e0d8cc"}`, background: klassenFilter === k ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: klassenFilter === k ? "white" : "#1a1a2e", cursor: "pointer", fontWeight: 700, fontSize: "14px", minWidth: "44px" }}>
+                  {k}
+                </button>
+              ))}
+            </div>
+            <p style={{ color: "#6e6e73", fontSize: "13px", textAlign: "center", margin: "0 0 24px" }}>
+              {klassenFilter === null ? "Klick auf deine Klasse, dann siehst du nur passende Themen." : `Themen für Klasse ${klassenFilter}`}
+            </p>
+
             <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Wähle dein Thema!</h2>
             <div style={{ display: "grid", gap: "10px", marginBottom: "28px" }}>
+              {(aktiverTab === "mathe" ? mathThemen : physikThemen).length === 0 && (
+                <div style={{ background: "white", padding: "20px", borderRadius: "12px", textAlign: "center", color: "#6e6e73", border: "2px dashed #e0d8cc" }}>
+                  Für Klasse {klassenFilter} gibt es in {aktiverTab === "mathe" ? "Mathe" : "Physik"} noch keine Themen. Probier eine andere Klasse oder klick auf &quot;Alle&quot;.
+                </div>
+              )}
               {(aktiverTab === "mathe" ? mathThemen : physikThemen).map((t) => (
                 <div key={t.id} onClick={() => setThema(t.id)}
                   style={{ background: thema === t.id ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: thema === t.id ? "white" : "#1a1a2e", padding: "16px 20px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${thema === t.id ? "#2d6da8" : "#e0d8cc"}`, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "17px", fontWeight: "600", transition: "all 0.2s" }}>
