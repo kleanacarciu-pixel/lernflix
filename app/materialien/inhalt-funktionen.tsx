@@ -108,7 +108,7 @@ export function InhaltFunktionen() {
           schritte={[<>x<sub>S</sub> = −(−6) / (2·1) = 3</>, <>f(3) = 9 − 18 + 5 = −4</>, <>Scheitel: <b>S(3 | −4)</b></>]} />
         <Beispiel aufgabe={<>Nullstellen von f(x) = x² − 5x + 6.</>}
           schritte={[<>p = −5, q = 6</>, <>x = 2,5 ± √(6,25 − 6) = 2,5 ± 0,5</>, <>x₁ = <b>3</b>, x₂ = <b>2</b></>]} />
-        <Joke>Eine Parabel sitzt im Park. Kommt jemand vorbei und fragt: „Bist du depressiv?" Sagt die Parabel: „Hängt davon ab — kommt drauf an, ob mein a positiv oder negativ ist."</Joke>
+        <Joke>Eine Parabel hängt vom Vorzeichen ihres a ab: a positiv = sie lächelt (U), a negativ = sie macht ein Schmoll-Mund (∩). Vorzeichen ist also wichtig fürs Gemüt.</Joke>
       </Sektion>
 
       <Sektion nr={5} titel="Spezielle Funktionen kurz vorgestellt">

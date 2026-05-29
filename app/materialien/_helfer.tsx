@@ -63,7 +63,7 @@ export function Beispiel({ aufgabe, schritte }: { aufgabe: ReactNode; schritte: 
 }
 
 export function Joke({ children }: { children: ReactNode }) {
-  return <div className="joke"><b>🤓 Spaßfakt:</b> {children}</div>;
+  return <div className="joke"><b>Übrigens:</b> {children}</div>;
 }
 
 export function Hook({ children }: { children: ReactNode }) {

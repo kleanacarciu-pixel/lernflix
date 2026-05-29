@@ -131,7 +131,7 @@ export function InhaltGleichungen() {
         <Beispiel aufgabe={<>Löse 2x² + 5x − 3 = 0.</>}
           schritte={[<>a=2, b=5, c=−3 → D = 25 + 24 = 49</>, <>x = (−5 ± 7) / 4</>, <>x₁ = <b>0,5</b>, x₂ = <b>−3</b></>]} />
         <div className="tipp"><b>Mitternachtsformel-Eselsbrücke:</b> heißt so, weil du sie auch um Mitternacht aus dem Tiefschlaf aufsagen können sollst.</div>
-        <Joke>Warum heißt das Ding „pq-Formel"? Weil's „pe-cu-Formel" zu schwer auszusprechen ist. Echt jetzt.</Joke>
+        <Joke>Bei der pq-Formel kommt das p von „Plus-Faktor" und das q von „Quergedacht". Klingt erfunden? Ist es auch — eigentlich kommen sie einfach aus der Gleichung x² + p·x + q = 0.</Joke>
       </Sektion>
 
       <Sektion nr={6} titel="Ungleichungen">

@@ -129,18 +129,17 @@ export function InhaltElektrizitaet() {
       </Sektion>
 
       <Sektion nr={6} titel="Gefahren des elektrischen Stroms">
-        <div className="merke"><b>WICHTIG:</b> Strom kann tödlich sein! Schon <b>50 mA</b> sind gefährlich, ab <b>100 mA</b> kann das Herz stehen bleiben. <b>Nie</b> mit nassen Händen oder ohne Sicherung an Steckdosen.</div>
+        <div className="merke"><b>Sehr wichtig:</b> Elektrischer Strom kann den Körper ernsthaft verletzen. Schon ab ca. <b>50 mA</b> wird es richtig gefährlich. Deshalb: <b>niemals</b> mit nassen Händen an Steckdosen, kein Kabel öffnen ohne Erwachsene, kein Werkzeug in Steckdosen stecken.</div>
         <table>
           <thead><tr><th>Stromstärke</th><th>Wirkung</th></tr></thead>
           <tbody>
             <tr><td>unter 1 mA</td><td>kaum spürbar</td></tr>
-            <tr><td>1–10 mA</td><td>Kribbeln, Muskelzuckungen</td></tr>
-            <tr><td>10–50 mA</td><td>schmerzhafte Muskelkrämpfe</td></tr>
-            <tr><td>50–100 mA</td><td>Atemstillstand möglich</td></tr>
-            <tr><td>über 100 mA</td><td>Herzkammerflimmern, lebensgefährlich</td></tr>
+            <tr><td>1–10 mA</td><td>Kribbeln, leichte Muskelreaktion</td></tr>
+            <tr><td>10–50 mA</td><td>schmerzhafte Muskelverkrampfung</td></tr>
+            <tr><td>über 50 mA</td><td>kann das Herz aus dem Takt bringen</td></tr>
           </tbody>
         </table>
-        <Joke>„Schon mal 220 Volt angefasst?" — „Einmal." — „Und?" — „Hat sich für meinen Rasiergutscheinsammelpunkt-Plan komplett gelohnt." Nicht nachmachen.</Joke>
+        <div className="tipp"><b>Goldene Regel:</b> Wenn du dir nicht 100 % sicher bist, frag immer einen Erwachsenen. Strom sieht man nicht — deshalb ist Vorsicht so wichtig.</div>
       </Sektion>
 
       <Sektion nr={7} titel="Übungen mit Lösungen">

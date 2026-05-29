@@ -140,7 +140,7 @@ export function InhaltBrueche() {
         <Beispiel aufgabe={<>Berechne 3 · 2/7.</>}
           schritte={[<>= 6/7</>]} />
         <div className="tipp"><b>Tipp:</b> Vor dem Multiplizieren über Kreuz <b>kürzen</b>! Das spart richtig viel Arbeit. Beispiel: 4/9 · 3/8 = 4·3/(9·8) — du kannst die 4 mit der 8 zu 1/2 kürzen UND die 3 mit der 9 zu 1/3. Ergebnis: 1/6. Viel netter als 12/72.</div>
-        <Joke>Mathe-Witz: ein halber Bruch und ein viertel Bruch treffen sich. Sagt der eine: „Du bist ja nur halb so groß wie ich." Antwortet der andere: „Du bist auch nicht mehr ganz."</Joke>
+        <Joke>Sagt ein halber Bruch zu einem viertel Bruch: „Du bist ja nur halb so groß wie ich!" Antwortet der andere: „Stimmt — aber zusammen ergeben wir drei Viertel." Mathe und Freundschaft, alles auf einmal.</Joke>
       </Sektion>
 
       <Sektion nr={5} titel="Brüche dividieren">

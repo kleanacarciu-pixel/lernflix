@@ -162,7 +162,7 @@ export function InhaltAtomphysik() {
           <Formel name="Photonenenergie" ausdruck={<>E = h · f</>} hinweis="h = Plancksches Wirkungsquantum" />
           <Formel name="De-Broglie-Wellenlänge" ausdruck={<>λ = h / p</>} hinweis="auch Teilchen sind Wellen" />
         </div>
-        <Joke>Schrödingers Katze ist gleichzeitig tot und lebendig — bis du nachschaust. Erfreut mich nicht so sehr, als „darüber nicht nachdenken" — was natürlich nicht hilft.</Joke>
+        <Joke>Schrödingers Katze ist in einer Kiste und wir wissen nicht, was sie gerade macht — schläft sie, spielt sie? Die Quantenphysik sagt: sie macht alles gleichzeitig, bis wir die Kiste öffnen. Verrückte Welt, was?</Joke>
       </Sektion>
 
       <Sektion nr={8} titel="Übungen mit Lösungen">
