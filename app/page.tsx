@@ -15,18 +15,22 @@ type Produkt = {
 };
 
 const FARBEN = {
-  cream: '#faf5ef',
-  creamDeep: '#f3ead9',
-  ink: '#1f1c19',
+  cream: '#fdf8ec',
+  creamDeep: '#f5ecd6',
+  ink: '#1c1a17',
   inkSoft: '#5a5045',
   inkMuted: '#8c8377',
   white: '#ffffff',
-  border: '#e8dfd0',
+  border: '#ece1c8',
   forest: '#2d5f5d',
   forestDeep: '#1f4544',
-  gold: '#c9a85c',
-  goldDeep: '#a3823f',
-  blush: '#d49b8a',
+  gold: '#e8b94e',
+  goldDeep: '#c9982e',
+  blush: '#e89580',
+  sky: '#5b9bd5',
+  berry: '#c47ab8',
+  mint: '#7fc4a4',
+  sun: '#f5c45c',
 };
 
 const SERIF = '"Cormorant Garamond", "Playfair Display", Georgia, "Times New Roman", serif';
@@ -142,16 +146,17 @@ export default function Home() {
       )}
 
       {/* HEADER */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(250, 245, 239, 0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(14px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '14px 20px' : '20px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
-        <a href="#" style={{ fontFamily: SERIF, fontSize: mobil ? '22px' : '26px', fontWeight: 600, color: FARBEN.ink, textDecoration: 'none', letterSpacing: '-0.01em' }}>
-          Lerne mit <span style={{ fontStyle: 'italic', color: FARBEN.forest }}>Anna</span>
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(253, 248, 236, 0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(14px)' : 'none', borderBottom: scrolled ? `1px solid ${FARBEN.border}` : 'none', padding: mobil ? '14px 20px' : '20px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+        <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: FARBEN.ink, color: FARBEN.gold, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>▶</span>
+          <span style={{ fontFamily: SERIF, fontSize: mobil ? '24px' : '28px', fontWeight: 700, color: FARBEN.ink, letterSpacing: '-0.01em' }}>Lernflix</span>
         </a>
         <nav style={{ display: 'flex', gap: mobil ? '14px' : '32px', alignItems: 'center' }}>
           {!mobil && (
             <>
               <a href="#materialien" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Materialien</a>
               <a href="/quiz" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Quiz</a>
-              <a href="#ueber" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Über mich</a>
+              <a href="#warum" style={{ color: FARBEN.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Warum Lernflix</a>
             </>
           )}
           <a href="/lernheld" style={{ background: FARBEN.ink, color: FARBEN.cream, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '10px 22px', borderRadius: '999px', letterSpacing: '0.01em' }}>Lernheld starten</a>
@@ -170,49 +175,48 @@ export default function Home() {
         )}
         <div className="anim-fadein" style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center' }}>
           <div>
-            <p style={{ fontFamily: SCRIPT, fontSize: '26px', color: FARBEN.forest, margin: '0 0 6px', letterSpacing: '0.02em' }}>Wissen, das hängen bleibt.</p>
-            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '46px' : '74px', fontWeight: 500, lineHeight: 1.02, margin: '0 0 22px', color: FARBEN.ink, letterSpacing: '-0.02em' }}>
-              Lernen — so <span style={{ fontStyle: 'italic', color: FARBEN.forest }}>einfach</span> wie streamen.
+            <span style={{ display: 'inline-block', background: FARBEN.ink, color: FARBEN.sun, padding: '6px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '20px' }}>▶ DEINE LERN-BIBLIOTHEK</span>
+            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '48px' : '82px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: FARBEN.ink, letterSpacing: '-0.025em' }}>
+              Lernen wie <span style={{ fontStyle: 'italic', color: FARBEN.berry }}>streamen</span>.
             </h1>
-            <p style={{ fontSize: mobil ? '16px' : '18px', color: FARBEN.inkSoft, lineHeight: 1.7, margin: '0 0 36px', maxWidth: '520px' }}>
-              Lernflix bringt deinen Schulstoff in die gleiche Bibliothek wie deine Lieblingsserien — nur dass du am Ende etwas mitnimmst, das dir in der nächsten Schulaufgabe hilft. Mathe, Physik, Quizzes und persönliche Lernpläne — alles an einem Ort.
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: FARBEN.inkSoft, lineHeight: 1.6, margin: '0 0 30px', maxWidth: '460px' }}>
+              Mathe und Physik in der Bibliothek, die Spaß macht. Schöne Lernpakete, persönliche Pläne und ein Quiz für deine Klasse.
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.forest, color: FARBEN.cream, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '10px', letterSpacing: '0.02em' }}>
-                Lernheld-Plan starten
-                <span style={{ fontSize: '18px' }}>→</span>
+              <a href="/lernheld" className="btn-haupt" style={{ background: FARBEN.ink, color: FARBEN.cream, textDecoration: 'none', padding: '16px 30px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                Lernheld starten <span style={{ fontSize: '18px' }}>→</span>
               </a>
-              <a href="#materialien" className="btn-rand" style={{ background: 'transparent', color: FARBEN.ink, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, border: `1.5px solid ${FARBEN.ink}`, letterSpacing: '0.02em' }}>
+              <a href="#materialien" className="btn-rand" style={{ background: 'transparent', color: FARBEN.ink, textDecoration: 'none', padding: '16px 30px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, border: `1.5px solid ${FARBEN.ink}` }}>
                 Bibliothek ansehen
               </a>
             </div>
-            <div style={{ display: 'flex', gap: '32px', marginTop: '50px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '32px', marginTop: '46px', flexWrap: 'wrap' }}>
               <div>
-                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 600, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>13</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Lernpakete</p>
+                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>13</p>
+                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Lernpakete</p>
               </div>
               <div style={{ width: '1px', background: FARBEN.border }} />
               <div>
-                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 600, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>61</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Quiz-Themen</p>
+                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>61</p>
+                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Quiz-Themen</p>
               </div>
               <div style={{ width: '1px', background: FARBEN.border }} />
               <div>
-                <p style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 600, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>1–13</p>
-                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0', letterSpacing: '0.04em' }}>Klassenstufen</p>
+                <p style={{ fontFamily: SERIF, fontSize: '36px', fontWeight: 700, color: FARBEN.ink, margin: 0, lineHeight: 1 }}>1–13</p>
+                <p style={{ fontSize: '13px', color: FARBEN.inkMuted, margin: '4px 0 0' }}>Klassen</p>
               </div>
             </div>
           </div>
 
-          {/* HERO-ILLUSTRATION: Bibliothek von Lerninhalten im Netflix-Stil */}
+          {/* HERO-ILLUSTRATION */}
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ position: 'absolute', top: '6%', left: '4%', background: FARBEN.white, padding: '10px 16px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', transform: 'rotate(-6deg)', animation: 'schweben 6s ease-in-out infinite', zIndex: 5 }}>
-              <span style={{ fontFamily: SERIF, fontSize: '20px', fontStyle: 'italic', color: FARBEN.forest }}>a² + b² = c²</span>
+            <BibliothekIllustration size={mobil ? 320 : 440} />
+            <div style={{ position: 'absolute', top: '-2%', left: '0%', background: FARBEN.sun, color: FARBEN.ink, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(-8deg)', animation: 'schweben 6s ease-in-out infinite', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
+              Episode 1
             </div>
-            <div style={{ position: 'absolute', bottom: '8%', right: '4%', background: FARBEN.gold, color: FARBEN.white, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', transform: 'rotate(5deg)', animation: 'schweben 7s ease-in-out infinite 0.5s', fontFamily: SCRIPT, fontSize: '20px', zIndex: 5 }}>
-              ▶ jetzt lernen
+            <div style={{ position: 'absolute', bottom: '4%', right: '-2%', background: FARBEN.berry, color: FARBEN.white, padding: '8px 14px', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', transform: 'rotate(6deg)', animation: 'schweben 7s ease-in-out infinite 0.5s', zIndex: 5, fontFamily: SCRIPT, fontSize: '22px', fontWeight: 700 }}>
+              ▶ jetzt!
             </div>
-            <BibliothekIllustration size={mobil ? 300 : 420} />
           </div>
         </div>
       </section>
@@ -309,21 +313,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ÜBER LERNFLIX */}
-      <section id="ueber" style={{ padding: mobil ? '70px 20px' : '120px 60px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <p style={{ fontFamily: SCRIPT, fontSize: '28px', color: FARBEN.forest, margin: '0 0 14px' }}>Die Idee dahinter.</p>
-          <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '58px', fontWeight: 500, color: FARBEN.ink, margin: '0 0 30px', lineHeight: 1.05, letterSpacing: '-0.01em' }}>
-            Lernen + Netflix = <span style={{ fontStyle: 'italic', color: FARBEN.forest }}>Lernflix</span>
+      {/* WARUM LERNFLIX — 3 Bulletpoints */}
+      <section id="warum" style={{ padding: mobil ? '60px 20px' : '90px 60px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: FARBEN.ink, margin: '0 0 50px', textAlign: 'center', letterSpacing: '-0.02em' }}>
+            Warum <span style={{ fontStyle: 'italic', color: FARBEN.berry }}>Lernflix</span>?
           </h2>
-          <p style={{ fontSize: mobil ? '17px' : '19px', color: FARBEN.inkSoft, lineHeight: 1.7, margin: '0 0 36px' }}>
-            Schulbuch zu schwer, YouTube zu unstrukturiert, Nachhilfe zu teuer. Wir haben Lernflix gebaut, damit du Lernen genauso entspannt erlebst wie eine gute Serie. Übersichtliche Themen statt Wand aus Text. Schöne Erklärungen statt trockener Definitionen. Persönliche Lernpläne statt 12 verschiedener Apps. Alles an einem Ort, in deinem Tempo.
-          </p>
-          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <span style={{ background: FARBEN.creamDeep, padding: '10px 22px', borderRadius: '999px', fontSize: '13.5px', color: FARBEN.ink, fontWeight: 500 }}>Klar strukturiert</span>
-            <span style={{ background: FARBEN.creamDeep, padding: '10px 22px', borderRadius: '999px', fontSize: '13.5px', color: FARBEN.ink, fontWeight: 500 }}>Mit Beispielen</span>
-            <span style={{ background: FARBEN.creamDeep, padding: '10px 22px', borderRadius: '999px', fontSize: '13.5px', color: FARBEN.ink, fontWeight: 500 }}>Kindgerecht</span>
-            <span style={{ background: FARBEN.creamDeep, padding: '10px 22px', borderRadius: '999px', fontSize: '13.5px', color: FARBEN.ink, fontWeight: 500 }}>Ohne Stress</span>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <span style={{ background: FARBEN.sun, color: FARBEN.ink, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>✦</span>
+              <div>
+                <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '6px 0 6px', color: FARBEN.ink }}>Bibliothek statt Buch</h3>
+                <p style={{ fontSize: '15px', color: FARBEN.inkSoft, margin: 0, lineHeight: 1.55 }}>Alle Themen schön gegliedert — du wählst, was du brauchst.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <span style={{ background: FARBEN.berry, color: FARBEN.white, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>♥</span>
+              <div>
+                <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '6px 0 6px', color: FARBEN.ink }}>Für deine Klasse</h3>
+                <p style={{ fontSize: '15px', color: FARBEN.inkSoft, margin: 0, lineHeight: 1.55 }}>Quiz und Pläne passend zu deiner Klassenstufe — nicht zu schwer, nicht zu leicht.</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+              <span style={{ background: FARBEN.mint, color: FARBEN.ink, width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>★</span>
+              <div>
+                <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '6px 0 6px', color: FARBEN.ink }}>Ohne Stress</h3>
+                <p style={{ fontSize: '15px', color: FARBEN.inkSoft, margin: 0, lineHeight: 1.55 }}>Mit Witzen, Beispielen und Eselsbrücken — Lernen darf Spaß machen.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -333,11 +350,12 @@ export default function Home() {
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '2fr 1fr 1fr 1fr', gap: '40px', marginBottom: '50px' }}>
             <div>
-              <p style={{ fontFamily: SERIF, fontSize: '26px', fontWeight: 600, color: FARBEN.cream, margin: '0 0 14px', letterSpacing: '-0.01em' }}>
-                Lerne mit <span style={{ fontStyle: 'italic', color: FARBEN.gold }}>Anna</span>
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: FARBEN.gold, color: FARBEN.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 800 }}>▶</span>
+                <p style={{ fontFamily: SERIF, fontSize: '26px', fontWeight: 700, color: FARBEN.cream, margin: 0 }}>Lernflix</p>
+              </div>
               <p style={{ fontSize: '14px', color: FARBEN.creamDeep, opacity: 0.7, lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
-                Lernpakete und persönliche Lernpläne für Mathematik und Physik. Verständlich, warm und ohne Stress.
+                Deine Lern-Bibliothek für Mathe und Physik. Klar, warm und ohne Stress.
               </p>
             </div>
             <div>
@@ -380,17 +398,38 @@ function SaeuleKarte({ nummer, titel, text, link, linkText, hervorgehoben }: { n
   );
 }
 
+const THEMA_SVGS: Record<string, { bg: string; render: () => React.ReactElement }> = {
+  geometrie: { bg: '#5b9bd5', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><polygon points="20,65 100,65 60,15" fill="#ffffff" opacity="0.9"/><rect x="48" y="55" width="10" height="10" fill="none" stroke="#1c1a17" strokeWidth="1.5"/></svg>) },
+  brueche: { bg: '#e89580', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="40" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">¾</text><line x1="35" y1="48" x2="85" y2="48" stroke="#fff" strokeWidth="2"/></svg>) },
+  prozent: { bg: '#7fc4a4', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="55" fontSize="48" fontWeight="800" fill="#fff" textAnchor="middle">%</text></svg>) },
+  gleichungen: { bg: '#f5c45c', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="52" fontSize="34" fontWeight="800" fill="#1c1a17" textAnchor="middle" fontFamily="Georgia, serif"><tspan fontStyle="italic">x</tspan> = ?</text></svg>) },
+  funktionen: { bg: '#c47ab8', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><line x1="15" y1="40" x2="105" y2="40" stroke="#fff" strokeWidth="1.5" opacity="0.5"/><line x1="60" y1="10" x2="60" y2="70" stroke="#fff" strokeWidth="1.5" opacity="0.5"/><path d="M 20 65 Q 60 -10 100 65" fill="none" stroke="#fff" strokeWidth="3"/></svg>) },
+  stochastik: { bg: '#5b9bd5', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><rect x="40" y="20" width="40" height="40" rx="6" fill="#fff"/><circle cx="52" cy="32" r="3" fill="#1c1a17"/><circle cx="68" cy="32" r="3" fill="#1c1a17"/><circle cx="52" cy="48" r="3" fill="#1c1a17"/><circle cx="68" cy="48" r="3" fill="#1c1a17"/></svg>) },
+  trigonometrie: { bg: '#7fc4a4', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><polygon points="20,65 100,65 100,20" fill="#fff" opacity="0.9"/><rect x="88" y="53" width="12" height="12" fill="none" stroke="#1c1a17" strokeWidth="1.5"/><text x="35" y="60" fontSize="14" fontStyle="italic" fontWeight="700" fill="#1c1a17">α</text></svg>) },
+  potenzen: { bg: '#c47ab8', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="50" y="55" fontSize="42" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif"><tspan fontStyle="italic">x</tspan></text><text x="78" y="32" fontSize="22" fontWeight="800" fill="#fff" fontFamily="Georgia, serif">2</text></svg>) },
+  mechanik: { bg: '#e8b94e', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><circle cx="42" cy="50" r="14" fill="#fff"/><line x1="56" y1="50" x2="92" y2="50" stroke="#fff" strokeWidth="4"/><polygon points="88,44 100,50 88,56" fill="#fff"/></svg>) },
+  elektrizitaet: { bg: '#f5c45c', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><polygon points="55,12 35,45 55,45 45,68 80,30 60,30 70,12" fill="#1c1a17"/></svg>) },
+  optik: { bg: '#c47ab8', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><circle cx="60" cy="40" r="22" fill="#f5c45c"/><line x1="60" y1="8" x2="60" y2="14" stroke="#fff" strokeWidth="2"/><line x1="60" y1="66" x2="60" y2="72" stroke="#fff" strokeWidth="2"/><line x1="28" y1="40" x2="34" y2="40" stroke="#fff" strokeWidth="2"/><line x1="86" y1="40" x2="92" y2="40" stroke="#fff" strokeWidth="2"/><line x1="36" y1="16" x2="40" y2="20" stroke="#fff" strokeWidth="2"/><line x1="80" y1="60" x2="84" y2="64" stroke="#fff" strokeWidth="2"/></svg>) },
+  waerme: { bg: '#e89580', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><rect x="55" y="12" width="10" height="40" rx="5" fill="#fff" stroke="#1c1a17" strokeWidth="1.5"/><rect x="55" y="32" width="10" height="20" fill="#1c1a17"/><circle cx="60" cy="60" r="11" fill="#1c1a17"/></svg>) },
+  atomphysik: { bg: '#7fc4a4', render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><circle cx="60" cy="40" r="6" fill="#fff"/><ellipse cx="60" cy="40" rx="30" ry="10" fill="none" stroke="#fff" strokeWidth="2"/><ellipse cx="60" cy="40" rx="30" ry="10" fill="none" stroke="#fff" strokeWidth="2" transform="rotate(60 60 40)"/><ellipse cx="60" cy="40" rx="30" ry="10" fill="none" stroke="#fff" strokeWidth="2" transform="rotate(-60 60 40)"/></svg>) },
+};
+
 function ProduktKarteEdel({ p, onClick }: { p: Produkt; onClick: () => void }) {
+  const svg = (p.slug && THEMA_SVGS[p.slug]) || { bg: FARBEN.forest, render: () => (<svg viewBox="0 0 120 80" width="100%" height="100%"><text x="60" y="50" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">π</text></svg>) };
   return (
-    <div onClick={onClick} className="karte-hover" style={{ background: FARBEN.white, borderRadius: '18px', padding: '28px 26px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(31, 28, 25, 0.04)', border: `1px solid ${FARBEN.border}`, display: 'flex', flexDirection: 'column', minHeight: '240px' }}>
-      <p style={{ fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: FARBEN.forest, fontWeight: 700, margin: '0 0 12px' }}>{p.typ}</p>
-      <h3 style={{ fontFamily: SERIF, fontSize: '22px', fontWeight: 600, margin: '0 0 12px', color: FARBEN.ink, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{p.titel}</h3>
-      <p style={{ fontSize: '14px', color: FARBEN.inkSoft, lineHeight: 1.6, margin: '0 0 20px', flex: 1 }}>{p.beschreibung.length > 110 ? p.beschreibung.slice(0, 110) + '…' : p.beschreibung}</p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${FARBEN.border}`, paddingTop: '16px' }}>
-        <span style={{ fontFamily: SERIF, fontSize: '22px', fontWeight: 600, color: FARBEN.ink }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-        <span style={{ fontSize: '13px', color: FARBEN.forest, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          Ansehen <span className="pfeil-hover">→</span>
-        </span>
+    <div onClick={onClick} className="karte-hover" style={{ background: FARBEN.white, borderRadius: '18px', cursor: 'pointer', boxShadow: '0 6px 20px rgba(31, 28, 25, 0.04)', border: `1px solid ${FARBEN.border}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: svg.bg, height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        {svg.render()}
+      </div>
+      <div style={{ padding: '20px 22px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <p style={{ fontSize: '10.5px', letterSpacing: '0.18em', textTransform: 'uppercase', color: FARBEN.inkMuted, fontWeight: 700, margin: '0 0 8px' }}>{p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}</p>
+        <h3 style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, margin: '0 0 16px', color: FARBEN.ink, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{p.titel}</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '12px', borderTop: `1px solid ${FARBEN.border}` }}>
+          <span style={{ fontFamily: SERIF, fontSize: '20px', fontWeight: 700, color: FARBEN.ink }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+          <span style={{ fontSize: '13px', color: FARBEN.ink, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            Ansehen <span className="pfeil-hover">→</span>
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -398,71 +437,89 @@ function ProduktKarteEdel({ p, onClick }: { p: Produkt; onClick: () => void }) {
 
 function BibliothekIllustration({ size }: { size: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 400 400" style={{ filter: 'drop-shadow(0 24px 50px rgba(31, 28, 25, 0.16))' }}>
+    <svg width={size} height={size} viewBox="0 0 440 440" style={{ filter: 'drop-shadow(0 24px 50px rgba(31, 28, 25, 0.18))' }}>
       <defs>
-        <linearGradient id="bgKreis" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fdf8ee" />
-          <stop offset="100%" stopColor="#f3ead9" />
-        </linearGradient>
+        <radialGradient id="bgKreis" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stopColor="#fff5d6" />
+          <stop offset="100%" stopColor="#f5ecd6" />
+        </radialGradient>
       </defs>
-      <circle cx="200" cy="200" r="180" fill="url(#bgKreis)" />
+      <circle cx="220" cy="220" r="200" fill="url(#bgKreis)" />
 
-      {/* TV / Tablet im Hintergrund — Lernflix Browse-Screen */}
-      <g transform="translate(60, 90)">
-        <rect x="0" y="0" width="280" height="200" rx="14" fill="#1f1c19" />
-        <rect x="0" y="0" width="280" height="28" rx="14" fill="#1f1c19" />
-        <circle cx="14" cy="14" r="3" fill="#ef4444" />
-        <circle cx="26" cy="14" r="3" fill="#f59e0b" />
-        <circle cx="38" cy="14" r="3" fill="#34c759" />
-        <text x="220" y="18" fontFamily="Georgia, serif" fontSize="11" fontWeight="700" fill="#c9a85c">lernflix</text>
-        {/* Bibliothek-Zeilen */}
-        <text x="14" y="50" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="700" fill="#faf5ef" opacity="0.7">FÜR DICH AUSGEWÄHLT</text>
-        <rect x="14" y="58" width="56" height="70" rx="5" fill="#2d5f5d" />
-        <text x="20" y="78" fontFamily="Georgia, serif" fontSize="9" fontWeight="700" fill="#c9a85c">Mathe</text>
-        <text x="20" y="92" fontFamily="Georgia, serif" fontSize="13" fontWeight="700" fill="#faf5ef">Brüche</text>
-        <rect x="20" y="108" width="30" height="12" rx="6" fill="#c9a85c" />
-        <text x="26" y="117" fontFamily="Inter, sans-serif" fontSize="7" fontWeight="700" fill="#1f1c19">▶ Start</text>
+      {/* Floating Mathe-Symbole */}
+      <text x="50" y="80" fontFamily="Georgia, serif" fontSize="34" fill="#c47ab8" opacity="0.7" fontStyle="italic">π</text>
+      <text x="370" y="90" fontFamily="Georgia, serif" fontSize="28" fill="#5b9bd5" opacity="0.7" fontStyle="italic">√</text>
+      <text x="380" y="320" fontFamily="Georgia, serif" fontSize="30" fill="#7fc4a4" opacity="0.7" fontStyle="italic">∑</text>
+      <text x="60" y="350" fontFamily="Georgia, serif" fontSize="26" fill="#e8b94e" opacity="0.7" fontStyle="italic">x²</text>
 
-        <rect x="76" y="58" width="56" height="70" rx="5" fill="#c97a96" />
-        <text x="82" y="78" fontFamily="Georgia, serif" fontSize="9" fontWeight="700" fill="#faf5ef">Mathe</text>
-        <text x="82" y="92" fontFamily="Georgia, serif" fontSize="13" fontWeight="700" fill="#faf5ef">Geo­metrie</text>
-        <rect x="82" y="108" width="36" height="12" rx="6" fill="#faf5ef" />
-        <text x="89" y="117" fontFamily="Inter, sans-serif" fontSize="7" fontWeight="700" fill="#1f1c19">▶ Start</text>
+      {/* TV / Tablet — Lernflix Browse-Screen */}
+      <g transform="translate(70, 100)">
+        <rect x="0" y="0" width="300" height="220" rx="18" fill="#1c1a17" />
+        {/* Browser-Bar */}
+        <rect x="0" y="0" width="300" height="32" rx="18" fill="#1c1a17" />
+        <rect x="0" y="14" width="300" height="18" fill="#1c1a17" />
+        <circle cx="16" cy="16" r="3.5" fill="#e89580" />
+        <circle cx="28" cy="16" r="3.5" fill="#e8b94e" />
+        <circle cx="40" cy="16" r="3.5" fill="#7fc4a4" />
+        <rect x="120" y="9" width="60" height="14" rx="7" fill="#fdf8ec" opacity="0.15" />
+        <text x="244" y="20" fontFamily="Georgia, serif" fontSize="13" fontWeight="800" fill="#e8b94e">▶ lernflix</text>
 
-        <rect x="138" y="58" width="56" height="70" rx="5" fill="#c9a85c" />
-        <text x="144" y="78" fontFamily="Georgia, serif" fontSize="9" fontWeight="700" fill="#1f1c19">Physik</text>
-        <text x="144" y="92" fontFamily="Georgia, serif" fontSize="13" fontWeight="700" fill="#1f1c19">Mecha­nik</text>
-        <rect x="144" y="108" width="36" height="12" rx="6" fill="#1f1c19" />
-        <text x="151" y="117" fontFamily="Inter, sans-serif" fontSize="7" fontWeight="700" fill="#faf5ef">▶ Start</text>
+        {/* Empfohlen-Zeile */}
+        <text x="16" y="54" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#fdf8ec" opacity="0.6">★ FÜR DICH</text>
+        <rect x="16" y="60" width="64" height="80" rx="6" fill="#5b9bd5" />
+        <polygon points="32,86 64,86 48,68" fill="#fff" opacity="0.9"/>
+        <text x="22" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Geo­metrie</text>
+        <text x="22" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 6–9</text>
 
-        <rect x="200" y="58" width="56" height="70" rx="5" fill="#5a8264" />
-        <text x="206" y="78" fontFamily="Georgia, serif" fontSize="9" fontWeight="700" fill="#faf5ef">Physik</text>
-        <text x="206" y="92" fontFamily="Georgia, serif" fontSize="13" fontWeight="700" fill="#faf5ef">Optik</text>
-        <rect x="206" y="108" width="36" height="12" rx="6" fill="#faf5ef" />
-        <text x="213" y="117" fontFamily="Inter, sans-serif" fontSize="7" fontWeight="700" fill="#1f1c19">▶ Start</text>
+        <rect x="86" y="60" width="64" height="80" rx="6" fill="#e89580" />
+        <text x="118" y="100" fontSize="32" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif">¾</text>
+        <text x="92" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Brüche</text>
+        <text x="92" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 5–7</text>
 
-        {/* Zweite Zeile */}
-        <text x="14" y="148" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="700" fill="#faf5ef" opacity="0.7">QUIZ</text>
-        <rect x="14" y="156" width="240" height="34" rx="5" fill="#faf5ef" opacity="0.1" />
-        <rect x="22" y="164" width="42" height="18" rx="4" fill="#c9a85c" />
-        <text x="35" y="177" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#1f1c19">Klasse 7</text>
-        <rect x="70" y="164" width="42" height="18" rx="4" fill="#2d5f5d" />
-        <text x="83" y="177" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#faf5ef">Klasse 8</text>
-        <rect x="118" y="164" width="42" height="18" rx="4" fill="#c97a96" />
-        <text x="131" y="177" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#faf5ef">Klasse 9</text>
-        <rect x="166" y="164" width="42" height="18" rx="4" fill="#5a8264" />
-        <text x="179" y="177" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#faf5ef">Klasse 10</text>
+        <rect x="156" y="60" width="64" height="80" rx="6" fill="#e8b94e" />
+        <circle cx="180" cy="90" r="10" fill="#fff"/>
+        <line x1="190" y1="90" x2="208" y2="90" stroke="#fff" strokeWidth="3"/>
+        <polygon points="205,86 212,90 205,94" fill="#fff"/>
+        <text x="162" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#1c1a17">Mecha­nik</text>
+        <text x="162" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#1c1a17" opacity="0.8">Klasse 8–10</text>
+
+        <rect x="226" y="60" width="64" height="80" rx="6" fill="#c47ab8" />
+        <text x="258" y="100" fontSize="30" fontWeight="800" fill="#fff" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic">x</text>
+        <text x="232" y="124" fontFamily="Georgia, serif" fontSize="11" fontWeight="800" fill="#fff">Funk­tionen</text>
+        <text x="232" y="135" fontFamily="Inter, sans-serif" fontSize="7" fill="#fff" opacity="0.8">Klasse 8–10</text>
+
+        {/* Quiz-Zeile */}
+        <text x="16" y="160" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#fdf8ec" opacity="0.6">⚡ QUIZ — WÄHLE DEINE KLASSE</text>
+        <g>
+          <rect x="16" y="170" width="36" height="32" rx="8" fill="#7fc4a4" />
+          <text x="34" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#1c1a17" textAnchor="middle">5</text>
+          <rect x="58" y="170" width="36" height="32" rx="8" fill="#5b9bd5" />
+          <text x="76" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">6</text>
+          <rect x="100" y="170" width="36" height="32" rx="8" fill="#e89580" />
+          <text x="118" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">7</text>
+          <rect x="142" y="170" width="36" height="32" rx="8" fill="#e8b94e" />
+          <text x="160" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#1c1a17" textAnchor="middle">8</text>
+          <rect x="184" y="170" width="36" height="32" rx="8" fill="#c47ab8" />
+          <text x="202" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">9</text>
+          <rect x="226" y="170" width="36" height="32" rx="8" fill="#fdf8ec" opacity="0.2" />
+          <text x="244" y="190" fontFamily="Georgia, serif" fontSize="14" fontWeight="800" fill="#fff" textAnchor="middle">10</text>
+        </g>
       </g>
 
-      {/* TV-Standfuß */}
-      <rect x="180" y="290" width="40" height="14" rx="3" fill="#1f1c19" />
-      <rect x="140" y="304" width="120" height="6" rx="3" fill="#1f1c19" />
-
-      {/* Pflanze daneben */}
-      <g transform="translate(345, 240)">
-        <rect x="-10" y="50" width="20" height="18" rx="3" fill="#8b6f47" />
-        <ellipse cx="-4" cy="38" rx="12" ry="20" fill="#5a8264" transform="rotate(-20)" />
-        <ellipse cx="6" cy="32" rx="11" ry="18" fill="#6b9477" transform="rotate(15)" />
+      {/* Popcorn-Eimer als süßer Akzent */}
+      <g transform="translate(330, 250)">
+        <polygon points="0,80 60,80 54,30 6,30" fill="#e89580" />
+        <rect x="0" y="20" width="60" height="14" rx="2" fill="#e89580" />
+        <rect x="6" y="22" width="6" height="10" fill="#fff" />
+        <rect x="18" y="22" width="6" height="10" fill="#fff" />
+        <rect x="30" y="22" width="6" height="10" fill="#fff" />
+        <rect x="42" y="22" width="6" height="10" fill="#fff" />
+        <rect x="54" y="22" width="6" height="10" fill="#fff" />
+        <circle cx="14" cy="22" r="7" fill="#fff5d6" />
+        <circle cx="26" cy="18" r="6" fill="#fff" />
+        <circle cx="40" cy="22" r="7" fill="#fff5d6" />
+        <circle cx="50" cy="16" r="5" fill="#fff" />
+        <circle cx="20" cy="14" r="5" fill="#fff5d6" />
       </g>
     </svg>
   );
