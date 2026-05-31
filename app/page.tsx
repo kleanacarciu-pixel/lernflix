@@ -16,13 +16,18 @@ const F = {
 const SERIF = '"Cormorant Garamond", Georgia, serif';
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
-// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar) - kindgerecht, Schul-Look
+// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar)
+// hero: schueler mit lern-stress / kopf in haenden
+// shop: bunte buecher-stapel
+// lernplan: kalender mit todo-liste & stiften
+// lernheld: handgeschriebene schulaufgabe (+ Note 1 Stempel via overlay)
+// quiz: kind mit tablet, freundlich
 const FOTO = {
-  hero: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1600&auto=format&fit=crop&q=85',
-  shop: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=1200&auto=format&fit=crop&q=85',
-  lernplan: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=85',
-  lernheld: 'https://images.unsplash.com/photo-1488998427799-e3362cec87c3?w=1200&auto=format&fit=crop&q=85',
-  quiz: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=1200&auto=format&fit=crop&q=85',
+  hero: 'https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=1600&auto=format&fit=crop&q=85',
+  shop: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&auto=format&fit=crop&q=85',
+  lernplan: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200&auto=format&fit=crop&q=85',
+  lernheld: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=1200&auto=format&fit=crop&q=85',
+  quiz: 'https://images.unsplash.com/photo-1503676382389-4809596d5290?w=1200&auto=format&fit=crop&q=85',
 };
 
 export default function Home() {
@@ -47,7 +52,7 @@ export default function Home() {
     <main style={{ minHeight: '100vh', background: F.bg, fontFamily: SANS, color: F.ink, overflowX: 'hidden' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
 
       <style>{`
         * { -webkit-font-smoothing: antialiased; }
@@ -125,7 +130,7 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(2, 1fr)', gap: mobil ? '18px' : '24px' }}>
             <Glied href="/shop" foto={FOTO.shop} nummer="01" label="Shop" titel="Lernmaterialien" sub="13 Pakete · ab 0,99 €" />
             <Glied href="/lernplan" foto={FOTO.lernplan} nummer="02" label="Kostenlos" titel="Mein Lernplan" sub="Wöchentlicher Plan" />
-            <Glied href="/lernheld" foto={FOTO.lernheld} nummer="03" label="Premium · 1,99 €" titel="Lernheld" sub="Plan für die Schulaufgabe" />
+            <Glied href="/lernheld" foto={FOTO.lernheld} nummer="03" label="Premium · 1,99 €" titel="Lernheld" sub="Plan für die Schulaufgabe" note1 />
             <Glied href="/quiz" foto={FOTO.quiz} nummer="04" label="Kostenlos" titel="Quiz" sub="61 Themen · Klasse 1–13" />
           </div>
         </div>
@@ -170,11 +175,17 @@ export default function Home() {
   );
 }
 
-function Glied({ href, foto, nummer, label, titel, sub }: { href: string; foto: string; nummer: string; label: string; titel: string; sub: string }) {
+function Glied({ href, foto, nummer, label, titel, sub, note1 }: { href: string; foto: string; nummer: string; label: string; titel: string; sub: string; note1?: boolean }) {
   return (
     <a href={href} className="glied" style={{ position: 'relative', display: 'block', textDecoration: 'none', borderRadius: '20px', overflow: 'hidden', aspectRatio: '4 / 3', boxShadow: '0 10px 30px rgba(28,28,30,0.10)' }}>
       <img src={foto} alt="" className="glied-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,28,30,0.10) 0%, rgba(28,28,30,0.30) 50%, rgba(28,28,30,0.85) 100%)' }} />
+      {note1 && (
+        <div style={{ position: 'absolute', top: '24px', left: '24px', transform: 'rotate(-8deg)', color: '#dc2626', fontFamily: '"Caveat", "Cormorant Garamond", cursive', fontWeight: 700, fontSize: '100px', lineHeight: 0.9, textShadow: '0 2px 8px rgba(0,0,0,0.18)', letterSpacing: '-0.02em' }}>
+          1
+          <div style={{ fontSize: '18px', fontFamily: '"Caveat", cursive', fontWeight: 600, marginTop: '4px', textShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>sehr gut!</div>
+        </div>
+      )}
       <div style={{ position: 'absolute', top: '22px', right: '24px', fontFamily: SERIF, fontSize: '52px', fontStyle: 'italic', fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '-0.02em', lineHeight: 1 }}>{nummer}</div>
       <div style={{ position: 'absolute', bottom: '28px', left: '28px', right: '28px', color: F.white }}>
         <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(10px)', color: F.white, padding: '5px 12px', borderRadius: '999px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.22)' }}>
