@@ -24,11 +24,14 @@ const F = {
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
 const FOTO = {
-  hero: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=1400&auto=format&fit=crop&q=90',
-  shop: 'https://images.unsplash.com/photo-1532153975070-2e9ab71f1b14?w=1000&auto=format&fit=crop&q=90',
+  // hero: schueler/teen am tablet (statt buero-mann)
+  hero: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1400&auto=format&fit=crop&q=90',
+  // shop: bunte schulbuecher mit apfel (klassiker, statt vintage-pages)
+  shop: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=1000&auto=format&fit=crop&q=90',
   lernplan: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1000&auto=format&fit=crop&q=90',
   lernheld: 'https://images.unsplash.com/photo-1488998427799-e3362cec87c3?w=1400&auto=format&fit=crop&q=90',
-  quiz: 'https://images.unsplash.com/photo-1626387346567-68d0c4fbd2cf?w=1000&auto=format&fit=crop&q=90',
+  // quiz: kind mit tablet (statt leerer broken-link)
+  quiz: 'https://images.unsplash.com/photo-1610484826917-0f101a7a8e69?w=1000&auto=format&fit=crop&q=90',
 };
 
 export default function Home() {
