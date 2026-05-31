@@ -174,8 +174,8 @@ export default function Home() {
         <nav style={{ display: 'flex', gap: mobil ? '14px' : '32px', alignItems: 'center' }}>
           {!mobil && (
             <>
-              <a href="#mathe" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Mathematik</a>
-              <a href="#physik" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Physik</a>
+              <a href="#shop" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Shop</a>
+              <a href="/lernplan" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Lernplan</a>
               <a href="/quiz" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Quiz</a>
             </>
           )}
@@ -188,20 +188,20 @@ export default function Home() {
         <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center' }}>
           <div>
             <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', boxShadow: '0 4px 14px rgba(255,107,107,0.12)' }}>
-              ✦ Deine Lern-Bibliothek
+              ✦ Die Lern-Plattform
             </span>
-            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '50px' : '80px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
-              Mathe und Physik,<br /><span style={{ fontStyle: 'italic', color: F.coral }}>endlich entspannt</span>.
+            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '50px' : '78px', fontWeight: 600, lineHeight: 1.0, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
+              Alles fürs Lernen,<br /><span style={{ fontStyle: 'italic', color: F.coral }}>an einem Ort</span>.
             </h1>
             <p style={{ fontSize: mobil ? '16.5px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 34px', maxWidth: '500px' }}>
-              13 schöne Lernpakete, dein eigener Lernplan und ein kostenloses Quiz — für jede Klasse von 1 bis 13.
+              Lernmaterialien zum Kaufen, dein eigener Lernplan, der Lernheld für Schulaufgaben und ein kostenloses Quiz — Lernflix vereint alles, was du brauchst.
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <a href="/lernheld" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                Lernheld starten →
+              <a href="#glieder" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                Loslegen →
               </a>
-              <a href="#bibliothek" className="btn-ghost" style={{ background: 'transparent', color: F.ink, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, border: `1.5px solid ${F.ink}` }}>
-                Pakete ansehen
+              <a href="#shop" className="btn-ghost" style={{ background: 'transparent', color: F.ink, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15.5px', fontWeight: 700, border: `1.5px solid ${F.ink}` }}>
+                Shop ansehen
               </a>
             </div>
           </div>
@@ -211,37 +211,41 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ====== SECTION 2: KATEGORIEN ====== */}
-      <section style={{ background: F.bg, padding: mobil ? '70px 22px' : '110px 60px' }}>
+      {/* ====== SECTION 2: 4 GLIEDER (Spiegel der Plattform) ====== */}
+      <section id="glieder" style={{ background: F.bg, padding: mobil ? '70px 22px' : '110px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: mobil ? '36px' : '52px' }}>
-            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>1. Was suchst du?</span>
-            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: 0, letterSpacing: '-0.02em' }}>
-              Vier einfache Wege zu deinem Ziel.
+            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>Die Plattform im Überblick</span>
+            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+              Vier Bereiche, ein Ziel.
             </h2>
+            <p style={{ fontSize: '15.5px', color: F.inkSoft, margin: 0 }}>Jeder Bereich hat seine eigene Seite — wähle, was du gerade brauchst.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: mobil ? '14px' : '20px' }}>
-            <KatTile href="#bibliothek" farbe={F.sky} titel="Lernpakete" sub={`${produkte.length} Themen verfügbar`} icon={(<svg width="32" height="32" viewBox="0 0 40 40"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
-            <KatTile href="/lernheld" farbe={F.coral} titel="Lernheld" sub="Premium · 1,99 €" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>)} />
-            <KatTile href="/quiz" farbe={F.sun} titelDark titel="Quiz" sub="Kostenlos · 61 Themen" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="#2d3436" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="#2d3436" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="#2d3436"/></svg>)} />
-            <KatTile href="https://wa.me/4917624700519" farbe={F.mint} titel="Hilfe" sub="Schreib direkt Anna" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M14 18c2 2 4 4 8 4M14 14h12M14 22h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
+            <GliedTile href="#shop" farbe={F.sky} nummer="01" titel="Lernmaterialien" sub={`Shop · ${produkte.length} Pakete`} icon={(<svg width="32" height="32" viewBox="0 0 40 40"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
+            <GliedTile href="/lernplan" farbe={F.mint} nummer="02" titel="Mein Lernplan" sub="Wöchentlicher Plan" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><rect x="6" y="6" width="28" height="28" rx="4" stroke="white" strokeWidth="2" fill="none"/><path d="M12 14h16M12 20h16M12 26h10" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>)} />
+            <GliedTile href="/lernheld" farbe={F.coral} nummer="03" titel="Lernheld" sub="Premium · 1,99 €" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>)} />
+            <GliedTile href="/quiz" farbe={F.sun} titelDark nummer="04" titel="Quiz" sub="Kostenlos · 61 Themen" icon={(<svg width="32" height="32" viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" stroke="#2d3436" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="#2d3436" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="#2d3436"/></svg>)} />
           </div>
         </div>
       </section>
 
-      {/* ====== SECTION 3: BIBLIOTHEK (Mathe + Physik kombiniert mit Filter) ====== */}
-      <section id="bibliothek" style={{ background: F.bgSky, padding: mobil ? '70px 22px' : '110px 60px' }}>
+      {/* ====== GLIED 1: LERNMATERIALIEN (SHOP) ====== */}
+      <section id="shop" style={{ background: F.bgSky, padding: mobil ? '70px 22px' : '110px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: mobil ? '28px' : '40px' }}>
-            <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.skyDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>2. Die Bibliothek</span>
-            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '50px', fontWeight: 600, color: F.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-              Alle Lernpakete an einem Ort.
-            </h2>
-            <p style={{ fontSize: '15px', color: F.inkSoft, margin: 0 }}>{produkte.length} Pakete · ab 0,99 € · sofort verfügbar</p>
+          <div style={{ marginBottom: mobil ? '28px' : '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
+            <div>
+              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.skyDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '12px' }}>Glied 1 · Shop</span>
+              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '36px' : '54px', fontWeight: 600, color: F.ink, margin: '0 0 12px', letterSpacing: '-0.02em', lineHeight: 1.0 }}>
+                Lernmaterialien.
+              </h2>
+              <p style={{ fontSize: '15.5px', color: F.inkSoft, margin: 0, maxWidth: '540px' }}>Schöne Lernpakete mit Erklärungen, Figuren und Übungen. Sofort verfügbar.</p>
+            </div>
+            <p style={{ fontSize: '14px', color: F.inkMuted, margin: 0 }}>{produkte.length} Pakete · ab 0,99 €</p>
           </div>
 
           {/* FILTER TABS */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: mobil ? '28px' : '40px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: mobil ? '24px' : '32px', flexWrap: 'wrap' }}>
             {([
               { id: 'alle' as const, t: 'Alle', n: produkte.length },
               { id: 'mathe' as const, t: 'Mathematik', n: mathe.length },
@@ -254,24 +258,52 @@ export default function Home() {
             ))}
           </div>
 
-          {/* GRID */}
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(auto-fill, minmax(220px, 1fr))', gap: mobil ? '14px' : '22px' }}>
             {angezeigt.map((p) => (<ProduktKarte key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
           </div>
         </div>
       </section>
 
-      {/* ====== SECTION 5: LERNHELD ====== */}
+      {/* ====== GLIED 2: LERNPLAN ====== */}
+      <section style={{ background: F.bgMint, padding: mobil ? '70px 22px' : '120px 60px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.1fr', gap: mobil ? '40px' : '70px', alignItems: 'center' }}>
+            <div>
+              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.mintDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Glied 2 · Kostenlos</span>
+              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '64px', fontWeight: 600, color: F.ink, margin: '0 0 22px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+                Mein <span style={{ fontStyle: 'italic', color: F.mintDeep }}>Lernplan</span>.
+              </h2>
+              <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, lineHeight: 1.6, margin: '0 0 28px', maxWidth: '480px' }}>
+                Erstelle deinen persönlichen Wochenplan — mit Stundenplan, Hausaufgaben, Lernblöcken und Pausen. Übersichtlich aufs Handy oder zum Ausdrucken.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px' }}>
+                {['Wöchentlicher Lernplan in 3 Designs', 'Fächer und Hausaufgaben verwalten', 'Termine, Tests, Konzentration', 'Funktioniert offline auf dem Handy'].map((t, i) => (
+                  <li key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px', fontSize: '14.5px', color: F.ink }}>
+                    <span style={{ background: F.mint, color: F.white, width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <a href="/lernplan" className="btn-primary" style={{ background: F.mintDeep, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                Lernplan erstellen →
+              </a>
+            </div>
+            <LernplanBild />
+          </div>
+        </div>
+      </section>
+
+      {/* ====== GLIED 3: LERNHELD ====== */}
       <section style={{ background: F.bgPeach, padding: mobil ? '70px 22px' : '120px 60px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '40px' : '70px', alignItems: 'center' }}>
             <div>
-              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>3. Premium · 1,99 €</span>
+              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.coral, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Glied 3 · Premium · 1,99 €</span>
               <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '64px', fontWeight: 600, color: F.ink, margin: '0 0 22px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
-                Dein eigener<br /><span style={{ fontStyle: 'italic', color: F.coral }}>Lernheld</span>-Plan.
+                Dein <span style={{ fontStyle: 'italic', color: F.coral }}>Lernheld</span>-Plan.
               </h2>
               <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, lineHeight: 1.6, margin: '0 0 32px', maxWidth: '480px' }}>
-                Foto vom Stoff hochladen, Klasse wählen, fertig. Du bekommst einen kompletten Lernplan für die nächste Schulaufgabe — mit Erklärungen, Übungen und Lösungen.
+                Foto vom Stoff hochladen, Klasse wählen, fertig. Dein persönlicher Plan für die nächste Schulaufgabe — mit allen Erklärungen, Übungen und Lösungen.
               </p>
               <a href="/lernheld" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
                 Plan jetzt erstellen →
@@ -296,22 +328,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ====== SECTION 6: QUIZ ====== */}
-      <section style={{ background: F.bg, padding: mobil ? '70px 22px' : '120px 60px' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ background: F.bgMint, borderRadius: '28px', padding: mobil ? '40px 28px' : '70px 60px', textAlign: 'center' }}>
-            <span style={{ display: 'inline-block', background: F.white, color: F.mintDeep, padding: '8px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '20px' }}>
-              4. Kostenlos
-            </span>
-            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '56px', fontWeight: 600, color: F.ink, margin: '0 0 18px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
-              Teste dein <span style={{ fontStyle: 'italic', color: F.mintDeep }}>Wissen</span>.
-            </h2>
-            <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, lineHeight: 1.55, margin: '0 auto 32px', maxWidth: '520px' }}>
-              61 Themen für Klasse 1 bis 13. Wähle Fach und Klasse — jede Runde neue Fragen.
-            </p>
-            <a href="/quiz" style={{ background: F.ink, color: F.white, textDecoration: 'none', padding: '16px 34px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-              Zum Quiz →
-            </a>
+      {/* ====== GLIED 4: QUIZ ====== */}
+      <section style={{ background: '#fef9ec', padding: mobil ? '70px 22px' : '120px 60px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.1fr', gap: mobil ? '40px' : '70px', alignItems: 'center' }}>
+            <div>
+              <span style={{ display: 'inline-block', fontSize: '12.5px', color: F.sunDeep, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '14px' }}>Glied 4 · Kostenlos</span>
+              <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '64px', fontWeight: 600, color: F.ink, margin: '0 0 22px', lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+                <span style={{ fontStyle: 'italic', color: F.sunDeep }}>Quiz</span> für jede Klasse.
+              </h2>
+              <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, lineHeight: 1.6, margin: '0 0 28px', maxWidth: '480px' }}>
+                61 Themen für Klasse 1 bis 13. Wähle dein Fach und deine Klassenstufe — jede Runde bekommst du neue Fragen.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px' }}>
+                {['Mathematik & Physik', 'Klasse 1 bis 13', 'Jede Runde neue Fragen', 'Drei Schwierigkeitsstufen'].map((t, i) => (
+                  <li key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px', fontSize: '14.5px', color: F.ink }}>
+                    <span style={{ background: F.sunDeep, color: F.white, width: '22px', height: '22px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>✓</span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <a href="/quiz" className="btn-primary" style={{ background: F.ink, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                Quiz starten →
+              </a>
+            </div>
+            <QuizBild />
           </div>
         </div>
       </section>
@@ -330,8 +371,8 @@ export default function Home() {
             </div>
             <div>
               <p style={{ fontSize: '11px', letterSpacing: '0.18em', textTransform: 'uppercase', color: F.coral, fontWeight: 700, margin: '0 0 18px' }}>Lernen</p>
-              <a href="#mathe" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Mathematik</a>
-              <a href="#physik" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Physik</a>
+              <a href="#shop" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernmaterialien</a>
+              <a href="/lernplan" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernplan</a>
               <a href="/lernheld" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernheld</a>
               <a href="/quiz" style={{ display: 'block', color: 'rgba(255,255,255,0.80)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Quiz</a>
             </div>
@@ -451,6 +492,165 @@ function KatTile({ href, farbe, titel, sub, icon, titelDark }: { href: string; f
         <p style={{ fontSize: '13.5px', margin: 0, opacity: titelDark ? 0.65 : 0.88 }}>{sub}</p>
       </div>
     </a>
+  );
+}
+
+function GliedTile({ href, farbe, nummer, titel, sub, icon, titelDark }: { href: string; farbe: string; nummer: string; titel: string; sub: string; icon: React.ReactNode; titelDark?: boolean }) {
+  return (
+    <a href={href} className="kat" style={{ background: farbe, color: titelDark ? F.ink : F.white, borderRadius: '22px', padding: '26px 22px', textDecoration: 'none', display: 'flex', flexDirection: 'column', minHeight: '210px', boxShadow: '0 10px 28px rgba(45,52,54,0.10)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: '14px', right: '20px', fontFamily: SERIF, fontSize: '42px', fontStyle: 'italic', fontWeight: 600, opacity: titelDark ? 0.18 : 0.28, letterSpacing: '-0.02em' }}>{nummer}</div>
+      <div style={{ marginBottom: 'auto' }}>{icon}</div>
+      <div style={{ marginTop: '18px' }}>
+        <h3 style={{ fontFamily: SERIF, fontSize: '22px', fontWeight: 700, margin: '0 0 4px', letterSpacing: '-0.01em', lineHeight: 1.1 }}>{titel}</h3>
+        <p style={{ fontSize: '12.5px', margin: 0, opacity: titelDark ? 0.65 : 0.88, fontWeight: 500 }}>{sub}</p>
+      </div>
+    </a>
+  );
+}
+
+function LernplanBild() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <svg width="100%" viewBox="0 0 420 360" style={{ maxWidth: '460px' }}>
+        <defs>
+          <linearGradient id="planShadow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2d3436" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#2d3436" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="210" cy="338" rx="160" ry="10" fill="url(#planShadow)" />
+        {/* Notebook page */}
+        <rect x="40" y="30" width="340" height="300" rx="18" fill="#ffffff" stroke="#e5ede8" strokeWidth="1.5" />
+        {/* Spiral binding holes */}
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <circle key={i} cx="60" cy={70 + i * 42} r="3" fill="#d6e3dd" />
+        ))}
+        <line x1="78" y1="30" x2="78" y2="330" stroke="#f0f6f3" strokeWidth="1" />
+        {/* Header */}
+        <text x="98" y="62" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="20" fontWeight="700" fill="#2d3436">Mein Wochenplan</text>
+        <text x="98" y="80" fontFamily="Inter, sans-serif" fontSize="10" fill="#8d9498" letterSpacing="1.5">KW 22 · MO – FR</text>
+        {/* Day columns */}
+        {['Mo', 'Di', 'Mi', 'Do', 'Fr'].map((d, i) => (
+          <g key={d}>
+            <text x={106 + i * 56} y="108" fontFamily="Inter, sans-serif" fontSize="11" fontWeight="700" fill="#566066">{d}</text>
+          </g>
+        ))}
+        {/* Time blocks - color coded subjects */}
+        {/* Row 1 - 8:00 */}
+        <rect x="98" y="122" width="44" height="22" rx="5" fill="#5cabd6" opacity="0.85" />
+        <text x="120" y="137" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Mathe</text>
+        <rect x="154" y="122" width="44" height="22" rx="5" fill="#ffd166" />
+        <text x="176" y="137" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#2d3436">Physik</text>
+        <rect x="210" y="122" width="44" height="22" rx="5" fill="#5cabd6" opacity="0.85" />
+        <text x="232" y="137" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Mathe</text>
+        <rect x="266" y="122" width="44" height="22" rx="5" fill="#a18ee0" />
+        <text x="288" y="137" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Engl</text>
+        <rect x="322" y="122" width="44" height="22" rx="5" fill="#ffd166" />
+        <text x="344" y="137" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#2d3436">Physik</text>
+        {/* Row 2 - 9:30 */}
+        <rect x="98" y="150" width="44" height="22" rx="5" fill="#4ecdc4" />
+        <text x="120" y="165" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Bio</text>
+        <rect x="154" y="150" width="44" height="22" rx="5" fill="#5cabd6" opacity="0.85" />
+        <text x="176" y="165" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Mathe</text>
+        <rect x="210" y="150" width="44" height="22" rx="5" fill="#ff6b6b" opacity="0.85" />
+        <text x="232" y="165" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Deu</text>
+        <rect x="266" y="150" width="44" height="22" rx="5" fill="#4ecdc4" />
+        <text x="288" y="165" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Bio</text>
+        <rect x="322" y="150" width="44" height="22" rx="5" fill="#a18ee0" />
+        <text x="344" y="165" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#ffffff">Engl</text>
+        {/* Pause */}
+        <rect x="98" y="180" width="268" height="14" rx="4" fill="#fdf8f0" />
+        <text x="232" y="190" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="8.5" fontWeight="600" fill="#8d9498" letterSpacing="1.5">PAUSE</text>
+        {/* Lernblöcke section */}
+        <text x="98" y="218" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="13" fontWeight="700" fill="#2d3436">Lernblöcke heute</text>
+        <g transform="translate(98, 228)">
+          <rect x="0" y="0" width="268" height="28" rx="8" fill="#f0f9f4" stroke="#d6ead9" strokeWidth="1" />
+          <circle cx="14" cy="14" r="5" fill="#4ecdc4" />
+          <text x="26" y="18" fontFamily="Inter, sans-serif" fontSize="10.5" fontWeight="600" fill="#2d3436">Mathe — Brüche kürzen</text>
+          <text x="240" y="18" fontFamily="Inter, sans-serif" fontSize="10" fill="#8d9498">30 min</text>
+        </g>
+        <g transform="translate(98, 262)">
+          <rect x="0" y="0" width="268" height="28" rx="8" fill="#fdf2ed" stroke="#f5d9c8" strokeWidth="1" />
+          <circle cx="14" cy="14" r="5" fill="#ff6b6b" />
+          <text x="26" y="18" fontFamily="Inter, sans-serif" fontSize="10.5" fontWeight="600" fill="#2d3436">Physik — Hebelgesetz</text>
+          <text x="240" y="18" fontFamily="Inter, sans-serif" fontSize="10" fill="#8d9498">25 min</text>
+        </g>
+        <g transform="translate(98, 296)">
+          <rect x="0" y="0" width="268" height="20" rx="6" fill="#ffffff" stroke="#ececec" strokeWidth="1" strokeDasharray="3 3" />
+          <text x="134" y="13" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9.5" fill="#8d9498">+ neuer Block</text>
+        </g>
+        {/* Floating sticker */}
+        <g transform="translate(330, 36) rotate(8)">
+          <rect x="0" y="0" width="58" height="30" rx="6" fill="#ff6b6b" />
+          <text x="29" y="20" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="14" fontStyle="italic" fontWeight="700" fill="#ffffff">Tipp!</text>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function QuizBild() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <svg width="100%" viewBox="0 0 420 360" style={{ maxWidth: '460px' }}>
+        <defs>
+          <linearGradient id="quizShadow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2d3436" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#2d3436" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="210" cy="338" rx="160" ry="10" fill="url(#quizShadow)" />
+        {/* Phone frame */}
+        <rect x="80" y="20" width="260" height="316" rx="28" fill="#2d3436" />
+        <rect x="88" y="28" width="244" height="300" rx="22" fill="#ffffff" />
+        {/* Status bar */}
+        <text x="100" y="48" fontFamily="Inter, sans-serif" fontSize="9" fontWeight="700" fill="#2d3436">9:41</text>
+        <circle cx="316" cy="44" r="3" fill="#2d3436" />
+        <circle cx="306" cy="44" r="3" fill="#2d3436" />
+        {/* Header */}
+        <text x="210" y="78" textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="20" fontWeight="700" fill="#2d3436">Wähle deine Klasse</text>
+        <text x="210" y="94" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="10" fill="#8d9498">Mathematik · 15 Themen</text>
+        {/* Class grid - 13 tiles */}
+        {[
+          { n: '1', x: 104, y: 110, c: '#fdf2ed' },
+          { n: '2', x: 152, y: 110, c: '#fdf2ed' },
+          { n: '3', x: 200, y: 110, c: '#fdf2ed' },
+          { n: '4', x: 248, y: 110, c: '#fdf2ed' },
+          { n: '5', x: 296, y: 110, c: '#fdf2ed' },
+          { n: '6', x: 104, y: 152, c: '#f0f9f4' },
+          { n: '7', x: 152, y: 152, c: '#f0f9f4' },
+          { n: '8', x: 200, y: 152, c: '#ffd166', active: true },
+          { n: '9', x: 248, y: 152, c: '#f0f9f4' },
+          { n: '10', x: 296, y: 152, c: '#f0f9f4' },
+          { n: '11', x: 104, y: 194, c: '#eff6fb' },
+          { n: '12', x: 152, y: 194, c: '#eff6fb' },
+          { n: '13', x: 200, y: 194, c: '#eff6fb' },
+        ].map((t) => (
+          <g key={t.n}>
+            <rect x={t.x} y={t.y} width="40" height="36" rx="9" fill={t.c} stroke={t.active ? '#e8b94e' : 'transparent'} strokeWidth="2" />
+            <text x={t.x + 20} y={t.y + 23} textAnchor="middle" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="16" fontWeight="700" fill="#2d3436">{t.n}</text>
+          </g>
+        ))}
+        {/* Question card preview */}
+        <rect x="100" y="244" width="220" height="74" rx="14" fill="#fdf8f0" stroke="#f0e6d2" strokeWidth="1" />
+        <text x="112" y="262" fontFamily="Inter, sans-serif" fontSize="8.5" fontWeight="700" fill="#e55454" letterSpacing="1.5">FRAGE 3 / 10</text>
+        <text x="112" y="280" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="13" fontWeight="600" fill="#2d3436">Was ist 3/4 + 1/4 ?</text>
+        <g transform="translate(112, 290)">
+          <rect x="0" y="0" width="44" height="20" rx="6" fill="#ffffff" stroke="#ececec" strokeWidth="1" />
+          <text x="22" y="14" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="600" fill="#2d3436">1/2</text>
+          <rect x="50" y="0" width="44" height="20" rx="6" fill="#4ecdc4" />
+          <text x="72" y="14" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="700" fill="#ffffff">1</text>
+          <rect x="100" y="0" width="44" height="20" rx="6" fill="#ffffff" stroke="#ececec" strokeWidth="1" />
+          <text x="122" y="14" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="600" fill="#2d3436">3/4</text>
+          <rect x="150" y="0" width="44" height="20" rx="6" fill="#ffffff" stroke="#ececec" strokeWidth="1" />
+          <text x="172" y="14" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="10" fontWeight="600" fill="#2d3436">4/8</text>
+        </g>
+        {/* Floating math symbols outside phone */}
+        <text x="40" y="100" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="34" fill="#ff6b6b" opacity="0.45" fontStyle="italic">?</text>
+        <text x="356" y="220" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="32" fill="#4ecdc4" opacity="0.5" fontStyle="italic">✓</text>
+        <text x="50" y="280" fontFamily="Cormorant Garamond, Georgia, serif" fontSize="30" fill="#a18ee0" opacity="0.45" fontStyle="italic">π</text>
+      </svg>
+    </div>
   );
 }
 
