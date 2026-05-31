@@ -191,73 +191,76 @@ export default function Home() {
               <span>Ab 0,99 €</span>
             </div>
           </div>
-          {/* Hero-Foto MIT Lernflix-Seite ueberlagert auf dem Laptop-Bildschirm */}
+          {/* Hero: Foto mit Laptop-Mockup drueber (TradeStation-Style) */}
           <div className="fade-up-2" style={{ position: 'relative' }}>
             <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', aspectRatio: '4 / 3', boxShadow: '0 30px 80px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.30)' }}>
-              {/* Foto */}
+              {/* Foto-Hintergrund (gedimmt) */}
               <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              {/* Subtiler dunkler tone fuer kontrast */}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,31,58,0.05) 0%, rgba(11,31,58,0.25) 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,31,58,0.30) 0%, rgba(11,31,58,0.55) 100%)' }} />
 
-              {/* Lernflix-Seite, positioniert ueber dem Laptop-Bildschirm im Foto */}
-              <div style={{
-                position: 'absolute',
-                top: '8%',
-                left: '11%',
-                width: '78%',
-                height: '64%',
-                background: F.navy,
-                borderRadius: '5px',
-                overflow: 'hidden',
-                transform: 'perspective(1400px) rotateY(-7deg) rotateX(3deg)',
-                transformOrigin: 'center center',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(0,0,0,0.6)',
-              }}>
-                {/* Browser bar */}
-                <div style={{ background: '#ececec', padding: mobil ? '4px 8px' : '6px 10px', display: 'flex', alignItems: 'center', gap: mobil ? '3px' : '5px', borderBottom: '1px solid #d8d8d8' }}>
-                  <div style={{ display: 'flex', gap: '3px' }}>
-                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#ff5f57' }} />
-                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#febc2e' }} />
-                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#28c840' }} />
-                  </div>
-                  <div style={{ marginLeft: mobil ? '4px' : '8px', flex: 1, background: '#ffffff', padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontSize: mobil ? '6px' : '8px', color: '#74747c', fontWeight: 500 }}>
-                    lernflix.lernemitanna.de
-                  </div>
-                </div>
-                {/* Mini Lernflix-Inhalt */}
-                <div style={{ background: F.navy, color: F.white, padding: mobil ? '10px 12px' : '18px 22px', height: 'calc(100% - 18px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(300px 160px at 90% 10%, rgba(23,105,255,0.20), transparent 60%)', pointerEvents: 'none' }} />
-                  {/* Mini nav */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                    <span style={{ fontSize: mobil ? '9px' : '12px', fontWeight: 800, letterSpacing: '-0.025em' }}>
-                      Lern<span style={{ color: F.blue }}>flix</span>
-                    </span>
-                    <div style={{ display: 'flex', gap: mobil ? '6px' : '10px', alignItems: 'center', fontSize: mobil ? '5.5px' : '7.5px', fontWeight: 500 }}>
-                      <span style={{ opacity: 0.7 }}>Shop</span>
-                      <span style={{ opacity: 0.7 }}>Lernplan</span>
-                      <span style={{ opacity: 0.7 }}>Quiz</span>
-                      <span style={{ background: F.blue, color: F.white, padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontWeight: 700 }}>Lernheld</span>
+              {/* Laptop-Mockup ueber dem Foto */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: mobil ? '12px' : '24px' }}>
+                <div style={{ perspective: '1800px', width: '100%' }}>
+                  <div style={{ transformStyle: 'preserve-3d', transform: mobil ? 'rotateY(-8deg) rotateX(3deg)' : 'rotateY(-12deg) rotateX(4deg)', transformOrigin: 'center center' }}>
+                    {/* Laptop Bezel + Screen */}
+                    <div style={{ background: '#0a0a0a', borderRadius: '10px 10px 3px 3px', padding: mobil ? '7px 7px 0' : '10px 10px 0', boxShadow: '0 30px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.04)' }}>
+                      {/* Camera notch */}
+                      <div style={{ height: mobil ? '8px' : '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: mobil ? '3px' : '4px' }}>
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#1c1c1c' }} />
+                      </div>
+                      {/* Screen content */}
+                      <div style={{ background: F.navy, aspectRatio: '16 / 10', borderRadius: '1px', overflow: 'hidden', position: 'relative' }}>
+                        {/* Browser bar */}
+                        <div style={{ background: '#ececec', padding: mobil ? '4px 6px' : '6px 10px', display: 'flex', alignItems: 'center', gap: mobil ? '3px' : '5px', borderBottom: '1px solid #d8d8d8' }}>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#ff5f57' }} />
+                            <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#febc2e' }} />
+                            <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#28c840' }} />
+                          </div>
+                          <div style={{ marginLeft: mobil ? '4px' : '8px', flex: 1, background: '#ffffff', padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontSize: mobil ? '6px' : '8px', color: '#74747c', fontWeight: 500 }}>
+                            lernflix.lernemitanna.de
+                          </div>
+                        </div>
+                        {/* Mini Lernflix-Inhalt */}
+                        <div style={{ background: F.navy, color: F.white, padding: mobil ? '10px 12px' : '18px 22px', height: 'calc(100% - 18px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(300px 160px at 90% 10%, rgba(23,105,255,0.20), transparent 60%)', pointerEvents: 'none' }} />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                            <span style={{ fontSize: mobil ? '9px' : '12px', fontWeight: 800, letterSpacing: '-0.025em' }}>
+                              Lern<span style={{ color: F.blue }}>flix</span>
+                            </span>
+                            <div style={{ display: 'flex', gap: mobil ? '6px' : '10px', alignItems: 'center', fontSize: mobil ? '5.5px' : '7.5px', fontWeight: 500 }}>
+                              <span style={{ opacity: 0.7 }}>Shop</span>
+                              <span style={{ opacity: 0.7 }}>Lernplan</span>
+                              <span style={{ opacity: 0.7 }}>Quiz</span>
+                              <span style={{ background: F.blue, color: F.white, padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontWeight: 700 }}>Lernheld</span>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: mobil ? '8px' : '14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+                            <span style={{ fontSize: mobil ? '5px' : '7px', color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: '0.16em', fontFamily: '"JetBrains Mono", monospace', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: mobil ? '4px' : '6px' }}>
+                              <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: F.green }} />
+                              DIE LERN-PLATTFORM · KLASSE 1—13
+                            </span>
+                            <h3 style={{ fontFamily: SANS, fontSize: mobil ? '14px' : '24px', fontWeight: 800, lineHeight: 0.96, margin: '0 0 6px', letterSpacing: '-0.035em', color: F.white }}>
+                              Verstehen, statt<br />auswendig <span style={{ color: F.blue }}>lernen</span>.
+                            </h3>
+                            <p style={{ fontSize: mobil ? '5.5px' : '8px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.4, margin: mobil ? '0 0 6px' : '0 0 10px', maxWidth: '75%' }}>
+                              Mathe und Physik, Klasse 1 bis 13. Sofort verfügbar.
+                            </p>
+                            <div style={{ display: 'flex', gap: mobil ? '4px' : '6px' }}>
+                              <span style={{ background: F.blue, color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600 }}>
+                                Loslegen →
+                              </span>
+                              <span style={{ background: 'transparent', color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.22)' }}>
+                                Zum Shop
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  {/* Mini hero */}
-                  <div style={{ marginTop: mobil ? '8px' : '14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
-                    <span style={{ fontSize: mobil ? '5px' : '7px', color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: '0.16em', fontFamily: '"JetBrains Mono", monospace', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: mobil ? '4px' : '6px' }}>
-                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: F.green }} />
-                      DIE LERN-PLATTFORM · KLASSE 1—13
-                    </span>
-                    <h3 style={{ fontFamily: SANS, fontSize: mobil ? '14px' : '24px', fontWeight: 800, lineHeight: 0.96, margin: '0 0 6px', letterSpacing: '-0.035em', color: F.white }}>
-                      Verstehen, statt<br />auswendig <span style={{ color: F.blue }}>lernen</span>.
-                    </h3>
-                    <p style={{ fontSize: mobil ? '5.5px' : '8px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.4, margin: mobil ? '0 0 6px' : '0 0 10px', maxWidth: '75%' }}>
-                      Mathe und Physik, Klasse 1 bis 13. Sofort verfügbar.
-                    </p>
-                    <div style={{ display: 'flex', gap: mobil ? '4px' : '6px' }}>
-                      <span style={{ background: F.blue, color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600 }}>
-                        Loslegen →
-                      </span>
-                      <span style={{ background: 'transparent', color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.22)' }}>
-                        Zum Shop
-                      </span>
+                    {/* Laptop Base (hinge + bottom) */}
+                    <div style={{ width: '107%', marginLeft: '-3.5%', height: mobil ? '8px' : '11px', background: 'linear-gradient(to bottom, #d4d4d4 0%, #9a9a9a 30%, #5a5a5a 80%, #2a2a2a 100%)', borderRadius: '0 0 11px 11px', boxShadow: '0 6px 14px rgba(0,0,0,0.25), inset 0 -1px 0 rgba(0,0,0,0.4)', position: 'relative' }}>
+                      <div style={{ position: 'absolute', bottom: '-1px', left: '50%', transform: 'translateX(-50%)', width: '14%', height: '3px', background: '#1a1a1a', borderRadius: '0 0 5px 5px' }} />
                     </div>
                   </div>
                 </div>
@@ -281,107 +284,158 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURED: LERNHELD */}
-      <section style={{ background: F.bg, padding: mobil ? '70px 22px 50px' : '120px 56px 60px' }}>
+      {/* BENTO-GRID: Lernheld gross, dann Lernplan, Quiz, Shop in unterschiedlichen groessen */}
+      <section id="bereiche" style={{ background: F.bg, padding: mobil ? '70px 22px 80px' : '120px 56px 140px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
-          <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
+          <div style={{ marginBottom: mobil ? '36px' : '60px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
-              ⎯ Featured
+              ⎯ Was du bei Lernflix bekommst
             </span>
-            <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.02 }}>
-              Auf die Eins lernen.
+            <h2 style={{ fontFamily: SANS, fontSize: mobil ? '40px' : '64px', fontWeight: 800, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.035em', lineHeight: 1.0 }}>
+              Vier Bereiche. <span style={{ color: F.blue }}>Ein Ziel.</span>
             </h2>
             <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, margin: 0, lineHeight: 1.55, fontWeight: 400 }}>
-              Mit dem Lernheld bekommst du in 3 Minuten einen persönlichen Plan für deine nächste Schulaufgabe.
+              Lernmaterialien, Lernplan, Lernheld und Quiz — alles im selben Account, sofort verfügbar.
             </p>
           </div>
-          <a href="/lernheld" className="feature-card" style={{ display: 'block', textDecoration: 'none', borderRadius: '28px', overflow: 'hidden', background: F.navy, color: F.white, boxShadow: '0 12px 40px rgba(11,31,58,0.16)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: 0, alignItems: 'stretch' }}>
-              <div style={{ padding: mobil ? '40px 28px' : '64px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <span style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.08)', color: F.white, padding: '7px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.16)' }}>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)',
+            gridTemplateAreas: mobil
+              ? `"lernheld" "lernplan" "quiz" "shop"`
+              : `"lernheld lernheld lernplan" "lernheld lernheld quiz" "shop shop shop"`,
+            gridAutoRows: mobil ? 'auto' : 'minmax(230px, auto)',
+            gap: mobil ? '16px' : '20px',
+          }}>
+            {/* LERNHELD - gross 2x2, navy */}
+            <a href="/lernheld" className="bento" style={{ gridArea: 'lernheld', background: F.navy, color: F.white, borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: mobil ? '420px' : 'auto' }}>
+              {/* Foto im hintergrund */}
+              <img src={FOTO.lernheld} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.22 }} />
+              <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${F.navy} 0%, rgba(11,31,58,0.7) 50%, rgba(11,31,58,0.4) 100%)` }} />
+              <div className="hero-glow" />
+              {/* Top: badge + 1 sehr gut */}
+              <div style={{ position: 'relative', padding: mobil ? '28px 28px 0' : '40px 44px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.10)', color: F.white, padding: '7px 14px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', border: '1px solid rgba(255,255,255,0.20)', backdropFilter: 'blur(8px)' }}>
                   Premium · 1,99 €
                 </span>
-                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: F.white, margin: '0 0 18px', lineHeight: 0.98, letterSpacing: '-0.035em' }}>
-                  Lernheld
-                </h3>
-                <p style={{ fontSize: mobil ? '16px' : '18px', color: 'rgba(255,255,255,0.78)', margin: '0 0 32px', lineHeight: 1.55, maxWidth: '440px' }}>
-                  Foto vom Stoff hochladen, Klasse wählen — fertig. Du bekommst einen persönlichen Plan mit Erklärungen, Übungen und Lösungen für deine Schulaufgabe.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '34px' }}>
-                  {['Foto vom Stoff hochladen', 'Klasse und Datum wählen', 'Plan in 3 Min auf dem Handy'].map((t, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'rgba(23,105,255,0.16)', color: F.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, flexShrink: 0, fontFamily: '"JetBrains Mono", monospace' }}>
-                        {i + 1}
-                      </div>
-                      <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.92)', fontWeight: 500 }}>{t}</span>
-                    </div>
-                  ))}
-                </div>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', alignSelf: 'flex-start', background: F.blue, color: F.white, padding: '14px 26px', borderRadius: '12px', fontSize: '15px', fontWeight: 600, boxShadow: '0 8px 24px rgba(23,105,255,0.32)' }}>
-                  Plan erstellen
-                  <span style={{ fontSize: '16px' }}>→</span>
-                </span>
-              </div>
-              <div style={{ position: 'relative', minHeight: mobil ? '320px' : '560px', overflow: 'hidden' }}>
-                <img src={FOTO.lernheld} alt="" className="feature-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,31,58,0.55) 0%, rgba(11,31,58,0.15) 30%, rgba(11,31,58,0) 60%)' }} />
-                {/* Note-overlay */}
-                <div style={{ position: 'absolute', top: mobil ? '24px' : '40px', right: mobil ? '24px' : '40px', background: F.white, color: F.ink, borderRadius: '14px', padding: '14px 20px', boxShadow: '0 20px 50px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: F.blueLight, color: F.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 800 }}>
+                <div style={{ background: F.white, color: F.ink, borderRadius: '12px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 24px rgba(0,0,0,0.20)' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: F.blueLight, color: F.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800 }}>
                     1
                   </div>
                   <div>
-                    <p style={{ fontSize: '10.5px', color: F.inkSoft, margin: '0 0 2px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Klassenarbeit</p>
-                    <p style={{ fontSize: '14px', color: F.ink, margin: 0, fontWeight: 700, letterSpacing: '-0.01em' }}>Sehr gut</p>
+                    <p style={{ fontSize: '9px', color: F.inkSoft, margin: 0, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Note</p>
+                    <p style={{ fontSize: '12px', color: F.ink, margin: 0, fontWeight: 800, letterSpacing: '-0.01em' }}>Sehr gut</p>
                   </div>
                 </div>
               </div>
-            </div>
-          </a>
-        </div>
-      </section>
+              {/* Bottom: text */}
+              <div style={{ position: 'relative', padding: mobil ? '24px 28px 32px' : '0 44px 44px' }}>
+                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '42px' : '64px', fontWeight: 800, color: F.white, margin: '0 0 14px', lineHeight: 0.96, letterSpacing: '-0.035em' }}>
+                  Lernheld
+                </h3>
+                <p style={{ fontSize: mobil ? '15px' : '16.5px', color: 'rgba(255,255,255,0.78)', margin: '0 0 26px', lineHeight: 1.55, maxWidth: '440px' }}>
+                  Foto vom Stoff hochladen, Klasse wählen — fertig. Dein Plan für die nächste Schulaufgabe in 3 Minuten.
+                </p>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.blue, color: F.white, padding: '13px 24px', borderRadius: '12px', fontSize: '14.5px', fontWeight: 600, boxShadow: '0 8px 24px rgba(23,105,255,0.32)' }}>
+                  Plan erstellen
+                  <span style={{ fontSize: '15px' }}>→</span>
+                </span>
+              </div>
+            </a>
 
-      {/* 3 BEREICHE - clean cards */}
-      <section id="bereiche" style={{ background: F.bg, padding: mobil ? '50px 22px 80px' : '60px 56px 140px' }}>
-        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
-          <div style={{ marginBottom: mobil ? '32px' : '50px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
-            <div>
-              <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
-                ⎯ Drei weitere Bereiche
-              </span>
-              <h2 style={{ fontFamily: SANS, fontSize: mobil ? '34px' : '50px', fontWeight: 800, color: F.ink, margin: 0, letterSpacing: '-0.03em', lineHeight: 1.0 }}>
-                Was du sonst noch hast.
-              </h2>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: mobil ? '20px' : '24px' }}>
-            <Karte
-              href="/shop"
-              label="Shop"
-              titel="Lernmaterialien"
-              sub="13 Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen."
-              foto={FOTO.shop}
-              preis="ab 0,99 €"
-              mobil={mobil}
-            />
-            <Karte
-              href="/lernplan"
-              label="Kostenlos"
-              titel="Mein Lernplan"
-              sub="Stundenplan, Hausaufgaben und Lernblöcke. Übersichtlich aufs Handy."
-              foto={FOTO.lernplan}
-              preis="gratis"
-              mobil={mobil}
-            />
-            <Karte
-              href="/quiz"
-              label="Kostenlos"
-              titel="Quiz"
-              sub="61 Themen für Klasse 1 bis 13. Jede Runde gibt es neue Fragen."
-              foto={FOTO.quiz}
-              preis="gratis"
-              mobil={mobil}
-            />
+            {/* LERNPLAN - klein 1x1, helles cream */}
+            <a href="/lernplan" className="bento" style={{ gridArea: 'lernplan', background: '#fff4dc', color: F.ink, borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: mobil ? '24px' : '28px', minHeight: mobil ? '240px' : 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '10.5px', color: '#8a6a1a', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace' }}>
+                  02 · Kostenlos
+                </span>
+                {/* Mini calendar widget */}
+                <div style={{ background: F.white, borderRadius: '10px', padding: '8px 10px', fontSize: '9px', boxShadow: '0 8px 20px rgba(122,89,18,0.15)', textAlign: 'center', transform: 'rotate(3deg)' }}>
+                  <p style={{ margin: 0, fontSize: '8px', color: F.inkSoft, fontWeight: 700, letterSpacing: '0.08em' }}>MO 14</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 800, color: F.ink, lineHeight: 1, letterSpacing: '-0.02em' }}>Mathe</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '8px', color: '#10B981', fontWeight: 700 }}>● 16:00</p>
+                </div>
+              </div>
+              <div>
+                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '26px' : '32px', fontWeight: 800, color: F.ink, margin: '0 0 8px', lineHeight: 1.0, letterSpacing: '-0.025em' }}>
+                  Mein Lernplan
+                </h3>
+                <p style={{ fontSize: '13.5px', color: 'rgba(15,23,42,0.65)', lineHeight: 1.5, margin: '0 0 16px' }}>
+                  Stundenplan, Hausaufgaben und Lernblöcke. Alles übersichtlich.
+                </p>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: F.ink }}>
+                  Plan erstellen <span style={{ fontSize: '15px' }}>→</span>
+                </span>
+              </div>
+            </a>
+
+            {/* QUIZ - klein 1x1, helles mint */}
+            <a href="/quiz" className="bento" style={{ gridArea: 'quiz', background: '#e3f5ec', color: F.ink, borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: mobil ? '24px' : '28px', minHeight: mobil ? '240px' : 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '10.5px', color: '#1e6f4b', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace' }}>
+                  03 · Kostenlos
+                </span>
+                {/* Mini quiz tiles */}
+                <div style={{ display: 'flex', gap: '4px', transform: 'rotate(-3deg)' }}>
+                  {['?', '?', '?'].map((q, i) => (
+                    <div key={i} style={{ background: F.white, borderRadius: '8px', width: '28px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 800, color: i === 1 ? F.blue : F.inkMuted, boxShadow: '0 4px 12px rgba(30,111,75,0.18)', fontFamily: SANS }}>
+                      {q}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '26px' : '32px', fontWeight: 800, color: F.ink, margin: '0 0 8px', lineHeight: 1.0, letterSpacing: '-0.025em' }}>
+                  Quiz
+                </h3>
+                <p style={{ fontSize: '13.5px', color: 'rgba(15,23,42,0.65)', lineHeight: 1.5, margin: '0 0 16px' }}>
+                  61 Themen für Klasse 1 bis 13. Jede Runde neue Fragen.
+                </p>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: F.ink }}>
+                  Quiz starten <span style={{ fontSize: '15px' }}>→</span>
+                </span>
+              </div>
+            </a>
+
+            {/* SHOP - wide bottom, 3 spalten breit */}
+            <a href="/shop" className="bento" style={{ gridArea: 'shop', background: F.white, border: `1px solid ${F.border}`, color: F.ink, borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.4fr', alignItems: 'stretch', minHeight: mobil ? 'auto' : '260px' }}>
+              <div style={{ padding: mobil ? '28px' : '40px 44px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ fontSize: '10.5px', color: F.blue, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace', marginBottom: '14px' }}>
+                  01 · Shop · ab 0,99 €
+                </span>
+                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '32px' : '44px', fontWeight: 800, color: F.ink, margin: '0 0 10px', lineHeight: 0.98, letterSpacing: '-0.03em' }}>
+                  Lernmaterialien
+                </h3>
+                <p style={{ fontSize: mobil ? '14.5px' : '16px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 22px', maxWidth: '440px' }}>
+                  13 Lernpakete für Mathe und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar.
+                </p>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start', background: F.ink, color: F.white, padding: '13px 24px', borderRadius: '12px', fontSize: '14px', fontWeight: 600 }}>
+                  Zum Shop
+                  <span style={{ fontSize: '15px' }}>→</span>
+                </span>
+              </div>
+              {/* Mini-buecher reihe */}
+              <div style={{ position: 'relative', background: F.bgSoft, padding: mobil ? '24px' : '28px 32px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', gap: mobil ? '8px' : '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {[
+                    { t: 'Brüche', c: '#ff4757', a: -4 },
+                    { t: 'Geometrie', c: '#1769FF', a: 3 },
+                    { t: 'Funktionen', c: '#7158e2', a: -2 },
+                    { t: 'Trigo', c: '#10B981', a: 5 },
+                    { t: 'Mechanik', c: '#f59e0b', a: -3 },
+                    { t: 'Optik', c: '#06b6d4', a: 2 },
+                    { t: 'Atomphysik', c: '#0F172A', a: -4 },
+                  ].map((p, i) => (
+                    <div key={i} style={{ background: F.white, border: `1px solid ${F.border}`, borderRadius: '10px', padding: '10px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transform: `rotate(${p.a}deg)`, minWidth: mobil ? '78px' : '100px' }}>
+                      <div style={{ width: '100%', height: '4px', background: p.c, borderRadius: '2px', marginBottom: '8px' }} />
+                      <p style={{ margin: 0, fontSize: mobil ? '11px' : '12.5px', fontWeight: 800, letterSpacing: '-0.01em', color: F.ink, lineHeight: 1.1 }}>{p.t}</p>
+                      <p style={{ margin: '4px 0 0', fontSize: '10px', color: F.inkMuted, fontWeight: 600 }}>ab 0,99 €</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </section>
