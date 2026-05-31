@@ -24,14 +24,17 @@ const F = {
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
 const FOTO = {
-  // hero: schueler/teen am tablet (statt buero-mann)
-  hero: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1400&auto=format&fit=crop&q=90',
-  // shop: bunte schulbuecher mit apfel (klassiker, statt vintage-pages)
-  shop: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=1000&auto=format&fit=crop&q=90',
-  lernplan: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1000&auto=format&fit=crop&q=90',
-  lernheld: 'https://images.unsplash.com/photo-1488998427799-e3362cec87c3?w=1400&auto=format&fit=crop&q=90',
-  // quiz: kind mit tablet (statt leerer broken-link)
-  quiz: 'https://images.unsplash.com/photo-1610484826917-0f101a7a8e69?w=1000&auto=format&fit=crop&q=90',
+  // hero: gruppe mit laptops um tisch (von dir gewuenscht, pfkknbsGuIc)
+  // ACHTUNG: foto zeigt TradeStation-logo auf laptop — siehe chat-warnung
+  hero: 'https://unsplash.com/photos/pfkknbsGuIc/download?w=1400&fm=jpg&q=85',
+  // shop: bunte notizbloecke (ETRPjvb0KM0)
+  shop: 'https://unsplash.com/photos/ETRPjvb0KM0/download?w=1000&fm=jpg&q=85',
+  // lernplan: smiley mit doktorhut (iMfG5py52LA)
+  lernplan: 'https://unsplash.com/photos/iMfG5py52LA/download?w=1000&fm=jpg&q=85',
+  // lernheld: person schreibt auf weissem papier (zNFT3o8HWks)
+  lernheld: 'https://unsplash.com/photos/zNFT3o8HWks/download?w=1400&fm=jpg&q=85',
+  // quiz: kind blickt auf 3 fragezeichen-bloecke (9Ul7x0bk3qE)
+  quiz: 'https://unsplash.com/photos/9Ul7x0bk3qE/download?w=1000&fm=jpg&q=85',
 };
 
 export default function Home() {
