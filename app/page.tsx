@@ -2,32 +2,37 @@
 import { useEffect, useState } from 'react';
 
 const F = {
-  bg: '#ffffff',
-  bgSoft: '#fafaf7',
+  bg: '#fffdf9',
+  bgWarm: '#fef6ed',
   ink: '#1c1c1e',
   inkSoft: '#5a5a5e',
   inkMuted: '#9a9a9e',
-  border: '#ececec',
+  border: '#f0ece3',
   white: '#ffffff',
-  coral: '#e85a4f',
+  coral: '#ff7a6b',
+  coralDeep: '#e56456',
+  mint: '#c5ead6',
+  mintDeep: '#5fb98c',
+  peach: '#fcd7c4',
+  peachDeep: '#e89878',
+  sky: '#cfe6f5',
+  skyDeep: '#5fa3cf',
+  lavender: '#e0d4f5',
+  lavenderDeep: '#9379c9',
+  sun: '#ffe4a3',
+  sunDeep: '#d99a36',
   dark: '#1c1c1e',
 };
 
 const SERIF = '"Cormorant Garamond", Georgia, serif';
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
-// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar) — alle kindgerecht
-// hero: junger schueler beim lernen / hausaufgaben
-// shop: bunte kinderbuecher
-// lernplan: bunte todo-liste / planer
-// lernheld: schulaufgabe mit handschrift (+ Note 1 Stempel via overlay)
-// quiz: kind / teenie mit tablet
+// Echte Fotos von Unsplash - Objekte/Schulsachen, keine Stress-Kinder-Fotos
 const FOTO = {
-  hero: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=1600&auto=format&fit=crop&q=85',
-  shop: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1200&auto=format&fit=crop&q=85',
-  lernplan: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&auto=format&fit=crop&q=85',
-  lernheld: 'https://images.unsplash.com/photo-1546484958-3a8aa9d6fff5?w=1200&auto=format&fit=crop&q=85',
-  quiz: 'https://images.unsplash.com/photo-1632571401005-458e9d244591?w=1200&auto=format&fit=crop&q=85',
+  shop: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=900&auto=format&fit=crop&q=85',
+  lernplan: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=900&auto=format&fit=crop&q=85',
+  lernheld: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=900&auto=format&fit=crop&q=85',
+  quiz: 'https://images.unsplash.com/photo-1607706189992-eae578626c86?w=900&auto=format&fit=crop&q=85',
 };
 
 export default function Home() {
@@ -59,79 +64,124 @@ export default function Home() {
         body { background: ${F.bg}; margin: 0; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .fade-up { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-        .glied { transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1); cursor: pointer; }
-        .glied:hover { transform: translateY(-6px); }
-        .glied:hover .glied-foto { transform: scale(1.06); }
-        .glied-foto { transition: transform 0.6s cubic-bezier(0.2,0.8,0.2,1); }
+        .glied { transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease; cursor: pointer; }
+        .glied:hover { transform: translateY(-6px); box-shadow: 0 24px 50px rgba(28,28,30,0.12); }
+        .glied:hover .arrow { transform: translateX(6px); }
+        .arrow { transition: transform 0.3s ease; display: inline-block; }
         .btn-primary { transition: all 0.25s ease; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(232,90,79,0.32); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(255,122,107,0.32); }
         .btn-ghost { transition: all 0.25s ease; }
         .btn-ghost:hover { background: ${F.ink}; color: ${F.white}; }
       `}</style>
 
       {/* HEADER */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,255,255,0.94)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,253,249,0.94)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '32px', fontWeight: 700, color: scrolled ? F.ink : F.white, letterSpacing: '-0.02em', textShadow: scrolled ? 'none' : '0 2px 12px rgba(0,0,0,0.3)' }}>
+          <span style={{ fontFamily: SERIF, fontSize: mobil ? '28px' : '32px', fontWeight: 700, color: F.ink, letterSpacing: '-0.02em' }}>
             Lern<span style={{ color: F.coral }}>flix</span>
           </span>
         </a>
         <nav style={{ display: 'flex', gap: mobil ? '14px' : '30px', alignItems: 'center' }}>
           {!mobil && (
             <>
-              <a href="/shop" style={{ color: scrolled ? F.ink : F.white, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500, textShadow: scrolled ? 'none' : '0 1px 8px rgba(0,0,0,0.3)' }}>Shop</a>
-              <a href="/lernplan" style={{ color: scrolled ? F.ink : F.white, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500, textShadow: scrolled ? 'none' : '0 1px 8px rgba(0,0,0,0.3)' }}>Lernplan</a>
-              <a href="/quiz" style={{ color: scrolled ? F.ink : F.white, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500, textShadow: scrolled ? 'none' : '0 1px 8px rgba(0,0,0,0.3)' }}>Quiz</a>
+              <a href="/shop" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Shop</a>
+              <a href="/lernplan" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Lernplan</a>
+              <a href="/quiz" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 500 }}>Quiz</a>
             </>
           )}
           <a href="/lernheld" style={{ background: F.coral, color: F.white, textDecoration: 'none', fontSize: '14px', fontWeight: 600, padding: '11px 22px', borderRadius: '999px' }}>Lernheld</a>
         </nav>
       </header>
 
-      {/* HERO mit echtem Foto */}
-      <section className="fade-up" style={{ position: 'relative', height: mobil ? '85vh' : '100vh', minHeight: mobil ? '600px' : '720px', overflow: 'hidden' }}>
-        <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,28,30,0.25) 0%, rgba(28,28,30,0.55) 60%, rgba(28,28,30,0.80) 100%)' }} />
-        <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: mobil ? '0 22px 60px' : '0 60px 100px' }}>
-          <div style={{ maxWidth: '880px' }}>
-            <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(10px)', color: F.white, padding: '8px 18px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '26px', border: '1px solid rgba(255,255,255,0.25)' }}>
-              Die Lern-Plattform
-            </span>
-            <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '54px' : '108px', fontWeight: 600, lineHeight: 0.96, margin: '0 0 22px', color: F.white, letterSpacing: '-0.035em' }}>
-              Alles fürs Lernen,<br /><span style={{ fontStyle: 'italic', fontWeight: 500 }}>an einem Ort</span>.
-            </h1>
-            <p style={{ fontSize: mobil ? '16px' : '20px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.55, margin: '0 0 36px', maxWidth: '600px' }}>
-              Lernmaterialien zum Kaufen, dein eigener Lernplan, der Lernheld für Schulaufgaben und ein kostenloses Quiz.
-            </p>
-            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <a href="#bereiche" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                Loslegen →
-              </a>
-              <a href="/shop" className="btn-ghost" style={{ background: 'transparent', color: F.white, textDecoration: 'none', padding: '16px 32px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, border: `1.5px solid rgba(255,255,255,0.7)` }}>
-                Zum Shop
-              </a>
-            </div>
+      {/* HERO - hell, freundlich, pastell */}
+      <section className="fade-up" style={{ background: F.bgWarm, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '22px' : '60px', paddingRight: mobil ? '22px' : '60px', position: 'relative', overflow: 'hidden' }}>
+        {/* Schwebende deko-kreise */}
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '120px', right: '8%', width: '120px', height: '120px', borderRadius: '50%', background: F.mint, opacity: 0.45 }} />
+            <div style={{ position: 'absolute', bottom: '60px', left: '6%', width: '90px', height: '90px', borderRadius: '50%', background: F.sky, opacity: 0.5 }} />
+            <div style={{ position: 'absolute', top: '40%', right: '4%', width: '60px', height: '60px', borderRadius: '50%', background: F.lavender, opacity: 0.55 }} />
+          </>
+        )}
+        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+          <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 20px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,122,107,0.18)' }}>
+            ✦ Die Lern-Plattform
+          </span>
+          <h1 style={{ fontFamily: SERIF, fontSize: mobil ? '52px' : '102px', fontWeight: 600, lineHeight: 0.96, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.035em' }}>
+            Alles fürs Lernen,<br /><span style={{ fontStyle: 'italic', color: F.coral }}>an einem Ort</span>.
+          </h1>
+          <p style={{ fontSize: mobil ? '17px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: '0 auto 38px', maxWidth: '620px' }}>
+            Lernmaterialien zum Kaufen, dein eigener Lernplan, der Lernheld für Schulaufgaben und ein kostenloses Quiz.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="#bereiche" className="btn-primary" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              Loslegen →
+            </a>
+            <a href="/shop" className="btn-ghost" style={{ background: 'transparent', color: F.ink, textDecoration: 'none', padding: '17px 34px', borderRadius: '999px', fontSize: '15px', fontWeight: 600, border: `1.5px solid ${F.ink}` }}>
+              Zum Shop
+            </a>
           </div>
         </div>
       </section>
 
-      {/* 4 BEREICHE */}
+      {/* 4 BEREICHE - Duolingo-Style Pastell-Kacheln */}
       <section id="bereiche" style={{ background: F.bg, padding: mobil ? '70px 22px' : '120px 60px' }}>
         <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div style={{ marginBottom: mobil ? '36px' : '56px', maxWidth: '760px' }}>
-            <p style={{ fontSize: '11px', letterSpacing: '0.24em', textTransform: 'uppercase', color: F.coral, fontWeight: 700, margin: '0 0 14px' }}>Die Plattform</p>
-            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '42px' : '60px', fontWeight: 600, color: F.ink, margin: '0 0 16px', letterSpacing: '-0.03em', lineHeight: 1.0 }}>
+          <div style={{ textAlign: 'center', marginBottom: mobil ? '40px' : '60px' }}>
+            <p style={{ fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: F.coral, fontWeight: 700, margin: '0 0 14px' }}>Die Plattform</p>
+            <h2 style={{ fontFamily: SERIF, fontSize: mobil ? '40px' : '60px', fontWeight: 600, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.0 }}>
               Vier Bereiche, ein Ziel.
             </h2>
             <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, margin: 0, lineHeight: 1.55 }}>
-              Jeder Bereich hat seine eigene Seite — wähle, was du gerade brauchst.
+              Jeder Bereich hat seine eigene Seite.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(2, 1fr)', gap: mobil ? '18px' : '24px' }}>
-            <Glied href="/shop" foto={FOTO.shop} nummer="01" label="Shop" titel="Lernmaterialien" sub="13 Pakete · ab 0,99 €" />
-            <Glied href="/lernplan" foto={FOTO.lernplan} nummer="02" label="Kostenlos" titel="Mein Lernplan" sub="Wöchentlicher Plan" />
-            <Glied href="/lernheld" foto={FOTO.lernheld} nummer="03" label="Premium · 1,99 €" titel="Lernheld" sub="Plan für die Schulaufgabe" note1 />
-            <Glied href="/quiz" foto={FOTO.quiz} nummer="04" label="Kostenlos" titel="Quiz" sub="61 Themen · Klasse 1–13" />
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(2, 1fr)', gap: mobil ? '20px' : '28px' }}>
+            <Glied
+              href="/shop"
+              bg={F.sky}
+              bgDeep={F.skyDeep}
+              nummer="01"
+              label="Shop"
+              titel="Lernmaterialien"
+              sub="13 Pakete · ab 0,99 €"
+              foto={FOTO.shop}
+              mobil={mobil}
+            />
+            <Glied
+              href="/lernplan"
+              bg={F.mint}
+              bgDeep={F.mintDeep}
+              nummer="02"
+              label="Kostenlos"
+              titel="Mein Lernplan"
+              sub="Wöchentlicher Plan"
+              foto={FOTO.lernplan}
+              mobil={mobil}
+            />
+            <Glied
+              href="/lernheld"
+              bg={F.peach}
+              bgDeep={F.peachDeep}
+              nummer="03"
+              label="Premium · 1,99 €"
+              titel="Lernheld"
+              sub="Plan für die Schulaufgabe"
+              foto={FOTO.lernheld}
+              note1
+              mobil={mobil}
+            />
+            <Glied
+              href="/quiz"
+              bg={F.lavender}
+              bgDeep={F.lavenderDeep}
+              nummer="04"
+              label="Kostenlos"
+              titel="Quiz"
+              sub="61 Themen · Klasse 1–13"
+              foto={FOTO.quiz}
+              mobil={mobil}
+            />
           </div>
         </div>
       </section>
@@ -175,24 +225,35 @@ export default function Home() {
   );
 }
 
-function Glied({ href, foto, nummer, label, titel, sub, note1 }: { href: string; foto: string; nummer: string; label: string; titel: string; sub: string; note1?: boolean }) {
+function Glied({ href, bg, bgDeep, nummer, label, titel, sub, foto, note1, mobil }: { href: string; bg: string; bgDeep: string; nummer: string; label: string; titel: string; sub: string; foto: string; note1?: boolean; mobil: boolean }) {
   return (
-    <a href={href} className="glied" style={{ position: 'relative', display: 'block', textDecoration: 'none', borderRadius: '20px', overflow: 'hidden', aspectRatio: '4 / 3', boxShadow: '0 10px 30px rgba(28,28,30,0.10)' }}>
-      <img src={foto} alt="" className="glied-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,28,30,0.10) 0%, rgba(28,28,30,0.30) 50%, rgba(28,28,30,0.85) 100%)' }} />
-      {note1 && (
-        <div style={{ position: 'absolute', top: '24px', left: '24px', transform: 'rotate(-8deg)', color: '#dc2626', fontFamily: '"Caveat", "Cormorant Garamond", cursive', fontWeight: 700, fontSize: '100px', lineHeight: 0.9, textShadow: '0 2px 8px rgba(0,0,0,0.18)', letterSpacing: '-0.02em' }}>
-          1
-          <div style={{ fontSize: '18px', fontFamily: '"Caveat", cursive', fontWeight: 600, marginTop: '4px', textShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>sehr gut!</div>
-        </div>
-      )}
-      <div style={{ position: 'absolute', top: '22px', right: '24px', fontFamily: SERIF, fontSize: '52px', fontStyle: 'italic', fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '-0.02em', lineHeight: 1 }}>{nummer}</div>
-      <div style={{ position: 'absolute', bottom: '28px', left: '28px', right: '28px', color: F.white }}>
-        <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(10px)', color: F.white, padding: '5px 12px', borderRadius: '999px', fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.22)' }}>
+    <a href={href} className="glied" style={{ display: 'block', textDecoration: 'none', background: bg, borderRadius: '28px', padding: mobil ? '24px' : '32px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 28px rgba(28,28,30,0.06)', color: '#1c1c1e' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: mobil ? '18px' : '24px' }}>
+        <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(6px)', color: bgDeep, padding: '6px 14px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
           {label}
         </span>
-        <h3 style={{ fontFamily: SERIF, fontSize: '34px', fontWeight: 600, margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1.0 }}>{titel}</h3>
-        <p style={{ fontSize: '14px', margin: 0, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>{sub}</p>
+        <span style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: mobil ? '38px' : '48px', fontStyle: 'italic', fontWeight: 600, color: bgDeep, opacity: 0.55, lineHeight: 1, letterSpacing: '-0.02em' }}>{nummer}</span>
+      </div>
+
+      {/* Foto in weissem Rahmen wie ein Polaroid */}
+      <div style={{ background: '#ffffff', padding: mobil ? '10px 10px 14px' : '12px 12px 16px', borderRadius: '14px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)', marginBottom: mobil ? '20px' : '26px', position: 'relative', transform: 'rotate(-1deg)' }}>
+        <div style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: '8px', overflow: 'hidden', background: '#f0f0f0' }}>
+          <img src={foto} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {note1 && (
+            <div style={{ position: 'absolute', top: '12px', right: '14px', transform: 'rotate(-8deg)', color: '#dc2626', fontFamily: '"Caveat", cursive', fontWeight: 700, fontSize: mobil ? '64px' : '84px', lineHeight: 0.9, textShadow: '0 2px 6px rgba(255,255,255,0.6)', letterSpacing: '-0.02em' }}>
+              1
+              <div style={{ fontSize: mobil ? '14px' : '16px', fontWeight: 700, marginTop: '2px', textShadow: '0 1px 4px rgba(255,255,255,0.6)' }}>sehr gut!</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: mobil ? '30px' : '38px', fontWeight: 700, margin: '0 0 4px', letterSpacing: '-0.02em', lineHeight: 1.0 }}>{titel}</h3>
+          <p style={{ fontSize: '14.5px', margin: 0, color: 'rgba(28,28,30,0.65)', fontWeight: 500 }}>{sub}</p>
+        </div>
+        <span className="arrow" style={{ fontSize: '24px', color: bgDeep, fontWeight: 700, lineHeight: 1 }}>→</span>
       </div>
     </a>
   );
