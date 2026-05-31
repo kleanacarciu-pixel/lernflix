@@ -191,83 +191,77 @@ export default function Home() {
               <span>Ab 0,99 €</span>
             </div>
           </div>
-          {/* Laptop-Mockup mit Lernflix-Seite drauf (TradeStation-Style) */}
-          <div className="fade-up-2" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ perspective: '2000px', width: '100%', maxWidth: mobil ? '420px' : '620px' }}>
-              <div className="laptop-tilt" style={{ transformStyle: 'preserve-3d', transform: mobil ? 'rotateY(-8deg) rotateX(3deg)' : 'rotateY(-14deg) rotateX(4deg)' }}>
-                {/* Screen (laptop top) */}
-                <div style={{ background: '#0a0a0a', borderRadius: '14px 14px 4px 4px', padding: mobil ? '10px 10px 0' : '14px 14px 0', boxShadow: '0 50px 100px rgba(0,0,0,0.55), 0 20px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05)' }}>
-                  {/* Camera notch */}
-                  <div style={{ height: mobil ? '10px' : '14px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: mobil ? '4px' : '6px' }}>
-                    <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#1f1f1f' }} />
+          {/* Hero-Foto MIT Lernflix-Seite ueberlagert auf dem Laptop-Bildschirm */}
+          <div className="fade-up-2" style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', aspectRatio: '4 / 3', boxShadow: '0 30px 80px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.30)' }}>
+              {/* Foto */}
+              <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              {/* Subtiler dunkler tone fuer kontrast */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,31,58,0.05) 0%, rgba(11,31,58,0.25) 100%)' }} />
+
+              {/* Lernflix-Seite, positioniert ueber dem Laptop-Bildschirm im Foto */}
+              <div style={{
+                position: 'absolute',
+                top: '8%',
+                left: '11%',
+                width: '78%',
+                height: '64%',
+                background: F.navy,
+                borderRadius: '5px',
+                overflow: 'hidden',
+                transform: 'perspective(1400px) rotateY(-7deg) rotateX(3deg)',
+                transformOrigin: 'center center',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(0,0,0,0.6)',
+              }}>
+                {/* Browser bar */}
+                <div style={{ background: '#ececec', padding: mobil ? '4px 8px' : '6px 10px', display: 'flex', alignItems: 'center', gap: mobil ? '3px' : '5px', borderBottom: '1px solid #d8d8d8' }}>
+                  <div style={{ display: 'flex', gap: '3px' }}>
+                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#ff5f57' }} />
+                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#febc2e' }} />
+                    <div style={{ width: mobil ? '5px' : '7px', height: mobil ? '5px' : '7px', borderRadius: '50%', background: '#28c840' }} />
                   </div>
-                  {/* Browser/screen content */}
-                  <div style={{ background: '#ffffff', aspectRatio: '16 / 10', borderRadius: '2px', overflow: 'hidden', position: 'relative' }}>
-                    {/* Browser chrome */}
-                    <div style={{ background: '#ececec', padding: mobil ? '6px 8px' : '8px 12px', display: 'flex', alignItems: 'center', gap: mobil ? '4px' : '6px', borderBottom: '1px solid #d8d8d8' }}>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <div style={{ width: mobil ? '7px' : '9px', height: mobil ? '7px' : '9px', borderRadius: '50%', background: '#ff5f57' }} />
-                        <div style={{ width: mobil ? '7px' : '9px', height: mobil ? '7px' : '9px', borderRadius: '50%', background: '#febc2e' }} />
-                        <div style={{ width: mobil ? '7px' : '9px', height: mobil ? '7px' : '9px', borderRadius: '50%', background: '#28c840' }} />
-                      </div>
-                      <div style={{ marginLeft: mobil ? '8px' : '14px', flex: 1, background: '#ffffff', padding: mobil ? '3px 8px' : '4px 12px', borderRadius: '4px', fontSize: mobil ? '8px' : '10px', color: '#74747c', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ color: '#10B981', fontSize: mobil ? '7px' : '9px' }}>●</span> lernflix.lernemitanna.de
-                      </div>
-                    </div>
-                    {/* Mini Lernflix homepage */}
-                    <div style={{ background: F.navy, color: F.white, padding: mobil ? '14px 16px 18px' : '22px 28px 26px', height: 'calc(100% - 30px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                      {/* Mini glow */}
-                      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(400px 200px at 90% 0%, rgba(23,105,255,0.18), transparent 60%)', pointerEvents: 'none' }} />
-                      {/* Mini nav */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                        <span style={{ fontSize: mobil ? '11px' : '14px', fontWeight: 800, letterSpacing: '-0.025em' }}>
-                          Lern<span style={{ color: F.blue }}>flix</span>
-                        </span>
-                        <div style={{ display: 'flex', gap: mobil ? '8px' : '14px', alignItems: 'center', fontSize: mobil ? '7px' : '9px', fontWeight: 500 }}>
-                          <span style={{ opacity: 0.7 }}>Shop</span>
-                          <span style={{ opacity: 0.7 }}>Lernplan</span>
-                          <span style={{ opacity: 0.7 }}>Quiz</span>
-                          <span style={{ background: F.blue, color: F.white, padding: mobil ? '3px 8px' : '4px 10px', borderRadius: '5px', fontWeight: 700 }}>Lernheld</span>
-                        </div>
-                      </div>
-                      {/* Mini hero */}
-                      <div style={{ marginTop: mobil ? '12px' : '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
-                        <span style={{ fontSize: mobil ? '6.5px' : '8.5px', color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: '0.16em', fontFamily: '"JetBrains Mono", monospace', display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: mobil ? '6px' : '10px' }}>
-                          <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: F.green }} />
-                          DIE LERN-PLATTFORM
-                        </span>
-                        <h3 style={{ fontFamily: SANS, fontSize: mobil ? '20px' : '32px', fontWeight: 800, lineHeight: 0.98, margin: '0 0 8px', letterSpacing: '-0.035em', color: F.white }}>
-                          Verstehen, statt<br />auswendig <span style={{ color: F.blue }}>lernen</span>.
-                        </h3>
-                        <p style={{ fontSize: mobil ? '7px' : '9.5px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.4, margin: mobil ? '0 0 8px' : '0 0 14px', maxWidth: '70%' }}>
-                          Lernmaterialien, Lernplan, Lernheld und Quiz. Mathe und Physik, Klasse 1 bis 13.
-                        </p>
-                        <div style={{ display: 'flex', gap: mobil ? '5px' : '8px' }}>
-                          <span style={{ background: F.blue, color: F.white, padding: mobil ? '4px 9px' : '6px 14px', borderRadius: mobil ? '4px' : '6px', fontSize: mobil ? '7px' : '9px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            Loslegen →
-                          </span>
-                          <span style={{ background: 'transparent', color: F.white, padding: mobil ? '4px 9px' : '6px 14px', borderRadius: mobil ? '4px' : '6px', fontSize: mobil ? '7px' : '9px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.22)' }}>
-                            Zum Shop
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  <div style={{ marginLeft: mobil ? '4px' : '8px', flex: 1, background: '#ffffff', padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontSize: mobil ? '6px' : '8px', color: '#74747c', fontWeight: 500 }}>
+                    lernflix.lernemitanna.de
                   </div>
                 </div>
-                {/* Laptop base (hinge + bottom) */}
-                <div style={{ width: '108%', marginLeft: '-4%', height: mobil ? '10px' : '14px', background: 'linear-gradient(to bottom, #d4d4d4 0%, #9a9a9a 30%, #5a5a5a 80%, #2a2a2a 100%)', borderRadius: '0 0 14px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.20), inset 0 -1px 0 rgba(0,0,0,0.3)', position: 'relative' }}>
-                  {/* Trackpad notch */}
-                  <div style={{ position: 'absolute', bottom: '-1px', left: '50%', transform: 'translateX(-50%)', width: '14%', height: '3px', background: '#1a1a1a', borderRadius: '0 0 6px 6px' }} />
+                {/* Mini Lernflix-Inhalt */}
+                <div style={{ background: F.navy, color: F.white, padding: mobil ? '10px 12px' : '18px 22px', height: 'calc(100% - 18px)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(300px 160px at 90% 10%, rgba(23,105,255,0.20), transparent 60%)', pointerEvents: 'none' }} />
+                  {/* Mini nav */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                    <span style={{ fontSize: mobil ? '9px' : '12px', fontWeight: 800, letterSpacing: '-0.025em' }}>
+                      Lern<span style={{ color: F.blue }}>flix</span>
+                    </span>
+                    <div style={{ display: 'flex', gap: mobil ? '6px' : '10px', alignItems: 'center', fontSize: mobil ? '5.5px' : '7.5px', fontWeight: 500 }}>
+                      <span style={{ opacity: 0.7 }}>Shop</span>
+                      <span style={{ opacity: 0.7 }}>Lernplan</span>
+                      <span style={{ opacity: 0.7 }}>Quiz</span>
+                      <span style={{ background: F.blue, color: F.white, padding: mobil ? '2px 6px' : '3px 8px', borderRadius: '3px', fontWeight: 700 }}>Lernheld</span>
+                    </div>
+                  </div>
+                  {/* Mini hero */}
+                  <div style={{ marginTop: mobil ? '8px' : '14px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
+                    <span style={{ fontSize: mobil ? '5px' : '7px', color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: '0.16em', fontFamily: '"JetBrains Mono", monospace', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: mobil ? '4px' : '6px' }}>
+                      <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: F.green }} />
+                      DIE LERN-PLATTFORM · KLASSE 1—13
+                    </span>
+                    <h3 style={{ fontFamily: SANS, fontSize: mobil ? '14px' : '24px', fontWeight: 800, lineHeight: 0.96, margin: '0 0 6px', letterSpacing: '-0.035em', color: F.white }}>
+                      Verstehen, statt<br />auswendig <span style={{ color: F.blue }}>lernen</span>.
+                    </h3>
+                    <p style={{ fontSize: mobil ? '5.5px' : '8px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.4, margin: mobil ? '0 0 6px' : '0 0 10px', maxWidth: '75%' }}>
+                      Mathe und Physik, Klasse 1 bis 13. Sofort verfügbar.
+                    </p>
+                    <div style={{ display: 'flex', gap: mobil ? '4px' : '6px' }}>
+                      <span style={{ background: F.blue, color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600 }}>
+                        Loslegen →
+                      </span>
+                      <span style={{ background: 'transparent', color: F.white, padding: mobil ? '3px 7px' : '4px 10px', borderRadius: mobil ? '3px' : '4px', fontSize: mobil ? '5.5px' : '8px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.22)' }}>
+                        Zum Shop
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Peeking Formel-Card (Brilliant-Style) - bleibt */}
-            <div className="float-y" style={{ position: 'absolute', bottom: mobil ? '-30px' : '-40px', left: mobil ? '4px' : '-20px', background: F.white, color: F.ink, borderRadius: '14px', padding: mobil ? '14px 18px' : '18px 22px', boxShadow: '0 24px 50px rgba(0,0,0,0.30), 0 4px 12px rgba(0,0,0,0.15)', minWidth: mobil ? '170px' : '220px', zIndex: 5 }}>
-              <p style={{ fontSize: '10.5px', fontWeight: 700, color: F.blue, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 8px', fontFamily: '"JetBrains Mono", monospace' }}>Pythagoras</p>
-              <p style={{ fontSize: mobil ? '20px' : '24px', fontWeight: 700, margin: '0 0 6px', fontFamily: '"JetBrains Mono", monospace', letterSpacing: '-0.01em' }}>
-                a<sup style={{ fontSize: '14px' }}>2</sup> + b<sup style={{ fontSize: '14px' }}>2</sup> = c<sup style={{ fontSize: '14px' }}>2</sup>
-              </p>
-              <p style={{ fontSize: '12.5px', color: F.inkSoft, margin: 0, fontWeight: 500 }}>Rechtwinkliges Dreieck</p>
             </div>
           </div>
         </div>
