@@ -144,7 +144,7 @@ export default function Shop() {
 
       {/* HERO mit Foto */}
       <section style={{ position: 'relative', height: mobil ? '52vh' : '60vh', minHeight: mobil ? '380px' : '480px', overflow: 'hidden' }}>
-        <img src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1600&auto=format&fit=crop&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1600&auto=format&fit=crop&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(28,28,30,0.25) 0%, rgba(28,28,30,0.65) 100%)' }} />
         <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'flex-end', padding: mobil ? '0 22px 50px' : '0 60px 80px' }}>
           <div style={{ maxWidth: '900px' }}>

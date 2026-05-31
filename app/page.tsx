@@ -16,18 +16,18 @@ const F = {
 const SERIF = '"Cormorant Garamond", Georgia, serif';
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
-// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar)
-// hero: schueler mit lern-stress / kopf in haenden
-// shop: bunte buecher-stapel
-// lernplan: kalender mit todo-liste & stiften
-// lernheld: handgeschriebene schulaufgabe (+ Note 1 Stempel via overlay)
-// quiz: kind mit tablet, freundlich
+// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar) — alle kindgerecht
+// hero: junger schueler beim lernen / hausaufgaben
+// shop: bunte kinderbuecher
+// lernplan: bunte todo-liste / planer
+// lernheld: schulaufgabe mit handschrift (+ Note 1 Stempel via overlay)
+// quiz: kind / teenie mit tablet
 const FOTO = {
-  hero: 'https://images.unsplash.com/photo-1503428593586-e225b39bddfe?w=1600&auto=format&fit=crop&q=85',
-  shop: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&auto=format&fit=crop&q=85',
-  lernplan: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200&auto=format&fit=crop&q=85',
-  lernheld: 'https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=1200&auto=format&fit=crop&q=85',
-  quiz: 'https://images.unsplash.com/photo-1503676382389-4809596d5290?w=1200&auto=format&fit=crop&q=85',
+  hero: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=1600&auto=format&fit=crop&q=85',
+  shop: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=1200&auto=format&fit=crop&q=85',
+  lernplan: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=1200&auto=format&fit=crop&q=85',
+  lernheld: 'https://images.unsplash.com/photo-1546484958-3a8aa9d6fff5?w=1200&auto=format&fit=crop&q=85',
+  quiz: 'https://images.unsplash.com/photo-1632571401005-458e9d244591?w=1200&auto=format&fit=crop&q=85',
 };
 
 export default function Home() {
