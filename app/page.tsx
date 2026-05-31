@@ -16,13 +16,13 @@ const F = {
 const SERIF = '"Cormorant Garamond", Georgia, serif';
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
 
-// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar)
+// Echte Fotos von Unsplash (kostenlos & kommerziell nutzbar) - kindgerecht, Schul-Look
 const FOTO = {
-  hero: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1600&auto=format&fit=crop&q=85',
-  shop: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1200&auto=format&fit=crop&q=85',
-  lernplan: 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200&auto=format&fit=crop&q=85',
-  lernheld: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&auto=format&fit=crop&q=85',
-  quiz: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&auto=format&fit=crop&q=85',
+  hero: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1600&auto=format&fit=crop&q=85',
+  shop: 'https://images.unsplash.com/photo-1497486751825-1233686d5d80?w=1200&auto=format&fit=crop&q=85',
+  lernplan: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&auto=format&fit=crop&q=85',
+  lernheld: 'https://images.unsplash.com/photo-1488998427799-e3362cec87c3?w=1200&auto=format&fit=crop&q=85',
+  quiz: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=1200&auto=format&fit=crop&q=85',
 };
 
 export default function Home() {
