@@ -1,467 +1,467 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-type Produkt = {
-  id: number;
-  slug?: string;
-  kategorie: string;
-  typ: string;
-  titel: string;
-  beschreibung: string;
-  details: string[];
-  seiten: string;
-  preis: number;
-  vorschau: string;
+const F = {
+  bg: '#fffdf8',
+  bgSoft: '#fef6e8',
+  bgWarm: '#fff8ee',
+  bgCream: '#fef3dd',
+  bgMint: '#e7f5ec',
+  bgPeach: '#fde4d4',
+  bgSky: '#dceffb',
+  ink: '#0F172A',
+  inkSoft: '#475569',
+  inkMuted: '#94A3B8',
+  border: '#E2E8F0',
+  borderSoft: '#EEF2F6',
+  blue: '#1769FF',
+  blueDeep: '#1156DD',
+  blueLight: '#E8F0FF',
+  navy: '#0B1F3A',
+  navyDark: '#08182C',
+  navySoft: '#152B4D',
+  green: '#10B981',
+  coral: '#ff5b4a',
+  yellow: '#FFCB45',
+  lavender: '#a78bfa',
+  white: '#ffffff',
+};
+const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+
+const FOTO = {
+  hero: 'https://unsplash.com/photos/pfkknbsGuIc/download?w=1400&fm=jpg&q=85',
+  shop: 'https://unsplash.com/photos/ETRPjvb0KM0/download?w=1000&fm=jpg&q=85',
+  lernplan: 'https://unsplash.com/photos/iMfG5py52LA/download?w=1000&fm=jpg&q=85',
+  lernheld: 'https://unsplash.com/photos/zNFT3o8HWks/download?w=1400&fm=jpg&q=85',
+  quiz: 'https://unsplash.com/photos/9Ul7x0bk3qE/download?w=1000&fm=jpg&q=85',
 };
 
+// Karten fuer den schwebenden card-stack im hero (bunte lernpaket-cover)
+const KARTEN = [
+  { t: 'Brüche', sym: '¾', bg: '#dceffb', akzent: '#1769FF', fach: 'Mathe', klasse: 'Klasse 5—7', preis: 'ab 0,99 €' },
+  { t: 'Pythagoras', sym: 'c²', bg: '#fde4d4', akzent: '#cf4a40', fach: 'Mathe', klasse: 'Klasse 8—10', preis: 'ab 1,99 €' },
+  { t: 'Funktionen', sym: 'ƒ(x)', bg: '#e7f5ec', akzent: '#2e8a5c', fach: 'Mathe', klasse: 'Klasse 9—11', preis: 'ab 1,99 €' },
+  { t: 'Mechanik', sym: 'F=ma', bg: '#fef3dd', akzent: '#d99a36', fach: 'Physik', klasse: 'Klasse 7—10', preis: 'ab 0,99 €' },
+  { t: 'Optik', sym: '◐', bg: '#e7defb', akzent: '#7656b0', fach: 'Physik', klasse: 'Klasse 8—10', preis: 'ab 0,99 €' },
+];
+
 export default function Home() {
-  const [ausgewaehlt, setAusgewaehlt] = useState<Produkt | null>(null);
-  const [phase, setPhase] = useState<'kratzen' | 'weglaufen' | 'zurueck' | 'schild'>('kratzen');
-  const [scrolled, setScrolled] = useState(false);
   const [breite, setBreite] = useState(1200);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const run = () => {
-      setPhase('kratzen');
-      setTimeout(() => setPhase('weglaufen'), 3500);
-      setTimeout(() => setPhase('zurueck'), 5500);
-      setTimeout(() => setPhase('schild'), 7200);
-    };
-    run();
-    const loop = setInterval(run, 12000);
-    return () => clearInterval(loop);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    const handleResize = () => setBreite(window.innerWidth);
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', handleResize);
-    handleResize();
+    const onResize = () => setBreite(window.innerWidth);
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll);
+    onResize();
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
   const mobil = breite < 768;
 
-  const kaufen = async (produkt: Produkt) => {
-    if (produkt.slug) {
-      window.location.href = `/materialien/${produkt.slug}`;
-      return;
-    }
-    // Fallback alter PDF-Flow
-    const response = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productName: produkt.titel, price: produkt.preis }),
-    });
-    const data = await response.json();
-    if (data.url) window.location.href = data.url;
-  };
-
-  const produkte: Produkt[] = [
-    {
-      id: 1, slug: 'geometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Geometrie Klasse 6–9',
-      beschreibung: 'Alle Geometrie-Themen — Dreiecke, Vierecke, Kreis, Körper. Mit beschrifteten Figuren und durchgerechneten Beispielen.',
-      details: ['13 Sektionen mit SVG-Skizzen', 'Pythagoras + Höhensatz + Kathetensatz', 'Komplette Trigonometrie', 'Alle Vierecke & Körper', 'Strahlensätze & Ähnlichkeit', 'Schnellübersicht am Ende'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 2, slug: 'brueche', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Brüche & Bruchrechnung',
-      beschreibung: 'Brüche endlich verstehen — kürzen, erweitern, addieren, multiplizieren. Mit Beispielen aus dem Alltag und kleinen Witzen.',
-      details: ['Was ist ein Bruch?', 'Kürzen & Erweitern', 'Plus, Minus, Mal, Geteilt', 'Gemischte Brüche, Dezimalzahlen', 'Eselsbrücken und Witze', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 3, slug: 'prozent', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Prozent & Zinsen',
-      beschreibung: 'Rabatte verstehen, Mehrwertsteuer rechnen, Zinsen und Zinseszins — alles mit einfachen Tricks erklärt.',
-      details: ['Die Grundformel der Prozentrechnung', '3 klassische Aufgabentypen', 'Aufschlag & Rabatt', 'Zinsrechnung & Zinseszins', 'Promille und ppm', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 4, slug: 'gleichungen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Gleichungen & Terme',
-      beschreibung: 'Vom einfachen x = 5 bis zur pq-Formel — Gleichungen lösen Schritt für Schritt mit klaren Tipps.',
-      details: ['Terme vereinfachen', 'Lineare Gleichungen', 'Gleichungssysteme (3 Methoden)', 'Quadratische Gleichungen', 'pq-Formel & Mitternachtsformel', 'Ungleichungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 5, slug: 'funktionen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Funktionen — linear & quadratisch',
-      beschreibung: 'Geraden, Parabeln, Hyperbeln, Wurzeln — alle Funktionstypen mit Skizzen und Beispielen.',
-      details: ['Lineare Funktionen (Gerade)', 'Quadratische Funktionen (Parabel)', 'pq-Formel anwenden', 'Schnittpunkte, Steigung, Scheitel', 'Spezielle Funktionen kurz vorgestellt', 'Symmetrie und Monotonie'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 6, slug: 'stochastik', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Wahrscheinlichkeit & Statistik',
-      beschreibung: 'Würfel, Münze, Karten und Mittelwert — Wahrscheinlichkeit verstehen mit Baumdiagrammen und vielen Beispielen.',
-      details: ['Grundlagen der Wahrscheinlichkeit', 'Mehrstufige Versuche & Baumdiagramme', 'Mit und ohne Zurücklegen', 'Kombinatorik & Anordnungen', 'Statistik: Mittelwert, Median, Modus', 'Binomialverteilung'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 7, slug: 'trigonometrie', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Trigonometrie',
-      beschreibung: 'sin, cos, tan kein Geheimnis mehr — mit Eselsbrücken und durchgerechneten Beispielen.',
-      details: ['Sinus, Kosinus, Tangens', 'Eselsbrücke GAGA HUDI', 'Sinussatz & Kosinussatz', 'Wertetabelle wichtiger Winkel', 'Trigonometrische Funktionen', 'Bogenmaß und Grad'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/geometrie-vorschau.jpeg',
-    },
-    {
-      id: 8, slug: 'potenzen', kategorie: 'mathe', typ: 'Lernpaket HTML', titel: 'Potenzen',
-      beschreibung: 'Die fünf Potenzgesetze leicht erklärt — mit Beispielen, Übungen und Tipps.',
-      details: ['Alle 5 Potenzgesetze', 'Negative & gebrochene Exponenten', 'Wurzeln und Wurzelgesetze', 'Wissenschaftliche Schreibweise', 'Wachstum und Zerfall', 'Logarithmen'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/potenzen-vorschau.jpeg',
-    },
-    {
-      id: 9, slug: 'mechanik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Mechanik',
-      beschreibung: 'Alle Mechanik-Themen — Geschwindigkeit, Kraft, Energie, Hebel, Reibung mit Skizzen aus dem Alltag.',
-      details: ['Bewegung & freier Fall', 'Newton-Gesetze', 'Schiefe Ebene', 'Energie, Arbeit, Leistung', 'Hebel & Flaschenzug', 'Dichte, Druck, Auftrieb'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 10, slug: 'elektrizitaet', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Elektrizität & Stromkreise',
-      beschreibung: 'Ohm, Spannung, Stromstärke — Elektrizität kapieren und die Stromrechnung verstehen.',
-      details: ['Ohm´sches Gesetz', 'Reihen- und Parallelschaltung', 'Elektrische Arbeit & Leistung', 'Spezifischer Widerstand', 'Gefahren des Stroms', 'Übungen mit Lösungen'],
-      seiten: 'HTML', preis: 1.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 11, slug: 'optik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Optik & Wellen',
-      beschreibung: 'Licht, Spiegel, Linsen, Regenbogen — alles zum Thema Sehen, Brechen und Strahlen.',
-      details: ['Lichtausbreitung & Schatten', 'Reflexion am Spiegel', 'Lichtbrechung & Snellius', 'Linsen und Linsenformel', 'Spektrum und Farben', 'Wellen und Welleneigenschaften'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 12, slug: 'waerme', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Wärmelehre',
-      beschreibung: 'Temperatur, Wärme, Aggregatzustände, Gase — alles über das Zappeln der Atome.',
-      details: ['Temperatur und Skalen', 'Wärmekapazität', 'Aggregatzustände & Phasenübergänge', 'Wärmeübertragung', 'Längenausdehnung', 'Gasgesetze'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-    {
-      id: 13, slug: 'atomphysik', kategorie: 'physik', typ: 'Lernpaket HTML', titel: 'Atomphysik & Strahlung',
-      beschreibung: 'Atome, Isotope, Radioaktivität, Kernspaltung — die kleinen Bausteine der Welt einfach erklärt.',
-      details: ['Atomaufbau & Isotope', 'Periodensystem', 'α-, β-, γ-Strahlung', 'Halbwertszeit', 'Kernspaltung & Kernfusion', 'Quantenphysik im Überblick'],
-      seiten: 'HTML', preis: 0.99, vorschau: '/mechanik-vorschau.jpeg',
-    },
-  ];
-
-  const mathe = produkte.filter(p => p.kategorie === 'mathe');
-  const physik = produkte.filter(p => p.kategorie === 'physik');
-
-  const ProduktKarte = ({ p }: { p: Produkt }) => (
-    <div
-      onClick={() => setAusgewaehlt(p)}
-      style={{backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #e5e5ea', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 12px rgba(0,0,0,0.06)'}}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,113,227,0.15)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'; }}
-    >
-      <div style={{background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)', height: '160px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
-        <span style={{fontSize: '52px'}}>{p.kategorie === 'mathe' ? '📐' : '⚡'}</span>
-        <span style={{fontSize: '11px', fontWeight: '700', color: '#0071e3', textTransform: 'uppercase', letterSpacing: '0.1em', backgroundColor: 'rgba(0,113,227,0.1)', padding: '3px 10px', borderRadius: '20px'}}>{p.typ}</span>
-      </div>
-      <div style={{padding: '18px 20px'}}>
-        <h4 style={{margin: '0 0 8px', fontSize: '17px', fontWeight: '700', color: '#1d1d1f'}}>{p.titel}</h4>
-        <p style={{margin: '0 0 14px', fontSize: '14px', color: '#6e6e73', lineHeight: '1.5'}}>{p.beschreibung}</p>
-        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f5', paddingTop: '12px'}}>
-          <span style={{fontSize: '22px', fontWeight: '700', color: '#0071e3'}}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-          <span style={{fontSize: '13px', color: '#0071e3', fontWeight: '600', backgroundColor: '#e8f0fe', padding: '6px 14px', borderRadius: '20px'}}>Details →</span>
-        </div>
-      </div>
-    </div>
-  );
-
-  const kategorien = [
-    {
-      href: '#mathe', titel: 'Mathematik', desc: 'Formeln, Übungen & Erklärungen',
-      gradient: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.9"/><rect x="22" y="4" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><rect x="4" y="22" width="14" height="14" rx="3" fill="white" fillOpacity="0.6"/><path d="M25 25h8M29 21v8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/></svg>),
-    },
-    {
-      href: '#physik', titel: 'Physik', desc: 'Gesetze, Formeln & Experimente',
-      gradient: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="5" fill="white"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(60 20 20)"/><ellipse cx="20" cy="20" rx="16" ry="7" stroke="white" strokeWidth="2" fill="none" strokeOpacity="0.7" transform="rotate(-60 20 20)"/></svg>),
-    },
-    {
-      href: '#pakete', titel: 'Lernpakete', desc: 'Abitur, Sommer & Spezialthemen',
-      gradient: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="14" width="28" height="20" rx="3" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2"/><path d="M14 14V10a6 6 0 0 1 12 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M20 22v4M16 24h8" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
-    },
-    {
-      href: '/lernheld', titel: 'Lernheld', desc: 'Dein Plan aus deinen Unterlagen',
-      gradient: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M20 4 L32 9 V20 C32 27 26 33 20 35 C14 33 8 27 8 20 V9 Z" fill="white" fillOpacity="0.2" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M20 14 L21.5 17.5 L25 17.5 L22.2 19.8 L23.3 23.5 L20 21.2 L16.7 23.5 L17.8 19.8 L15 17.5 L18.5 17.5 Z" fill="white"/></svg>),
-    },
-    {
-      href: '/quiz', titel: 'Quizze', desc: 'Kostenlos Wissen testen',
-      gradient: 'linear-gradient(135deg, #ff9500 0%, #cc7700 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" strokeWidth="2" fill="none"/><path d="M16 16.5C16 14 17.5 12 20 12c2.5 0 4 1.8 4 3.5 0 3-4 4-4 7" stroke="white" strokeWidth="2.5" strokeLinecap="round"/><circle cx="20" cy="27" r="1.5" fill="white"/></svg>),
-    },
-    {
-      href: '/lernplan', titel: 'Mein Lernplan', desc: 'Persönlicher Lernplan nach Annas Methode',
-      gradient: 'linear-gradient(135deg, #2A7A78 0%, #1d5654 100%)',
-      icon: (<svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="6" y="6" width="28" height="28" rx="4" stroke="white" strokeWidth="2" fill="none"/><path d="M12 14h16M12 20h16M12 26h10" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>),
-    },
-  ];
-
   return (
-    <main style={{minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif'}}>
+    <main style={{ minHeight: '100vh', background: F.bg, fontFamily: SANS, color: F.ink, overflowX: 'hidden' }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" />
 
       <style>{`
-        @keyframes beinLinks { 0%,100%{transform:rotate(-28deg)}50%{transform:rotate(28deg)} }
-        @keyframes beinRechts { 0%,100%{transform:rotate(28deg)}50%{transform:rotate(-28deg)} }
-        @keyframes frage1 { 0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-18px) scale(1.2);opacity:0.4} }
-        @keyframes frage2 { 0%,100%{transform:translateY(0) scale(1);opacity:0.8}50%{transform:translateY(-14px) scale(1.15);opacity:0.3} }
-        @keyframes frage3 { 0%,100%{transform:translateY(0) scale(1);opacity:0.6}50%{transform:translateY(-10px) scale(1.1);opacity:0.2} }
-        @keyframes schildRein { 0%{transform:scale(0) rotate(-20deg);opacity:0}100%{transform:scale(1) rotate(0deg);opacity:1} }
-        @keyframes blinzeln { 0%,85%,100%{transform:scaleY(1)}92%{transform:scaleY(0.05)} }
-        @keyframes schweben { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
-        @keyframes schildSchaukeln { 0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)} }
-        @keyframes formelSchweben1 { 0%,100%{transform:translateY(0) rotate(-5deg);opacity:0.1}50%{transform:translateY(-20px) rotate(5deg);opacity:0.2} }
-        @keyframes formelSchweben2 { 0%,100%{transform:translateY(0) rotate(3deg);opacity:0.08}50%{transform:translateY(-15px) rotate(-3deg);opacity:0.16} }
-        @keyframes formelSchweben3 { 0%,100%{transform:translateY(0);opacity:0.06}50%{transform:translateY(-25px);opacity:0.14} }
-        @keyframes gradientMove { 0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%} }
+        * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        body { background: ${F.bg}; margin: 0; font-family: ${SANS}; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } }
+        @keyframes floatA { 0%, 100% { transform: translateY(0px) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        @keyframes floatB { 0%, 100% { transform: translateY(0px) rotate(3deg); } 50% { transform: translateY(-10px) rotate(-3deg); } }
+        @keyframes karteIn { from { opacity: 0; transform: rotate(0deg) translateY(80px); } }
+
+        .lernkarte { animation: karteIn 1s cubic-bezier(0.2,0.8,0.2,1) both; transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1); }
+        .lernkarte:hover { z-index: 10; transform: translateY(-16px) rotate(0deg) scale(1.04) !important; }
+        .fade-up { animation: fadeUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+        .fade-up-2 { animation: fadeUp 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+        .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+        .btn-primary {
+          background: ${F.blue}; color: ${F.white};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700; letter-spacing: -0.005em;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: none; cursor: pointer;
+          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+          box-shadow: 0 1px 2px rgba(23,105,255,0.08), 0 8px 24px rgba(23,105,255,0.20);
+          font-family: ${SANS};
+        }
+        .btn-primary:hover { background: ${F.blueDeep}; box-shadow: 0 1px 2px rgba(23,105,255,0.10), 0 14px 32px rgba(23,105,255,0.28); transform: translateY(-1px); }
+
+        .btn-coral {
+          background: ${F.coral}; color: ${F.white};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700; letter-spacing: -0.005em;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: none; cursor: pointer;
+          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+          box-shadow: 0 1px 2px rgba(255,91,74,0.10), 0 10px 28px rgba(255,91,74,0.30);
+          font-family: ${SANS};
+        }
+        .btn-coral:hover { background: #e44b3c; box-shadow: 0 1px 2px rgba(255,91,74,0.12), 0 16px 38px rgba(255,91,74,0.38); transform: translateY(-1px); }
+
+        .btn-ghost-dark {
+          background: rgba(255,255,255,0.04); color: ${F.white};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: 1px solid rgba(255,255,255,0.18);
+          transition: all 0.2s ease;
+        }
+        .btn-ghost-dark:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.30); }
+
+        .btn-ghost-warm {
+          background: ${F.white}; color: ${F.ink};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: 1.5px solid ${F.ink};
+          transition: all 0.2s ease;
+        }
+        .btn-ghost-warm:hover { background: ${F.ink}; color: ${F.white}; }
+
+        .nav-link {
+          color: rgba(255,255,255,0.82); text-decoration: none;
+          font-size: 14.5px; font-weight: 500;
+          padding: 8px 14px; border-radius: 8px;
+          transition: all 0.15s ease;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.08); color: ${F.white}; }
+        .nav-link-light { color: ${F.inkSoft}; }
+        .nav-link-light:hover { background: ${F.bgSoft}; color: ${F.ink}; }
+
+        .glied-card {
+          transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .glied-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 24px 48px rgba(23,105,255,0.10), 0 4px 16px rgba(15,23,42,0.06);
+        }
+        .glied-card:hover .glied-arrow { transform: translateX(6px); color: ${F.blue}; }
+        .glied-card:hover .glied-foto { transform: scale(1.05); }
+        .glied-arrow { transition: transform 0.3s ease, color 0.3s ease; display: inline-block; }
+        .glied-foto { transition: transform 0.7s cubic-bezier(0.2,0.8,0.2,1); }
+
+        .feature:hover .feature-foto { transform: scale(1.03); }
+        .feature-foto { transition: transform 0.7s cubic-bezier(0.2,0.8,0.2,1); }
+
+        .hero-glow {
+          background:
+            radial-gradient(800px 400px at 90% 30%, rgba(23,105,255,0.12), transparent 60%),
+            radial-gradient(700px 500px at 10% 80%, rgba(23,105,255,0.06), transparent 60%);
+          position: absolute; inset: 0; pointer-events: none;
+        }
       `}</style>
 
-      {ausgewaehlt && (
-        <div onClick={() => setAusgewaehlt(null)} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(20px)'}}>
-          <div onClick={e => e.stopPropagation()} style={{backgroundColor: 'white', borderRadius: '24px', maxWidth: '680px', width: '100%', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 100px rgba(0,0,0,0.3)'}}>
-            <div style={{position: 'relative', height: mobil ? '200px' : '280px', background: 'linear-gradient(135deg, #e8f0fe 0%, #dde8ff 100%)'}}>
-              <img src={ausgewaehlt.vorschau} alt={ausgewaehlt.titel} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
-              <button onClick={() => setAusgewaehlt(null)} style={{position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', fontSize: '16px', cursor: 'pointer', color: 'white'}}>✕</button>
-              <div style={{position: 'absolute', top: '16px', left: '16px', backgroundColor: '#0071e3', color: 'white', fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', textTransform: 'uppercase'}}>{ausgewaehlt.typ}</div>
-            </div>
-            <div style={{padding: mobil ? '20px' : '32px'}}>
-              <h2 style={{margin: '0 0 8px', fontSize: mobil ? '20px' : '24px', fontWeight: '700', color: '#1d1d1f'}}>{ausgewaehlt.titel}</h2>
-              <p style={{margin: '0 0 20px', fontSize: '15px', color: '#6e6e73', lineHeight: '1.6'}}>{ausgewaehlt.beschreibung}</p>
-              <div style={{backgroundColor: '#f5f5f7', borderRadius: '12px', padding: '18px', marginBottom: '20px'}}>
-                <p style={{margin: '0 0 10px', fontSize: '14px', fontWeight: '700', color: '#1d1d1f'}}>Was ist drin:</p>
-                {ausgewaehlt.details.map((d, i) => (
-                  <div key={i} style={{display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px'}}>
-                    <span style={{color: '#0071e3', fontWeight: '700', fontSize: '14px', flexShrink: 0}}>✓</span>
-                    <span style={{fontSize: '14px', color: '#1d1d1f'}}>{d}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap'}}>
-                {['📄 ' + ausgewaehlt.seiten, '⬇️ Sofort-Download', '🔒 Sicher via Stripe'].map((t, i) => (
-                  <span key={i} style={{fontSize: '12px', color: '#6e6e73', backgroundColor: '#f5f5f7', padding: '6px 12px', borderRadius: '20px'}}>{t}</span>
-                ))}
-              </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e5e5ea', paddingTop: '20px'}}>
-                <div>
-                  <p style={{margin: '0', fontSize: '13px', color: '#6e6e73'}}>Preis</p>
-                  <p style={{margin: '0', fontSize: '30px', fontWeight: '800', color: '#1d1d1f'}}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
-                </div>
-                <button onClick={() => kaufen(ausgewaehlt)} style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', border: 'none', borderRadius: '14px', padding: '14px 28px', fontSize: '16px', fontWeight: '700', cursor: 'pointer'}}>
-                  {ausgewaehlt.slug ? 'Jetzt freischalten' : 'Jetzt kaufen'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <header style={{position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: scrolled ? 'rgba(255,255,255,0.92)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none', padding: mobil ? '12px 16px' : '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease'}}>
-        <img src="/logo.jpg?v=1" alt="Lerne mit Anna" style={{height: mobil ? '40px' : '48px', borderRadius: '10px'}} />
-        <nav style={{display: 'flex', gap: mobil ? '10px' : '28px', alignItems: 'center'}}>
-          {!mobil && <>
-            <a href="#mathe" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Mathe</a>
-            <a href="#physik" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Physik</a>
-            <a href="#pakete" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernpakete</a>
-            <a href="/lernplan" style={{color: '#1d1d1f', textDecoration: 'none', fontSize: '15px', fontWeight: '500'}}>Lernplan</a>
-          </>}
-          <a href="/lernplan" style={{backgroundColor: '#0071e3', color: 'white', textDecoration: 'none', fontSize: '14px', fontWeight: '600', padding: '8px 18px', borderRadius: '980px', whiteSpace: 'nowrap'}}>Lernplan erstellen</a>
+      {/* HEADER - hell, freundlich */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,253,248,0.94)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+        <a href="/" style={{ textDecoration: 'none' }}>
+          <span style={{ fontSize: mobil ? '24px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
+            Lern<span style={{ color: F.coral }}>flix</span>
+          </span>
+        </a>
+        <nav style={{ display: 'flex', gap: mobil ? '8px' : '28px', alignItems: 'center' }}>
+          {!mobil && (
+            <>
+              <a href="/shop" className="nav-link-light">Lernmaterialien</a>
+              <a href="/lernplan" className="nav-link-light">Lernplan</a>
+              <a href="/quiz" className="nav-link-light">Quiz</a>
+            </>
+          )}
+          <a href="/lernheld" className="btn-coral" style={{ padding: '11px 22px', fontSize: '14px', marginLeft: mobil ? '0' : '12px' }}>
+            Lernheld
+          </a>
         </nav>
       </header>
 
-      <section style={{minHeight: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: mobil ? '90px 16px 40px' : '100px 24px 60px', overflow: 'hidden'}}>
-        <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #e8f0ff 0%, #ffffff 25%, #f0e8ff 50%, #e8f8ff 75%, #fff0e8 100%)', backgroundSize: '400% 400%', animation: 'gradientMove 10s ease infinite', zIndex: 0}}></div>
-        <div style={{position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: mobil ? '300px' : '600px', height: mobil ? '300px' : '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,113,227,0.08) 0%, transparent 70%)', zIndex: 1, pointerEvents: 'none'}}></div>
-
+      {/* HERO - hell, warm, kinderfreundlich */}
+      <section className="fade-up" style={{ background: F.bgWarm, color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {!mobil && (
-          <div style={{position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden'}}>
-            {[
-              {text: 'x²', top: '12%', left: '7%', size: '42px', anim: 'formelSchweben1 4s ease-in-out infinite'},
-              {text: 'E=mc²', top: '18%', right: '8%', size: '30px', anim: 'formelSchweben2 5s ease-in-out infinite 1s'},
-              {text: 'π', top: '68%', left: '5%', size: '48px', anim: 'formelSchweben3 4.5s ease-in-out infinite 0.5s'},
-              {text: 'a²+b²=c²', top: '10%', left: '28%', size: '24px', anim: 'formelSchweben1 6s ease-in-out infinite 2s'},
-              {text: 'F=ma', top: '72%', right: '7%', size: '28px', anim: 'formelSchweben2 5.5s ease-in-out infinite 1.5s'},
-              {text: '∫', top: '40%', right: '4%', size: '40px', anim: 'formelSchweben2 4.8s ease-in-out infinite 0.8s'},
-            ].map((f, i) => (
-              <div key={i} style={{position: 'absolute', top: f.top, left: (f as {left?: string}).left, right: (f as {right?: string}).right, fontSize: f.size, fontWeight: '700', color: '#0071e3', fontFamily: 'Georgia, serif', animation: f.anim}}>
-                {f.text}
-              </div>
-            ))}
-          </div>
+          <>
+            <div style={{ position: 'absolute', top: '120px', right: '6%', width: '160px', height: '160px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '60px', left: '4%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgMint, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '42%', right: '38%', width: '70px', height: '70px', borderRadius: '50%', background: F.bgSky, opacity: 0.6, pointerEvents: 'none' }} />
+          </>
         )}
-
-        <div style={{position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', minHeight: mobil ? '200px' : '280px', marginBottom: mobil ? '32px' : '48px', width: '100%'}}>
-          <div style={{transform: phase === 'weglaufen' ? `translateX(${mobil ? '300px' : '700px'})` : 'translateX(0px)', opacity: phase === 'weglaufen' ? 0 : 1, transition: phase === 'weglaufen' ? 'transform 1.5s ease-in, opacity 0.8s ease-in 0.7s' : 'transform 1.2s ease-out', position: 'relative'}}>
-
-            {phase === 'kratzen' && (<>
-              <div style={{position: 'absolute', top: mobil ? '-55px' : '-75px', left: '50%', transform: 'translateX(-50%)', fontSize: mobil ? '36px' : '52px', fontWeight: '900', color: '#0071e3', animation: 'frage1 1.2s ease-in-out infinite'}}>?</div>
-              <div style={{position: 'absolute', top: mobil ? '-42px' : '-58px', left: mobil ? '-25px' : '-38px', fontSize: mobil ? '24px' : '34px', fontWeight: '900', color: '#0071e3', opacity: 0.6, animation: 'frage2 1.5s ease-in-out infinite 0.3s'}}>?</div>
-              <div style={{position: 'absolute', top: mobil ? '-42px' : '-58px', right: mobil ? '-25px' : '-38px', fontSize: mobil ? '24px' : '34px', fontWeight: '900', color: '#0071e3', opacity: 0.4, animation: 'frage3 1.8s ease-in-out infinite 0.6s'}}>?</div>
-            </>)}
-
-            <div style={{width: mobil ? '110px' : '150px', height: mobil ? '135px' : '185px', background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', borderRadius: mobil ? '10px 16px 16px 10px' : '14px 22px 22px 14px', position: 'relative', boxShadow: '0 24px 70px rgba(0,113,227,0.4)', animation: phase === 'kratzen' ? 'schweben 2.5s ease-in-out infinite' : 'none'}}>
-              <div style={{position: 'absolute', left: '5px', top: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', height: mobil ? '111px' : '155px'}}>
-                {[0,1,2,3,4,5,6,7].map(i => (
-                  <div key={i} style={{width: mobil ? '10px' : '13px', height: mobil ? '10px' : '13px', borderRadius: '50%', backgroundColor: '#1d1d1f', border: '2px solid rgba(255,255,255,0.85)'}}></div>
-                ))}
-              </div>
-              <div style={{position: 'absolute', top: mobil ? '24px' : '34px', left: mobil ? '28px' : '38px', display: 'flex', gap: mobil ? '16px' : '24px'}}>
-                <div style={{width: mobil ? '18px' : '24px', height: mobil ? '18px' : '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite'}}>
-                  <div style={{width: mobil ? '9px' : '12px', height: mobil ? '9px' : '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
-                </div>
-                <div style={{width: mobil ? '18px' : '24px', height: mobil ? '18px' : '24px', backgroundColor: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'blinzeln 4s ease-in-out infinite 0.2s'}}>
-                  <div style={{width: mobil ? '9px' : '12px', height: mobil ? '9px' : '12px', backgroundColor: '#1d1d1f', borderRadius: '50%'}}></div>
-                </div>
-              </div>
-              <div style={{position: 'absolute', top: mobil ? '52px' : '74px', left: mobil ? '22px' : '30px', width: mobil ? '66px' : '90px', height: mobil ? '28px' : '38px', borderBottom: '5px solid white', borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderRadius: '0 0 50px 50px'}}></div>
-              <div style={{position: 'absolute', top: mobil ? '48px' : '68px', left: mobil ? '18px' : '24px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
-              <div style={{position: 'absolute', top: mobil ? '48px' : '68px', right: mobil ? '12px' : '17px', width: mobil ? '14px' : '20px', height: mobil ? '8px' : '11px', backgroundColor: '#ffaaaa', borderRadius: '50%', opacity: 0.9}}></div>
-              <div style={{position: 'absolute', bottom: mobil ? '22px' : '32px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
-              <div style={{position: 'absolute', bottom: mobil ? '34px' : '50px', left: mobil ? '22px' : '30px', right: mobil ? '10px' : '14px', height: '3px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '2px'}}></div>
-            </div>
-
-            <div style={{display: 'flex', justifyContent: 'center', gap: mobil ? '22px' : '30px', marginTop: '5px'}}>
-              <div style={{width: mobil ? '11px' : '15px', height: mobil ? '36px' : '50px', backgroundColor: '#1d1d1f', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinLinks 0.35s ease-in-out infinite' : 'none'}}></div>
-              <div style={{width: mobil ? '11px' : '15px', height: mobil ? '36px' : '50px', backgroundColor: '#1d1d1f', borderRadius: '6px', transformOrigin: 'top center', animation: phase !== 'schild' ? 'beinRechts 0.35s ease-in-out infinite' : 'none'}}></div>
-            </div>
-          </div>
-
-          {phase === 'schild' && (
-            <div style={{position: 'absolute', right: mobil ? 'calc(50% - 155px)' : 'calc(50% - 250px)', bottom: mobil ? '40px' : '55px', animation: 'schildRein 0.7s ease-out forwards'}}>
-              <div style={{animation: 'schildSchaukeln 2s ease-in-out infinite'}}>
-                <div style={{background: 'linear-gradient(135deg, #1d1d1f 0%, #2d2d2f 100%)', color: 'white', padding: mobil ? '14px 22px' : '20px 44px', borderRadius: '18px', fontSize: mobil ? '26px' : '40px', fontWeight: '900', letterSpacing: '-1px', boxShadow: '0 16px 50px rgba(0,0,0,0.3)'}}>
-                  LERNFLIX
-                </div>
-                <div style={{width: '8px', height: mobil ? '36px' : '55px', backgroundColor: '#1d1d1f', margin: '0 auto', borderRadius: '4px'}}></div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={{position: 'relative', zIndex: 2, opacity: phase === 'schild' ? 1 : 0, transition: 'opacity 0.8s ease', marginBottom: '20px', minHeight: '32px'}}>
-          <p style={{fontSize: mobil ? '17px' : '22px', color: '#6e6e73', fontWeight: '400', margin: 0}}>Dein Lernstream. Deine Regeln.</p>
-        </div>
-
-        <div style={{position: 'relative', zIndex: 2, display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap'}}>
-          <a href="#mathe" style={{background: 'linear-gradient(135deg, #0071e3 0%, #0051a0 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(0,113,227,0.4)'}}>
-            Materialien ansehen
-          </a>
-          <a href="/quiz" style={{background: 'linear-gradient(135deg, #5856d6 0%, #3634a3 100%)', color: 'white', fontWeight: '700', padding: mobil ? '13px 24px' : '16px 40px', borderRadius: '980px', textDecoration: 'none', fontSize: mobil ? '15px' : '17px', boxShadow: '0 8px 24px rgba(88,86,214,0.4)'}}>
-            Kostenlose Quizze
-          </a>
-        </div>
-      </section>
-
-      {/* Kategorien — MIT SVG Icons */}
-      <section style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px', textAlign: 'center'}}>Alle Kategorien</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', textAlign: 'center', marginBottom: '36px'}}>Wähle dein Fach und starte durch</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '14px'}}>
-            {kategorien.map((k) => (
-              <a key={k.titel} href={k.href} style={{textDecoration: 'none'}}>
-                <div
-                  style={{background: k.gradient, borderRadius: '20px', padding: mobil ? '20px 16px' : '32px 28px', transition: 'all 0.3s ease', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative', overflow: 'hidden'}}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px) scale(1.02)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 16px 40px rgba(0,0,0,0.22)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0) scale(1)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'; }}
-                >
-                  <div style={{marginBottom: mobil ? '12px' : '20px'}}>{k.icon}</div>
-                  <h4 style={{margin: '0 0 6px', fontSize: mobil ? '15px' : '20px', fontWeight: '700', color: 'white'}}>{k.titel}</h4>
-                  <p style={{margin: 0, fontSize: mobil ? '11px' : '14px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4'}}>{k.desc}</p>
-                  <div style={{position: 'absolute', bottom: '16px', right: '16px', fontSize: '16px', color: 'rgba(255,255,255,0.5)'}}>→</div>
-                </div>
+        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '50px' : '70px', alignItems: 'center', position: 'relative' }}>
+          {/* Text */}
+          <div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
+              <span className="pulse-dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, boxShadow: `0 0 10px ${F.coral}` }} />
+              Für Klasse 1 bis 13
+            </span>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '82px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 24px', color: F.ink, letterSpacing: '-0.035em' }}>
+              Mathe und Physik <span style={{ color: F.coral }}>verstehen</span>.
+            </h1>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 38px', maxWidth: '500px', fontWeight: 400 }}>
+              Lernmaterialien, Lernplan, ein Quiz und Hilfe für die nächste Schulaufgabe. Alles auf einer Seite.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mobil ? '36px' : '52px' }}>
+              <a href="#bereiche" className="btn-coral">
+                Loslegen
+                <span style={{ fontSize: '17px', lineHeight: 1 }}>→</span>
               </a>
-            ))}
+              <a href="/shop" className="btn-ghost-warm">Zum Shop</a>
+            </div>
+            <div style={{ display: 'flex', gap: mobil ? '20px' : '36px', flexWrap: 'wrap', fontSize: '13px', color: F.inkSoft, fontWeight: 500 }}>
+              <span><strong style={{ color: F.ink, fontWeight: 700 }}>13</strong> Lernpakete</span>
+              <span><strong style={{ color: F.ink, fontWeight: 700 }}>61</strong> Quiz-Themen</span>
+              <span>Mathe + Physik</span>
+              <span>Ab 0,99 €</span>
+            </div>
           </div>
-        </div>
-      </section>
+          {/* Hero-Visual: floating Lernpaket-card-stack mit schwebenden mathe-symbolen */}
+          <div className="fade-up-2" style={{ position: 'relative', height: mobil ? '500px' : '640px' }}>
+            {/* Schwebende mathe-symbole als deko */}
+            <span style={{ position: 'absolute', top: '3%', left: '6%', fontSize: mobil ? '42px' : '64px', fontWeight: 800, color: F.coral, opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 6s ease-in-out infinite' }}>π</span>
+            <span style={{ position: 'absolute', top: '8%', right: '8%', fontSize: mobil ? '36px' : '54px', fontWeight: 800, color: F.blue, opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 7s ease-in-out infinite' }}>x²</span>
+            <span style={{ position: 'absolute', bottom: '15%', left: '2%', fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: '#a78bfa', opacity: 0.32, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 8s ease-in-out infinite 1s' }}>√</span>
+            <span style={{ position: 'absolute', bottom: '4%', right: '4%', fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: '#2e8a5c', opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 6.5s ease-in-out infinite 0.5s' }}>Σ</span>
 
-      {/* Mathe */}
-      <section id="mathe" style={{backgroundColor: '#ffffff', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Mathematik</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Formeln, Übungen und Erklärungen für die Schule</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
-            {mathe.map(p => <ProduktKarte key={p.id} p={p} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* Physik */}
-      <section id="physik" style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Physik</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Gesetze, Formeln und Experimente verständlich erklärt</p>
-          <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px'}}>
-            {physik.map(p => <ProduktKarte key={p.id} p={p} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* Lernpakete */}
-      <section id="pakete" style={{backgroundColor: '#ffffff', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Lernpakete</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Spezielle Pakete für besondere Lernsituationen</p>
-          <div style={{background: 'linear-gradient(135deg, #34c759 0%, #248a3d 100%)', borderRadius: '20px', padding: mobil ? '40px 24px' : '60px', textAlign: 'center', boxShadow: '0 8px 32px rgba(52,199,89,0.25)'}}>
-            <div style={{fontSize: '56px', marginBottom: '16px'}}>🚀</div>
-            <h4 style={{margin: '0 0 8px', fontSize: mobil ? '20px' : '24px', fontWeight: '700', color: 'white'}}>Bald verfügbar!</h4>
-            <p style={{margin: 0, fontSize: '15px', color: 'rgba(255,255,255,0.85)'}}>Spezielle Lernpakete für Abitur, Sommer und mehr kommen bald!</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Quiz */}
-      <section id="quiz" style={{backgroundColor: '#f5f5f7', padding: mobil ? '48px 16px' : '80px 24px'}}>
-        <div style={{maxWidth: '1100px', margin: '0 auto'}}>
-          <h2 style={{fontSize: mobil ? '28px' : '36px', fontWeight: '700', color: '#1d1d1f', marginBottom: '8px'}}>Kostenlose Quizze</h2>
-          <p style={{fontSize: '16px', color: '#6e6e73', marginBottom: '32px'}}>Teste dein Wissen — direkt hier in der App!</p>
-          <div style={{background: 'linear-gradient(135deg, #0071e3 0%, #5856d6 100%)', borderRadius: '20px', padding: mobil ? '36px 24px' : '56px', boxShadow: '0 8px 32px rgba(0,113,227,0.25)'}}>
-            <div style={{display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1fr', gap: '40px', alignItems: 'center'}}>
-              <div>
-                <h3 style={{margin: '0 0 12px', fontSize: mobil ? '22px' : '28px', fontWeight: '800', color: 'white'}}>Lerne mit Spaß!</h3>
-                <p style={{margin: '0 0 20px', fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.7'}}>Teste dein Wissen mit interaktiven Quizzen. Jedes Mal neue Fragen — kostenlos und ohne Anmeldung!</p>
-                <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px'}}>
-                  {['Über 10 verschiedene Themen', 'Leicht, Mittel & Schwer', 'Sofortige Erklärungen', 'Kostenlos & ohne Anmeldung'].map((f, i) => (
-                    <div key={i} style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                      <div style={{width: '20px', height: '20px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {/* Card-Stack zentral, sanft gefaechert */}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: mobil ? '320px' : '460px', height: mobil ? '440px' : '580px' }}>
+                {KARTEN.map((k, i) => {
+                  const totalAng = mobil ? 12 : 16;
+                  const ang = (i - (KARTEN.length - 1) / 2) * (totalAng / (KARTEN.length - 1));
+                  const offsetY = Math.abs(i - (KARTEN.length - 1) / 2) * (mobil ? 4 : 6);
+                  const offsetX = (i - (KARTEN.length - 1) / 2) * (mobil ? 14 : 22);
+                  return (
+                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${ang}deg)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
+                      <div style={{ background: k.bg, borderRadius: '26px', padding: mobil ? '26px 22px' : '34px 30px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 22px 48px rgba(15,23,42,0.18), 0 6px 16px rgba(15,23,42,0.10)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                        <div>
+                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800, marginBottom: mobil ? '18px' : '24px' }}>
+                            {k.fach}
+                          </span>
+                          <div style={{ fontSize: mobil ? '54px' : '80px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.95 }}>
+                            {k.sym}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: mobil ? '28px' : '38px', fontWeight: 800, color: F.ink, margin: '0 0 6px', letterSpacing: '-0.025em', lineHeight: 1.0, fontFamily: SANS }}>
+                            {k.t}
+                          </h3>
+                          <p style={{ fontSize: '14px', color: F.inkSoft, margin: '0 0 16px', fontWeight: 600 }}>
+                            {k.klasse}
+                          </p>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1.5px solid rgba(15,23,42,0.10)' }}>
+                            <span style={{ fontSize: '18px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: k.akzent }}>Lernpaket →</span>
+                          </div>
+                        </div>
                       </div>
-                      <span style={{fontSize: '15px', color: 'rgba(255,255,255,0.9)', fontWeight: '500'}}>{f}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST STRIP - warm cream */}
+      <section style={{ background: F.bgCream, padding: mobil ? '24px 22px' : '28px 56px' }}>
+        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: mobil ? '20px' : '48px', justifyContent: 'center', alignItems: 'center' }}>
+          {['Sofort verfügbar', 'PDF zum Ausdrucken', 'Sichere Bezahlung', 'Mit Rechnung', '14 Tage Widerruf'].map((t, i) => (
+            <span key={i} style={{ fontSize: '13px', fontWeight: 600, color: F.inkSoft, letterSpacing: '-0.005em', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7L6 10L11 4" stroke={F.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {t}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* GLIED 3: LERNHELD - FEATURED (gross, premium) */}
+      <section id="bereiche" style={{ background: F.bgWarm, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
+        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
+          <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
+            <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
+              Premium · 1,99 €
+            </span>
+            <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.02 }}>
+              Plan für die Schulaufgabe.
+            </h2>
+            <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, margin: 0, lineHeight: 1.55, fontWeight: 400 }}>
+              Foto hochladen, Klasse wählen, fertig. Dein persönlicher Plan steht in 3 Minuten.
+            </p>
+          </div>
+          <a href="/lernheld" className="feature" style={{ display: 'block', textDecoration: 'none', borderRadius: '32px', overflow: 'hidden', background: F.navy, color: F.white, boxShadow: '0 16px 50px rgba(11,31,58,0.20)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: 0, alignItems: 'stretch' }}>
+              <div style={{ padding: mobil ? '40px 28px' : '64px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.08)', color: F.white, padding: '7px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.16)' }}>
+                  Premium · 1,99 €
+                </span>
+                <h3 style={{ fontFamily: SANS, fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: F.white, margin: '0 0 18px', lineHeight: 0.98, letterSpacing: '-0.035em' }}>
+                  Lernheld
+                </h3>
+                <p style={{ fontSize: mobil ? '16px' : '18px', color: 'rgba(255,255,255,0.78)', margin: '0 0 32px', lineHeight: 1.55, maxWidth: '440px' }}>
+                  Foto vom Stoff hochladen, Klasse wählen — fertig. Du bekommst einen persönlichen Plan mit Erklärungen, Übungen und Lösungen für deine Schulaufgabe.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '34px' }}>
+                  {['Foto vom Stoff hochladen', 'Klasse und Datum wählen', 'Plan in 3 Min auf dem Handy'].map((t, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'rgba(23,105,255,0.16)', color: F.blue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, flexShrink: 0, fontFamily: '"JetBrains Mono", monospace' }}>
+                        {i + 1}
+                      </div>
+                      <span style={{ fontSize: '15px', color: 'rgba(255,255,255,0.92)', fontWeight: 500 }}>{t}</span>
                     </div>
                   ))}
                 </div>
-                <button onClick={() => window.location.href = '/quiz'} style={{backgroundColor: 'white', color: '#0071e3', border: 'none', borderRadius: '980px', padding: '14px 32px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.15)'}}>
-                  Jetzt Quiz starten
-                </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', alignSelf: 'flex-start', background: F.blue, color: F.white, padding: '14px 26px', borderRadius: '12px', fontSize: '15px', fontWeight: 600, boxShadow: '0 8px 24px rgba(23,105,255,0.32)' }}>
+                  Plan erstellen
+                  <span style={{ fontSize: '16px' }}>→</span>
+                </span>
               </div>
-              {!mobil && (
-                <div style={{background: 'rgba(255,255,255,0.1)', borderRadius: '20px', padding: '32px', backdropFilter: 'blur(10px)'}}>
-                  <div style={{fontSize: '72px', textAlign: 'center', marginBottom: '20px'}}>🧠</div>
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px'}}>
-                    {[{n: '10+', t: 'Themen'}, {n: '3', t: 'Stufen'}, {n: '∞', t: 'Fragen'}, {n: '0€', t: 'Kostenlos'}].map((s, i) => (
-                      <div key={i} style={{backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '16px', textAlign: 'center'}}>
-                        <div style={{fontSize: '24px', fontWeight: '800', color: 'white', marginBottom: '4px'}}>{s.n}</div>
-                        <div style={{fontSize: '12px', color: 'rgba(255,255,255,0.75)', fontWeight: '500'}}>{s.t}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div style={{ position: 'relative', minHeight: mobil ? '320px' : '560px', overflow: 'hidden' }}>
+                <img src={FOTO.lernheld} alt="" className="feature-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(11,31,58,0.55) 0%, rgba(11,31,58,0.15) 30%, rgba(11,31,58,0) 60%)' }} />
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      {/* 3 GLIEDER: Shop / Lernplan / Quiz - mit visueller varianz, nicht symmetrisch */}
+      <section style={{ background: F.bgWarm, padding: mobil ? '40px 22px 80px' : '50px 56px 130px' }}>
+        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
+          <div style={{ marginBottom: mobil ? '32px' : '50px', maxWidth: '720px' }}>
+            <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
+              Auch dabei
+            </span>
+            <h2 style={{ fontFamily: SANS, fontSize: mobil ? '34px' : '50px', fontWeight: 800, color: F.ink, margin: 0, letterSpacing: '-0.03em', lineHeight: 1.0 }}>
+              Shop, Lernplan und Quiz.
+            </h2>
+          </div>
+
+          {/* asymmetrisches layout: shop gross links, lernplan + quiz gestapelt rechts */}
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.4fr 1fr', gap: mobil ? '20px' : '24px' }}>
+            {/* Shop - gross, sky-blau */}
+            <Glied
+              href="/shop"
+              foto={FOTO.shop}
+              label="Lernmaterialien · ab 0,99 €"
+              titel="Shop"
+              sub="13 Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar."
+              farbe={F.bgSky}
+              gross
+              mobil={mobil}
+            />
+            {/* Rechts: 2 gestapelt */}
+            <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: mobil ? '20px' : '24px' }}>
+              <Glied
+                href="/lernplan"
+                foto={FOTO.lernplan}
+                label="Kostenlos"
+                titel="Mein Lernplan"
+                sub="Wöchentlicher Stundenplan mit Hausaufgaben und Lernblöcken."
+                farbe={F.bgMint}
+                mobil={mobil}
+              />
+              <Glied
+                href="/quiz"
+                foto={FOTO.quiz}
+                label="Kostenlos"
+                titel="Quiz"
+                sub="61 Themen für Klasse 1 bis 13. Jede Runde neue Fragen."
+                farbe={F.bgPeach}
+                mobil={mobil}
+              />
             </div>
           </div>
         </div>
       </section>
 
-      <footer style={{textAlign: 'center', padding: '32px 16px', backgroundColor: '#ffffff', borderTop: '1px solid #e5e5ea', color: '#6e6e73', fontSize: '13px'}}>
-        © 2025 Lerne mit Anna ·
-        <a href="/impressum" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>Impressum</a> ·
-        <a href="/datenschutz" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>Datenschutz</a> ·
-        <a href="/agb" style={{color: '#6e6e73', textDecoration: 'none', margin: '0 6px'}}>AGB</a>
-      </footer>
+      {/* CTA Banner - hell und warm */}
+      <section style={{ background: F.bgCream, color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '40px', right: '8%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '40px', left: '6%', width: '90px', height: '90px', borderRadius: '50%', background: F.bgMint, opacity: 0.6, pointerEvents: 'none' }} />
+          </>
+        )}
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+          <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '60px', fontWeight: 800, color: F.ink, margin: '0 0 20px', letterSpacing: '-0.035em', lineHeight: 1.02 }}>
+            Jetzt <span style={{ color: F.coral }}>loslegen</span>.
+          </h2>
+          <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, margin: '0 auto 36px', lineHeight: 1.55, maxWidth: '540px' }}>
+            Plan für die Schulaufgabe oder direkt durch die Lernmaterialien stöbern.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href="/lernheld" className="btn-coral">
+              Lernheld starten
+              <span style={{ fontSize: '17px', lineHeight: 1 }}>→</span>
+            </a>
+            <a href="/shop" className="btn-ghost-warm">Zum Shop</a>
+          </div>
+        </div>
+      </section>
 
+      {/* FOOTER */}
+      <footer style={{ background: F.navyDark, color: F.white, padding: mobil ? '60px 22px 30px' : '90px 56px 40px' }}>
+        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '2fr 1fr 1fr 1fr', gap: '40px', marginBottom: '60px' }}>
+            <div>
+              <span style={{ fontSize: '28px', fontWeight: 800, color: F.white, letterSpacing: '-0.025em', display: 'block', marginBottom: '14px' }}>
+                Lern<span style={{ color: F.blue }}>flix</span>
+              </span>
+              <p style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
+                Die Lern-Plattform für Mathematik und Physik. Klasse 1 bis 13.
+              </p>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 18px' }}>Lernen</p>
+              <a href="/shop" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernmaterialien</a>
+              <a href="/lernplan" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernplan</a>
+              <a href="/lernheld" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Lernheld</a>
+              <a href="/quiz" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Quiz</a>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 18px' }}>Rechtliches</p>
+              <a href="/impressum" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Impressum</a>
+              <a href="/datenschutz" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>Datenschutz</a>
+              <a href="/agb" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>AGB</a>
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', fontWeight: 700, margin: '0 0 18px' }}>Kontakt</p>
+              <a href="https://wa.me/4917624700519" style={{ display: 'block', color: 'rgba(255,255,255,0.82)', textDecoration: 'none', fontSize: '14px', marginBottom: '10px' }}>WhatsApp</a>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.10)', paddingTop: '24px', fontSize: '13px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+            © {new Date().getFullYear()} Lernflix · lernflix.lernemitanna.de
+          </div>
+        </div>
+      </footer>
     </main>
+  );
+}
+
+function Glied({ href, foto, label, titel, sub, farbe, gross, mobil }: { href: string; foto: string; label: string; titel: string; sub: string; farbe: string; gross?: boolean; mobil: boolean }) {
+  const F2 = { ink: '#0F172A', inkSoft: '#475569', border: 'rgba(15,23,42,0.08)', blue: '#1769FF' };
+  return (
+    <a href={href} className="glied-card" style={{ display: 'flex', flexDirection: 'column', background: farbe, border: `1px solid ${F2.border}`, borderRadius: '28px', overflow: 'hidden', textDecoration: 'none', color: F2.ink, height: '100%' }}>
+      <div style={{ position: 'relative', aspectRatio: gross ? '16 / 9' : '16 / 7', overflow: 'hidden', background: '#f4f4f5', borderBottom: `1px solid ${F2.border}` }}>
+        <img src={foto} alt="" className="glied-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <span style={{ position: 'absolute', top: '14px', left: '14px', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', color: F2.ink, padding: '6px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace' }}>
+          {label}
+        </span>
+      </div>
+      <div style={{ padding: mobil ? '22px 22px 24px' : (gross ? '32px 36px 32px' : '24px 26px 24px'), display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <h3 style={{ fontFamily: SANS, fontSize: mobil ? '24px' : (gross ? '38px' : '24px'), fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.025em', lineHeight: 1.05, color: F2.ink }}>{titel}</h3>
+        <p style={{ fontSize: gross ? '15px' : '13.5px', color: F2.inkSoft, lineHeight: 1.55, margin: '0 0 16px', flex: 1 }}>{sub}</p>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: F2.ink, marginTop: 'auto' }}>
+          Öffnen <span className="glied-arrow" style={{ fontSize: '16px' }}>→</span>
+        </span>
+      </div>
+    </a>
   );
 }
