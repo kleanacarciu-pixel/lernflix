@@ -2,9 +2,13 @@
 import { useEffect, useState } from 'react';
 
 const F = {
-  bg: '#ffffff',
-  bgSoft: '#F5F7FA',
+  bg: '#fffdf8',
+  bgSoft: '#fef6e8',
   bgWarm: '#fff8ee',
+  bgCream: '#fef3dd',
+  bgMint: '#e7f5ec',
+  bgPeach: '#fde4d4',
+  bgSky: '#dceffb',
   ink: '#0F172A',
   inkSoft: '#475569',
   inkMuted: '#94A3B8',
@@ -19,6 +23,7 @@ const F = {
   green: '#10B981',
   coral: '#ff5b4a',
   yellow: '#FFCB45',
+  lavender: '#a78bfa',
   white: '#ffffff',
 };
 const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
@@ -140,9 +145,15 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - Navy, premium */}
+      {/* HERO - Navy, premium, mit warmen deko-blobs */}
       <section className="fade-up" style={{ background: F.navy, color: F.white, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
         <div className="hero-glow" />
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '90px', right: '4%', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '40px', left: '2%', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,91,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          </>
+        )}
         <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '50px' : '70px', alignItems: 'center', position: 'relative' }}>
           {/* Text */}
           <div>
@@ -180,8 +191,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRUST STRIP */}
-      <section style={{ background: F.bgSoft, padding: mobil ? '24px 22px' : '28px 56px', borderBottom: `1px solid ${F.border}` }}>
+      {/* TRUST STRIP - warm cream */}
+      <section style={{ background: F.bgCream, padding: mobil ? '24px 22px' : '28px 56px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: mobil ? '20px' : '48px', justifyContent: 'center', alignItems: 'center' }}>
           {['Sofort verfügbar', 'PDF zum Ausdrucken', 'Sichere Bezahlung', 'Mit Rechnung', '14 Tage Widerruf'].map((t, i) => (
             <span key={i} style={{ fontSize: '13px', fontWeight: 600, color: F.inkSoft, letterSpacing: '-0.005em', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -195,7 +206,7 @@ export default function Home() {
       </section>
 
       {/* GLIED 3: LERNHELD - FEATURED (gross, premium) */}
-      <section id="bereiche" style={{ background: F.bg, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
+      <section id="bereiche" style={{ background: F.bgWarm, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
           <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
@@ -208,7 +219,7 @@ export default function Home() {
               Mit dem Lernheld bekommst du in 3 Minuten einen persönlichen Plan für deine nächste Schulaufgabe.
             </p>
           </div>
-          <a href="/lernheld" className="feature" style={{ display: 'block', textDecoration: 'none', borderRadius: '28px', overflow: 'hidden', background: F.navy, color: F.white, boxShadow: '0 12px 40px rgba(11,31,58,0.16)' }}>
+          <a href="/lernheld" className="feature" style={{ display: 'block', textDecoration: 'none', borderRadius: '32px', overflow: 'hidden', background: F.navy, color: F.white, boxShadow: '0 16px 50px rgba(11,31,58,0.20)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: 0, alignItems: 'stretch' }}>
               <div style={{ padding: mobil ? '40px 28px' : '64px 64px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <span style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.08)', color: F.white, padding: '7px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.16)' }}>
@@ -245,7 +256,7 @@ export default function Home() {
       </section>
 
       {/* 3 GLIEDER: Shop / Lernplan / Quiz - mit visueller varianz, nicht symmetrisch */}
-      <section style={{ background: F.bg, padding: mobil ? '40px 22px 80px' : '50px 56px 130px' }}>
+      <section style={{ background: F.bgWarm, padding: mobil ? '40px 22px 80px' : '50px 56px 130px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
           <div style={{ marginBottom: mobil ? '32px' : '50px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
@@ -258,14 +269,14 @@ export default function Home() {
 
           {/* asymmetrisches layout: shop gross links, lernplan + quiz gestapelt rechts */}
           <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.4fr 1fr', gap: mobil ? '20px' : '24px' }}>
-            {/* Shop - gross */}
+            {/* Shop - gross, sky-blau */}
             <Glied
               href="/shop"
               foto={FOTO.shop}
               label="Lernmaterialien · ab 0,99 €"
               titel="Shop"
               sub="13 Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar."
-              vertikal={false}
+              farbe={F.bgSky}
               gross
               mobil={mobil}
             />
@@ -277,7 +288,7 @@ export default function Home() {
                 label="Kostenlos"
                 titel="Mein Lernplan"
                 sub="Wöchentlicher Stundenplan mit Hausaufgaben und Lernblöcken."
-                vertikal={false}
+                farbe={F.bgMint}
                 mobil={mobil}
               />
               <Glied
@@ -286,7 +297,7 @@ export default function Home() {
                 label="Kostenlos"
                 titel="Quiz"
                 sub="61 Themen für Klasse 1 bis 13. Jede Runde neue Fragen."
-                vertikal={false}
+                farbe={F.bgPeach}
                 mobil={mobil}
               />
             </div>
@@ -353,11 +364,11 @@ export default function Home() {
   );
 }
 
-function Glied({ href, foto, label, titel, sub, vertikal, gross, mobil }: { href: string; foto: string; label: string; titel: string; sub: string; vertikal: boolean; gross?: boolean; mobil: boolean }) {
-  const F2 = { ink: '#0F172A', inkSoft: '#475569', border: '#E2E8F0', blue: '#1769FF', bg: '#fff' };
+function Glied({ href, foto, label, titel, sub, farbe, gross, mobil }: { href: string; foto: string; label: string; titel: string; sub: string; farbe: string; gross?: boolean; mobil: boolean }) {
+  const F2 = { ink: '#0F172A', inkSoft: '#475569', border: 'rgba(15,23,42,0.08)', blue: '#1769FF' };
   return (
-    <a href={href} className="glied-card" style={{ display: 'flex', flexDirection: 'column', background: F2.bg, border: `1px solid ${F2.border}`, borderRadius: '22px', overflow: 'hidden', textDecoration: 'none', color: F2.ink, height: '100%' }}>
-      <div style={{ position: 'relative', aspectRatio: gross ? '16 / 9' : '16 / 7', overflow: 'hidden', background: '#f4f4f5' }}>
+    <a href={href} className="glied-card" style={{ display: 'flex', flexDirection: 'column', background: farbe, border: `1px solid ${F2.border}`, borderRadius: '28px', overflow: 'hidden', textDecoration: 'none', color: F2.ink, height: '100%' }}>
+      <div style={{ position: 'relative', aspectRatio: gross ? '16 / 9' : '16 / 7', overflow: 'hidden', background: '#f4f4f5', borderBottom: `1px solid ${F2.border}` }}>
         <img src={foto} alt="" className="glied-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         <span style={{ position: 'absolute', top: '14px', left: '14px', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', color: F2.ink, padding: '6px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace' }}>
           {label}
