@@ -71,24 +71,47 @@ export default function Home() {
 
         .btn-primary {
           background: ${F.blue}; color: ${F.white};
-          padding: 14px 28px; border-radius: 12px;
-          font-size: 15px; font-weight: 600; letter-spacing: -0.005em;
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700; letter-spacing: -0.005em;
           display: inline-flex; align-items: center; gap: 8px;
           text-decoration: none; border: none; cursor: pointer;
           transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
           box-shadow: 0 1px 2px rgba(23,105,255,0.08), 0 8px 24px rgba(23,105,255,0.20);
+          font-family: ${SANS};
         }
         .btn-primary:hover { background: ${F.blueDeep}; box-shadow: 0 1px 2px rgba(23,105,255,0.10), 0 14px 32px rgba(23,105,255,0.28); transform: translateY(-1px); }
 
+        .btn-coral {
+          background: ${F.coral}; color: ${F.white};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700; letter-spacing: -0.005em;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: none; cursor: pointer;
+          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+          box-shadow: 0 1px 2px rgba(255,91,74,0.10), 0 10px 28px rgba(255,91,74,0.30);
+          font-family: ${SANS};
+        }
+        .btn-coral:hover { background: #e44b3c; box-shadow: 0 1px 2px rgba(255,91,74,0.12), 0 16px 38px rgba(255,91,74,0.38); transform: translateY(-1px); }
+
         .btn-ghost-dark {
           background: rgba(255,255,255,0.04); color: ${F.white};
-          padding: 14px 28px; border-radius: 12px;
-          font-size: 15px; font-weight: 600;
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700;
           display: inline-flex; align-items: center; gap: 8px;
           text-decoration: none; border: 1px solid rgba(255,255,255,0.18);
           transition: all 0.2s ease;
         }
         .btn-ghost-dark:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.30); }
+
+        .btn-ghost-warm {
+          background: ${F.white}; color: ${F.ink};
+          padding: 14px 28px; border-radius: 14px;
+          font-size: 15px; font-weight: 700;
+          display: inline-flex; align-items: center; gap: 8px;
+          text-decoration: none; border: 1.5px solid ${F.ink};
+          transition: all 0.2s ease;
+        }
+        .btn-ghost-warm:hover { background: ${F.ink}; color: ${F.white}; }
 
         .nav-link {
           color: rgba(255,255,255,0.82); text-decoration: none;
@@ -123,69 +146,70 @@ export default function Home() {
         }
       `}</style>
 
-      {/* HEADER - klare nav */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(11,31,58,0.92)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,0.10)' : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
+      {/* HEADER - hell, freundlich */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,253,248,0.94)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
         <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: mobil ? '24px' : '26px', fontWeight: 800, color: F.white, letterSpacing: '-0.025em' }}>
-            Lern<span style={{ color: F.blue }}>flix</span>
+          <span style={{ fontSize: mobil ? '24px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
+            Lern<span style={{ color: F.coral }}>flix</span>
           </span>
         </a>
         <nav style={{ display: 'flex', gap: mobil ? '4px' : '8px', alignItems: 'center' }}>
           {!mobil && (
             <>
-              <a href="/shop" className="nav-link">Lernmaterialien</a>
-              <a href="/lernplan" className="nav-link">Lernplan</a>
-              <a href="/lernheld" className="nav-link">Lernheld</a>
-              <a href="/quiz" className="nav-link">Quiz</a>
+              <a href="/shop" className="nav-link-light">Lernmaterialien</a>
+              <a href="/lernplan" className="nav-link-light">Lernplan</a>
+              <a href="/lernheld" className="nav-link-light">Lernheld</a>
+              <a href="/quiz" className="nav-link-light">Quiz</a>
             </>
           )}
-          <a href="/lernheld" className="btn-primary" style={{ padding: '10px 18px', fontSize: '13.5px', marginLeft: mobil ? '0' : '12px' }}>
+          <a href="/lernheld" className="btn-coral" style={{ padding: '10px 18px', fontSize: '13.5px', marginLeft: mobil ? '0' : '12px' }}>
             Lernheld
           </a>
         </nav>
       </header>
 
-      {/* HERO - Navy, premium, mit warmen deko-blobs */}
-      <section className="fade-up" style={{ background: F.navy, color: F.white, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        <div className="hero-glow" />
+      {/* HERO - hell, warm, kinderfreundlich */}
+      <section className="fade-up" style={{ background: F.bgWarm, color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '90px', right: '4%', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '40px', left: '2%', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,91,74,0.14) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '120px', right: '6%', width: '160px', height: '160px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '60px', left: '4%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgMint, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '42%', right: '38%', width: '70px', height: '70px', borderRadius: '50%', background: F.bgSky, opacity: 0.6, pointerEvents: 'none' }} />
           </>
         )}
         <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '50px' : '70px', alignItems: 'center', position: 'relative' }}>
           {/* Text */}
           <div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.92)', padding: '7px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '28px', fontFamily: '"JetBrains Mono", monospace' }}>
-              <span className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: F.green, boxShadow: `0 0 12px ${F.green}` }} />
-              DIE LERN-PLATTFORM · KLASSE 1—13
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
+              <span className="pulse-dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, boxShadow: `0 0 10px ${F.coral}` }} />
+              Die Lern-Plattform · Klasse 1—13
             </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 24px', color: F.white, letterSpacing: '-0.035em' }}>
-              Alles fürs Lernen,<br /><span style={{ color: F.blue }}>an einem Ort</span>.
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '82px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 24px', color: F.ink, letterSpacing: '-0.035em' }}>
+              Alles fürs Lernen,<br /><span style={{ color: F.coral }}>an einem Ort</span>.
             </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.72)', lineHeight: 1.55, margin: '0 0 38px', maxWidth: '500px', fontWeight: 400 }}>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 38px', maxWidth: '500px', fontWeight: 400 }}>
               Lernmaterialien zum Kaufen, dein eigener Lernplan, der Lernheld für die Schulaufgabe und ein kostenloses Quiz. Mathematik und Physik, Klasse 1 bis 13.
             </p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mobil ? '36px' : '52px' }}>
-              <a href="#bereiche" className="btn-primary">
+              <a href="#bereiche" className="btn-coral">
                 Loslegen
                 <span style={{ fontSize: '17px', lineHeight: 1 }}>→</span>
               </a>
-              <a href="/shop" className="btn-ghost-dark">Zum Shop</a>
+              <a href="/shop" className="btn-ghost-warm">Zum Shop</a>
             </div>
-            <div style={{ display: 'flex', gap: mobil ? '20px' : '36px', flexWrap: 'wrap', fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
-              <span><strong style={{ color: F.white, fontWeight: 700 }}>13</strong> Lernpakete</span>
-              <span><strong style={{ color: F.white, fontWeight: 700 }}>61</strong> Quiz-Themen</span>
+            <div style={{ display: 'flex', gap: mobil ? '20px' : '36px', flexWrap: 'wrap', fontSize: '13px', color: F.inkSoft, fontWeight: 500 }}>
+              <span><strong style={{ color: F.ink, fontWeight: 700 }}>13</strong> Lernpakete</span>
+              <span><strong style={{ color: F.ink, fontWeight: 700 }}>61</strong> Quiz-Themen</span>
               <span>Mathe + Physik</span>
               <span>Ab 0,99 €</span>
             </div>
           </div>
-          {/* Foto - dein gewuenschtes pfkknbsGuIc */}
+          {/* Foto - in weissem Rahmen schwebend */}
           <div className="fade-up-2" style={{ position: 'relative' }}>
-            <div style={{ position: 'relative', borderRadius: '20px', overflow: 'hidden', aspectRatio: '4 / 5', boxShadow: '0 30px 80px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.30)' }}>
-              <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(170deg, rgba(11,31,58,0.10) 0%, rgba(11,31,58,0.35) 100%)' }} />
+            <div style={{ position: 'relative', background: F.white, padding: mobil ? '12px 12px 16px' : '16px 16px 22px', borderRadius: '24px', boxShadow: '0 30px 70px rgba(15,23,42,0.14), 0 8px 24px rgba(15,23,42,0.08)' }}>
+              <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', aspectRatio: '4 / 5' }}>
+                <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
             </div>
           </div>
         </div>
@@ -305,22 +329,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <section style={{ background: F.navy, color: F.white, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
-        <div className="hero-glow" />
+      {/* CTA Banner - hell und warm */}
+      <section style={{ background: F.bgCream, color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '40px', right: '8%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '40px', left: '6%', width: '90px', height: '90px', borderRadius: '50%', background: F.bgMint, opacity: 0.6, pointerEvents: 'none' }} />
+          </>
+        )}
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
-          <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '60px', fontWeight: 800, color: F.white, margin: '0 0 20px', letterSpacing: '-0.035em', lineHeight: 1.02 }}>
-            Bereit für deine<br />nächste <span style={{ color: F.blue }}>Eins</span>?
+          <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '60px', fontWeight: 800, color: F.ink, margin: '0 0 20px', letterSpacing: '-0.035em', lineHeight: 1.02 }}>
+            Bereit für deine<br />nächste <span style={{ color: F.coral }}>Eins</span>?
           </h2>
-          <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.72)', margin: '0 auto 36px', lineHeight: 1.55, maxWidth: '540px' }}>
+          <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, margin: '0 auto 36px', lineHeight: 1.55, maxWidth: '540px' }}>
             Erstelle deinen Lernplan oder schau dir die Lernmaterialien an. Sofort verfügbar.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/lernheld" className="btn-primary">
+            <a href="/lernheld" className="btn-coral">
               Lernheld starten
               <span style={{ fontSize: '17px', lineHeight: 1 }}>→</span>
             </a>
-            <a href="/shop" className="btn-ghost-dark">Zum Shop</a>
+            <a href="/shop" className="btn-ghost-warm">Zum Shop</a>
           </div>
         </div>
       </section>
