@@ -194,15 +194,15 @@ export default function Home() {
         <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '50px' : '70px', alignItems: 'center', position: 'relative' }}>
           {/* Text */}
           <div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
               <span className="pulse-dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, boxShadow: `0 0 10px ${F.coral}` }} />
-              Die Lern-Plattform · Klasse 1—13
+              Für Klasse 1 bis 13
             </span>
             <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '82px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 24px', color: F.ink, letterSpacing: '-0.035em' }}>
-              Alles fürs Lernen,<br /><span style={{ color: F.coral }}>an einem Ort</span>.
+              Mathe und Physik <span style={{ color: F.coral }}>verstehen</span>.
             </h1>
             <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 38px', maxWidth: '500px', fontWeight: 400 }}>
-              Lernmaterialien zum Kaufen, dein eigener Lernplan, der Lernheld für die Schulaufgabe und ein kostenloses Quiz. Mathematik und Physik, Klasse 1 bis 13.
+              Lernmaterialien, Lernplan, ein Quiz und Hilfe für die nächste Schulaufgabe. Alles auf einer Seite.
             </p>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mobil ? '36px' : '52px' }}>
               <a href="#bereiche" className="btn-coral">
@@ -238,7 +238,7 @@ export default function Home() {
                     <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${ang}deg)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
                       <div style={{ background: k.bg, borderRadius: '26px', padding: mobil ? '26px 22px' : '34px 30px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 22px 48px rgba(15,23,42,0.18), 0 6px 16px rgba(15,23,42,0.10)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                         <div>
-                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '6px 13px', borderRadius: '999px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: mobil ? '18px' : '24px', fontFamily: '"JetBrains Mono", monospace' }}>
+                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800, marginBottom: mobil ? '18px' : '24px' }}>
                             {k.fach}
                           </span>
                           <div style={{ fontSize: mobil ? '54px' : '80px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.95 }}>
@@ -254,7 +254,7 @@ export default function Home() {
                           </p>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1.5px solid rgba(15,23,42,0.10)' }}>
                             <span style={{ fontSize: '18px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: k.akzent, letterSpacing: '0.08em' }}>LERNPAKET →</span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: k.akzent }}>Lernpaket →</span>
                           </div>
                         </div>
                       </div>
@@ -285,14 +285,14 @@ export default function Home() {
       <section id="bereiche" style={{ background: F.bgWarm, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
           <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
-            <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
-              ⎯ Featured · Premium
+            <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
+              Premium · 1,99 €
             </span>
             <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.02 }}>
-              Auf die Eins lernen.
+              Plan für die Schulaufgabe.
             </h2>
             <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, margin: 0, lineHeight: 1.55, fontWeight: 400 }}>
-              Mit dem Lernheld bekommst du in 3 Minuten einen persönlichen Plan für deine nächste Schulaufgabe.
+              Foto hochladen, Klasse wählen, fertig. Dein persönlicher Plan steht in 3 Minuten.
             </p>
           </div>
           <a href="/lernheld" className="feature" style={{ display: 'block', textDecoration: 'none', borderRadius: '32px', overflow: 'hidden', background: F.navy, color: F.white, boxShadow: '0 16px 50px rgba(11,31,58,0.20)' }}>
@@ -335,11 +335,11 @@ export default function Home() {
       <section style={{ background: F.bgWarm, padding: mobil ? '40px 22px 80px' : '50px 56px 130px' }}>
         <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
           <div style={{ marginBottom: mobil ? '32px' : '50px', maxWidth: '720px' }}>
-            <span style={{ display: 'inline-block', fontSize: '12px', color: F.blue, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '14px', fontFamily: '"JetBrains Mono", monospace' }}>
-              ⎯ Drei weitere Bereiche
+            <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
+              Auch dabei
             </span>
             <h2 style={{ fontFamily: SANS, fontSize: mobil ? '34px' : '50px', fontWeight: 800, color: F.ink, margin: 0, letterSpacing: '-0.03em', lineHeight: 1.0 }}>
-              Was du sonst noch hast.
+              Shop, Lernplan und Quiz.
             </h2>
           </div>
 
@@ -391,10 +391,10 @@ export default function Home() {
         )}
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
           <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '60px', fontWeight: 800, color: F.ink, margin: '0 0 20px', letterSpacing: '-0.035em', lineHeight: 1.02 }}>
-            Bereit für deine<br />nächste <span style={{ color: F.coral }}>Eins</span>?
+            Jetzt <span style={{ color: F.coral }}>loslegen</span>.
           </h2>
           <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, margin: '0 auto 36px', lineHeight: 1.55, maxWidth: '540px' }}>
-            Erstelle deinen Lernplan oder schau dir die Lernmaterialien an. Sofort verfügbar.
+            Plan für die Schulaufgabe oder direkt durch die Lernmaterialien stöbern.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="/lernheld" className="btn-coral">
