@@ -226,35 +226,40 @@ export default function Home() {
             <span style={{ position: 'absolute', bottom: '15%', left: '2%', fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: '#a78bfa', opacity: 0.32, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 8s ease-in-out infinite 1s' }}>√</span>
             <span style={{ position: 'absolute', bottom: '4%', right: '4%', fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: '#2e8a5c', opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 6.5s ease-in-out infinite 0.5s' }}>Σ</span>
 
-            {/* Card-Stack zentral, sanft gefaechert */}
+            {/* EINE grosse karte zentral, andere 4 hinten subtil als hint */}
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ position: 'relative', width: mobil ? '320px' : '460px', height: mobil ? '440px' : '580px' }}>
+              <div style={{ position: 'relative', width: mobil ? '300px' : '420px', height: mobil ? '420px' : '540px' }}>
                 {KARTEN.map((k, i) => {
-                  const totalAng = mobil ? 12 : 16;
-                  const ang = (i - (KARTEN.length - 1) / 2) * (totalAng / (KARTEN.length - 1));
-                  const offsetY = Math.abs(i - (KARTEN.length - 1) / 2) * (mobil ? 4 : 6);
-                  const offsetX = (i - (KARTEN.length - 1) / 2) * (mobil ? 14 : 22);
+                  const isMain = i === 2; // mittlere karte ist die haupt-karte
+                  // andere karten als dezente hints links/rechts
+                  const offset = i - 2;
+                  const ang = isMain ? 0 : offset * (mobil ? 4 : 6);
+                  const offsetX = isMain ? 0 : offset * (mobil ? 26 : 38);
+                  const offsetY = isMain ? 0 : Math.abs(offset) * (mobil ? 18 : 24);
+                  const scale = isMain ? 1 : 0.92 - Math.abs(offset) * 0.04;
+                  const opacity = isMain ? 1 : 0.5 - Math.abs(offset) * 0.10;
+                  const z = isMain ? 10 : 5 - Math.abs(offset);
                   return (
-                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${ang}deg)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
-                      <div style={{ background: k.bg, borderRadius: '26px', padding: mobil ? '26px 22px' : '34px 30px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 22px 48px rgba(15,23,42,0.18), 0 6px 16px rgba(15,23,42,0.10)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
+                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${ang}deg) scale(${scale})`, transformOrigin: 'center center', opacity, zIndex: z, animationDelay: `${i * 0.12}s` }}>
+                      <div style={{ background: k.bg, borderRadius: '28px', padding: mobil ? '28px 24px' : '38px 32px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: isMain ? '0 32px 64px rgba(15,23,42,0.22), 0 8px 20px rgba(15,23,42,0.10)' : '0 16px 32px rgba(15,23,42,0.10)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                         <div>
-                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '6px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: 800, marginBottom: mobil ? '18px' : '24px' }}>
+                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '7px 14px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 800, marginBottom: mobil ? '20px' : '28px' }}>
                             {k.fach}
                           </span>
-                          <div style={{ fontSize: mobil ? '54px' : '80px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.95 }}>
+                          <div style={{ fontSize: mobil ? '64px' : '94px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.95 }}>
                             {k.sym}
                           </div>
                         </div>
                         <div>
-                          <h3 style={{ fontSize: mobil ? '28px' : '38px', fontWeight: 800, color: F.ink, margin: '0 0 6px', letterSpacing: '-0.025em', lineHeight: 1.0, fontFamily: SANS }}>
+                          <h3 style={{ fontSize: mobil ? '30px' : '42px', fontWeight: 800, color: F.ink, margin: '0 0 6px', letterSpacing: '-0.025em', lineHeight: 1.0, fontFamily: SANS }}>
                             {k.t}
                           </h3>
-                          <p style={{ fontSize: '14px', color: F.inkSoft, margin: '0 0 16px', fontWeight: 600 }}>
+                          <p style={{ fontSize: '14.5px', color: F.inkSoft, margin: '0 0 18px', fontWeight: 600 }}>
                             {k.klasse}
                           </p>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1.5px solid rgba(15,23,42,0.10)' }}>
-                            <span style={{ fontSize: '18px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: k.akzent }}>Lernpaket →</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '16px', borderTop: '1.5px solid rgba(15,23,42,0.10)' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
+                            <span style={{ fontSize: '13.5px', fontWeight: 700, color: k.akzent }}>Lernpaket →</span>
                           </div>
                         </div>
                       </div>
@@ -343,40 +348,35 @@ export default function Home() {
             </h2>
           </div>
 
-          {/* asymmetrisches layout: shop gross links, lernplan + quiz gestapelt rechts */}
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.4fr 1fr', gap: mobil ? '20px' : '24px' }}>
-            {/* Shop - gross, sky-blau */}
+          {/* 3 gleich grosse karten in einer reihe - ruhig, balanced */}
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: mobil ? '20px' : '28px' }}>
             <Glied
               href="/shop"
               foto={FOTO.shop}
               label="Lernmaterialien · ab 0,99 €"
               titel="Shop"
-              sub="13 Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar."
+              sub="13 Lernpakete für Mathe und Physik. Mit Erklärungen, Skizzen und Übungen."
               farbe={F.bgSky}
-              gross
               mobil={mobil}
             />
-            {/* Rechts: 2 gestapelt */}
-            <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: mobil ? '20px' : '24px' }}>
-              <Glied
-                href="/lernplan"
-                foto={FOTO.lernplan}
-                label="Kostenlos"
-                titel="Mein Lernplan"
-                sub="Wöchentlicher Stundenplan mit Hausaufgaben und Lernblöcken."
-                farbe={F.bgMint}
-                mobil={mobil}
-              />
-              <Glied
-                href="/quiz"
-                foto={FOTO.quiz}
-                label="Kostenlos"
-                titel="Quiz"
-                sub="61 Themen für Klasse 1 bis 13. Jede Runde neue Fragen."
-                farbe={F.bgPeach}
-                mobil={mobil}
-              />
-            </div>
+            <Glied
+              href="/lernplan"
+              foto={FOTO.lernplan}
+              label="Kostenlos"
+              titel="Mein Lernplan"
+              sub="Wöchentlicher Stundenplan mit Hausaufgaben und Lernblöcken."
+              farbe={F.bgMint}
+              mobil={mobil}
+            />
+            <Glied
+              href="/quiz"
+              foto={FOTO.quiz}
+              label="Kostenlos"
+              titel="Quiz"
+              sub="61 Themen für Klasse 1 bis 13. Jede Runde neue Fragen."
+              farbe={F.bgPeach}
+              mobil={mobil}
+            />
           </div>
         </div>
       </section>
