@@ -36,6 +36,15 @@ const FOTO = {
   quiz: 'https://unsplash.com/photos/9Ul7x0bk3qE/download?w=1000&fm=jpg&q=85',
 };
 
+// Karten fuer den schwebenden card-stack im hero (bunte lernpaket-cover)
+const KARTEN = [
+  { t: 'Brüche', sym: '¾', bg: '#dceffb', akzent: '#1769FF', fach: 'Mathe', klasse: 'Klasse 5—7', preis: 'ab 0,99 €' },
+  { t: 'Pythagoras', sym: 'c²', bg: '#fde4d4', akzent: '#cf4a40', fach: 'Mathe', klasse: 'Klasse 8—10', preis: 'ab 1,99 €' },
+  { t: 'Funktionen', sym: 'ƒ(x)', bg: '#e7f5ec', akzent: '#2e8a5c', fach: 'Mathe', klasse: 'Klasse 9—11', preis: 'ab 1,99 €' },
+  { t: 'Mechanik', sym: 'F=ma', bg: '#fef3dd', akzent: '#d99a36', fach: 'Physik', klasse: 'Klasse 7—10', preis: 'ab 0,99 €' },
+  { t: 'Optik', sym: '◐', bg: '#e7defb', akzent: '#7656b0', fach: 'Physik', klasse: 'Klasse 8—10', preis: 'ab 0,99 €' },
+];
+
 export default function Home() {
   const [breite, setBreite] = useState(1200);
   const [scrolled, setScrolled] = useState(false);
@@ -65,6 +74,12 @@ export default function Home() {
         body { background: ${F.bg}; margin: 0; font-family: ${SANS}; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } }
+        @keyframes floatA { 0%, 100% { transform: translateY(0px) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        @keyframes floatB { 0%, 100% { transform: translateY(0px) rotate(3deg); } 50% { transform: translateY(-10px) rotate(-3deg); } }
+        @keyframes karteIn { from { opacity: 0; transform: rotate(0deg) translateY(80px); } }
+
+        .lernkarte { animation: karteIn 1s cubic-bezier(0.2,0.8,0.2,1) both; transition: transform 0.4s cubic-bezier(0.2,0.8,0.2,1); }
+        .lernkarte:hover { z-index: 10; transform: translateY(-16px) rotate(0deg) scale(1.04) !important; }
         .fade-up { animation: fadeUp 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
         .fade-up-2 { animation: fadeUp 0.9s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
         .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
@@ -204,11 +219,49 @@ export default function Home() {
               <span>Ab 0,99 €</span>
             </div>
           </div>
-          {/* Foto - in weissem Rahmen schwebend */}
-          <div className="fade-up-2" style={{ position: 'relative' }}>
-            <div style={{ position: 'relative', background: F.white, padding: mobil ? '12px 12px 16px' : '16px 16px 22px', borderRadius: '24px', boxShadow: '0 30px 70px rgba(15,23,42,0.14), 0 8px 24px rgba(15,23,42,0.08)' }}>
-              <div style={{ position: 'relative', borderRadius: '14px', overflow: 'hidden', aspectRatio: '4 / 5' }}>
-                <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {/* Hero-Visual: floating Lernpaket-card-stack mit schwebenden mathe-symbolen */}
+          <div className="fade-up-2" style={{ position: 'relative', height: mobil ? '440px' : '560px' }}>
+            {/* Schwebende mathe-symbole als deko */}
+            <span style={{ position: 'absolute', top: '5%', left: '8%', fontSize: mobil ? '38px' : '54px', fontWeight: 800, color: F.coral, opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 6s ease-in-out infinite' }}>π</span>
+            <span style={{ position: 'absolute', top: '12%', right: '14%', fontSize: mobil ? '32px' : '46px', fontWeight: 800, color: F.blue, opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 7s ease-in-out infinite' }}>x²</span>
+            <span style={{ position: 'absolute', bottom: '22%', left: '4%', fontSize: mobil ? '36px' : '52px', fontWeight: 800, color: '#a78bfa', opacity: 0.32, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 8s ease-in-out infinite 1s' }}>√</span>
+            <span style={{ position: 'absolute', bottom: '5%', right: '6%', fontSize: mobil ? '34px' : '48px', fontWeight: 800, color: '#2e8a5c', opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 6.5s ease-in-out infinite 0.5s' }}>Σ</span>
+            <span style={{ position: 'absolute', top: '48%', right: '4%', fontSize: mobil ? '26px' : '36px', fontWeight: 800, color: '#d99a36', opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 5.5s ease-in-out infinite 1.5s' }}>∞</span>
+
+            {/* Card-Stack zentral, gefaechert */}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: mobil ? '280px' : '380px', height: mobil ? '380px' : '480px' }}>
+                {KARTEN.map((k, i) => {
+                  const totalAng = mobil ? 18 : 26;
+                  const ang = (i - (KARTEN.length - 1) / 2) * (totalAng / (KARTEN.length - 1));
+                  const offsetY = Math.abs(i - (KARTEN.length - 1) / 2) * (mobil ? 6 : 10);
+                  return (
+                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `rotate(${ang}deg) translateY(${offsetY}px)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
+                      <div style={{ background: k.bg, borderRadius: '22px', padding: mobil ? '20px 18px' : '26px 22px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 18px 36px rgba(15,23,42,0.16), 0 4px 12px rgba(15,23,42,0.08)', border: '1.5px solid rgba(255,255,255,0.65)' }}>
+                        <div>
+                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '5px 11px', borderRadius: '999px', fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: mobil ? '14px' : '18px', fontFamily: '"JetBrains Mono", monospace' }}>
+                            {k.fach}
+                          </span>
+                          <div style={{ fontSize: mobil ? '42px' : '60px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.92 }}>
+                            {k.sym}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: mobil ? '22px' : '28px', fontWeight: 800, color: F.ink, margin: '0 0 4px', letterSpacing: '-0.025em', lineHeight: 1.05, fontFamily: SANS }}>
+                            {k.t}
+                          </h3>
+                          <p style={{ fontSize: '12.5px', color: F.inkSoft, margin: '0 0 12px', fontWeight: 600 }}>
+                            {k.klasse}
+                          </p>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1.5px solid rgba(15,23,42,0.08)' }}>
+                            <span style={{ fontSize: '15px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: k.akzent, letterSpacing: '0.06em' }}>LERNPAKET →</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
