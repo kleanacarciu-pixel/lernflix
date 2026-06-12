@@ -195,8 +195,8 @@ export default function Shop() {
             ))}
           </div>
 
-          {/* Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr 1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: mobil ? '14px' : '22px' }}>
+          {/* Grid - max 3 pro reihe, viel groessere abstaende */}
+          <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : breite < 1100 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: mobil ? '20px' : '32px' }}>
             {angezeigt.map((p) => (<ProduktKarte key={p.id} p={p} onClick={() => setAusgewaehlt(p)} mobil={mobil} />))}
           </div>
         </div>
@@ -232,17 +232,23 @@ function ProduktKarte({ p, onClick, mobil }: { p: Produkt; onClick: () => void; 
   const F2 = {
     bg: '#ffffff', ink: '#0F172A', inkSoft: '#475569', inkMuted: '#94A3B8', border: '#E2E8F0', coral: '#ff5b4a',
     mathe: '#1769FF', physik: '#c8782e',
+    matheBg: '#E8F0FF', physikBg: '#FEF1E0',
   };
   const akzent = p.kategorie === 'mathe' ? F2.mathe : F2.physik;
+  const akzentBg = p.kategorie === 'mathe' ? F2.matheBg : F2.physikBg;
   return (
-    <div onClick={onClick} className="karte" style={{ background: F2.bg, borderRadius: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: `1.5px solid ${F2.border}`, padding: mobil ? '20px 18px 18px' : '24px 22px 22px', boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
-      <span style={{ fontSize: '10.5px', letterSpacing: '0.16em', textTransform: 'uppercase', color: akzent, fontWeight: 800, marginBottom: '10px' }}>{p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}</span>
-      <h3 style={{ fontFamily: SANS, fontSize: mobil ? '22px' : '24px', fontWeight: 800, margin: '0 0 12px', color: F2.ink, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{p.titel}</h3>
-      <p style={{ fontSize: '13.5px', color: F2.inkSoft, lineHeight: 1.5, margin: '0 0 18px', flex: 1, fontWeight: 400 }}>{p.beschreibung}</p>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: `1px solid ${F2.border}` }}>
-        <span style={{ fontSize: '17px', fontWeight: 800, color: F2.ink, letterSpacing: '-0.01em' }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
-        <span style={{ fontSize: '13px', color: F2.coral, fontWeight: 800, letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-          Ansehen <span className="karte-arrow">→</span>
+    <div onClick={onClick} className="karte" style={{ background: F2.bg, borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: `1.5px solid ${F2.border}`, padding: mobil ? '28px 26px 26px' : '36px 32px 32px', boxShadow: '0 1px 2px rgba(15,23,42,0.04)', minHeight: mobil ? '260px' : '320px' }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <span style={{ background: akzentBg, color: akzent, padding: '7px 14px', borderRadius: '999px', fontSize: '12px', letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 800 }}>
+          {p.kategorie === 'mathe' ? 'Mathematik' : 'Physik'}
+        </span>
+      </div>
+      <h3 style={{ fontFamily: SANS, fontSize: mobil ? '30px' : '34px', fontWeight: 800, margin: '0 0 14px', color: F2.ink, letterSpacing: '-0.025em', lineHeight: 1.05 }}>{p.titel}</h3>
+      <p style={{ fontSize: mobil ? '15px' : '16px', color: F2.inkSoft, lineHeight: 1.55, margin: '0 0 28px', flex: 1, fontWeight: 400 }}>{p.beschreibung}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '20px', borderTop: `1px solid ${F2.border}` }}>
+        <span style={{ fontSize: mobil ? '22px' : '24px', fontWeight: 800, color: F2.ink, letterSpacing: '-0.02em' }}>{p.preis.toFixed(2).replace('.', ',')} €</span>
+        <span style={{ fontSize: '14.5px', color: F2.coral, fontWeight: 800, letterSpacing: '0.02em', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          Ansehen <span className="karte-arrow" style={{ fontSize: '17px' }}>→</span>
         </span>
       </div>
     </div>

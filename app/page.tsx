@@ -168,16 +168,15 @@ export default function Home() {
             Lern<span style={{ color: F.coral }}>flix</span>
           </span>
         </a>
-        <nav style={{ display: 'flex', gap: mobil ? '4px' : '8px', alignItems: 'center' }}>
+        <nav style={{ display: 'flex', gap: mobil ? '8px' : '28px', alignItems: 'center' }}>
           {!mobil && (
             <>
               <a href="/shop" className="nav-link-light">Lernmaterialien</a>
               <a href="/lernplan" className="nav-link-light">Lernplan</a>
-              <a href="/lernheld" className="nav-link-light">Lernheld</a>
               <a href="/quiz" className="nav-link-light">Quiz</a>
             </>
           )}
-          <a href="/lernheld" className="btn-coral" style={{ padding: '10px 18px', fontSize: '13.5px', marginLeft: mobil ? '0' : '12px' }}>
+          <a href="/lernheld" className="btn-coral" style={{ padding: '11px 22px', fontSize: '14px', marginLeft: mobil ? '0' : '12px' }}>
             Lernheld
           </a>
         </nav>
@@ -220,42 +219,42 @@ export default function Home() {
             </div>
           </div>
           {/* Hero-Visual: floating Lernpaket-card-stack mit schwebenden mathe-symbolen */}
-          <div className="fade-up-2" style={{ position: 'relative', height: mobil ? '440px' : '560px' }}>
+          <div className="fade-up-2" style={{ position: 'relative', height: mobil ? '500px' : '640px' }}>
             {/* Schwebende mathe-symbole als deko */}
-            <span style={{ position: 'absolute', top: '5%', left: '8%', fontSize: mobil ? '38px' : '54px', fontWeight: 800, color: F.coral, opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 6s ease-in-out infinite' }}>π</span>
-            <span style={{ position: 'absolute', top: '12%', right: '14%', fontSize: mobil ? '32px' : '46px', fontWeight: 800, color: F.blue, opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 7s ease-in-out infinite' }}>x²</span>
-            <span style={{ position: 'absolute', bottom: '22%', left: '4%', fontSize: mobil ? '36px' : '52px', fontWeight: 800, color: '#a78bfa', opacity: 0.32, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 8s ease-in-out infinite 1s' }}>√</span>
-            <span style={{ position: 'absolute', bottom: '5%', right: '6%', fontSize: mobil ? '34px' : '48px', fontWeight: 800, color: '#2e8a5c', opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 6.5s ease-in-out infinite 0.5s' }}>Σ</span>
-            <span style={{ position: 'absolute', top: '48%', right: '4%', fontSize: mobil ? '26px' : '36px', fontWeight: 800, color: '#d99a36', opacity: 0.30, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 5.5s ease-in-out infinite 1.5s' }}>∞</span>
+            <span style={{ position: 'absolute', top: '3%', left: '6%', fontSize: mobil ? '42px' : '64px', fontWeight: 800, color: F.coral, opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 6s ease-in-out infinite' }}>π</span>
+            <span style={{ position: 'absolute', top: '8%', right: '8%', fontSize: mobil ? '36px' : '54px', fontWeight: 800, color: F.blue, opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 7s ease-in-out infinite' }}>x²</span>
+            <span style={{ position: 'absolute', bottom: '15%', left: '2%', fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: '#a78bfa', opacity: 0.32, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 8s ease-in-out infinite 1s' }}>√</span>
+            <span style={{ position: 'absolute', bottom: '4%', right: '4%', fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: '#2e8a5c', opacity: 0.28, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 6.5s ease-in-out infinite 0.5s' }}>Σ</span>
 
-            {/* Card-Stack zentral, gefaechert */}
+            {/* Card-Stack zentral, sanft gefaechert */}
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ position: 'relative', width: mobil ? '280px' : '380px', height: mobil ? '380px' : '480px' }}>
+              <div style={{ position: 'relative', width: mobil ? '320px' : '460px', height: mobil ? '440px' : '580px' }}>
                 {KARTEN.map((k, i) => {
-                  const totalAng = mobil ? 18 : 26;
+                  const totalAng = mobil ? 12 : 16;
                   const ang = (i - (KARTEN.length - 1) / 2) * (totalAng / (KARTEN.length - 1));
-                  const offsetY = Math.abs(i - (KARTEN.length - 1) / 2) * (mobil ? 6 : 10);
+                  const offsetY = Math.abs(i - (KARTEN.length - 1) / 2) * (mobil ? 4 : 6);
+                  const offsetX = (i - (KARTEN.length - 1) / 2) * (mobil ? 14 : 22);
                   return (
-                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `rotate(${ang}deg) translateY(${offsetY}px)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
-                      <div style={{ background: k.bg, borderRadius: '22px', padding: mobil ? '20px 18px' : '26px 22px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 18px 36px rgba(15,23,42,0.16), 0 4px 12px rgba(15,23,42,0.08)', border: '1.5px solid rgba(255,255,255,0.65)' }}>
+                    <div key={k.t} className="lernkarte" style={{ position: 'absolute', inset: 0, transform: `translateX(${offsetX}px) translateY(${offsetY}px) rotate(${ang}deg)`, transformOrigin: 'center bottom', animationDelay: `${i * 0.15}s` }}>
+                      <div style={{ background: k.bg, borderRadius: '26px', padding: mobil ? '26px 22px' : '34px 30px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 22px 48px rgba(15,23,42,0.18), 0 6px 16px rgba(15,23,42,0.10)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                         <div>
-                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '5px 11px', borderRadius: '999px', fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: mobil ? '14px' : '18px', fontFamily: '"JetBrains Mono", monospace' }}>
+                          <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(6px)', color: k.akzent, padding: '6px 13px', borderRadius: '999px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: mobil ? '18px' : '24px', fontFamily: '"JetBrains Mono", monospace' }}>
                             {k.fach}
                           </span>
-                          <div style={{ fontSize: mobil ? '42px' : '60px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.92 }}>
+                          <div style={{ fontSize: mobil ? '54px' : '80px', fontWeight: 900, color: k.akzent, fontFamily: SANS, fontStyle: 'italic', letterSpacing: '-0.04em', lineHeight: 1, opacity: 0.95 }}>
                             {k.sym}
                           </div>
                         </div>
                         <div>
-                          <h3 style={{ fontSize: mobil ? '22px' : '28px', fontWeight: 800, color: F.ink, margin: '0 0 4px', letterSpacing: '-0.025em', lineHeight: 1.05, fontFamily: SANS }}>
+                          <h3 style={{ fontSize: mobil ? '28px' : '38px', fontWeight: 800, color: F.ink, margin: '0 0 6px', letterSpacing: '-0.025em', lineHeight: 1.0, fontFamily: SANS }}>
                             {k.t}
                           </h3>
-                          <p style={{ fontSize: '12.5px', color: F.inkSoft, margin: '0 0 12px', fontWeight: 600 }}>
+                          <p style={{ fontSize: '14px', color: F.inkSoft, margin: '0 0 16px', fontWeight: 600 }}>
                             {k.klasse}
                           </p>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1.5px solid rgba(15,23,42,0.08)' }}>
-                            <span style={{ fontSize: '15px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
-                            <span style={{ fontSize: '11px', fontWeight: 700, color: k.akzent, letterSpacing: '0.06em' }}>LERNPAKET →</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1.5px solid rgba(15,23,42,0.10)' }}>
+                            <span style={{ fontSize: '18px', fontWeight: 800, color: F.ink, fontFamily: SANS, letterSpacing: '-0.01em' }}>{k.preis}</span>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: k.akzent, letterSpacing: '0.08em' }}>LERNPAKET →</span>
                           </div>
                         </div>
                       </div>
