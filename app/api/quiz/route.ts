@@ -44,11 +44,15 @@ WICHTIG — diese Fragen muessen ABWECHSLUNGSREICH sein:
 - Mische diese Aufgabentypen: ${stil1} und ${stil2}.
 - Verwende NEUE Zahlen, neue Kontexte und neue Formulierungen — KEINE Standard-Lehrbuch-Aufgaben.
 - Mische einfachere und kniffligere Fragen innerhalb der gewuenschten Schwierigkeit.
-- Bei richtiger Antwort: variiere die Position (mal A, mal B, mal C, mal D — nicht immer dieselbe).
+- Variiere welche Position die richtige Antwort hat (mal die erste, mal die zweite, mal die dritte, mal die vierte).
 
-Jede Frage hat 4 Antworten, nur eine ist richtig. Die Fragen muessen genau zur Klassenstufe passen — nicht zu schwer, nicht zu leicht. Verwende echte deutsche Umlaute (ä ö ü ß), niemals "ae oe ue ss". Erwaehne niemals KI/AI/Sprachmodelle/Claude/Anthropic.
+Jede Frage hat genau 4 Antworten. Genau eine ist richtig. Die Fragen muessen zur Klassenstufe passen. Verwende echte deutsche Umlaute (ä ö ü ß), niemals "ae oe ue ss". Erwaehne niemals KI/AI/Sprachmodelle/Claude/Anthropic.
 
-Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
+KRITISCH FUER DIE RICHTIGE ANTWORT:
+Statt einer Index-Zahl gib das Feld "loesung" mit dem WORTLAUT der richtigen Antwort genau wie er auch in der "antworten"-Liste steht (selbe Schreibweise, selbe Zeichen). Das ist die einzige Quelle der Wahrheit — die Reihenfolge der Antworten ist egal.
+
+Antworte NUR mit JSON ohne Markdown ohne Backticks. Beispiel-Struktur:
+{"fragen":[{"frage":"Was ist 2+3?","antworten":["4","5","6","7"],"loesung":"5","erklaerung":"2+3=5"}]}`,
           },
         ],
       }),
@@ -69,6 +73,32 @@ Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","ant
     }
     
     const quizData = JSON.parse(text);
+
+    // Konvertiere "loesung" (text der richtigen antwort) -> "richtig" (index)
+    // Das ist robuster als wenn die KI selbst den index liefert
+    // (sie hat oft 1-basiert statt 0-basiert verstanden -> falsche-antwort-bug)
+    if (quizData && Array.isArray(quizData.fragen)) {
+      quizData.fragen = quizData.fragen.map((f: { frage?: string; antworten?: string[]; loesung?: string; richtig?: number; erklaerung?: string }) => {
+        const antworten = Array.isArray(f.antworten) ? f.antworten : [];
+        let richtig = 0;
+        if (typeof f.loesung === "string" && antworten.length > 0) {
+          // exakter match zuerst, sonst normalisierter vergleich
+          const idx = antworten.findIndex((a) => a === f.loesung);
+          if (idx !== -1) {
+            richtig = idx;
+          } else {
+            const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+            const idx2 = antworten.findIndex((a) => norm(a) === norm(f.loesung!));
+            if (idx2 !== -1) richtig = idx2;
+          }
+        } else if (typeof f.richtig === "number" && f.richtig >= 0 && f.richtig < antworten.length) {
+          // fallback fuer altes format
+          richtig = f.richtig;
+        }
+        return { frage: f.frage, antworten, richtig, erklaerung: f.erklaerung };
+      });
+    }
+
     return NextResponse.json(quizData);
   } catch (error) {
     console.error("Fehler:", error);
