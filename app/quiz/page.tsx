@@ -168,14 +168,44 @@ const KATALOG: Record<Fach, Record<number, string[]>> = {
 };
 
 const SCHWIERIGKEITEN = [
-  { id: "leicht", name: "😊 Leicht", farbe: "#22c55e" },
-  { id: "mittel", name: "😤 Mittel", farbe: "#f59e0b" },
-  { id: "schwer", name: "🔥 Schwer", farbe: "#ef4444" },
+  { id: "leicht", name: "Leicht", farbe: "#10B981", farbeHell: "#E8F7EE" },
+  { id: "mittel", name: "Mittel", farbe: "#F59E0B", farbeHell: "#FEF3DD" },
+  { id: "schwer", name: "Schwer", farbe: "#EF4444", farbeHell: "#FEE4E4" },
 ];
 
-const EMOJIS_SUPER = ["🏆🎉🥳", "⭐⭐⭐", "🎊🏅✨"];
-const EMOJIS_GUT = ["👍😊💪", "🌟😄✨", "💪🎯👏"];
-const EMOJIS_WEITER = ["📚💡🔥", "⚡📖💪", "🎯📚✏️"];
+const EMOJIS_SUPER = ["", "", ""];
+const EMOJIS_GUT = ["", "", ""];
+const EMOJIS_WEITER = ["", "", ""];
+
+// Lernflix design system
+const F = {
+  bg: '#fffdf8',
+  bgWarm: '#fff8ee',
+  bgCream: '#fef3dd',
+  bgSoft: '#fef6e8',
+  white: '#ffffff',
+  ink: '#0F172A',
+  inkSoft: '#475569',
+  inkMuted: '#94A3B8',
+  border: '#E2E8F0',
+  coral: '#ff5b4a',
+  coralDeep: '#e44b3c',
+  blue: '#1769FF',
+  blueDeep: '#1156DD',
+  blueLight: '#E8F0FF',
+  navy: '#0B1F3A',
+  navyDark: '#08182C',
+  green: '#10B981',
+  greenLight: '#E8F7EE',
+  red: '#EF4444',
+  redLight: '#FEE4E4',
+};
+const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+
+// emoji am anfang eines themas entfernen, damit titel sauber sind
+function stripEmojiPrefix(s: string): string {
+  return s.replace(/^[^a-zA-ZÄÖÜäöüß0-9]+/, "").trim();
+}
 
 type Frage = {
   frage: string;
@@ -288,117 +318,192 @@ export default function QuizPage() {
   const verfuegbareKlassen = Array.from({ length: 13 }, (_, i) => i + 1); // 1..13
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f5f0e8", fontFamily: "Arial, sans-serif" }}>
-      <div style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", padding: "20px", textAlign: "center" }}>
-        <h1 style={{ color: "white", margin: 0, fontSize: "32px", fontWeight: "900" }}>🎓 Lernflix Quiz</h1>
-        <p style={{ color: "rgba(255,255,255,0.9)", margin: "6px 0 0 0", fontSize: "16px" }}>Teste dein Wissen — kostenlos & interaktiv!</p>
-      </div>
+    <main style={{ minHeight: "100vh", background: F.bgWarm, fontFamily: SANS, color: F.ink }}>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
-      <div style={{ maxWidth: "750px", margin: "0 auto", padding: "30px 16px" }}>
+      <style>{`
+        * { -webkit-font-smoothing: antialiased; }
+        body { background: ${F.bgWarm}; margin: 0; font-family: ${SANS}; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+        .fade-up { animation: fadeUp 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
+        .pulse { animation: pulse 1.4s ease-in-out infinite; }
+        .pill { transition: all 0.18s cubic-bezier(0.2,0.8,0.2,1); cursor: pointer; }
+        .pill:hover:not(.disabled) { transform: translateY(-2px); }
+        .answer { transition: all 0.18s cubic-bezier(0.2,0.8,0.2,1); }
+        .answer:hover:not(.locked) { transform: translateY(-2px); border-color: ${F.coral}; }
+        .btn-primary {
+          background: ${F.coral}; color: ${F.white};
+          padding: 16px 28px; border-radius: 14px;
+          font-size: 16px; font-weight: 700; letter-spacing: -0.005em;
+          display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+          text-decoration: none; border: none; cursor: pointer;
+          transition: all 0.2s ease; font-family: ${SANS};
+          box-shadow: 0 1px 2px rgba(255,91,74,0.10), 0 8px 24px rgba(255,91,74,0.24);
+          width: 100%;
+        }
+        .btn-primary:hover:not(:disabled) { background: ${F.coralDeep}; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255,91,74,0.32); }
+        .btn-primary:disabled { background: ${F.inkMuted}; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
+      `}</style>
+
+      {/* HEADER */}
+      <header style={{ background: F.bgWarm, padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${F.border}`, position: "sticky", top: 0, zIndex: 50, backdropFilter: "saturate(180%) blur(20px)" }}>
+        <a href="/" style={{ textDecoration: "none" }}>
+          <span style={{ fontSize: "24px", fontWeight: 800, color: F.ink, letterSpacing: "-0.025em" }}>
+            Lern<span style={{ color: F.coral }}>flix</span>
+          </span>
+        </a>
+        <a href="/" style={{ color: F.inkSoft, textDecoration: "none", fontSize: "14px", fontWeight: 600 }}>← Zurück</a>
+      </header>
+
+      <div style={{ maxWidth: "780px", margin: "0 auto", padding: "32px 22px 80px" }}>
 
         {schritt === "auswahl" && (
-          <div>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
-              <button onClick={() => { setAktiverTab("mathe"); setThema(""); setKlassenFilter(null); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "mathe" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "mathe" ? "white" : "#5b9bd5" }}>
-                📐 Mathe
-              </button>
-              <button onClick={() => { setAktiverTab("physik"); setThema(""); setKlassenFilter(null); }}
-                style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "18px", fontWeight: "700", background: aktiverTab === "physik" ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: aktiverTab === "physik" ? "white" : "#5b9bd5" }}>
-                ⚡ Physik
-              </button>
+          <div className="fade-up">
+            {/* Title */}
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(255,91,74,0.14)" }}>
+                Kostenloses Quiz
+              </span>
+              <h1 style={{ fontSize: "44px", fontWeight: 800, margin: "0 0 10px", letterSpacing: "-0.03em", lineHeight: 1.0, color: F.ink }}>
+                Teste dein <span style={{ color: F.coral }}>Wissen</span>.
+              </h1>
+              <p style={{ fontSize: "16px", color: F.inkSoft, margin: 0, lineHeight: 1.55 }}>
+                Wähle Fach, Klasse, Thema und Schwierigkeit.
+              </p>
             </div>
 
-            <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "20px", marginBottom: "12px" }}>Welche Klasse bist du?</h2>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "10px", justifyContent: "center" }}>
-              {verfuegbareKlassen.map((k) => (
-                <button key={k} onClick={() => { setKlassenFilter(k); setThema(""); }}
-                  style={{ padding: "10px 14px", borderRadius: "10px", border: `2px solid ${klassenFilter === k ? "#2d6da8" : "#e0d8cc"}`, background: klassenFilter === k ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: klassenFilter === k ? "white" : "#1a1a2e", cursor: "pointer", fontWeight: 700, fontSize: "14px", minWidth: "44px" }}>
-                  {k}
-                </button>
-              ))}
+            {/* Step 1: Fach */}
+            <div style={{ marginBottom: "28px" }}>
+              <p style={{ fontSize: "11.5px", color: F.inkMuted, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", margin: "0 0 10px" }}>Schritt 1 · Fach</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                {(["mathe", "physik"] as const).map((f) => (
+                  <button key={f} className="pill" onClick={() => { setAktiverTab(f); setThema(""); setKlassenFilter(null); }}
+                    style={{ padding: "16px 18px", borderRadius: "14px", border: `1.5px solid ${aktiverTab === f ? F.ink : F.border}`, background: aktiverTab === f ? F.ink : F.white, color: aktiverTab === f ? F.white : F.ink, fontSize: "16px", fontWeight: 700, fontFamily: SANS }}>
+                    {f === "mathe" ? "Mathematik" : "Physik"}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p style={{ color: "#6e6e73", fontSize: "13px", textAlign: "center", margin: "0 0 24px" }}>
-              {klassenFilter === null ? "Klick auf deine Klasse, dann siehst du deine 15 Themen." : `15 Themen für Klasse ${klassenFilter}`}
-            </p>
 
+            {/* Step 2: Klasse */}
+            <div style={{ marginBottom: "28px" }}>
+              <p style={{ fontSize: "11.5px", color: F.inkMuted, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", margin: "0 0 10px" }}>Schritt 2 · Klasse</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
+                {verfuegbareKlassen.map((k) => (
+                  <button key={k} className="pill" onClick={() => { setKlassenFilter(k); setThema(""); }}
+                    style={{ aspectRatio: "1 / 1", borderRadius: "12px", border: `1.5px solid ${klassenFilter === k ? F.ink : F.border}`, background: klassenFilter === k ? F.ink : F.white, color: klassenFilter === k ? F.white : F.ink, fontSize: "16px", fontWeight: 800, fontFamily: SANS, padding: 0 }}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 3: Thema */}
             {klassenFilter !== null && (
-              <>
-                <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Wähle dein Thema!</h2>
-                <div style={{ display: "grid", gap: "10px", marginBottom: "28px" }}>
-                  {aktiveThemen.map((t) => (
-                    <div key={t} onClick={() => setThema(t)}
-                      style={{ background: thema === t ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "white", color: thema === t ? "white" : "#1a1a2e", padding: "16px 20px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${thema === t ? "#2d6da8" : "#e0d8cc"}`, fontSize: "17px", fontWeight: "600", transition: "all 0.2s" }}>
-                      {t}
-                    </div>
-                  ))}
+              <div style={{ marginBottom: "28px" }} className="fade-up">
+                <p style={{ fontSize: "11.5px", color: F.inkMuted, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", margin: "0 0 10px" }}>Schritt 3 · Thema</p>
+                <div style={{ display: "grid", gap: "8px" }}>
+                  {aktiveThemen.map((t) => {
+                    const clean = stripEmojiPrefix(t);
+                    return (
+                      <button key={t} className="pill" onClick={() => setThema(t)}
+                        style={{ textAlign: "left", padding: "14px 18px", borderRadius: "12px", border: `1.5px solid ${thema === t ? F.coral : F.border}`, background: thema === t ? "#fff5f3" : F.white, color: F.ink, fontSize: "15px", fontWeight: 600, fontFamily: SANS, display: "flex", alignItems: "center", gap: "12px" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", border: `1.5px solid ${thema === t ? F.coral : F.border}`, background: thema === t ? F.coral : "transparent", flexShrink: 0 }}>
+                          {thema === t && (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M3 6L5 8L9 4" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {clean}
+                      </button>
+                    );
+                  })}
                 </div>
-              </>
+              </div>
             )}
 
-            <h2 style={{ color: "#1a1a2e", textAlign: "center", fontSize: "22px", marginBottom: "16px" }}>Schwierigkeit?</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "28px" }}>
-              {SCHWIERIGKEITEN.map((s) => (
-                <div key={s.id} onClick={() => setSchwierigkeit(s.id)}
-                  style={{ background: schwierigkeit === s.id ? s.farbe : "white", color: schwierigkeit === s.id ? "white" : "#1a1a2e", padding: "16px", borderRadius: "12px", cursor: "pointer", border: `2px solid ${schwierigkeit === s.id ? s.farbe : "#e0d8cc"}`, textAlign: "center", fontSize: "16px", fontWeight: "700", transition: "all 0.2s" }}>
-                  {s.name}
-                </div>
-              ))}
+            {/* Step 4: Schwierigkeit */}
+            <div style={{ marginBottom: "32px" }}>
+              <p style={{ fontSize: "11.5px", color: F.inkMuted, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", margin: "0 0 10px" }}>Schritt 4 · Schwierigkeit</p>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                {SCHWIERIGKEITEN.map((s) => (
+                  <button key={s.id} className="pill" onClick={() => setSchwierigkeit(s.id)}
+                    style={{ padding: "14px 12px", borderRadius: "12px", border: `1.5px solid ${schwierigkeit === s.id ? s.farbe : F.border}`, background: schwierigkeit === s.id ? s.farbeHell : F.white, color: schwierigkeit === s.id ? s.farbe : F.ink, fontSize: "15px", fontWeight: 700, fontFamily: SANS }}>
+                    {s.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <button onClick={startQuiz} disabled={!thema || !schwierigkeit || laden}
-              style={{ width: "100%", background: thema && schwierigkeit ? "linear-gradient(135deg, #5b9bd5, #2d6da8)" : "#ccc", color: "white", border: "none", padding: "18px", borderRadius: "14px", fontSize: "20px", cursor: thema && schwierigkeit ? "pointer" : "not-allowed", fontWeight: "800" }}>
-              {laden ? "⏳ Einen Moment..." : "🚀 Quiz starten!"}
+            <button onClick={startQuiz} disabled={!thema || !schwierigkeit || laden} className="btn-primary">
+              {laden ? (
+                <span className="pulse" style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: F.white }} />
+                  Fragen werden geladen ...
+                </span>
+              ) : (
+                <>Quiz starten <span style={{ fontSize: "18px" }}>→</span></>
+              )}
             </button>
           </div>
         )}
 
         {schritt === "quiz" && fragen && fragen.length > 0 && (
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px", alignItems: "center" }}>
-              <span style={{ color: "#2d6da8", fontWeight: "800", fontSize: "16px" }}>Frage {aktuelle + 1} von {fragen.length}</span>
-              <span style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", padding: "6px 16px", borderRadius: "20px", fontWeight: "800", fontSize: "16px" }}>⭐ {punkte} Punkte</span>
+          <div className="fade-up">
+            {/* Progress header */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "14px", alignItems: "center" }}>
+              <span style={{ color: F.inkSoft, fontWeight: 700, fontSize: "13.5px" }}>Frage {aktuelle + 1} von {fragen.length}</span>
+              <span style={{ background: F.ink, color: F.white, padding: "5px 13px", borderRadius: "999px", fontWeight: 700, fontSize: "13px" }}>{punkte} richtig</span>
             </div>
 
-            <div style={{ background: "#dbeafe", borderRadius: "10px", height: "10px", marginBottom: "24px", overflow: "hidden" }}>
-              <div style={{ background: "linear-gradient(90deg, #5b9bd5, #2d6da8)", height: "10px", borderRadius: "10px", width: `${((aktuelle + 1) / fragen.length) * 100}%`, transition: "width 0.4s ease" }} />
+            <div style={{ background: F.border, borderRadius: "999px", height: "6px", marginBottom: "26px", overflow: "hidden" }}>
+              <div style={{ background: F.coral, height: "6px", borderRadius: "999px", width: `${((aktuelle + 1) / fragen.length) * 100}%`, transition: "width 0.4s ease" }} />
             </div>
 
-            <div style={{ background: "white", borderRadius: "16px", padding: "24px", marginBottom: "20px", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", border: "2px solid #dbeafe" }}>
-              <h3 style={{ fontSize: "20px", color: "#1a1a2e", marginTop: 0, lineHeight: 1.6, fontWeight: "700" }}>{fragen[aktuelle].frage}</h3>
+            {/* Question card */}
+            <div style={{ background: F.white, borderRadius: "20px", padding: "28px 28px 26px", marginBottom: "20px", boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px rgba(15,23,42,0.06)", border: `1px solid ${F.border}` }}>
+              <h2 style={{ fontSize: "22px", color: F.ink, margin: 0, lineHeight: 1.4, fontWeight: 700, letterSpacing: "-0.015em" }}>{fragen[aktuelle].frage}</h2>
             </div>
 
-            <div style={{ display: "grid", gap: "12px", marginBottom: "20px" }}>
+            {/* Answers */}
+            <div style={{ display: "grid", gap: "10px", marginBottom: "20px" }}>
               {fragen[aktuelle].antworten.map((antwort, i) => {
-                let bg = "white";
-                let border = "#2d6da8";
-                let textColor = "#1a1a2e";
+                let bg = F.white;
+                let border = F.border;
+                let textColor = F.ink;
+                let badgeBg = F.bgSoft;
+                let badgeColor = F.inkSoft;
                 if (antwortGezeigt) {
-                  if (i === fragen[aktuelle].richtig) { bg = "#dcfce7"; border = "#16a34a"; textColor = "#166534"; }
-                  else if (i === ausgewaehlt) { bg = "#fee2e2"; border = "#dc2626"; textColor = "#991b1b"; }
-                  else { bg = "#f9fafb"; border = "#d1d5db"; textColor = "#9ca3af"; }
+                  if (i === fragen[aktuelle].richtig) { bg = F.greenLight; border = F.green; textColor = F.ink; badgeBg = F.green; badgeColor = F.white; }
+                  else if (i === ausgewaehlt) { bg = F.redLight; border = F.red; textColor = F.ink; badgeBg = F.red; badgeColor = F.white; }
+                  else { bg = F.white; border = F.border; textColor = F.inkMuted; }
                 }
                 return (
-                  <div key={i} onClick={() => antwortWaehlen(i)}
-                    style={{ background: bg, border: `2.5px solid ${border}`, borderRadius: "12px", padding: "16px 20px", cursor: antwortGezeigt ? "default" : "pointer", fontSize: "17px", fontWeight: "700", color: textColor, transition: "all 0.2s", display: "flex", alignItems: "center", gap: "14px" }}>
-                    <span style={{ background: antwortGezeigt ? "transparent" : "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: antwortGezeigt ? textColor : "white", borderRadius: "8px", padding: "4px 12px", fontSize: "15px", fontWeight: "900", border: antwortGezeigt ? `2px solid ${border}` : "none", minWidth: "32px", textAlign: "center" }}>
+                  <button key={i} onClick={() => antwortWaehlen(i)} disabled={antwortGezeigt}
+                    className={antwortGezeigt ? "answer locked" : "answer"}
+                    style={{ background: bg, border: `1.5px solid ${border}`, borderRadius: "14px", padding: "16px 18px", cursor: antwortGezeigt ? "default" : "pointer", fontSize: "16px", fontWeight: 600, color: textColor, display: "flex", alignItems: "center", gap: "14px", textAlign: "left", fontFamily: SANS, width: "100%" }}>
+                    <span style={{ background: badgeBg, color: badgeColor, borderRadius: "8px", padding: "4px 0", fontSize: "13px", fontWeight: 800, minWidth: "30px", textAlign: "center", flexShrink: 0 }}>
                       {["A", "B", "C", "D"][i]}
                     </span>
-                    {antwort}
-                  </div>
+                    <span style={{ flex: 1, lineHeight: 1.4 }}>{antwort}</span>
+                  </button>
                 );
               })}
             </div>
 
             {antwortGezeigt && (
-              <div>
-                <div style={{ background: ausgewaehlt === fragen[aktuelle].richtig ? "#dcfce7" : "#fee2e2", border: `2px solid ${ausgewaehlt === fragen[aktuelle].richtig ? "#16a34a" : "#dc2626"}`, borderRadius: "12px", padding: "16px", marginBottom: "16px", fontSize: "16px", fontWeight: "600", color: ausgewaehlt === fragen[aktuelle].richtig ? "#166534" : "#991b1b" }}>
-                  {ausgewaehlt === fragen[aktuelle].richtig ? "✅ Richtig! " : "❌ Falsch! "}
+              <div className="fade-up">
+                <div style={{ background: ausgewaehlt === fragen[aktuelle].richtig ? F.greenLight : F.redLight, border: `1.5px solid ${ausgewaehlt === fragen[aktuelle].richtig ? F.green : F.red}`, borderRadius: "14px", padding: "18px 20px", marginBottom: "16px", fontSize: "14.5px", fontWeight: 500, color: F.ink, lineHeight: 1.55 }}>
+                  <p style={{ margin: 0, fontWeight: 800, fontSize: "14px", color: ausgewaehlt === fragen[aktuelle].richtig ? F.green : F.red, marginBottom: "6px" }}>
+                    {ausgewaehlt === fragen[aktuelle].richtig ? "Richtig" : "Leider falsch"}
+                  </p>
                   {fragen[aktuelle].erklaerung}
                 </div>
-                <button onClick={naechsteFrage}
-                  style={{ width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "16px", borderRadius: "12px", fontSize: "18px", cursor: "pointer", fontWeight: "800" }}>
-                  {aktuelle + 1 >= fragen.length ? "🏁 Ergebnis sehen!" : "➡️ Nächste Frage"}
+                <button onClick={naechsteFrage} className="btn-primary">
+                  {aktuelle + 1 >= fragen.length ? "Ergebnis ansehen" : "Nächste Frage"} <span style={{ fontSize: "18px" }}>→</span>
                 </button>
               </div>
             )}
@@ -406,32 +511,36 @@ export default function QuizPage() {
         )}
 
         {schritt === "ergebnis" && (
-          <div style={{ textAlign: "center" }}>
-            <h2 style={{ color: "#1a1a2e", fontSize: "28px", fontWeight: "900" }}>
-              {prozent >= 80 ? "🏆 Fantastisch!" : prozent >= 50 ? "👍 Gut gemacht!" : "💪 Weiter üben!"}
+          <div className="fade-up" style={{ textAlign: "center", paddingTop: "20px" }}>
+            <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(255,91,74,0.14)" }}>
+              Quiz beendet
+            </span>
+            <h2 style={{ fontSize: "42px", margin: "0 0 10px", letterSpacing: "-0.03em", lineHeight: 1.0, fontWeight: 800, color: F.ink }}>
+              {prozent >= 80 ? "Stark!" : prozent >= 50 ? "Gut gemacht." : "Bleib dran."}
             </h2>
-            <div style={{ background: "white", borderRadius: "20px", padding: "30px", marginBottom: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}>
-              <p style={{ fontSize: "56px", fontWeight: "900", color: "#2d6da8", margin: "0 0 8px 0" }}>{punkte}/{fragen.length}</p>
-              <p style={{ fontSize: "22px", color: "#555", margin: "0 0 16px 0" }}>{prozent}% richtig</p>
-              {zufallsEmoji && (
-                <div style={{ fontSize: "80px", margin: "16px 0" }}>{zufallsEmoji}</div>
-              )}
+            <p style={{ fontSize: "16px", color: F.inkSoft, margin: "0 0 28px" }}>
+              {prozent >= 80 ? "Das war richtig gut." : prozent >= 50 ? "Mit ein bisschen Übung wird die Eins sicher." : "Übung macht die Eins. Probier es nochmal."}
+            </p>
+
+            <div style={{ background: F.white, borderRadius: "24px", padding: "36px 28px 32px", marginBottom: "20px", boxShadow: "0 1px 2px rgba(15,23,42,0.04), 0 12px 32px rgba(15,23,42,0.06)", border: `1px solid ${F.border}` }}>
+              <p style={{ fontSize: "72px", fontWeight: 900, color: F.ink, margin: "0", lineHeight: 1.0, letterSpacing: "-0.04em" }}>{punkte}<span style={{ color: F.inkMuted, fontSize: "44px", fontWeight: 800 }}>/{fragen.length}</span></p>
+              <p style={{ fontSize: "16px", color: F.inkSoft, margin: "10px 0 0", fontWeight: 600 }}>{prozent}% richtig</p>
             </div>
 
-            <div style={{ background: "#dbeafe", border: "2px solid #5b9bd5", borderRadius: "16px", padding: "24px", marginBottom: "24px" }}>
-              <p style={{ fontSize: "18px", fontWeight: "800", color: "#1e40af", margin: "0 0 10px 0" }}>📚 Noch mehr lernen?</p>
-              <p style={{ color: "#3b4f7a", margin: "0 0 16px 0", fontSize: "15px" }}>Unsere Lernmaterialien helfen dir noch besser zu werden!</p>
-              <button onClick={() => window.location.href = "/"} style={{ background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "12px 28px", borderRadius: "10px", fontWeight: "800", fontSize: "16px", cursor: "pointer" }}>
-                Materialien ansehen
-              </button>
+            <div style={{ background: F.white, border: `1px solid ${F.border}`, borderRadius: "18px", padding: "22px 24px", marginBottom: "20px", textAlign: "left" }}>
+              <p style={{ fontSize: "14.5px", fontWeight: 800, color: F.ink, margin: "0 0 6px" }}>Noch besser werden?</p>
+              <p style={{ color: F.inkSoft, margin: "0 0 14px", fontSize: "14px", lineHeight: 1.55 }}>Im Shop findest du Lernpakete für dein Thema. Mit Erklärungen, Skizzen und Übungen.</p>
+              <a href="/shop" style={{ background: F.ink, color: F.white, textDecoration: "none", padding: "10px 22px", borderRadius: "10px", fontWeight: 700, fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                Zum Shop <span style={{ fontSize: "16px" }}>→</span>
+              </a>
             </div>
 
-            <button onClick={neuStarten} style={{ width: "100%", background: "linear-gradient(135deg, #5b9bd5, #2d6da8)", color: "white", border: "none", padding: "16px", borderRadius: "12px", fontSize: "18px", cursor: "pointer", fontWeight: "800" }}>
-              🔄 Nochmal spielen!
+            <button onClick={neuStarten} className="btn-primary">
+              Nochmal spielen <span style={{ fontSize: "18px" }}>→</span>
             </button>
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
