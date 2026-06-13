@@ -237,8 +237,8 @@ export default function Home() {
               <span className="pulse-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: F.blue, boxShadow: '0 0 8px rgba(23,105,255,0.6)' }} />
               Klasse 1 bis 13 · Mathe + Physik
             </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '42px' : '78px', fontWeight: 800, lineHeight: mobil ? 1.05 : 1.0, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.03em' }}>
-              Die Lernplattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '64px', fontWeight: 800, lineHeight: mobil ? 1.1 : 1.05, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.025em' }}>
+              Die Lernplattform<br />für <span style={{ color: F.blue, whiteSpace: 'nowrap' }}>Mathe und Physik</span>.
             </h1>
             <p style={{ fontSize: mobil ? '16px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: mobil ? '0 auto 24px' : '0 0 32px', maxWidth: '520px', fontWeight: 400 }}>
               Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
