@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -12,17 +14,10 @@ export async function POST(request: Request) {
     if (schwierigkeit === "mittel") schwierigkeitText = "mittelschwer";
     if (schwierigkeit === "schwer") schwierigkeitText = "schwierig";
 
-    // Variations-Stichworte sorgen dafuer, dass die Fragen jedes Mal anders sind.
-    const stilArten = [
-      "konkrete Zahlenaufgaben", "Textaufgaben aus dem Alltag", "Begriffe und Definitionen abfragen",
-      "Fehler in Rechnungen erkennen", "Vergleichs- und Reihenfolge-Aufgaben", "Anwendungsbeispiele aus der Praxis",
-      "Aufgaben mit kleinen Zahlen", "Aufgaben mit groesseren Zahlen", "Schaetzaufgaben",
-      "Visuelle Beschreibungen", "Lueckentext-Style", "Was-passiert-wenn-Fragen",
-    ];
-    const stil1 = stilArten[Math.floor(Math.random() * stilArten.length)];
-    const stil2 = stilArten[Math.floor(Math.random() * stilArten.length)];
-    const variationsId = Math.random().toString(36).slice(2, 10);
+    const variationsId = Math.random().toString(36).slice(2, 8);
 
+    // Speed-optimierter prompt: kuerzer + niedrigere max_tokens
+    // Klare anleitung -> weniger nachdenken -> schnellere antwort
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -32,30 +27,30 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 1500,
-        temperature: 1.0,
+        max_tokens: 900,
+        temperature: 0.9,
         messages: [
           {
             role: "user",
-            content: `Erstelle 5 Multiple-Choice-Fragen zum Thema "${thema}" für ${fach} in ${klasse}. Schwierigkeit: ${schwierigkeitText}.
+            content: `5 Multiple-Choice-Fragen ${fach} ${klasse} Thema "${thema}", ${schwierigkeitText}. Variation: ${variationsId}.
 
-WICHTIG — diese Fragen muessen ABWECHSLUNGSREICH sein:
-- Variations-ID dieses Aufrufs: ${variationsId} (nutze andere Zahlen und Beispiele als bei anderen IDs).
-- Mische diese Aufgabentypen: ${stil1} und ${stil2}.
-- Verwende NEUE Zahlen, neue Kontexte und neue Formulierungen — KEINE Standard-Lehrbuch-Aufgaben.
-- Mische einfachere und kniffligere Fragen innerhalb der gewuenschten Schwierigkeit.
-- Bei richtiger Antwort: variiere die Position (mal A, mal B, mal C, mal D — nicht immer dieselbe).
+Regeln:
+- Jede Frage 4 Antworten, eine richtig
+- Variiere Position der richtigen Antwort
+- Neue Zahlen/Kontexte, keine Standardaufgaben
+- Echte deutsche Umlaute (ä ö ü ß)
+- Niemals KI/AI/Anthropic erwaehnen
+- "loesung" = WORTLAUT der richtigen Antwort (nicht Index)
 
-Jede Frage hat 4 Antworten, nur eine ist richtig. Die Fragen muessen genau zur Klassenstufe passen — nicht zu schwer, nicht zu leicht. Verwende echte deutsche Umlaute (ä ö ü ß), niemals "ae oe ue ss". Erwaehne niemals KI/AI/Sprachmodelle/Claude/Anthropic.
-
-Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"kurz"}]}`,
+Nur JSON ohne Markdown:
+{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"<text der richtigen>","erklaerung":"kurz"}]}`,
           },
         ],
       }),
     });
 
     const data = await response.json();
-    
+
     if (!response.ok) {
       return NextResponse.json({ error: "Fehler" }, { status: 500 });
     }
@@ -67,8 +62,30 @@ Antworte NUR mit JSON ohne Markdown ohne Backticks: {"fragen":[{"frage":"?","ant
     if (start !== -1 && end !== -1) {
       text = text.substring(start, end + 1);
     }
-    
+
     const quizData = JSON.parse(text);
+
+    // Konvertiere "loesung" (text der richtigen antwort) -> "richtig" (index)
+    if (quizData && Array.isArray(quizData.fragen)) {
+      quizData.fragen = quizData.fragen.map((f: { frage?: string; antworten?: string[]; loesung?: string; richtig?: number; erklaerung?: string }) => {
+        const antworten = Array.isArray(f.antworten) ? f.antworten : [];
+        let richtig = 0;
+        if (typeof f.loesung === "string" && antworten.length > 0) {
+          const idx = antworten.findIndex((a) => a === f.loesung);
+          if (idx !== -1) {
+            richtig = idx;
+          } else {
+            const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+            const idx2 = antworten.findIndex((a) => norm(a) === norm(f.loesung!));
+            if (idx2 !== -1) richtig = idx2;
+          }
+        } else if (typeof f.richtig === "number" && f.richtig >= 0 && f.richtig < antworten.length) {
+          richtig = f.richtig;
+        }
+        return { frage: f.frage, antworten, richtig, erklaerung: f.erklaerung };
+      });
+    }
+
     return NextResponse.json(quizData);
   } catch (error) {
     console.error("Fehler:", error);
