@@ -323,7 +323,7 @@ export default function QuizPage() {
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
       {/* Karierte papier textur (matched mit homepage) */}
-      <div style={{ position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(23,105,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.045) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none", zIndex: 0 }} />
       {/* Dezente glow blobs */}
       <div style={{ position: "fixed", top: "10%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.08) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
       <div style={{ position: "fixed", bottom: "-100px", left: "10%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(50px)", zIndex: 0 }} />

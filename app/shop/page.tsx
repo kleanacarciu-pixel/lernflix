@@ -156,7 +156,7 @@ export default function Shop() {
       {/* HERO - matched mit homepage: weiss + karierte papier + dezente blobs */}
       <section style={{ background: '#ffffff', color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '100px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {/* Karierte papier textur */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.045) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         {/* Dezente glow blobs */}
         {!mobil && (
           <>
@@ -193,10 +193,14 @@ export default function Shop() {
           <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x² + 3x + 2</text>
         </svg>
         <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center', zIndex: 1 }}>
+          {/* Kleines buecher-foto als deko (matched mit homepage) */}
+          <img src="/20260613_173033176_iOS.png" alt="Mathe und Physik Buecher" style={{ width: mobil ? '140px' : '180px', height: 'auto', marginBottom: '18px', display: 'inline-block' }} />
           {/* Premium pill eyebrow */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, border: `1px solid ${F.border}`, padding: '8px 18px', borderRadius: '999px', marginBottom: '22px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, display: 'inline-block' }} />
-            <span style={{ fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: F.ink }}>Lernpakete</span>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '22px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, border: `1px solid ${F.border}`, padding: '8px 18px', borderRadius: '999px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, display: 'inline-block' }} />
+              <span style={{ fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: F.ink }}>Lernpakete</span>
+            </div>
           </div>
           <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 18px', color: F.ink, letterSpacing: '-0.035em' }}>
             Lernmaterialien.
