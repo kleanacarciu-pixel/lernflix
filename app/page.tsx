@@ -257,19 +257,20 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - transparenter PNG, kein mask noetig */}
+          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - groesser, besser positioniert */}
           {!mobil && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: '580px' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', minHeight: '680px' }}>
               <img
                 src="https://tmpfiles.org/dl/wywKMCUgzRnb/hp_foto-removebg-preview.png"
                 alt=""
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '580px',
-                  width: 'auto',
+                  width: '110%',
+                  maxWidth: '640px',
                   height: 'auto',
                   objectFit: 'contain',
-                  filter: 'drop-shadow(0 20px 30px rgba(15,23,42,0.18))',
+                  filter: 'drop-shadow(0 24px 40px rgba(15,23,42,0.22))',
+                  marginRight: '-30px',
+                  marginBottom: '-40px',
                 }}
               />
             </div>
