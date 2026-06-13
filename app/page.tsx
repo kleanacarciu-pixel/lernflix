@@ -267,7 +267,6 @@ export default function Home() {
                 maxWidth: mobil ? '380px' : '800px',
                 height: 'auto',
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 24px 40px rgba(15,23,42,0.22))',
               }}
             />
           </div>
