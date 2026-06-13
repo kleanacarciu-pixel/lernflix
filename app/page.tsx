@@ -182,94 +182,86 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - hell, warm, kinderfreundlich */}
-      <section className="fade-up" style={{ background: F.bgWarm, color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '70px' : '120px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {!mobil && (
-          <>
-            <div style={{ position: 'absolute', top: '120px', right: '6%', width: '160px', height: '160px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '60px', left: '4%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgMint, opacity: 0.7, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', top: '42%', right: '38%', width: '70px', height: '70px', borderRadius: '50%', background: F.bgSky, opacity: 0.6, pointerEvents: 'none' }} />
-          </>
-        )}
-        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '50px' : '70px', alignItems: 'center', position: 'relative' }}>
+      {/* HERO - Mathegym-style: voller coral-bg mit math-formel-pattern, headline + cta + visual rechts */}
+      <section className="fade-up" style={{ background: `linear-gradient(135deg, ${F.coral} 0%, #ff6b5a 100%)`, color: F.white, paddingTop: mobil ? '100px' : '120px', paddingBottom: mobil ? '60px' : '90px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Dezente math-formel-pattern als deko */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.10 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1200 700">
+          <text x="60" y="120" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">a² + b² = c²</text>
+          <text x="800" y="80" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">∫ x dx</text>
+          <text x="40" y="320" fontFamily="Inter, sans-serif" fontSize="48" fontWeight="800" fontStyle="italic" fill="white">f(x) = 2x + 5</text>
+          <text x="900" y="280" fontFamily="Inter, sans-serif" fontSize="46" fontWeight="800" fontStyle="italic" fill="white">π · r²</text>
+          <text x="100" y="540" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="white">v = s / t</text>
+          <text x="700" y="500" fontFamily="Inter, sans-serif" fontSize="44" fontWeight="800" fontStyle="italic" fill="white">F = m · a</text>
+          <text x="500" y="200" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">sin α · cos β</text>
+          <text x="300" y="650" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">3/4 + 1/2</text>
+        </svg>
+        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center', position: 'relative' }}>
           {/* Text */}
           <div>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '28px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
-              <span className="pulse-dot" style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, boxShadow: `0 0 10px ${F.coral}` }} />
-              Für Klasse 1 bis 13
-            </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '82px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 24px', color: F.ink, letterSpacing: '-0.035em' }}>
-              Mathe und Physik <span style={{ color: F.coral }}>verstehen</span>.
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '80px', fontWeight: 800, lineHeight: 1.0, margin: '0 0 22px', color: F.white, letterSpacing: '-0.035em' }}>
+              Die Lern-Plattform<br />für <span style={{ fontStyle: 'italic' }}>Mathe & Physik</span>.
             </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 0 38px', maxWidth: '500px', fontWeight: 400 }}>
-              Lernmaterialien, Lernplan, ein Quiz und Hilfe für die nächste Schulaufgabe. Alles auf einer Seite.
+            <p style={{ fontSize: mobil ? '17px' : '20px', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, margin: '0 0 36px', maxWidth: '560px', fontWeight: 400 }}>
+              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
             </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mobil ? '36px' : '52px' }}>
-              <a href="#bereiche" className="btn-coral">
-                Loslegen
-                <span style={{ fontSize: '17px', lineHeight: 1 }}>→</span>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <a href="/shop" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: '17px 32px', borderRadius: '14px', fontSize: '16px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 32px rgba(0,0,0,0.18)' }}>
+                Zum Shop <span style={{ fontSize: '18px' }}>→</span>
               </a>
-              <a href="/shop" className="btn-ghost-warm">Zum Shop</a>
-            </div>
-            <div style={{ display: 'flex', gap: mobil ? '20px' : '36px', flexWrap: 'wrap', fontSize: '13px', color: F.inkSoft, fontWeight: 500 }}>
-              <span><strong style={{ color: F.ink, fontWeight: 700 }}>13</strong> Lernpakete</span>
-              <span><strong style={{ color: F.ink, fontWeight: 700 }}>61</strong> Quiz-Themen</span>
-              <span>Mathe + Physik</span>
-              <span>Ab 0,99 €</span>
+              <a href="/quiz" style={{ background: 'rgba(255,255,255,0.16)', color: F.white, textDecoration: 'none', padding: '17px 32px', borderRadius: '14px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1.5px solid rgba(255,255,255,0.4)', backdropFilter: 'blur(8px)' }}>
+                Quiz starten
+              </a>
             </div>
           </div>
-          {/* Hero-Visual: pastell-blob mit zentralem Klasse-Selector — ruhig, klar, schueler-orientiert */}
-          <div className="fade-up-2" style={{ position: 'relative', height: mobil ? '440px' : '560px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Schwebende mathe-symbole sehr dezent als hintergrund */}
-            <span style={{ position: 'absolute', top: '4%', left: '4%', fontSize: mobil ? '48px' : '72px', fontWeight: 800, color: F.coral, opacity: 0.18, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 7s ease-in-out infinite' }}>π</span>
-            <span style={{ position: 'absolute', top: '50%', right: '2%', fontSize: mobil ? '42px' : '64px', fontWeight: 800, color: F.blue, opacity: 0.18, fontFamily: SANS, fontStyle: 'italic', animation: 'floatB 8s ease-in-out infinite' }}>x²</span>
-            <span style={{ position: 'absolute', bottom: '6%', left: '8%', fontSize: mobil ? '40px' : '60px', fontWeight: 800, color: '#a78bfa', opacity: 0.18, fontFamily: SANS, fontStyle: 'italic', animation: 'floatA 9s ease-in-out infinite 1s' }}>√</span>
 
-            {/* Klasse-Picker als Hero-Element */}
-            <div style={{ position: 'relative', background: F.white, borderRadius: '32px', padding: mobil ? '28px 26px 30px' : '40px 38px 42px', boxShadow: '0 32px 64px rgba(15,23,42,0.10), 0 8px 24px rgba(15,23,42,0.06)', border: `1px solid ${F.border}`, width: mobil ? '100%' : '480px', maxWidth: '500px' }}>
-              <p style={{ fontSize: '12px', color: F.inkMuted, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 14px' }}>
-                Welche Klasse?
+          {/* Klasse-Picker als Hero-Visual */}
+          <div className="fade-up-2" style={{ position: 'relative' }}>
+            <div style={{ background: F.white, borderRadius: '24px', padding: mobil ? '24px 22px 26px' : '32px 30px 34px', boxShadow: '0 32px 64px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.10)', border: `1px solid rgba(0,0,0,0.04)` }}>
+              <p style={{ fontSize: '12.5px', color: F.inkMuted, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                In welcher Klasse?
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '18px' }}>
                 {Array.from({ length: 13 }, (_, i) => i + 1).map((n) => (
-                  <a key={n} href={`/quiz?klasse=${n}`} style={{ aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: `1.5px solid ${F.border}`, background: F.bg, color: F.ink, fontSize: mobil ? '14px' : '16px', fontWeight: 800, textDecoration: 'none', transition: 'all 0.15s ease' }}
-                     onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = F.ink; (e.currentTarget as HTMLAnchorElement).style.color = F.white; (e.currentTarget as HTMLAnchorElement).style.borderColor = F.ink; }}
+                  <a key={n} href={`/quiz?klasse=${n}`} style={{ aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: `1.5px solid ${F.border}`, background: F.bg, color: F.ink, fontSize: mobil ? '14px' : '15px', fontWeight: 800, textDecoration: 'none', transition: 'all 0.15s ease' }}
+                     onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = F.coral; (e.currentTarget as HTMLAnchorElement).style.color = F.white; (e.currentTarget as HTMLAnchorElement).style.borderColor = F.coral; }}
                      onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = F.bg; (e.currentTarget as HTMLAnchorElement).style.color = F.ink; (e.currentTarget as HTMLAnchorElement).style.borderColor = F.border; }}>
                     {n}
                   </a>
                 ))}
               </div>
-              <p style={{ fontSize: '13px', color: F.inkSoft, fontWeight: 500, margin: '0 0 18px', lineHeight: 1.5 }}>
-                Klick auf deine Klasse und du landest direkt im Quiz mit deinen Themen.
+              <p style={{ fontSize: '13.5px', color: F.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+                Klick auf deine Klasse — du landest direkt im Quiz mit deinen Themen.
               </p>
-              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: F.inkSoft, fontWeight: 600 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: F.coral }} />
-                  Mathematik
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: F.inkSoft, fontWeight: 600 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: F.blue }} />
-                  Physik
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TRUST STRIP - warm cream */}
-      <section style={{ background: F.bgCream, padding: mobil ? '24px 22px' : '28px 56px' }}>
-        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: mobil ? '20px' : '48px', justifyContent: 'center', alignItems: 'center' }}>
-          {['Sofort verfügbar', 'PDF zum Ausdrucken', 'Sichere Bezahlung', 'Mit Rechnung', '14 Tage Widerruf'].map((t, i) => (
-            <span key={i} style={{ fontSize: '13px', fontWeight: 600, color: F.inkSoft, letterSpacing: '-0.005em', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 7L6 10L11 4" stroke={F.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {t}
-            </span>
+      {/* TRUST STRIP - Mathegym-style: 3 grosse spalten mit checkmarks */}
+      <section style={{ background: F.white, padding: mobil ? '32px 22px' : '40px 56px', borderBottom: `1px solid ${F.border}` }}>
+        <div style={{ maxWidth: '1180px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: mobil ? '20px' : '32px' }}>
+          {[
+            { num: '13', t: 'Lernpakete', sub: 'Mathe + Physik · ab 0,99 €' },
+            { num: '61', t: 'Quiz-Themen', sub: 'Kostenlos · jede Runde neu' },
+            { num: '1—13', t: 'Klassenstufen', sub: 'Von Grundschule bis Abitur' },
+          ].map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#E8F7EE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 10L8.5 13.5L15 7" stroke={F.green} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <p style={{ fontSize: '17px', color: F.ink, fontWeight: 800, margin: '0 0 2px', letterSpacing: '-0.01em' }}>
+                  <span style={{ color: F.coral }}>{t.num}</span> {t.t}
+                </p>
+                <p style={{ fontSize: '13px', color: F.inkSoft, margin: 0, fontWeight: 500 }}>{t.sub}</p>
+              </div>
+            </div>
           ))}
         </div>
       </section>
+
 
       {/* SHOP - FEATURED (gross, wichtigster bereich) */}
       <section id="bereiche" style={{ background: F.bgWarm, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
