@@ -235,7 +235,7 @@ export default function Home() {
             Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
           </p>
           <a href="/shop" style={{ background: '#10B981', color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '19px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(16,185,129,0.45), inset 0 -4px 0 rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
-            Zum Aufgabenbereich
+            Loslegen <span style={{ fontSize: '20px' }}>→</span>
           </a>
         </div>
       </section>
@@ -423,23 +423,59 @@ export default function Home() {
   );
 }
 
-function Glied({ href, foto, label, titel, sub, farbe, gross, mobil }: { href: string; foto: string; label: string; titel: string; sub: string; farbe: string; gross?: boolean; mobil: boolean }) {
-  const F2 = { ink: '#0F172A', inkSoft: '#475569', border: 'rgba(15,23,42,0.08)', blue: '#1769FF' };
+function Glied({ href, label, titel, sub, farbe, gross, mobil }: { href: string; foto?: string; label: string; titel: string; sub: string; farbe: string; gross?: boolean; mobil: boolean }) {
+  const F2 = { ink: '#0F172A', inkSoft: '#475569', border: 'rgba(15,23,42,0.08)', blue: '#1769FF', white: '#fff' };
+  // Icon je nach titel auswaehlen
+  const icon = (() => {
+    if (titel.toLowerCase().includes('lernheld')) return (
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <path d="M22 6 L36 11 V22 C36 30 30 36 22 39 C14 36 8 30 8 22 V11 Z" stroke={F2.ink} strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+        <path d="M22 16 L24.5 21 L30 21.5 L26 25 L27 30 L22 27.5 L17 30 L18 25 L14 21.5 L19.5 21 Z" fill={F2.ink} />
+      </svg>
+    );
+    if (titel.toLowerCase().includes('lernplan')) return (
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <rect x="7" y="9" width="30" height="28" rx="3" stroke={F2.ink} strokeWidth="2.5" fill="none" />
+        <path d="M7 17 L37 17" stroke={F2.ink} strokeWidth="2.5" />
+        <path d="M14 5 V13 M30 5 V13" stroke={F2.ink} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="15" cy="24" r="1.6" fill={F2.ink} />
+        <circle cx="22" cy="24" r="1.6" fill={F2.ink} />
+        <circle cx="29" cy="24" r="1.6" fill={F2.ink} />
+        <circle cx="15" cy="30" r="1.6" fill={F2.ink} />
+        <circle cx="22" cy="30" r="1.6" fill={F2.ink} />
+      </svg>
+    );
+    if (titel.toLowerCase().includes('quiz')) return (
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <circle cx="22" cy="22" r="16" stroke={F2.ink} strokeWidth="2.5" fill="none" />
+        <path d="M17 17C17 14 19 12 22 12C25 12 27 14 27 17C27 20 23 21 23 25" stroke={F2.ink} strokeWidth="2.8" strokeLinecap="round" fill="none" />
+        <circle cx="23" cy="31" r="1.8" fill={F2.ink} />
+      </svg>
+    );
+    // shop default
+    return (
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <rect x="8" y="8" width="11" height="28" rx="2" stroke={F2.ink} strokeWidth="2.5" fill="none" />
+        <rect x="22" y="8" width="11" height="28" rx="2" stroke={F2.ink} strokeWidth="2.5" fill="none" />
+      </svg>
+    );
+  })();
+
   return (
-    <a href={href} className="glied-card" style={{ display: 'flex', flexDirection: 'column', background: farbe, border: `1px solid ${F2.border}`, borderRadius: '28px', overflow: 'hidden', textDecoration: 'none', color: F2.ink, height: '100%' }}>
-      <div style={{ position: 'relative', aspectRatio: gross ? '16 / 9' : '16 / 7', overflow: 'hidden', background: '#f4f4f5', borderBottom: `1px solid ${F2.border}` }}>
-        <img src={foto} alt="" className="glied-foto" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-        <span style={{ position: 'absolute', top: '14px', left: '14px', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', color: F2.ink, padding: '6px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"JetBrains Mono", monospace' }}>
+    <a href={href} className="glied-card" style={{ display: 'flex', flexDirection: 'column', background: farbe, border: `1px solid ${F2.border}`, borderRadius: '24px', overflow: 'hidden', textDecoration: 'none', color: F2.ink, height: '100%', padding: mobil ? '28px 24px' : '32px 28px', minHeight: gross ? 'auto' : (mobil ? '220px' : '280px') }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: mobil ? '18px' : '24px' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: F2.white, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 16px rgba(15,23,42,0.08)' }}>
+          {icon}
+        </div>
+        <span style={{ background: F2.white, color: F2.ink, padding: '6px 12px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
           {label}
         </span>
       </div>
-      <div style={{ padding: mobil ? '22px 22px 24px' : (gross ? '32px 36px 32px' : '24px 26px 24px'), display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <h3 style={{ fontFamily: SANS, fontSize: mobil ? '24px' : (gross ? '38px' : '24px'), fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.025em', lineHeight: 1.05, color: F2.ink }}>{titel}</h3>
-        <p style={{ fontSize: gross ? '15px' : '13.5px', color: F2.inkSoft, lineHeight: 1.55, margin: '0 0 16px', flex: 1 }}>{sub}</p>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 700, color: F2.ink, marginTop: 'auto' }}>
-          Öffnen <span className="glied-arrow" style={{ fontSize: '16px' }}>→</span>
-        </span>
-      </div>
+      <h3 style={{ fontFamily: SANS, fontSize: mobil ? '26px' : '30px', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.025em', lineHeight: 1.05, color: F2.ink }}>{titel}</h3>
+      <p style={{ fontSize: '14.5px', color: F2.inkSoft, lineHeight: 1.55, margin: '0 0 20px', flex: 1 }}>{sub}</p>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14.5px', fontWeight: 800, color: F2.ink, marginTop: 'auto' }}>
+        Öffnen <span className="glied-arrow" style={{ fontSize: '17px' }}>→</span>
+      </span>
     </a>
   );
 }
