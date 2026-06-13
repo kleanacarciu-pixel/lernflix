@@ -38,11 +38,11 @@ const FOTO = {
 
 // Karten fuer den schwebenden card-stack im hero (bunte lernpaket-cover)
 const KARTEN = [
-  { t: 'Brüche', sym: '¾', bg: '#dceffb', akzent: '#1769FF', fach: 'Mathe', klasse: 'Klasse 5—7', preis: 'ab 0,99 €' },
-  { t: 'Pythagoras', sym: 'c²', bg: '#fde4d4', akzent: '#cf4a40', fach: 'Mathe', klasse: 'Klasse 8—10', preis: 'ab 1,99 €' },
-  { t: 'Funktionen', sym: 'ƒ(x)', bg: '#e7f5ec', akzent: '#2e8a5c', fach: 'Mathe', klasse: 'Klasse 9—11', preis: 'ab 1,99 €' },
-  { t: 'Mechanik', sym: 'F=ma', bg: '#fef3dd', akzent: '#d99a36', fach: 'Physik', klasse: 'Klasse 7—10', preis: 'ab 0,99 €' },
-  { t: 'Optik', sym: '◐', bg: '#e7defb', akzent: '#7656b0', fach: 'Physik', klasse: 'Klasse 8—10', preis: 'ab 0,99 €' },
+  { t: 'Brüche', sym: '¾', bg: '#dceffb', akzent: '#1769FF', fach: 'Mathe', klasse: 'Klasse 5 bis 7', preis: 'ab 0,99 €' },
+  { t: 'Pythagoras', sym: 'c²', bg: '#fde4d4', akzent: '#cf4a40', fach: 'Mathe', klasse: 'Klasse 8 bis 10', preis: 'ab 1,99 €' },
+  { t: 'Funktionen', sym: 'ƒ(x)', bg: '#e7f5ec', akzent: '#2e8a5c', fach: 'Mathe', klasse: 'Klasse 9 bis 11', preis: 'ab 1,99 €' },
+  { t: 'Mechanik', sym: 'F=ma', bg: '#fef3dd', akzent: '#d99a36', fach: 'Physik', klasse: 'Klasse 7 bis 10', preis: 'ab 0,99 €' },
+  { t: 'Optik', sym: '◐', bg: '#e7defb', akzent: '#7656b0', fach: 'Physik', klasse: 'Klasse 8 bis 10', preis: 'ab 0,99 €' },
 ];
 
 export default function Home() {
@@ -231,7 +231,7 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '24px' : '50px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.25fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
           {/* Links/oben: text */}
           <div style={{ textAlign: mobil ? 'center' : 'left' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '9px 18px', borderRadius: '999px', fontSize: mobil ? '12.5px' : '13.5px', fontWeight: 700, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 8px 24px rgba(23,105,255,0.12)', border: `1.5px solid ${F.blueLight}` }}>
@@ -239,7 +239,7 @@ export default function Home() {
               Klasse 1 bis 13 · Mathe + Physik
             </span>
             <h1 style={{ fontFamily: SANS, fontSize: mobil ? '42px' : '78px', fontWeight: 800, lineHeight: mobil ? 1.05 : 1.0, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.03em' }}>
-              Die Lern-Plattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
+              Die Lernplattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
             </h1>
             <p style={{ fontSize: mobil ? '16px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: mobil ? '0 auto 24px' : '0 0 32px', maxWidth: '520px', fontWeight: 400 }}>
               Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
@@ -261,14 +261,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts/unten: Foto vom lachenden jungen mit MATHE-TEST note 1 - auch mobil sichtbar */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '600px', marginTop: mobil ? '8px' : 0 }}>
+          {/* Rechts/unten: Foto vom lachenden jungen mit MATHE-TEST note 1 - jetzt deutlich groesser */}
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '720px', marginTop: mobil ? '8px' : 0 }}>
             <img
               src="/HP_FOTO-removebg-preview.png"
               alt=""
               style={{
                 width: '100%',
-                maxWidth: mobil ? '380px' : '800px',
+                maxWidth: mobil ? '480px' : '1000px',
                 height: 'auto',
                 objectFit: 'contain',
               }}
@@ -283,7 +283,7 @@ export default function Home() {
           {[
             { num: '13', t: 'Lernpakete', sub: 'Mathe + Physik · ab 0,99 €' },
             { num: '61', t: 'Quiz-Themen', sub: 'Kostenlos · jede Runde neu' },
-            { num: '1—13', t: 'Klassenstufen', sub: 'Von Grundschule bis Abitur' },
+            { num: '1 bis 13', t: 'Klassenstufen', sub: 'Von Grundschule bis Abitur' },
           ].map((t, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#E8F7EE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -335,7 +335,7 @@ export default function Home() {
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {['Mathematik: 8 Pakete (Brüche, Geometrie, Funktionen …)', 'Physik: 5 Pakete (Mechanik, Optik, Elektrizität …)', 'Sofort verfügbar — ab 0,99 €'].map((t, i) => (
+                {['Mathematik: 8 Pakete (Brüche, Geometrie, Funktionen)', 'Physik: 5 Pakete (Mechanik, Optik, Elektrizität)', 'Sofort verfügbar ab 0,99 €'].map((t, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '14px 18px', background: F.bgSky, borderRadius: '14px' }}>
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: F.coral, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -369,7 +369,7 @@ export default function Home() {
               foto={FOTO.lernheld}
               label="Premium · 1,99 €"
               titel="Lernheld"
-              sub="Foto vom Stoff hochladen, Klasse wählen — fertig. Dein Plan für die Schulaufgabe in 3 Minuten."
+              sub="Foto vom Stoff hochladen, Klasse wählen, fertig. Dein Plan für die Schulaufgabe in 3 Minuten."
               farbe={F.bgPeach}
               mobil={mobil}
             />
@@ -429,7 +429,7 @@ export default function Home() {
                 Lern<span style={{ color: F.blue }}>flix</span>
               </span>
               <p style={{ fontSize: '14.5px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0, maxWidth: '320px' }}>
-                Die Lern-Plattform für Mathematik und Physik. Klasse 1 bis 13.
+                Die Lernplattform für Mathematik und Physik. Klasse 1 bis 13.
               </p>
             </div>
             <div>
