@@ -183,9 +183,9 @@ export default function Home() {
       </header>
 
       {/* HERO - ruhig: cremig-weisser bg, dezent math-pattern in blau, blauer cta */}
-      <section className="fade-up" style={{ background: '#FAFBFF', color: F.ink, paddingTop: mobil ? '110px' : '130px', paddingBottom: mobil ? '60px' : '90px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Sehr dezent math-formel-pattern in hellblau */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
+      <section className="fade-up" style={{ background: '#FAFBFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '40px' : '90px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Sehr dezent math-formel-pattern in hellblau - auf mobil noch dezenter */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.03 : 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
           <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
           <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
           <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
@@ -227,28 +227,28 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '30px' : '50px', alignItems: 'center', padding: mobil ? '20px 0 10px' : '20px 0' }}>
-          {/* Links: text */}
-          <div style={{ textAlign: mobil ? 'left' : 'left' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '24px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '24px' : '50px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
+          {/* Links/oben: text */}
+          <div style={{ textAlign: mobil ? 'center' : 'left' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '7px 14px', borderRadius: '999px', fontSize: mobil ? '12px' : '13px', fontWeight: 700, marginBottom: mobil ? '18px' : '24px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} />
               Klasse 1 bis 13 · Mathe + Physik
             </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '72px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '72px', fontWeight: 800, lineHeight: mobil ? 1.05 : 1.02, margin: '0 0 16px', color: F.ink, letterSpacing: '-0.03em' }}>
               Die Lern-Plattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
             </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: '0 0 32px', maxWidth: '500px', fontWeight: 400 }}>
+            <p style={{ fontSize: mobil ? '15.5px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: mobil ? '0 auto 22px' : '0 0 32px', maxWidth: '500px', fontWeight: 400 }}>
               Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
             </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-              <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)' }}>
+            <div style={{ display: 'flex', gap: mobil ? '10px' : '12px', flexWrap: 'wrap', marginBottom: mobil ? '18px' : '24px', justifyContent: mobil ? 'center' : 'flex-start' }}>
+              <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: mobil ? '15px 28px' : '17px 38px', borderRadius: '12px', fontSize: mobil ? '15px' : '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)', flex: mobil ? '1 1 auto' : '0 0 auto', justifyContent: 'center', minWidth: mobil ? '140px' : 'auto' }}>
                 Loslegen <span style={{ fontSize: '18px' }}>→</span>
               </a>
-              <a href="/quiz" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: `1.5px solid ${F.border}` }}>
+              <a href="/quiz" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: mobil ? '15px 28px' : '17px 38px', borderRadius: '12px', fontSize: mobil ? '15px' : '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: `1.5px solid ${F.border}`, flex: mobil ? '1 1 auto' : '0 0 auto', justifyContent: 'center', minWidth: mobil ? '140px' : 'auto' }}>
                 Quiz starten
               </a>
             </div>
-            <div style={{ display: 'flex', gap: mobil ? '16px' : '24px', flexWrap: 'wrap', fontSize: '13.5px', color: F.inkSoft, fontWeight: 500 }}>
+            <div style={{ display: 'flex', gap: mobil ? '10px' : '24px', flexWrap: 'wrap', fontSize: mobil ? '12.5px' : '13.5px', color: F.inkSoft, fontWeight: 500, justifyContent: mobil ? 'center' : 'flex-start' }}>
               <span><strong style={{ color: F.ink, fontWeight: 800 }}>13</strong> Lernpakete</span>
               <span style={{ color: F.inkMuted }}>·</span>
               <span><strong style={{ color: F.ink, fontWeight: 800 }}>61</strong> Quiz-Themen</span>
@@ -257,22 +257,20 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - gross, oben platziert */}
-          {!mobil && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
-              <img
-                src="/HP_FOTO-removebg-preview.png"
-                alt=""
-                style={{
-                  width: '100%',
-                  maxWidth: '800px',
-                  height: 'auto',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 24px 40px rgba(15,23,42,0.22))',
-                }}
-              />
-            </div>
-          )}
+          {/* Rechts/unten: Foto vom lachenden jungen mit MATHE-TEST note 1 - auch mobil sichtbar */}
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '600px', marginTop: mobil ? '8px' : 0 }}>
+            <img
+              src="/HP_FOTO-removebg-preview.png"
+              alt=""
+              style={{
+                width: '100%',
+                maxWidth: mobil ? '380px' : '800px',
+                height: 'auto',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 24px 40px rgba(15,23,42,0.22))',
+              }}
+            />
+          </div>
         </div>
       </section>
 
