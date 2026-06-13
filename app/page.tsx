@@ -195,17 +195,15 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - heller bg + dezente formeln im hintergrund */}
-      <section className="fade-up" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #F5F8FF 60%, #ECEEFF 100%)', color: F.ink, paddingTop: mobil ? '110px' : '150px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Math-grid pattern wie kariertes papier - subtil */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
-        {/* Gradient-blobs - dezent in blau und lavender */}
+      {/* HERO - fast weiss, kaum blau */}
+      <section className="fade-up" style={{ background: '#ffffff', color: F.ink, paddingTop: mobil ? '110px' : '150px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Math-grid pattern wie kariertes papier - sehr dezent */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.035) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        {/* Gradient-blobs - viel dezenter */}
         {!mobil && (
           <>
-            {/* Spotlight hinter dem foto rechts */}
-            <div style={{ position: 'absolute', top: '15%', right: '5%', width: '650px', height: '650px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.22) 0%, rgba(167,139,250,0.12) 35%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
-            {/* Akzent unten - lavender */}
-            <div style={{ position: 'absolute', bottom: '-150px', left: '20%', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
+            <div style={{ position: 'absolute', top: '15%', right: '5%', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.10) 0%, rgba(167,139,250,0.05) 35%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', bottom: '-150px', left: '20%', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.10) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(60px)' }} />
           </>
         )}
         {/* Mid-size formel-pattern - links schwach (text bereich), rechts mehr (um die buecher rum, NICHT drauf) */}
@@ -323,9 +321,9 @@ export default function Home() {
 
 
       {/* SHOP - FEATURED (gross, wichtigster bereich) */}
-      <section id="bereiche" style={{ background: 'linear-gradient(180deg, #FAFCFF 0%, #F5F8FF 100%)', padding: mobil ? '70px 22px 40px' : '120px 56px 50px', position: 'relative' }}>
-        {/* Karierte papier textur - matched mit hero */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <section id="bereiche" style={{ background: '#ffffff', padding: mobil ? '70px 22px 40px' : '120px 56px 50px', position: 'relative' }}>
+        {/* Karierte papier textur - sehr dezent */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '13px', color: F.coral, fontWeight: 700, marginBottom: '14px' }}>
@@ -373,9 +371,9 @@ export default function Home() {
       </section>
 
       {/* 3 GLIEDER: Lernheld / Lernplan / Quiz - gleich gross */}
-      <section style={{ background: 'linear-gradient(180deg, #F5F8FF 0%, #ECEEFF 100%)', padding: mobil ? '40px 22px 80px' : '50px 56px 130px', position: 'relative' }}>
-        {/* Karierte papier textur */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      <section style={{ background: '#ffffff', padding: mobil ? '40px 22px 80px' : '50px 56px 130px', position: 'relative' }}>
+        {/* Karierte papier textur - sehr dezent */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ marginBottom: mobil ? '32px' : '50px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
@@ -418,14 +416,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Banner - matched mit hero design */}
-      <section style={{ background: 'linear-gradient(180deg, #ECEEFF 0%, #F5F8FF 100%)', color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Karierte papier textur */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+      {/* CTA Banner - fast weiss, dezent */}
+      <section style={{ background: '#ffffff', color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Karierte papier textur - sehr dezent */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '20px', right: '5%', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.18) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
-            <div style={{ position: 'absolute', bottom: '20px', left: '5%', width: '280px', height: '280px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
+            <div style={{ position: 'absolute', top: '20px', right: '5%', width: '260px', height: '260px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.07) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', bottom: '20px', left: '5%', width: '240px', height: '240px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
           </>
         )}
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
