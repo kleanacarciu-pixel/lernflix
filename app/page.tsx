@@ -195,13 +195,16 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - reines weiss, text-platz erhoeht, foto ausreichend gross aber nicht ueberragend */}
+      {/* HERO - premium feel: gradient mesh + dot pattern + floating badges */}
       <section className="fade-up" style={{ background: '#FFFFFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Soft glow nur dezent */}
+        {/* Subtle dot-grid pattern fuer textur */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.5, pointerEvents: 'none' }} />
+        {/* Vibrante color blobs - staerker fuer premium-vibe */}
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '-100px', right: '-50px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '-150px', left: '-80px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '-80px', right: '5%', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.14) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', bottom: '-120px', left: '2%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.18) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
+            <div style={{ position: 'absolute', top: '35%', left: '38%', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(60px)' }} />
           </>
         )}
         {/* Dezent math-formel-pattern in hellblau */}
@@ -293,25 +296,25 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TRUST STRIP - Mathegym-style: 3 grosse spalten mit checkmarks */}
-      <section style={{ background: F.white, padding: mobil ? '32px 22px' : '40px 56px', borderBottom: `1px solid ${F.border}` }}>
-        <div style={{ maxWidth: '1180px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: mobil ? '20px' : '32px' }}>
+      {/* TRUST STRIP - premium card mit schatten + trennlinien */}
+      <section style={{ background: F.white, padding: mobil ? '24px 22px 40px' : '20px 56px 70px', position: 'relative' }}>
+        <div style={{ maxWidth: '1180px', margin: '0 auto', background: F.white, borderRadius: '20px', boxShadow: '0 20px 50px rgba(15,23,42,0.08), 0 4px 16px rgba(15,23,42,0.04)', border: `1px solid ${F.borderSoft}`, padding: mobil ? '28px 24px' : '32px 48px', display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: 0 }}>
           {[
             { num: '13', t: 'Lernpakete', sub: 'Mathe + Physik · ab 0,99 €' },
             { num: '61', t: 'Quiz-Themen', sub: 'Kostenlos · jede Runde neu' },
             { num: '1 bis 13', t: 'Klassenstufen', sub: 'Von Grundschule bis Abitur' },
           ].map((t, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#E8F7EE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 10L8.5 13.5L15 7" stroke={F.green} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '18px', padding: mobil ? '14px 0' : '6px 24px', borderRight: !mobil && i < 2 ? `1px solid ${F.borderSoft}` : 'none', borderBottom: mobil && i < 2 ? `1px solid ${F.borderSoft}` : 'none', justifyContent: mobil ? 'flex-start' : 'center' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: F.bgSky, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                  <path d="M6 11L9.5 14.5L16 8" stroke={F.blue} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <div>
-                <p style={{ fontSize: '17px', color: F.ink, fontWeight: 800, margin: '0 0 2px', letterSpacing: '-0.01em' }}>
-                  <span style={{ color: F.coral }}>{t.num}</span> {t.t}
+                <p style={{ fontSize: '20px', color: F.ink, fontWeight: 800, margin: '0 0 3px', letterSpacing: '-0.015em', lineHeight: 1.1 }}>
+                  <span style={{ color: F.blue }}>{t.num}</span> {t.t}
                 </p>
-                <p style={{ fontSize: '13px', color: F.inkSoft, margin: 0, fontWeight: 500 }}>{t.sub}</p>
+                <p style={{ fontSize: '13.5px', color: F.inkSoft, margin: 0, fontWeight: 500 }}>{t.sub}</p>
               </div>
             </div>
           ))}
