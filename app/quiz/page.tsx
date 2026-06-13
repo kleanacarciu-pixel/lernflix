@@ -369,9 +369,13 @@ export default function QuizPage() {
           <div className="fade-up">
             {/* Title */}
             <div style={{ textAlign: "center", marginBottom: "32px" }}>
-              <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(23,105,255,0.18)" }}>
-                Kostenloses Quiz
-              </span>
+              {/* Kleines buecher-foto (matched mit homepage und shop) */}
+              <img src="/20260613_173033176_iOS.png" alt="Mathe und Physik Buecher" style={{ width: "150px", height: "auto", marginBottom: "12px", display: "inline-block" }} />
+              <div>
+                <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(23,105,255,0.18)", border: `1px solid ${F.border}` }}>
+                  Kostenloses Quiz
+                </span>
+              </div>
               <h1 style={{ fontSize: "44px", fontWeight: 800, margin: "0 0 10px", letterSpacing: "-0.03em", lineHeight: 1.0, color: F.ink }}>
                 Teste dein <span style={{ color: F.coral }}>Wissen</span>.
               </h1>
