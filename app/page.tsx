@@ -253,7 +253,7 @@ export default function Home() {
           <text className="formel-c" style={{animationDelay: '-2.6s'}} x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.3fr 1fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.1fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
           {/* Links/oben: text */}
           <div style={{ textAlign: mobil ? 'center' : 'left' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.blue, padding: '10px 20px', borderRadius: '999px', fontSize: mobil ? '13px' : '14px', fontWeight: 800, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 12px 30px rgba(23,105,255,0.18), 0 4px 10px rgba(23,105,255,0.08)', border: `2px solid ${F.blueLight}` }}>
@@ -288,14 +288,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Foto - nur in nativer aufloesung (612px) damit scharf bleibt */}
+          {/* Foto - 4 kinder lachen, 1536x1024 hochaufloesend */}
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '500px', marginTop: mobil ? '8px' : 0 }}>
             <img
-              src="/HP_FOTO-removebg-preview.png"
-              alt=""
+              src="/20260613_165935048_iOS.png"
+              alt="Vier Kinder lernen lachend zusammen"
               style={{
                 width: '100%',
-                maxWidth: mobil ? '360px' : '600px',
+                maxWidth: mobil ? '420px' : '720px',
                 height: 'auto',
                 objectFit: 'contain',
               }}
