@@ -178,10 +178,18 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - reines weiss damit png-edges perfekt verschmelzen */}
-      <section className="fade-up" style={{ background: '#FFFFFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '40px' : '90px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Sehr dezent math-formel-pattern in hellblau - auf mobil noch dezenter */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.03 : 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
+      {/* HERO - sanfter welcoming-gradient mit pastell-akzenten, mehr energie */}
+      <section className="fade-up" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F5FF 60%, #E8F0FF 100%)', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Soft glow blobs fuer welcoming-feel */}
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '-100px', right: '-50px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '-150px', left: '-80px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '30%', left: '50%', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          </>
+        )}
+        {/* Sehr dezent math-formel-pattern in hellblau */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.04 : 0.06 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
           <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
           <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
           <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
@@ -226,14 +234,14 @@ export default function Home() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '24px' : '50px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
           {/* Links/oben: text */}
           <div style={{ textAlign: mobil ? 'center' : 'left' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '7px 14px', borderRadius: '999px', fontSize: mobil ? '12px' : '13px', fontWeight: 700, marginBottom: mobil ? '18px' : '24px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '9px 18px', borderRadius: '999px', fontSize: mobil ? '12.5px' : '13.5px', fontWeight: 700, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 8px 24px rgba(23,105,255,0.12)', border: `1.5px solid ${F.blueLight}` }}>
+              <span className="pulse-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: F.blue, boxShadow: '0 0 8px rgba(23,105,255,0.6)' }} />
               Klasse 1 bis 13 · Mathe + Physik
             </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '72px', fontWeight: 800, lineHeight: mobil ? 1.05 : 1.02, margin: '0 0 16px', color: F.ink, letterSpacing: '-0.03em' }}>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '42px' : '78px', fontWeight: 800, lineHeight: mobil ? 1.05 : 1.0, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.03em' }}>
               Die Lern-Plattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
             </h1>
-            <p style={{ fontSize: mobil ? '15.5px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: mobil ? '0 auto 22px' : '0 0 32px', maxWidth: '500px', fontWeight: 400 }}>
+            <p style={{ fontSize: mobil ? '16px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: mobil ? '0 auto 24px' : '0 0 32px', maxWidth: '520px', fontWeight: 400 }}>
               Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
             </p>
             <div style={{ display: 'flex', gap: mobil ? '10px' : '12px', flexWrap: 'wrap', marginBottom: mobil ? '18px' : '24px', justifyContent: mobil ? 'center' : 'flex-start' }}>
