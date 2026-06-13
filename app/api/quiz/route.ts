@@ -2,150 +2,208 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
-export const maxDuration = 60;
 
+// === KONSTANTEN ===
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const MODEL = "claude-sonnet-4-6";
+const ZIEL_FRAGEN = 5;
+const TIMEOUT_PRO_FRAGE_MS = 15_000;
+const MAX_PARALLEL = 7; // 5 + 2 buffer fuer den fall dass welche fehlschlagen
+const CACHE_POOL_GROESSE = 30;
+
+// === TYPES ===
 type Frage = {
   frage: string;
   antworten: string[];
-  loesung?: string;
-  richtig?: number;
-  erklaerung?: string;
+  richtig: number;
+  erklaerung: string;
 };
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const MODEL_GENERATE = "claude-sonnet-4-6";
-const MODEL_VERIFY = "claude-sonnet-4-6";
-const FRAGE_TIMEOUT_MS = 12000;
-const ZIEL_FRAGEN = 5;
+type AnthropicResponse = {
+  content?: Array<{ text?: string }>;
+};
 
-// Supabase setup. Wenn keys fehlen, faellt API zurueck auf reine KI-generation.
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// === SUPABASE ===
+const supabase = (() => {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    console.warn("Supabase env vars fehlen - cache deaktiviert");
+    return null;
+  }
+  return createClient(url, key);
+})();
 
-function bauGenerationsPrompt(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): string {
-  const aspekte = ["Rechnen / Berechnung", "Anwendung im Alltag", "Konzept", "Sachaufgabe", "Schritt-fuer-Schritt"];
-  const aspekt = aspekte[index % aspekte.length];
-  return `Erstelle GENAU EINE Multiple-Choice-Frage. ${fach}, ${klasse}, Thema "${thema}", ${schwierigkeit}. Aspekt: ${aspekt}. Var: ${variation}-${index}.
+// === ANTHROPIC CALL ===
+async function callClaude(prompt: string, maxTokens: number, timeoutMs: number): Promise<string | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    console.error("ANTHROPIC_API_KEY fehlt");
+    return null;
+  }
 
-PFLICHT:
-- Echte ${fach}-Aufgabe zum Thema "${thema}" - kein Allgemeinwissen
-- Rechne SELBST nach. Loesung MUSS nachweisbar korrekt sein.
-- Frage komplett aus Text loesbar - keine Bilder/Skizzen-Verweise
-- FALSCH: "Wie viele Finger zeigt die Hand?" (kein Kontext)
-- RICHTIG: "Anna hat 3 Aepfel, bekommt 4 dazu. Wie viele?"
-- 4 Antworten, eine korrekt, drei plausibel-falsch (typische Schuelerfehler)
-- Position der richtigen Antwort zufaellig variieren
-- echte Umlaute (ä ö ü ß)
-- erklaerung = 1 satz mit rechenweg
-- loesung = WORTLAUT (text, kein index)
-- nie KI/AI erwaehnen
-
-NUR JSON:
-{"frage":"...","antworten":["a","b","c","d"],"loesung":"<wortlaut>","erklaerung":"<rechenweg>"}`;
-}
-
-function bauVerifikationsPrompt(frage: Frage): string {
-  return `Pruefe ob die angeblich richtige Antwort wirklich korrekt ist. WICHTIG: Bei jedem Zweifel antworte korrekt:true. Nur bei EINDEUTIGEM Fehler korrekt:false.
-
-Frage: ${frage.frage}
-Antworten: ${JSON.stringify(frage.antworten)}
-Angeblich richtige Antwort: ${frage.antworten[frage.richtig ?? 0]}
-
-Pruefe NUR EINS: stimmt die Loesung mathematisch/physikalisch? Rechne selbst nach.
-- Wenn rechnung aufgeht: korrekt:true
-- Wenn rechnung NICHT aufgeht und du SICHER bist: korrekt:false
-- Bei interpretationsspielraum oder rundungsfragen: korrekt:true
-
-NUR JSON-Antwort:
-{"korrekt":true/false,"grund":"<kurz>"}
-
-Beispiele:
-- "Eine Hand hat 10 Finger" → {"korrekt":false,"grund":"Hand hat 5 Finger"}
-- "3+4=7" → {"korrekt":true,"grund":"stimmt"}
-- "Pi r^2 mit r=3 ist 28.27" → {"korrekt":true,"grund":"~28.27 stimmt"}`;
-}
-
-async function callAnthropic(prompt: string, maxTokens: number, timeoutMs: number, model: string): Promise<string | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+        "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model,
+        model: MODEL,
         max_tokens: maxTokens,
-        temperature: 0.7,
+        temperature: 0.6,
         messages: [{ role: "user", content: prompt }],
       }),
       signal: controller.signal,
     });
-    clearTimeout(timeoutId);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.content?.[0]?.text?.trim() || null;
+    if (!res.ok) {
+      const errTxt = await res.text().catch(() => "");
+      console.error(`Anthropic ${res.status}: ${errTxt.slice(0, 200)}`);
+      return null;
+    }
+    const data = (await res.json()) as AnthropicResponse;
+    return data.content?.[0]?.text?.trim() ?? null;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      console.warn("Anthropic timeout");
+    } else {
+      console.error("Anthropic fetch fehler", err);
+    }
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// === PROMPT ===
+function bauPrompt(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): string {
+  const aspekte = [
+    "direkte Rechenaufgabe",
+    "kurze Sachaufgabe aus dem Alltag",
+    "Konzept-Verstaendnis",
+    "Schritt-fuer-Schritt Aufgabe",
+    "Anwendung in einem Kontext",
+  ];
+  const aspekt = aspekte[index % aspekte.length];
+
+  return `Du bist ein erfahrener ${fach}-Lehrer fuer ${klasse}. Erstelle GENAU EINE Multiple-Choice-Frage zum Thema "${thema}", Schwierigkeit "${schwierigkeit}", Aspekt: ${aspekt}. Variation: ${variation}-${index}.
+
+VORGEHEN (in deinem Kopf):
+1. Formuliere die Aufgabe inhaltlich
+2. Rechne die Loesung Schritt fuer Schritt durch - sei genau!
+3. Erstelle 3 plausible-aber-falsche Antworten (typische Schuelerfehler wie Rechenfehler, falsches Vorzeichen, falsche Formel)
+4. Position der richtigen Antwort: zufaellig A, B, C oder D
+5. Gib NUR den finalen JSON aus - kein "Hier ist die Frage" davor
+
+REGELN:
+- Frage muss komplett aus Text loesbar sein (keine Verweise auf Bilder/Skizzen)
+- Alle Werte/Zahlen in der Frage stehen
+- BSP FALSCH: "Wie viele Aepfel sind es?" (kein Kontext)
+- BSP RICHTIG: "Anna hat 3 Aepfel, kauft 4 dazu. Wie viele hat sie?"
+- BSP FALSCH: "Wie viele Finger zeigt die Hand?" (Allgemeinwissen, eine Hand hat 5)
+- BSP RICHTIG: "Berechne 7+8" oder Sachaufgabe mit Zahlen
+- Loesung muss mathematisch/physikalisch korrekt sein - PRUEFE deine rechnung
+- Antworten alle plausibel (keine Quatsch-Optionen wie "Bratwurst")
+- echte deutsche Umlaute (ä ö ü ß)
+- "erklaerung" = 1 Satz mit Rechenweg
+- "richtig" = INDEX (0-3) der korrekten Antwort
+- niemals KI/AI/Anthropic/Claude erwaehnen
+
+OUTPUT FORMAT - exakt diese 4 Felder, nichts anderes:
+{"frage":"...","antworten":["A","B","C","D"],"richtig":0,"erklaerung":"..."}`;
+}
+
+// === JSON EXTRAKTION ===
+// Robust gegen markdown-blocks und text-praeambel
+function extrahiereJson(text: string): unknown | null {
+  let t = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  t = t.substring(start, end + 1);
+  try {
+    return JSON.parse(t);
   } catch {
-    clearTimeout(timeoutId);
     return null;
   }
 }
 
-function parseJsonAusText(text: string): unknown | null {
-  let t = text.replace(/```json/g, "").replace(/```/g, "").trim();
-  const start = t.indexOf("{");
-  const end = t.lastIndexOf("}");
-  if (start === -1 || end === -1) return null;
-  t = t.substring(start, end + 1);
-  try { return JSON.parse(t); } catch { return null; }
-}
+function validiereUndNormalisiere(roh: unknown): Frage | null {
+  if (!roh || typeof roh !== "object") return null;
+  const r = roh as { frage?: unknown; antworten?: unknown; richtig?: unknown; loesung?: unknown; erklaerung?: unknown };
 
-type FrageMitStatus = { frage: Frage; verifiziert: boolean };
+  if (typeof r.frage !== "string" || r.frage.trim().length < 5) return null;
+  if (!Array.isArray(r.antworten) || r.antworten.length !== 4) return null;
+  if (!r.antworten.every((a) => typeof a === "string" && a.trim().length > 0)) return null;
 
-async function generiereUndVerifiziereFrage(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): Promise<FrageMitStatus | null> {
-  const rohText = await callAnthropic(bauGenerationsPrompt(fach, klasse, thema, schwierigkeit, variation, index), 400, FRAGE_TIMEOUT_MS, MODEL_GENERATE);
-  if (!rohText) return null;
-  const parsed = parseJsonAusText(rohText) as { frage?: string; antworten?: string[]; loesung?: string; richtig?: number; erklaerung?: string } | null;
-  if (!parsed || !parsed.frage || !Array.isArray(parsed.antworten) || parsed.antworten.length < 2) return null;
+  const antworten = r.antworten as string[];
+  // Doppelte antworten = fehler
+  if (new Set(antworten).size !== 4) return null;
 
-  let richtig = 0;
-  if (typeof parsed.loesung === "string") {
-    const idx = parsed.antworten.findIndex((a: string) => a === parsed.loesung);
-    if (idx !== -1) richtig = idx;
-    else {
-      const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-      const idx2 = parsed.antworten.findIndex((a: string) => norm(a) === norm(parsed.loesung!));
-      if (idx2 !== -1) richtig = idx2;
-    }
-  } else if (typeof parsed.richtig === "number" && parsed.richtig >= 0 && parsed.richtig < parsed.antworten.length) {
-    richtig = parsed.richtig;
-  }
-
-  const frage: Frage = { frage: parsed.frage, antworten: parsed.antworten, richtig, erklaerung: parsed.erklaerung };
-
-  // SELBST-CHECK (lenient): verwirft nur bei eindeutigem fehler. timeout ist OK = wir akzeptieren.
-  const checkText = await callAnthropic(bauVerifikationsPrompt(frage), 150, 8000, MODEL_VERIFY);
-  let verifiziert = true;
-  if (checkText) {
-    const check = parseJsonAusText(checkText) as { korrekt?: boolean; grund?: string } | null;
-    if (check && check.korrekt === false) {
-      console.log(`Frage verworfen: ${check?.grund || "verify fail"}`);
-      return null; // klarer fehler -> wirklich verwerfen
-    }
-    verifiziert = check?.korrekt === true;
+  let richtig: number;
+  if (typeof r.richtig === "number" && r.richtig >= 0 && r.richtig <= 3) {
+    richtig = Math.floor(r.richtig);
+  } else if (typeof r.loesung === "string") {
+    // Fallback: loesung-text -> index
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const idx = antworten.findIndex((a) => norm(a) === norm(r.loesung as string));
+    if (idx === -1) return null;
+    richtig = idx;
   } else {
-    // Verify timeout / failure -> trotzdem nehmen aber als nicht-verifiziert markieren
-    verifiziert = false;
+    return null;
   }
 
-  return { frage, verifiziert };
+  const erklaerung = typeof r.erklaerung === "string" ? r.erklaerung.trim() : "";
+
+  return {
+    frage: r.frage.trim(),
+    antworten,
+    richtig,
+    erklaerung,
+  };
 }
 
-async function speichereFragen(fach: string, klasse: number, thema: string, schwierigkeit: string, fragen: Frage[]): Promise<void> {
+// === EINE FRAGE GENERIEREN ===
+async function generiereFrage(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): Promise<Frage | null> {
+  const prompt = bauPrompt(fach, klasse, thema, schwierigkeit, variation, index);
+  const text = await callClaude(prompt, 500, TIMEOUT_PRO_FRAGE_MS);
+  if (!text) return null;
+  const json = extrahiereJson(text);
+  return validiereUndNormalisiere(json);
+}
+
+// === CACHE LESEN ===
+async function holeAusCache(fach: string, klasse: number, thema: string, schwierigkeit: string): Promise<Frage[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("quiz_fragen")
+    .select("frage,antworten,richtig,erklaerung")
+    .eq("fach", fach)
+    .eq("klasse", klasse)
+    .eq("thema", thema)
+    .eq("schwierigkeit", schwierigkeit)
+    .limit(CACHE_POOL_GROESSE);
+  if (error) {
+    console.error("Supabase select fehler", error.message);
+    return [];
+  }
+  if (!data) return [];
+  // Random pick aus dem pool
+  const gemischt = [...data].sort(() => Math.random() - 0.5).slice(0, ZIEL_FRAGEN);
+  return gemischt.map((d) => ({
+    frage: d.frage as string,
+    antworten: d.antworten as string[],
+    richtig: d.richtig as number,
+    erklaerung: (d.erklaerung as string) ?? "",
+  }));
+}
+
+// === CACHE SCHREIBEN ===
+async function speichereInCache(fach: string, klasse: number, thema: string, schwierigkeit: string, fragen: Frage[]): Promise<void> {
   if (!supabase || fragen.length === 0) return;
   const rows = fragen.map((f) => ({
     fach,
@@ -154,77 +212,77 @@ async function speichereFragen(fach: string, klasse: number, thema: string, schw
     schwierigkeit,
     frage: f.frage,
     antworten: f.antworten,
-    richtig: f.richtig ?? 0,
-    erklaerung: f.erklaerung || "",
+    richtig: f.richtig,
+    erklaerung: f.erklaerung,
   }));
-  await supabase.from("quiz_fragen").insert(rows);
+  const { error } = await supabase.from("quiz_fragen").insert(rows);
+  if (error) console.error("Supabase insert fehler", error.message);
 }
 
-async function holeAusCache(fach: string, klasse: number, thema: string, schwierigkeit: string, anzahl: number): Promise<Frage[]> {
-  if (!supabase) return [];
-  // Hole bis zu 30 fragen aus dem cache, dann zufaellig 5 davon
-  const { data, error } = await supabase
-    .from("quiz_fragen")
-    .select("frage,antworten,richtig,erklaerung")
-    .eq("fach", fach)
-    .eq("klasse", klasse)
-    .eq("thema", thema)
-    .eq("schwierigkeit", schwierigkeit)
-    .limit(30);
-  if (error || !data) return [];
-  // Random mix
-  const gemischt = [...data].sort(() => Math.random() - 0.5).slice(0, anzahl);
-  return gemischt.map((d) => ({
-    frage: d.frage,
-    antworten: d.antworten,
-    richtig: d.richtig,
-    erklaerung: d.erklaerung,
-  }));
-}
-
+// === HAUPT-HANDLER ===
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const thema = (body.thema || "Mathematik").toString().slice(0, 120);
-    const schwierigkeit = body.schwierigkeit || "mittel";
-    const klasseNum = parseInt(body.klasse || "5", 10);
-    const klasseText = `Klasse ${klasseNum}`;
+    const body = await request.json().catch(() => ({}));
+
+    const thema = String(body.thema ?? "Mathematik").slice(0, 120).trim();
+    const schwierigkeit = String(body.schwierigkeit ?? "mittel");
+    const klasseNum = Math.max(1, Math.min(13, parseInt(String(body.klasse ?? "5"), 10) || 5));
     const fach = body.fach === "physik" ? "physik" : "mathe";
+
     const fachText = fach === "physik" ? "Physik" : "Mathematik";
+    const klasseText = `Klasse ${klasseNum}`;
+    const schwierigkeitText =
+      schwierigkeit === "leicht" ? "einfach" :
+      schwierigkeit === "schwer" ? "schwierig" :
+      "mittelschwer";
 
-    let schwierigkeitText = "einfach";
-    if (schwierigkeit === "mittel") schwierigkeitText = "mittelschwer";
-    if (schwierigkeit === "schwer") schwierigkeitText = "schwierig";
-
-    // 1. CACHE ZUERST
-    const cached = await holeAusCache(fach, klasseNum, thema, schwierigkeit, ZIEL_FRAGEN);
+    // 1. CACHE FIRST
+    const cached = await holeAusCache(fach, klasseNum, thema, schwierigkeit);
     if (cached.length >= ZIEL_FRAGEN) {
-      return NextResponse.json({ fragen: cached });
+      return NextResponse.json({ fragen: cached, quelle: "cache" });
     }
 
-    // 2. ANSONSTEN GENERIEREN
-    const variationsId = Math.random().toString(36).slice(2, 8);
+    // 2. GENERIEREN: 7 parallele calls (5 ziel + 2 buffer)
+    const variation = Math.random().toString(36).slice(2, 8);
     const fehlend = ZIEL_FRAGEN - cached.length;
-    const promises = Array.from({ length: fehlend + 2 }, (_, i) => // +2 buffer falls welche verworfen
-      generiereUndVerifiziereFrage(fachText, klasseText, thema, schwierigkeitText, variationsId, i),
+    const generierZahl = Math.min(MAX_PARALLEL, fehlend + 2);
+
+    const promises = Array.from({ length: generierZahl }, (_, i) =>
+      generiereFrage(fachText, klasseText, thema, schwierigkeitText, variation, i),
     );
-    const generated = (await Promise.all(promises)).filter((f): f is FrageMitStatus => f !== null);
+    const ergebnisse = await Promise.all(promises);
+    const neueFragen = ergebnisse.filter((f): f is Frage => f !== null);
 
-    // 3. NUR VERIFIZIERTE FRAGEN IN CACHE SPEICHERN
-    const verifizierteFragen = generated.filter((g) => g.verifiziert).map((g) => g.frage);
-    if (verifizierteFragen.length > 0) {
-      speichereFragen(fach, klasseNum, thema, schwierigkeit, verifizierteFragen).catch(() => {});
+    // 3. CACHE FILL (fire-and-forget - blockiert nicht die antwort)
+    if (neueFragen.length > 0) {
+      const waitUntil = (request as unknown as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil;
+      const speicherPromise = speichereInCache(fach, klasseNum, thema, schwierigkeit, neueFragen).catch(() => {});
+      if (typeof waitUntil === "function") {
+        waitUntil(speicherPromise);
+      } else {
+        // Im notfall: nicht warten, lass es im hintergrund laufen
+        void speicherPromise;
+      }
     }
 
-    // 4. ALLE GENERIERTEN FRAGEN ZURUECKGEBEN (auch nicht-verifizierte - besser als gar nichts)
-    const alleGenerierten = generated.map((g) => g.frage);
-    const fragen = [...cached, ...alleGenerierten].slice(0, ZIEL_FRAGEN);
+    // 4. RETURN: cache + neue, bis zu 5
+    const fragen = [...cached, ...neueFragen].slice(0, ZIEL_FRAGEN);
+
     if (fragen.length === 0) {
-      return NextResponse.json({ error: "Keine Fragen verfuegbar" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Konnte keine Fragen generieren. Bitte erneut versuchen." },
+        { status: 503 },
+      );
     }
-    return NextResponse.json({ fragen });
+
+    return NextResponse.json({
+      fragen,
+      quelle: cached.length > 0 ? "gemischt" : "neu",
+      cache_count: cached.length,
+      neu_count: neueFragen.length,
+    });
   } catch (error) {
-    console.error("Fehler:", error);
-    return NextResponse.json({ error: "Fehler" }, { status: 500 });
+    console.error("Quiz API fatal error:", error);
+    return NextResponse.json({ error: "Server-Fehler" }, { status: 500 });
   }
 }
