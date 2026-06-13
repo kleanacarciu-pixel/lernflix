@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 30;
+export const maxDuration = 45;
 
 export async function POST(request: Request) {
   try {
@@ -26,22 +26,43 @@ export async function POST(request: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 850,
-        temperature: 0.9,
+        model: "claude-sonnet-4-6",
+        max_tokens: 1200,
+        temperature: 0.7,
         messages: [
           {
             role: "user",
-            content: `5 MC-Fragen ${fach} ${klasse} "${thema}" ${schwierigkeitText}. ID:${variationsId}
+            content: `Erstelle 5 ${fach}-Multiple-Choice-Fragen fuer ${klasse} zum Thema "${thema}" (${schwierigkeitText}). Variation: ${variationsId}.
 
-WICHTIG - Frage muss aus REINEM TEXT vollstaendig verstaendlich sein:
-- KEINE Verweise auf Bilder, Skizzen, Diagramme, Tabellen ("im Bild", "siehe", "wie viele Aepfel sind es")
-- Alle noetigen Zahlen/Infos MUESSEN im Fragetext stehen
-- Sachaufgabe? Konkret formulieren: "Anna hat 5 Aepfel und kauft 3 dazu. Wie viele hat sie?" - NICHT "Wie viele Aepfel sind es?"
-- Bei Geometrie/Physik: Werte direkt in Frage angeben
+== ABSOLUTE REGELN ==
 
-Weitere Regeln: 4 Antworten/Frage, eine richtig, variiere Position, neue Zahlen, deutsche Umlaute, kurze Erklaerung, "loesung"=Wortlaut (nicht Index), nie KI/AI erwaehnen.
-JSON only:{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"...","erklaerung":"..."}]}`,
+1. FACHLICH KORREKT
+- Jede Frage ist eine ECHTE Mathe-/Physik-Aufgabe zum Thema "${thema}" - kein Allgemeinwissen, keine Trick-Fragen
+- BEISPIEL FALSCH: "Wie viele Finger zeigt die Hand?" (eine Hand hat 5 Finger, nicht 10!)
+- BEISPIEL FALSCH: "Wie viele Aepfel sind es?" (kein Kontext)
+- BEISPIEL RICHTIG (Klasse 1, Addition): "Anna hat 3 Aepfel und bekommt 4 dazu. Wie viele Aepfel hat sie?"
+- BEISPIEL RICHTIG (Klasse 8, Pythagoras): "Ein rechtwinkliges Dreieck hat die Katheten 3 cm und 4 cm. Wie lang ist die Hypotenuse?"
+
+2. RECHNE NACH
+- Bevor du die Loesung notierst: rechne die Aufgabe SELBST durch
+- Die "loesung" ist NUR der mathematisch/physikalisch nachweisbar korrekte Wert
+- Die "erklaerung" muss die richtige Rechnung zeigen (1-2 Saetze), nicht raten
+
+3. SELBSTSTAENDIG VERSTAENDLICH
+- Frage muss aus REINEM TEXT vollstaendig loesbar sein
+- KEINE Verweise auf Bilder/Skizzen/Diagramme/Tabellen
+- Alle Werte/Zahlen direkt in der Frage
+
+4. ANTWORTEN
+- Genau 4 Antworten, eine richtig, drei plausibel-aber-falsch
+- Variiere die Position der richtigen Antwort (nicht immer A oder B)
+- "loesung" = WORTLAUT der richtigen Antwort (Text, nicht Index)
+- Echte deutsche Umlaute (ae->ä, oe->ö, ue->ü, ß)
+
+5. NIE: KI/AI/Anthropic/Claude erwaehnen.
+
+Antwort NUR als JSON ohne Markdown:
+{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"<wortlaut>","erklaerung":"<rechenweg in 1-2 saetzen>"}]}`,
           },
         ],
       }),
