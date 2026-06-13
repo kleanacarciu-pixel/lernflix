@@ -161,29 +161,25 @@ export default function Home() {
         }
       `}</style>
 
-      {/* HEADER - heller bg, dunkler text, klar lesbar */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(250,251,255,0.94)' : 'rgba(250,251,255,0.7)', backdropFilter: 'saturate(180%) blur(20px)', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '16px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
-        <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: mobil ? '24px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
+      {/* HEADER - alle 4 bereiche sichtbar (auch mobil), quiz als haupt-cta */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'saturate(180%) blur(20px)', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '12px 16px' : '16px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease', gap: '12px' }}>
+        <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          <span style={{ fontSize: mobil ? '20px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
             Lern<span style={{ color: F.blue }}>flix</span>
           </span>
         </a>
-        <nav style={{ display: 'flex', gap: mobil ? '8px' : '28px', alignItems: 'center' }}>
-          {!mobil && (
-            <>
-              <a href="/shop" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 600, padding: '8px 14px', borderRadius: '8px' }}>Lernmaterialien</a>
-              <a href="/lernplan" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 600, padding: '8px 14px', borderRadius: '8px' }}>Lernplan</a>
-              <a href="/quiz" style={{ color: F.ink, textDecoration: 'none', fontSize: '14.5px', fontWeight: 600, padding: '8px 14px', borderRadius: '8px' }}>Quiz</a>
-            </>
-          )}
-          <a href="/lernheld" className="btn-coral" style={{ padding: '11px 22px', fontSize: '14px', marginLeft: mobil ? '0' : '12px' }}>
-            Lernheld
+        <nav style={{ display: 'flex', gap: mobil ? '4px' : '20px', alignItems: 'center', flexWrap: 'nowrap' }}>
+          <a href="/shop" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Material' : 'Lernmaterialien'}</a>
+          <a href="/lernplan" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Plan' : 'Lernplan'}</a>
+          <a href="/lernheld" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Held' : 'Lernheld'}</a>
+          <a href="/quiz" style={{ background: F.blue, color: F.white, textDecoration: 'none', fontSize: mobil ? '12.5px' : '14px', fontWeight: 700, padding: mobil ? '8px 14px' : '11px 22px', borderRadius: '10px', marginLeft: mobil ? '4px' : '8px', boxShadow: '0 6px 16px rgba(23,105,255,0.24)' }}>
+            Quiz
           </a>
         </nav>
       </header>
 
-      {/* HERO - ruhig: cremig-weisser bg, dezent math-pattern in blau, blauer cta */}
-      <section className="fade-up" style={{ background: '#FAFBFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '40px' : '90px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+      {/* HERO - reines weiss damit png-edges perfekt verschmelzen */}
+      <section className="fade-up" style={{ background: '#FFFFFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '40px' : '90px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {/* Sehr dezent math-formel-pattern in hellblau - auf mobil noch dezenter */}
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.03 : 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
           <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
