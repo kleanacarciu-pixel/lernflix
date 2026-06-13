@@ -27,13 +27,20 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 750,
+        max_tokens: 850,
         temperature: 0.9,
         messages: [
           {
             role: "user",
             content: `5 MC-Fragen ${fach} ${klasse} "${thema}" ${schwierigkeitText}. ID:${variationsId}
-Regeln: 4 Antworten/Frage, eine richtig, variiere Position, neue Zahlen, deutsche Umlaute, kurze Erklaerung, "loesung"=Wortlaut (nicht Index), nie KI/AI erwaehnen.
+
+WICHTIG - Frage muss aus REINEM TEXT vollstaendig verstaendlich sein:
+- KEINE Verweise auf Bilder, Skizzen, Diagramme, Tabellen ("im Bild", "siehe", "wie viele Aepfel sind es")
+- Alle noetigen Zahlen/Infos MUESSEN im Fragetext stehen
+- Sachaufgabe? Konkret formulieren: "Anna hat 5 Aepfel und kauft 3 dazu. Wie viele hat sie?" - NICHT "Wie viele Aepfel sind es?"
+- Bei Geometrie/Physik: Werte direkt in Frage angeben
+
+Weitere Regeln: 4 Antworten/Frage, eine richtig, variiere Position, neue Zahlen, deutsche Umlaute, kurze Erklaerung, "loesung"=Wortlaut (nicht Index), nie KI/AI erwaehnen.
 JSON only:{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"...","erklaerung":"..."}]}`,
           },
         ],
