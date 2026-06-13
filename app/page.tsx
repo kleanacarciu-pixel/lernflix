@@ -195,16 +195,19 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - premium feel: gradient mesh + dot pattern + floating badges */}
-      <section className="fade-up" style={{ background: '#FFFFFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+      {/* HERO - warmer cream-bg statt steriles weiss + grosses spotlight + accents */}
+      <section className="fade-up" style={{ background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {/* Subtle dot-grid pattern fuer textur */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.5, pointerEvents: 'none' }} />
-        {/* Vibrante color blobs - staerker fuer premium-vibe */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.45, pointerEvents: 'none' }} />
+        {/* Vibrante gradient-blobs - jetzt staerker fuer premium-vibe */}
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '-80px', right: '5%', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.14) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
-            <div style={{ position: 'absolute', bottom: '-120px', left: '2%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.18) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
-            <div style={{ position: 'absolute', top: '35%', left: '38%', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.14) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(60px)' }} />
+            {/* Grosses spotlight hinter dem jungen rechts */}
+            <div style={{ position: 'absolute', top: '15%', right: '5%', width: '650px', height: '650px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.22) 0%, rgba(255,180,90,0.12) 35%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
+            {/* Akzent oben links */}
+            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.30) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            {/* Akzent unten */}
+            <div style={{ position: 'absolute', bottom: '-150px', left: '30%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
           </>
         )}
         {/* Dezent math-formel-pattern in hellblau */}
@@ -253,12 +256,17 @@ export default function Home() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.3fr 1fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
           {/* Links/oben: text */}
           <div style={{ textAlign: mobil ? 'center' : 'left' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '9px 18px', borderRadius: '999px', fontSize: mobil ? '12.5px' : '13.5px', fontWeight: 700, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 8px 24px rgba(23,105,255,0.12)', border: `1.5px solid ${F.blueLight}` }}>
-              <span className="pulse-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: F.blue, boxShadow: '0 0 8px rgba(23,105,255,0.6)' }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.blue, padding: '10px 20px', borderRadius: '999px', fontSize: mobil ? '13px' : '14px', fontWeight: 800, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 12px 30px rgba(23,105,255,0.18), 0 4px 10px rgba(23,105,255,0.08)', border: `2px solid ${F.blueLight}` }}>
+              <span className="pulse-dot" style={{ width: '9px', height: '9px', borderRadius: '50%', background: F.blue, boxShadow: '0 0 12px rgba(23,105,255,0.8)' }} />
               Klasse 1 bis 13 · Mathe + Physik
             </span>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '64px', fontWeight: 800, lineHeight: mobil ? 1.1 : 1.05, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.025em' }}>
-              Die Lernplattform<br />für <span style={{ color: F.blue, whiteSpace: 'nowrap' }}>Mathe und Physik</span>.
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '64px', fontWeight: 800, lineHeight: mobil ? 1.1 : 1.05, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.025em', position: 'relative', display: 'inline-block' }}>
+              Die Lernplattform<br />für <span style={{ color: F.blue, whiteSpace: 'nowrap', position: 'relative' }}>
+                Mathe und Physik
+                <svg style={{ position: 'absolute', left: 0, right: 0, bottom: '-8px', width: '100%', height: '14px' }} viewBox="0 0 400 14" preserveAspectRatio="none">
+                  <path d="M 5 8 Q 100 2, 200 7 T 395 8" stroke="rgba(255,180,90,0.85)" strokeWidth="5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>.
             </h1>
             <p style={{ fontSize: mobil ? '16px' : '20px', color: F.inkSoft, lineHeight: 1.55, margin: mobil ? '0 auto 24px' : '0 0 32px', maxWidth: '520px', fontWeight: 400 }}>
               Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
