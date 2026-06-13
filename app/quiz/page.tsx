@@ -266,7 +266,7 @@ export default function QuizPage() {
           setLaden(false);
           clearInterval(interval);
         }
-      }, 300);
+      }, 80); // schneller polling damit es responsive ist
       setTimeout(() => { clearInterval(interval); setLaden(false); }, 30000);
     }
   }
@@ -399,7 +399,7 @@ export default function QuizPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
                 {verfuegbareKlassen.map((k) => (
                   <button key={k} className="pill" onClick={() => { setKlassenFilter(k); setThema(""); }}
-                    style={{ aspectRatio: "1 / 1", borderRadius: "12px", border: `1.5px solid ${klassenFilter === k ? F.ink : F.border}`, background: klassenFilter === k ? F.ink : F.white, color: klassenFilter === k ? F.white : F.ink, fontSize: "16px", fontWeight: 800, fontFamily: SANS, padding: 0 }}>
+                    style={{ aspectRatio: "1 / 1", borderRadius: "14px", border: `2px solid ${klassenFilter === k ? F.coral : "#CDD9F5"}`, background: klassenFilter === k ? F.coral : "#F5F8FF", color: klassenFilter === k ? F.white : F.ink, fontSize: "18px", fontWeight: 800, fontFamily: SANS, padding: 0, boxShadow: klassenFilter === k ? "0 8px 20px rgba(23,105,255,0.25)" : "0 2px 6px rgba(15,23,42,0.04)" }}>
                     {k}
                   </button>
                 ))}
@@ -410,18 +410,22 @@ export default function QuizPage() {
             {klassenFilter !== null && (
               <div style={{ marginBottom: "28px" }} className="fade-up">
                 <p style={{ fontSize: "11.5px", color: F.inkMuted, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", margin: "0 0 10px" }}>Schritt 3 · Thema</p>
-                <div style={{ display: "grid", gap: "8px" }}>
+                <div style={{ display: "grid", gap: "10px" }}>
                   {aktiveThemen.map((t) => {
+                    // Behalte das emoji als visueller anker, das hilft kindern
+                    const emojiMatch = t.match(/^([^a-zA-ZÄÖÜäöüß0-9]+)/);
+                    const emoji = emojiMatch ? emojiMatch[1].trim() : "📘";
                     const clean = stripEmojiPrefix(t);
+                    const aktiv = thema === t;
                     return (
                       <button key={t} className="pill" onClick={() => setThema(t)}
-                        style={{ textAlign: "left", padding: "14px 18px", borderRadius: "12px", border: `1.5px solid ${thema === t ? F.coral : F.border}`, background: thema === t ? "#fff5f3" : F.white, color: F.ink, fontSize: "15px", fontWeight: 600, fontFamily: SANS, display: "flex", alignItems: "center", gap: "12px" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", border: `1.5px solid ${thema === t ? F.coral : F.border}`, background: thema === t ? F.coral : "transparent", flexShrink: 0 }}>
-                          {thema === t && (
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path d="M3 6L5 8L9 4" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        style={{ textAlign: "left", padding: "16px 18px", borderRadius: "14px", border: `2px solid ${aktiv ? F.coral : "#CDD9F5"}`, background: aktiv ? "#E8F0FF" : "#F5F8FF", color: F.ink, fontSize: "16px", fontWeight: 700, fontFamily: SANS, display: "flex", alignItems: "center", gap: "14px", boxShadow: aktiv ? "0 8px 20px rgba(23,105,255,0.18)" : "0 2px 6px rgba(15,23,42,0.04)" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", borderRadius: "10px", background: aktiv ? F.coral : F.white, border: `1.5px solid ${aktiv ? F.coral : "#CDD9F5"}`, fontSize: "20px", flexShrink: 0 }}>
+                          {aktiv ? (
+                            <svg width="18" height="18" viewBox="0 0 12 12" fill="none">
+                              <path d="M3 6L5 8L9 4" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                          )}
+                          ) : emoji}
                         </span>
                         {clean}
                       </button>
@@ -437,7 +441,7 @@ export default function QuizPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
                 {SCHWIERIGKEITEN.map((s) => (
                   <button key={s.id} className="pill" onClick={() => setSchwierigkeit(s.id)}
-                    style={{ padding: "14px 12px", borderRadius: "12px", border: `1.5px solid ${schwierigkeit === s.id ? s.farbe : F.border}`, background: schwierigkeit === s.id ? s.farbeHell : F.white, color: schwierigkeit === s.id ? s.farbe : F.ink, fontSize: "15px", fontWeight: 700, fontFamily: SANS }}>
+                    style={{ padding: "16px 12px", borderRadius: "14px", border: `2px solid ${schwierigkeit === s.id ? s.farbe : "#CDD9F5"}`, background: schwierigkeit === s.id ? s.farbeHell : "#F5F8FF", color: schwierigkeit === s.id ? s.farbe : F.ink, fontSize: "16px", fontWeight: 800, fontFamily: SANS, boxShadow: schwierigkeit === s.id ? `0 8px 20px ${s.farbe}30` : "0 2px 6px rgba(15,23,42,0.04)" }}>
                     {s.name}
                   </button>
                 ))}

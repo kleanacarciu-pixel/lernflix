@@ -27,23 +27,14 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 900,
+        max_tokens: 750,
         temperature: 0.9,
         messages: [
           {
             role: "user",
-            content: `5 Multiple-Choice-Fragen ${fach} ${klasse} Thema "${thema}", ${schwierigkeitText}. Variation: ${variationsId}.
-
-Regeln:
-- Jede Frage 4 Antworten, eine richtig
-- Variiere Position der richtigen Antwort
-- Neue Zahlen/Kontexte, keine Standardaufgaben
-- Echte deutsche Umlaute (ä ö ü ß)
-- Niemals KI/AI/Anthropic erwaehnen
-- "loesung" = WORTLAUT der richtigen Antwort (nicht Index)
-
-Nur JSON ohne Markdown:
-{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"<text der richtigen>","erklaerung":"kurz"}]}`,
+            content: `5 MC-Fragen ${fach} ${klasse} "${thema}" ${schwierigkeitText}. ID:${variationsId}
+Regeln: 4 Antworten/Frage, eine richtig, variiere Position, neue Zahlen, deutsche Umlaute, kurze Erklaerung, "loesung"=Wortlaut (nicht Index), nie KI/AI erwaehnen.
+JSON only:{"fragen":[{"frage":"...","antworten":["a","b","c","d"],"loesung":"...","erklaerung":"..."}]}`,
           },
         ],
       }),
