@@ -20,9 +20,9 @@ const THEMES: Record<ThemeKey, {
   },
   navy: {
     name: "Navy & Grün", emoji: "⚡",
-    dark: "#1e3a5f", darkSoft: "#2b507e", accent: "#3a8a4f",
-    bg: "#f6f8fa", card: "#ffffff", line: "#e2e8ee", ink: "#23272e", soft: "#6b7689",
-    swatches: ["#1e3a5f", "#3a8a4f", "#dbe6f0", "#e3f0e6"],
+    dark: "#1769FF", darkSoft: "#2b76ff", accent: "#3a8a4f",
+    bg: "#FFF9F0", card: "#ffffff", line: "#ece1cd", ink: "#0F172A", soft: "#475569",
+    swatches: ["#1769FF", "#3a8a4f", "#dbe6f0", "#e3f0e6"],
   },
   gold: {
     name: "Gold & Beige", emoji: "✨",
@@ -348,13 +348,23 @@ export default function LernheldPage() {
   );
 
   const seitenStil: React.CSSProperties = {
-    minHeight: "100vh", background: t.bg, color: t.ink, fontFamily: sans, WebkitFontSmoothing: "antialiased",
+    minHeight: "100vh", background: "linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)", color: t.ink, fontFamily: sans, WebkitFontSmoothing: "antialiased", position: "relative", overflow: "hidden",
   };
+
+  const dekoSchicht = (
+    <>
+      {/* Dot-grid pattern + glow blobs (matched mit homepage) */}
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)", backgroundSize: "32px 32px", opacity: 0.35, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "-100px", left: "-100px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "30%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(30px)", zIndex: 0 }} />
+    </>
+  );
 
   // ===== FERTIGER PLAN =====
   if (plan) {
     return (
       <div style={seitenStil}>
+        {dekoSchicht}
         <div style={{ padding: "14px 22px", display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", position: "sticky", top: 0, zIndex: 10, background: t.dark }}>
           <button onClick={herunterladen} style={{ background: "#fff", color: t.dark, border: "none", borderRadius: "999px", padding: "11px 22px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>Plan herunterladen</button>
           <button onClick={() => window.print()} style={{ background: "rgba(255,255,255,0.18)", color: "#fff", border: "1px solid rgba(255,255,255,0.5)", borderRadius: "999px", padding: "11px 22px", fontSize: "15px", fontWeight: 700, cursor: "pointer" }}>Drucken / PDF</button>
@@ -369,8 +379,9 @@ export default function LernheldPage() {
   // ===== EINGABE =====
   return (
     <div style={seitenStil}>
+      {dekoSchicht}
       {/* Farbiger Kopf-Banner */}
-      <div style={{ background: t.dark, padding: "34px 22px 30px", textAlign: "center" }}>
+      <div style={{ background: t.dark, padding: "34px 22px 30px", textAlign: "center", position: "relative", zIndex: 1 }}>
         <div style={{ width: "62px", height: "62px", margin: "0 auto 14px", background: t.darkSoft, borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ fontFamily: serif, fontSize: "34px", fontWeight: 700, color: "#fff" }}>A</span>
         </div>
@@ -378,7 +389,7 @@ export default function LernheldPage() {
         <p style={{ color: "rgba(255,255,255,0.88)", fontSize: "15px", margin: 0 }}>Lade deine Unterlagen hoch — den Rest übernehmen wir.</p>
       </div>
 
-      <div style={{ maxWidth: "640px", margin: "0 auto", padding: "26px 18px 70px" }}>
+      <div style={{ maxWidth: "640px", margin: "0 auto", padding: "26px 18px 70px", position: "relative", zIndex: 1 }}>
         {laden ? (
           <div style={{ textAlign: "center", padding: "90px 20px" }}>
             <h2 style={{ fontFamily: serif, fontSize: "26px", fontWeight: 700, margin: "0 0 14px", color: t.ink }}>{ladeText}</h2>

@@ -45,12 +45,18 @@ export default function VorschlagSkizze() {
   const mobil = breite < 768;
 
   return (
-    <main style={{ minHeight: '100vh', background: F.bg, fontFamily: SANS, color: F.ink, overflowX: 'hidden' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', fontFamily: SANS, color: F.ink, overflowX: 'hidden', position: 'relative' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" />
+
+      {/* Dot-grid pattern + glow blobs */}
+      <div style={{ position: 'fixed', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.35, pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)', zIndex: 0 }} />
+      <div style={{ position: 'fixed', top: '20%', right: '-150px', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)', zIndex: 0 }} />
+
       <style>{`
         * { -webkit-font-smoothing: antialiased; }
-        body { background: ${F.bg}; margin: 0; }
+        body { background: #FFF9F0; margin: 0; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes draw { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
         @keyframes appear { 0%, 30% { opacity: 0; transform: translateY(4px); } 60%, 100% { opacity: 1; transform: translateY(0); } }
