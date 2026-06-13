@@ -182,80 +182,65 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - Mathegym-style: voller coral-bg mit dichtem math-formel-pattern, headline mittig + ORANGE cta + foto rechts */}
-      <section className="fade-up" style={{ background: `linear-gradient(160deg, #ff5b4a 0%, #ff7b5a 100%)`, color: F.white, paddingTop: mobil ? '100px' : '110px', paddingBottom: mobil ? '50px' : '70px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Dichtes math-formel-pattern wie chalkboard - viele formeln in mehreren reihen */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.13 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
-          {/* Reihe 1 */}
-          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">a² + b² = c²</text>
-          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">2x + 3</text>
-          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">∫ x dx</text>
-          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">π · r²</text>
-          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">sin α</text>
-          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">¾ + ⅖</text>
-          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">√25 = 5</text>
-          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">log x</text>
-          {/* Reihe 2 */}
-          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">f(x) = 2x + 5</text>
-          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">x² − 4</text>
-          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">F = m · a</text>
-          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">E = m·c²</text>
-          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">cos β</text>
-          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">tan γ</text>
-          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">3·4</text>
-          {/* Reihe 3 */}
-          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">v = s / t</text>
-          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">P = U · I</text>
-          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">y = mx + b</text>
-          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">Δx · Δp</text>
-          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">e^x</text>
-          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">∑ aᵢ</text>
-          <text x="1260" y="370" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">U = R · I</text>
-          {/* Reihe 4 */}
-          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">7·8 = 56</text>
-          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">17 + 25</text>
-          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="white">a·(b+c)</text>
-          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">x² + 3x + 2</text>
-          <text x="1080" y="530" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">d/dx</text>
-          <text x="1280" y="560" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">Q = m·c·ΔT</text>
-          {/* Reihe 5 */}
-          <text x="20" y="700" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">15% von 80</text>
-          <text x="320" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">3/4 + 1/2</text>
-          <text x="580" y="690" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">A = π·r²</text>
-          <text x="840" y="720" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">12 · 13</text>
-          <text x="1020" y="690" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">x³ − 8</text>
-          <text x="1220" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">F = q·v·B</text>
-          {/* Reihe 6 */}
-          <text x="100" y="860" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">log₂ 8 = 3</text>
-          <text x="420" y="880" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">9 · 11 = 99</text>
-          <text x="680" y="860" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">m · g · h</text>
-          <text x="940" y="880" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">2π · f</text>
-          <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">100 km/h</text>
+      {/* HERO - Cream-bg + dunkle math-pattern + coral CTA - professionell und ruhig */}
+      <section className="fade-up" style={{ background: '#fff8ee', color: F.ink, paddingTop: mobil ? '100px' : '120px', paddingBottom: mobil ? '60px' : '90px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Dichtes math-formel-pattern in subtilem ink-grau (chalkboard-style) */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.08 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
+          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">a² + b² = c²</text>
+          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#0F172A">2x + 3</text>
+          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">∫ x dx</text>
+          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">π · r²</text>
+          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#0F172A">sin α</text>
+          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#0F172A">¾ + ⅖</text>
+          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">√25 = 5</text>
+          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">log x</text>
+          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#0F172A">f(x) = 2x + 5</text>
+          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">x² − 4</text>
+          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#0F172A">F = m · a</text>
+          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">E = m·c²</text>
+          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#0F172A">cos β</text>
+          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">tan γ</text>
+          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">3·4</text>
+          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">v = s / t</text>
+          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#0F172A">P = U · I</text>
+          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#0F172A">y = mx + b</text>
+          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">Δx · Δp</text>
+          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#0F172A">e^x</text>
+          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">∑ aᵢ</text>
+          <text x="1260" y="370" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">U = R · I</text>
+          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">7·8 = 56</text>
+          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#0F172A">17 + 25</text>
+          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#0F172A">a·(b+c)</text>
+          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">x² + 3x + 2</text>
+          <text x="1080" y="530" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#0F172A">d/dx</text>
+          <text x="1280" y="560" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">Q = m·c·ΔT</text>
+          <text x="20" y="700" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#0F172A">15% von 80</text>
+          <text x="320" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">3/4 + 1/2</text>
+          <text x="580" y="690" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#0F172A">A = π·r²</text>
+          <text x="840" y="720" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">12 · 13</text>
+          <text x="1020" y="690" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">x³ − 8</text>
+          <text x="1220" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">F = q·v·B</text>
+          <text x="100" y="860" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#0F172A">log₂ 8 = 3</text>
+          <text x="420" y="880" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#0F172A">9 · 11 = 99</text>
+          <text x="680" y="860" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#0F172A">m · g · h</text>
+          <text x="940" y="880" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#0F172A">2π · f</text>
+          <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1320px', margin: '0 auto', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.05fr 1fr', gap: mobil ? '40px' : '50px', alignItems: 'center', position: 'relative', minHeight: mobil ? 'auto' : '460px' }}>
-          {/* Text - links, mittig */}
-          <div style={{ textAlign: mobil ? 'left' : 'center', maxWidth: mobil ? 'none' : '640px', justifySelf: mobil ? 'stretch' : 'center' }}>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '44px' : '64px', fontWeight: 800, lineHeight: 1.05, margin: '0 0 20px', color: F.white, letterSpacing: '-0.02em' }}>
-              Die Lern-Plattform für Mathe & Physik.
-            </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.95)', lineHeight: 1.5, margin: '0 auto 32px', maxWidth: '560px', fontWeight: 400 }}>
-              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
-            </p>
-            {/* Mathegym-style: EIN grosser orange-CTA in der mitte */}
-            <a href="/shop" style={{ background: '#f57c1f', color: F.white, textDecoration: 'none', padding: '18px 42px', borderRadius: '8px', fontSize: '18px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(245,124,31,0.40), inset 0 -3px 0 rgba(0,0,0,0.12)' }}>
-              Zum Aufgabenbereich
-            </a>
-          </div>
-
-          {/* Visual rechts - foto wie bei mathegym */}
-          {!mobil && (
-            <div className="fade-up-2" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: '100%', maxWidth: '440px', aspectRatio: '4 / 5', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 30px 80px rgba(0,0,0,0.35), 0 8px 24px rgba(0,0,0,0.20)' }}>
-                <img src={FOTO.hero} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            </div>
-          )}
+        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center', padding: mobil ? '20px 0 10px' : '40px 0 30px' }}>
+          <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: 800, marginBottom: '28px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
+            Mathematik & Physik · Klasse 1 bis 13
+          </span>
+          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '88px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 22px', color: F.ink, letterSpacing: '-0.03em', maxWidth: '920px' }}>
+            Die Lern-Plattform für<br />Mathe & Physik.
+          </h1>
+          <p style={{ fontSize: mobil ? '17px' : '20px', color: F.inkSoft, lineHeight: 1.5, margin: '0 auto 36px', maxWidth: '620px', fontWeight: 400 }}>
+            Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
+          </p>
+          {/* EIN grosser coral-CTA in der mitte */}
+          <a href="/shop" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '18px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(255,91,74,0.32), inset 0 -3px 0 rgba(0,0,0,0.12)', letterSpacing: '-0.01em' }}>
+            Zum Aufgabenbereich
+          </a>
         </div>
       </section>
 
