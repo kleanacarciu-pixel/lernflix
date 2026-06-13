@@ -178,18 +178,17 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* HERO - sanfter welcoming-gradient mit pastell-akzenten, mehr energie */}
-      <section className="fade-up" style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F0F5FF 60%, #E8F0FF 100%)', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Soft glow blobs fuer welcoming-feel */}
+      {/* HERO - reines weiss, text-platz erhoeht, foto ausreichend gross aber nicht ueberragend */}
+      <section className="fade-up" style={{ background: '#FFFFFF', color: F.ink, paddingTop: mobil ? '90px' : '130px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Soft glow nur dezent */}
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '-100px', right: '-50px', width: '400px', height: '400px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '-150px', left: '-80px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', top: '30%', left: '50%', width: '600px', height: '600px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '-100px', right: '-50px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', bottom: '-150px', left: '-80px', width: '450px', height: '450px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,203,69,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
           </>
         )}
-        {/* Sehr dezent math-formel-pattern in hellblau */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.04 : 0.06 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
+        {/* Dezent math-formel-pattern in hellblau */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.03 : 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
           <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
           <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
           <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
@@ -231,7 +230,7 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1fr 1.25fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.3fr 1fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
           {/* Links/oben: text */}
           <div style={{ textAlign: mobil ? 'center' : 'left' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '9px 18px', borderRadius: '999px', fontSize: mobil ? '12.5px' : '13.5px', fontWeight: 700, marginBottom: mobil ? '20px' : '28px', boxShadow: '0 8px 24px rgba(23,105,255,0.12)', border: `1.5px solid ${F.blueLight}` }}>
@@ -261,14 +260,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts/unten: Foto vom lachenden jungen mit MATHE-TEST note 1 - jetzt deutlich groesser */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '720px', marginTop: mobil ? '8px' : 0 }}>
+          {/* Foto - nur in nativer aufloesung (612px) damit scharf bleibt */}
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '500px', marginTop: mobil ? '8px' : 0 }}>
             <img
               src="/HP_FOTO-removebg-preview.png"
               alt=""
               style={{
                 width: '100%',
-                maxWidth: mobil ? '480px' : '1000px',
+                maxWidth: mobil ? '360px' : '600px',
                 height: 'auto',
                 objectFit: 'contain',
               }}
