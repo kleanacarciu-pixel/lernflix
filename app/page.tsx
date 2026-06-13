@@ -257,20 +257,20 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - radial mask blended den hintergrund */}
+          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - aggressive radial mask fuer max cutout-effekt */}
           {!mobil && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '560px' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '580px' }}>
               <img
                 src="https://images.pexels.com/photos/14139194/pexels-photo-14139194.jpeg?auto=compress&cs=tinysrgb&w=1000"
                 alt=""
                 style={{
                   maxWidth: '100%',
-                  maxHeight: '560px',
-                  width: 'auto',
                   height: '100%',
+                  width: 'auto',
                   objectFit: 'cover',
-                  WebkitMaskImage: 'radial-gradient(ellipse 65% 80% at 55% 50%, black 55%, transparent 95%)',
-                  maskImage: 'radial-gradient(ellipse 65% 80% at 55% 50%, black 55%, transparent 95%)',
+                  objectPosition: 'center',
+                  WebkitMaskImage: 'radial-gradient(ellipse 50% 60% at 52% 48%, black 50%, rgba(0,0,0,0.6) 70%, transparent 92%)',
+                  maskImage: 'radial-gradient(ellipse 50% 60% at 52% 48%, black 50%, rgba(0,0,0,0.6) 70%, transparent 92%)',
                 }}
               />
             </div>
