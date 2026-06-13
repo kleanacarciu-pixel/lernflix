@@ -74,6 +74,23 @@ export default function Home() {
         body { background: ${F.bg}; margin: 0; font-family: ${SANS}; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } }
+        @keyframes formelDrift1 {
+          0%, 100% { opacity: 0; transform: translate(-15px, 10px); }
+          25%, 75% { opacity: 1; transform: translate(0, 0); }
+        }
+        @keyframes formelDrift2 {
+          0%, 100% { opacity: 0; transform: translate(15px, -10px) scale(0.9); }
+          30%, 70% { opacity: 1; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes formelFloat {
+          0%, 100% { transform: translate(0, 0); }
+          25% { transform: translate(8px, -10px); }
+          50% { transform: translate(-5px, -15px); }
+          75% { transform: translate(-10px, 5px); }
+        }
+        .formel-a { animation: formelDrift1 12s ease-in-out infinite; transform-origin: center; }
+        .formel-b { animation: formelDrift2 14s ease-in-out infinite; transform-origin: center; }
+        .formel-c { animation: formelFloat 16s ease-in-out infinite; transform-origin: center; }
         @keyframes floatA { 0%, 100% { transform: translateY(0px) rotate(-4deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
         @keyframes floatB { 0%, 100% { transform: translateY(0px) rotate(3deg); } 50% { transform: translateY(-10px) rotate(-3deg); } }
         @keyframes karteIn { from { opacity: 0; transform: rotate(0deg) translateY(80px); } }
@@ -189,45 +206,45 @@ export default function Home() {
         )}
         {/* Dezent math-formel-pattern in hellblau */}
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.03 : 0.05 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 900">
-          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
-          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
-          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
-          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">π · r²</text>
-          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">sin α</text>
-          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">¾ + ⅖</text>
-          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">√25 = 5</text>
-          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">log x</text>
-          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">f(x) = 2x + 5</text>
-          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">x² − 4</text>
-          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">F = m · a</text>
-          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">E = m·c²</text>
-          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">cos β</text>
-          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">tan γ</text>
-          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">3·4</text>
-          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">v = s / t</text>
-          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">P = U · I</text>
-          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">y = mx + b</text>
-          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">Δx · Δp</text>
-          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">e^x</text>
-          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">∑ aᵢ</text>
-          <text x="1260" y="370" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">U = R · I</text>
-          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">7·8 = 56</text>
-          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">17 + 25</text>
-          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#1769FF">a·(b+c)</text>
-          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x² + 3x + 2</text>
-          <text x="1080" y="530" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">d/dx</text>
-          <text x="1280" y="560" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">Q = m·c·ΔT</text>
-          <text x="20" y="700" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">15% von 80</text>
-          <text x="320" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">3/4 + 1/2</text>
-          <text x="580" y="690" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">A = π·r²</text>
-          <text x="840" y="720" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">12 · 13</text>
-          <text x="1020" y="690" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x³ − 8</text>
-          <text x="1220" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">F = q·v·B</text>
-          <text x="100" y="860" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">log₂ 8 = 3</text>
-          <text x="420" y="880" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">9 · 11 = 99</text>
-          <text x="680" y="860" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">m · g · h</text>
-          <text x="940" y="880" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">2π · f</text>
-          <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
+          <text className="formel-a" style={{animationDelay: '-0.0s'}} x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
+          <text className="formel-b" style={{animationDelay: '-0.7s'}} x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
+          <text className="formel-c" style={{animationDelay: '-1.4s'}} x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
+          <text className="formel-a" style={{animationDelay: '-2.1s'}} x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">π · r²</text>
+          <text className="formel-b" style={{animationDelay: '-2.8s'}} x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">sin α</text>
+          <text className="formel-c" style={{animationDelay: '-3.5s'}} x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">¾ + ⅖</text>
+          <text className="formel-a" style={{animationDelay: '-4.2s'}} x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">√25 = 5</text>
+          <text className="formel-b" style={{animationDelay: '-4.9s'}} x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">log x</text>
+          <text className="formel-c" style={{animationDelay: '-5.6s'}} x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">f(x) = 2x + 5</text>
+          <text className="formel-a" style={{animationDelay: '-6.3s'}} x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">x² − 4</text>
+          <text className="formel-b" style={{animationDelay: '-7.0s'}} x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">F = m · a</text>
+          <text className="formel-c" style={{animationDelay: '-7.7s'}} x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">E = m·c²</text>
+          <text className="formel-a" style={{animationDelay: '-8.4s'}} x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">cos β</text>
+          <text className="formel-b" style={{animationDelay: '-9.1s'}} x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">tan γ</text>
+          <text className="formel-c" style={{animationDelay: '-9.8s'}} x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">3·4</text>
+          <text className="formel-a" style={{animationDelay: '-10.5s'}} x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">v = s / t</text>
+          <text className="formel-b" style={{animationDelay: '-11.2s'}} x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">P = U · I</text>
+          <text className="formel-c" style={{animationDelay: '-11.9s'}} x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">y = mx + b</text>
+          <text className="formel-a" style={{animationDelay: '-0.6s'}} x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">Δx · Δp</text>
+          <text className="formel-b" style={{animationDelay: '-1.3s'}} x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">e^x</text>
+          <text className="formel-c" style={{animationDelay: '-2.0s'}} x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">∑ aᵢ</text>
+          <text className="formel-a" style={{animationDelay: '-2.7s'}} x="1260" y="370" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">U = R · I</text>
+          <text className="formel-b" style={{animationDelay: '-3.4s'}} x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">7·8 = 56</text>
+          <text className="formel-c" style={{animationDelay: '-4.1s'}} x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">17 + 25</text>
+          <text className="formel-a" style={{animationDelay: '-4.8s'}} x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#1769FF">a·(b+c)</text>
+          <text className="formel-b" style={{animationDelay: '-5.5s'}} x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x² + 3x + 2</text>
+          <text className="formel-c" style={{animationDelay: '-6.2s'}} x="1080" y="530" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">d/dx</text>
+          <text className="formel-a" style={{animationDelay: '-6.9s'}} x="1280" y="560" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">Q = m·c·ΔT</text>
+          <text className="formel-b" style={{animationDelay: '-7.6s'}} x="20" y="700" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">15% von 80</text>
+          <text className="formel-c" style={{animationDelay: '-8.3s'}} x="320" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">3/4 + 1/2</text>
+          <text className="formel-a" style={{animationDelay: '-9.0s'}} x="580" y="690" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">A = π·r²</text>
+          <text className="formel-b" style={{animationDelay: '-9.7s'}} x="840" y="720" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">12 · 13</text>
+          <text className="formel-c" style={{animationDelay: '-10.4s'}} x="1020" y="690" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x³ − 8</text>
+          <text className="formel-a" style={{animationDelay: '-11.1s'}} x="1220" y="720" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">F = q·v·B</text>
+          <text className="formel-b" style={{animationDelay: '-11.8s'}} x="100" y="860" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">log₂ 8 = 3</text>
+          <text className="formel-c" style={{animationDelay: '-0.5s'}} x="420" y="880" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">9 · 11 = 99</text>
+          <text className="formel-a" style={{animationDelay: '-1.2s'}} x="680" y="860" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">m · g · h</text>
+          <text className="formel-b" style={{animationDelay: '-1.9s'}} x="940" y="880" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">2π · f</text>
+          <text className="formel-c" style={{animationDelay: '-2.6s'}} x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.3fr 1fr', gap: mobil ? '24px' : '40px', alignItems: 'center', padding: mobil ? '8px 0 0' : '20px 0' }}>
