@@ -134,8 +134,12 @@ export default function MaterialPage() {
   }
 
   return (
-    <main style={{ minHeight: "100vh", background: "#fafafa", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", color: "#1d1d1f" }}>
-      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "60px 20px" }}>
+    <main style={{ minHeight: "100vh", background: "linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)", fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", color: "#0F172A", position: "relative", overflow: "hidden" }}>
+      {/* Dot-grid pattern + glow blobs */}
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)", backgroundSize: "32px 32px", opacity: 0.35, pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "-100px", left: "-100px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "30%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(30px)", zIndex: 0 }} />
+      <div style={{ maxWidth: "560px", margin: "0 auto", padding: "60px 20px", position: "relative", zIndex: 1 }}>
         <a href="/" style={{ color: "#6e6e73", fontSize: "13px", textDecoration: "none" }}>← Zurück zur Startseite</a>
         <div style={{ background: "#fff", borderRadius: "20px", padding: "36px 28px", marginTop: "20px", border: "1px solid #ececec", boxShadow: "0 6px 24px rgba(0,0,0,0.04)" }}>
           <div style={{ background: material.farbe, color: "#fff", borderRadius: "14px", padding: "20px 22px", marginBottom: "22px" }}>

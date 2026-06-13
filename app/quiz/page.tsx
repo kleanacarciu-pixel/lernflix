@@ -188,8 +188,8 @@ const F = {
   inkSoft: '#475569',
   inkMuted: '#94A3B8',
   border: '#E2E8F0',
-  coral: '#ff5b4a',
-  coralDeep: '#e44b3c',
+  coral: '#1769FF',
+  coralDeep: '#1156DD',
   blue: '#1769FF',
   blueDeep: '#1156DD',
   blueLight: '#E8F0FF',
@@ -318,13 +318,19 @@ export default function QuizPage() {
   const verfuegbareKlassen = Array.from({ length: 13 }, (_, i) => i + 1); // 1..13
 
   return (
-    <main style={{ minHeight: "100vh", background: F.bgWarm, fontFamily: SANS, color: F.ink }}>
+    <main style={{ minHeight: "100vh", background: "linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)", fontFamily: SANS, color: F.ink, position: "relative", overflow: "hidden" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
+      {/* Dot-grid pattern fuer textur (matched mit homepage) */}
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)", backgroundSize: "32px 32px", opacity: 0.35, pointerEvents: "none", zIndex: 0 }} />
+      {/* Glow blobs */}
+      <div style={{ position: "fixed", top: "-100px", left: "-100px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
+      <div style={{ position: "fixed", top: "30%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(30px)", zIndex: 0 }} />
+
       <style>{`
         * { -webkit-font-smoothing: antialiased; }
-        body { background: ${F.bgWarm}; margin: 0; font-family: ${SANS}; }
+        body { background: #FFF9F0; margin: 0; font-family: ${SANS}; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
         .fade-up { animation: fadeUp 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
@@ -340,30 +346,30 @@ export default function QuizPage() {
           display: inline-flex; align-items: center; justify-content: center; gap: 8px;
           text-decoration: none; border: none; cursor: pointer;
           transition: all 0.2s ease; font-family: ${SANS};
-          box-shadow: 0 1px 2px rgba(255,91,74,0.10), 0 8px 24px rgba(255,91,74,0.24);
+          box-shadow: 0 1px 2px rgba(23,105,255,0.12), 0 8px 24px rgba(23,105,255,0.28);
           width: 100%;
         }
-        .btn-primary:hover:not(:disabled) { background: ${F.coralDeep}; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255,91,74,0.32); }
+        .btn-primary:hover:not(:disabled) { background: ${F.coralDeep}; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(23,105,255,0.36); }
         .btn-primary:disabled { background: ${F.inkMuted}; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
       `}</style>
 
-      {/* HEADER */}
-      <header style={{ background: F.bgWarm, padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${F.border}`, position: "sticky", top: 0, zIndex: 50, backdropFilter: "saturate(180%) blur(20px)" }}>
+      {/* HEADER - matched mit homepage */}
+      <header style={{ background: "rgba(255,255,255,0.85)", padding: "16px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${F.border}`, position: "sticky", top: 0, zIndex: 50, backdropFilter: "saturate(180%) blur(20px)" }}>
         <a href="/" style={{ textDecoration: "none" }}>
           <span style={{ fontSize: "24px", fontWeight: 800, color: F.ink, letterSpacing: "-0.025em" }}>
-            Lern<span style={{ color: F.coral }}>flix</span>
+            Lern<span style={{ color: F.blue }}>flix</span>
           </span>
         </a>
         <a href="/" style={{ color: F.inkSoft, textDecoration: "none", fontSize: "14px", fontWeight: 600 }}>← Zurück</a>
       </header>
 
-      <div style={{ maxWidth: "780px", margin: "0 auto", padding: "32px 22px 80px" }}>
+      <div style={{ maxWidth: "780px", margin: "0 auto", padding: "32px 22px 80px", position: "relative", zIndex: 1 }}>
 
         {schritt === "auswahl" && (
           <div className="fade-up">
             {/* Title */}
             <div style={{ textAlign: "center", marginBottom: "32px" }}>
-              <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(255,91,74,0.14)" }}>
+              <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(23,105,255,0.18)" }}>
                 Kostenloses Quiz
               </span>
               <h1 style={{ fontSize: "44px", fontWeight: 800, margin: "0 0 10px", letterSpacing: "-0.03em", lineHeight: 1.0, color: F.ink }}>
@@ -512,7 +518,7 @@ export default function QuizPage() {
 
         {schritt === "ergebnis" && (
           <div className="fade-up" style={{ textAlign: "center", paddingTop: "20px" }}>
-            <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(255,91,74,0.14)" }}>
+            <span style={{ display: "inline-block", background: F.white, color: F.coral, padding: "7px 14px", borderRadius: "999px", fontSize: "12px", fontWeight: 700, marginBottom: "16px", boxShadow: "0 4px 14px rgba(23,105,255,0.18)" }}>
               Quiz beendet
             </span>
             <h2 style={{ fontSize: "42px", margin: "0 0 10px", letterSpacing: "-0.03em", lineHeight: 1.0, fontWeight: 800, color: F.ink }}>

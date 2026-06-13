@@ -8,8 +8,8 @@ const F = {
   ink: '#0F172A',
   inkSoft: '#475569',
   border: '#E2E8F0',
-  coral: '#ff5b4a',
-  coralDeep: '#e44b3c',
+  coral: '#1769FF',
+  coralDeep: '#1156DD',
   blue: '#1769FF',
   green: '#10B981',
 };
@@ -45,11 +45,16 @@ function SuccessContent() {
   }, [url]);
 
   return (
-    <main style={{ minHeight: '100vh', background: F.bgWarm, fontFamily: SANS, color: F.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', fontFamily: SANS, color: F.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', position: 'relative', overflow: 'hidden' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
 
-      <div style={{ background: F.bg, borderRadius: '28px', padding: '52px 44px 44px', border: `1px solid ${F.border}`, textAlign: 'center', maxWidth: '500px', width: '100%', boxShadow: '0 16px 50px rgba(15,23,42,0.10)' }}>
+      {/* Dot-grid pattern + glow blobs */}
+      <div style={{ position: 'fixed', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.35, pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)', zIndex: 0 }} />
+      <div style={{ position: 'fixed', bottom: '-100px', right: '-100px', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)', zIndex: 0 }} />
+
+      <div style={{ background: F.bg, borderRadius: '28px', padding: '52px 44px 44px', border: `1px solid ${F.border}`, textAlign: 'center', maxWidth: '500px', width: '100%', boxShadow: '0 16px 50px rgba(15,23,42,0.10)', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
           <Sterne />
         </div>
@@ -64,7 +69,7 @@ function SuccessContent() {
           <p style={{ height: '20px', margin: '0 0 28px' }} />
         )}
         {url && (
-          <a href={url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: F.coral, color: '#fff', padding: '14px 28px', borderRadius: '14px', textDecoration: 'none', fontWeight: 700, fontSize: '15px', marginBottom: '20px', boxShadow: '0 8px 24px rgba(255,91,74,0.30)' }}>
+          <a href={url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', background: F.coral, color: '#fff', padding: '14px 28px', borderRadius: '14px', textDecoration: 'none', fontWeight: 700, fontSize: '15px', marginBottom: '20px', boxShadow: '0 8px 24px rgba(23,105,255,0.30)' }}>
             Hier klicken zum Herunterladen
           </a>
         )}
@@ -79,7 +84,7 @@ function SuccessContent() {
 export default function Success() {
   return (
     <Suspense fallback={
-      <main style={{ minHeight: '100vh', background: F.bgWarm, fontFamily: SANS, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', fontFamily: SANS, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: F.inkSoft, fontSize: '15px', fontWeight: 600 }}>Laden ...</p>
       </main>
     }>

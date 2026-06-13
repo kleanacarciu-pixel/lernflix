@@ -136,62 +136,74 @@ export default function Shop() {
         </div>
       )}
 
-      {/* HEADER */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,253,248,0.94)' : 'transparent', backdropFilter: scrolled ? 'saturate(180%) blur(20px)' : 'none', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '14px 22px' : '18px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease' }}>
-        <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontSize: mobil ? '24px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
-            Lern<span style={{ color: F.coral }}>flix</span>
+      {/* HEADER - matched mit homepage */}
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.85)', backdropFilter: 'saturate(180%) blur(20px)', borderBottom: scrolled ? `1px solid ${F.border}` : '1px solid transparent', padding: mobil ? '12px 16px' : '16px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.3s ease', gap: '12px' }}>
+        <a href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
+          <span style={{ fontSize: mobil ? '20px' : '26px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>
+            Lern<span style={{ color: F.blue }}>flix</span>
           </span>
         </a>
-        <nav style={{ display: 'flex', gap: mobil ? '4px' : '8px', alignItems: 'center' }}>
-          {!mobil && (
-            <>
-              <a href="/shop" className="nav-link">Lernmaterialien</a>
-              <a href="/lernplan" className="nav-link">Lernplan</a>
-              <a href="/quiz" className="nav-link">Quiz</a>
-            </>
-          )}
-          <a href="/lernheld" className="btn-coral" style={{ background: F.coral, color: F.white, textDecoration: 'none', fontSize: '13.5px', fontWeight: 700, padding: '10px 18px', borderRadius: '14px', marginLeft: mobil ? '0' : '12px', boxShadow: '0 8px 22px rgba(255,91,74,0.26)', display: 'inline-flex', alignItems: 'center' }}>
-            Lernheld
+        <nav style={{ display: 'flex', gap: mobil ? '4px' : '20px', alignItems: 'center', flexWrap: 'nowrap' }}>
+          <a href="/shop" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Material' : 'Lernmaterialien'}</a>
+          <a href="/lernplan" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Plan' : 'Lernplan'}</a>
+          <a href="/lernheld" style={{ color: F.ink, textDecoration: 'none', fontSize: mobil ? '12px' : '14.5px', fontWeight: 600, padding: mobil ? '6px 6px' : '8px 12px', borderRadius: '8px' }}>{mobil ? 'Held' : 'Lernheld'}</a>
+          <a href="/quiz" style={{ background: F.blue, color: F.white, textDecoration: 'none', fontSize: mobil ? '12.5px' : '14px', fontWeight: 700, padding: mobil ? '8px 14px' : '11px 22px', borderRadius: '10px', marginLeft: mobil ? '4px' : '8px', boxShadow: '0 6px 16px rgba(23,105,255,0.24)' }}>
+            Quiz
           </a>
         </nav>
       </header>
 
-      {/* HERO - Navy mit Math-Pattern (gleicher Stil wie Homepage) */}
-      <section style={{ background: 'linear-gradient(150deg, #1E3A8A 0%, #2952B3 100%)', color: F.white, paddingTop: mobil ? '110px' : '130px', paddingBottom: mobil ? '50px' : '80px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.14 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 600">
-          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">a² + b² = c²</text>
-          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">2x + 3</text>
-          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">∫ x dx</text>
-          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">π · r²</text>
-          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">sin α</text>
-          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">¾ + ⅖</text>
-          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">√25 = 5</text>
-          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">log x</text>
-          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">f(x) = 2x + 5</text>
-          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">x² − 4</text>
-          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">F = m · a</text>
-          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">E = m·c²</text>
-          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">cos β</text>
-          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">tan γ</text>
-          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">3·4</text>
-          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">v = s / t</text>
-          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">P = U · I</text>
-          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">y = mx + b</text>
-          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">Δx · Δp</text>
-          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">e^x</text>
-          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">∑ aᵢ</text>
-          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">7·8 = 56</text>
-          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">17 + 25</text>
-          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="white">a·(b+c)</text>
-          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">x² + 3x + 2</text>
+      {/* HERO - cream gradient mit blue accent (matched mit homepage) */}
+      <section style={{ background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '100px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Dot-grid pattern fuer textur */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.45, pointerEvents: 'none' }} />
+        {/* Glow blobs */}
+        {!mobil && (
+          <>
+            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.30) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', top: '10%', right: '-100px', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.18) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
+            <div style={{ position: 'absolute', bottom: '-150px', left: '30%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
+          </>
+        )}
+        {/* Dezent math-formel pattern */}
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.04 : 0.06 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 600">
+          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
+          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
+          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
+          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">π · r²</text>
+          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">sin α</text>
+          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">¾ + ⅖</text>
+          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">√25 = 5</text>
+          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">log x</text>
+          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">f(x) = 2x + 5</text>
+          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">x² − 4</text>
+          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">F = m · a</text>
+          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">E = m·c²</text>
+          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">cos β</text>
+          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">tan γ</text>
+          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">3·4</text>
+          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">v = s / t</text>
+          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">P = U · I</text>
+          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">y = mx + b</text>
+          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">Δx · Δp</text>
+          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">e^x</text>
+          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">∑ aᵢ</text>
+          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">7·8 = 56</text>
+          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">17 + 25</text>
+          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#1769FF">a·(b+c)</text>
+          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x² + 3x + 2</text>
         </svg>
         <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 18px', color: F.white, letterSpacing: '-0.035em' }}>
+          {/* Premium pill eyebrow */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, border: `1px solid ${F.border}`, padding: '8px 18px', borderRadius: '999px', marginBottom: '22px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, display: 'inline-block' }} />
+            <span style={{ fontSize: '12.5px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: F.ink }}>Lernpakete</span>
+          </div>
+          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 18px', color: F.ink, letterSpacing: '-0.035em' }}>
             Lernmaterialien.
           </h1>
-          <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.92)', lineHeight: 1.55, margin: '0 auto', maxWidth: '600px', fontWeight: 400 }}>
-            Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar — ab 0,99 €.
+          <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: '0 auto', maxWidth: '600px', fontWeight: 400 }}>
+            Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar ab 0,99 €.
           </p>
         </div>
       </section>
