@@ -227,20 +227,27 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#0F172A">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center', padding: mobil ? '20px 0 10px' : '40px 0 30px' }}>
-          <span style={{ display: 'inline-block', background: F.white, color: F.coral, padding: '8px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: 800, marginBottom: '28px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
-            Mathematik & Physik · Klasse 1 bis 13
-          </span>
-          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '88px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 22px', color: F.ink, letterSpacing: '-0.03em', maxWidth: '920px' }}>
-            Die Lern-Plattform für<br />Mathe & Physik.
-          </h1>
-          <p style={{ fontSize: mobil ? '17px' : '20px', color: F.inkSoft, lineHeight: 1.5, margin: '0 auto 36px', maxWidth: '620px', fontWeight: 400 }}>
-            Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
-          </p>
-          {/* EIN grosser coral-CTA in der mitte */}
-          <a href="/shop" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '18px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(255,91,74,0.32), inset 0 -3px 0 rgba(0,0,0,0.12)', letterSpacing: '-0.01em' }}>
-            Zum Aufgabenbereich
-          </a>
+        <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center', minHeight: mobil ? 'auto' : '460px' }}>
+          {/* Text - links */}
+          <div style={{ textAlign: mobil ? 'left' : 'left' }}>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '44px' : '68px', fontWeight: 800, lineHeight: 1.05, margin: '0 0 20px', color: F.ink, letterSpacing: '-0.025em' }}>
+              Die Lern-Plattform für Mathe & Physik.
+            </h1>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: '0 0 32px', maxWidth: '560px', fontWeight: 400 }}>
+              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
+            </p>
+            <a href="/shop" style={{ background: F.coral, color: F.white, textDecoration: 'none', padding: '18px 42px', borderRadius: '10px', fontSize: '18px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 32px rgba(255,91,74,0.32), inset 0 -3px 0 rgba(0,0,0,0.14)', letterSpacing: '-0.01em' }}>
+              Zum Aufgabenbereich
+            </a>
+          </div>
+          {/* Foto rechts - neues unsplash foto (lizenzfrei, kommerziell nutzbar) */}
+          {!mobil && (
+            <div className="fade-up-2" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', maxWidth: '460px', aspectRatio: '4 / 5', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(15,23,42,0.25), 0 8px 24px rgba(15,23,42,0.12)' }}>
+                <img src="https://unsplash.com/photos/LT7gGy5RN3A/download?w=900&fm=jpg&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
