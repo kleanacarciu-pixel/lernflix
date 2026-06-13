@@ -6,9 +6,9 @@ const F = {
   bgSoft: '#fef6e8',
   bgWarm: '#fff8ee',
   bgCream: '#fef3dd',
-  bgMint: '#e7f5ec',
-  bgPeach: '#fde4d4',
-  bgSky: '#dceffb',
+  bgMint: '#E8F0FF',
+  bgPeach: '#F0F5FF',
+  bgSky: '#DBE7FF',
   ink: '#0F172A',
   inkSoft: '#475569',
   inkMuted: '#94A3B8',
@@ -21,7 +21,7 @@ const F = {
   navyDark: '#08182C',
   navySoft: '#152B4D',
   green: '#10B981',
-  coral: '#10B981',
+  coral: '#1769FF',
   yellow: '#FFCB45',
   lavender: '#a78bfa',
   white: '#ffffff',
@@ -103,10 +103,10 @@ export default function Home() {
           display: inline-flex; align-items: center; gap: 8px;
           text-decoration: none; border: none; cursor: pointer;
           transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-          box-shadow: 0 1px 2px rgba(16,185,129,0.10), 0 10px 28px rgba(16,185,129,0.30);
+          box-shadow: 0 1px 2px rgba(23,105,255,0.10), 0 10px 28px rgba(23,105,255,0.30);
           font-family: ${SANS};
         }
-        .btn-coral:hover { background: #0F9F70; box-shadow: 0 1px 2px rgba(16,185,129,0.12), 0 16px 38px rgba(16,185,129,0.38); transform: translateY(-1px); }
+        .btn-coral:hover { background: #1156DD; box-shadow: 0 1px 2px rgba(23,105,255,0.12), 0 16px 38px rgba(23,105,255,0.38); transform: translateY(-1px); }
 
         .btn-ghost-dark {
           background: rgba(255,255,255,0.04); color: ${F.white};
@@ -234,7 +234,7 @@ export default function Home() {
           <p style={{ fontSize: mobil ? '17px' : '20px', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, margin: '0 auto 36px', maxWidth: '620px', fontWeight: 400 }}>
             Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
           </p>
-          <a href="/shop" style={{ background: '#10B981', color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '19px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(16,185,129,0.45), inset 0 -4px 0 rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
+          <a href="/shop" style={{ background: '#1769FF', color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '19px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(23,105,255,0.45), inset 0 -4px 0 rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
             Loslegen <span style={{ fontSize: '20px' }}>→</span>
           </a>
         </div>

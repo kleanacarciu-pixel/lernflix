@@ -23,8 +23,8 @@ const F = {
   inkMuted: '#94A3B8',
   border: '#E2E8F0',
   white: '#ffffff',
-  coral: '#ff5b4a',
-  coralDeep: '#e44b3c',
+  coral: '#1769FF',
+  coralDeep: '#1156DD',
   blue: '#1769FF',
   navy: '#0B1F3A',
   navyDark: '#08182C',
@@ -96,7 +96,7 @@ export default function Shop() {
         .karte:hover .karte-arrow { transform: translateX(6px); }
         .karte-arrow { transition: transform 0.3s ease; display: inline-block; }
         .btn-coral { transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; }
-        .btn-coral:hover { background: ${F.coralDeep}; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255,91,74,0.32); }
+        .btn-coral:hover { background: ${F.coralDeep}; transform: translateY(-1px); box-shadow: 0 14px 32px rgba(23,105,255,0.32); }
         .tab { transition: all 0.2s ease; }
         .nav-link { color: ${F.ink}; text-decoration: none; font-size: 14.5px; font-weight: 500; padding: 8px 14px; border-radius: 8px; transition: background 0.15s ease; }
         .nav-link:hover { background: ${F.bgSoft}; }
@@ -127,7 +127,7 @@ export default function Shop() {
                   <p style={{ margin: 0, fontSize: '11px', color: F.inkMuted, letterSpacing: '0.10em', textTransform: 'uppercase', fontWeight: 700 }}>Einmalig</p>
                   <p style={{ margin: '4px 0 0', fontSize: '36px', fontWeight: 800, color: F.ink, letterSpacing: '-0.025em' }}>{ausgewaehlt.preis.toFixed(2).replace('.', ',')} €</p>
                 </div>
-                <button onClick={() => kaufen(ausgewaehlt)} className="btn-coral" style={{ background: F.coral, color: F.white, border: 'none', borderRadius: '14px', padding: '15px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: SANS, boxShadow: '0 8px 24px rgba(255,91,74,0.30)' }}>
+                <button onClick={() => kaufen(ausgewaehlt)} className="btn-coral" style={{ background: F.coral, color: F.white, border: 'none', borderRadius: '14px', padding: '15px 28px', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: SANS, boxShadow: '0 8px 24px rgba(23,105,255,0.30)' }}>
                   Jetzt freischalten →
                 </button>
               </div>
@@ -157,22 +157,40 @@ export default function Shop() {
         </nav>
       </header>
 
-      {/* HERO - hell, warm */}
-      <section style={{ background: F.bgWarm, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '50px' : '70px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {!mobil && (
-          <>
-            <div style={{ position: 'absolute', top: '120px', right: '6%', width: '160px', height: '160px', borderRadius: '50%', background: F.bgCream, opacity: 0.7, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '40px', left: '4%', width: '120px', height: '120px', borderRadius: '50%', background: '#e7f5ec', opacity: 0.7, pointerEvents: 'none' }} />
-          </>
-        )}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: F.white, color: F.coral, padding: '8px 16px', borderRadius: '999px', fontSize: '12px', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '24px', boxShadow: '0 4px 14px rgba(255,91,74,0.16)' }}>
-            Shop · 13 Pakete
-          </span>
-          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.0, margin: '0 0 18px', color: F.ink, letterSpacing: '-0.035em' }}>
+      {/* HERO - Navy mit Math-Pattern (gleicher Stil wie Homepage) */}
+      <section style={{ background: 'linear-gradient(150deg, #1E3A8A 0%, #2952B3 100%)', color: F.white, paddingTop: mobil ? '110px' : '130px', paddingBottom: mobil ? '50px' : '80px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.14 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 600">
+          <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">a² + b² = c²</text>
+          <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">2x + 3</text>
+          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">∫ x dx</text>
+          <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">π · r²</text>
+          <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">sin α</text>
+          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">¾ + ⅖</text>
+          <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">√25 = 5</text>
+          <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">log x</text>
+          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="white">f(x) = 2x + 5</text>
+          <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">x² − 4</text>
+          <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">F = m · a</text>
+          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">E = m·c²</text>
+          <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">cos β</text>
+          <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">tan γ</text>
+          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">3·4</text>
+          <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">v = s / t</text>
+          <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">P = U · I</text>
+          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="white">y = mx + b</text>
+          <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">Δx · Δp</text>
+          <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="white">e^x</text>
+          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="white">∑ aᵢ</text>
+          <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="white">7·8 = 56</text>
+          <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="white">17 + 25</text>
+          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="white">a·(b+c)</text>
+          <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">x² + 3x + 2</text>
+        </svg>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '78px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 18px', color: F.white, letterSpacing: '-0.035em' }}>
             Lernmaterialien.
           </h1>
-          <p style={{ fontSize: mobil ? '16px' : '19px', color: F.inkSoft, lineHeight: 1.55, margin: 0, maxWidth: '620px', fontWeight: 400 }}>
+          <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.92)', lineHeight: 1.55, margin: '0 auto', maxWidth: '600px', fontWeight: 400 }}>
             Lernpakete für Mathematik und Physik. Mit Erklärungen, Skizzen und Übungen. Sofort verfügbar — ab 0,99 €.
           </p>
         </div>
