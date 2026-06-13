@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 30;
+// Edge runtime: keine cold starts, viel schneller anlauf
+export const runtime = "edge";
+export const maxDuration = 25;
 
 type Frage = {
   frage: string;
@@ -12,6 +14,7 @@ type Frage = {
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-haiku-4-5-20251001";
+const FRAGE_TIMEOUT_MS = 8000;
 
 function bauPrompt(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): string {
   const aspekte = [
@@ -19,31 +22,31 @@ function bauPrompt(fach: string, klasse: string, thema: string, schwierigkeit: s
     "Anwendung im Alltag",
     "Konzept / Verstaendnis",
     "Sachaufgabe mit Kontext",
-    "Schritt-fuer-Schritt-Aufgabe",
+    "Schritt-fuer-Schritt",
   ];
   const aspekt = aspekte[index % aspekte.length];
 
-  return `Erstelle GENAU EINE Multiple-Choice-Frage fuer ${fach}, ${klasse}, Thema "${thema}", Schwierigkeit ${schwierigkeit}.
-Aspekt diese Frage: ${aspekt}. Variation: ${variation}-${index}.
+  return `Erstelle GENAU EINE Multiple-Choice-Frage. Fach=${fach}, ${klasse}, Thema="${thema}", Schwierigkeit=${schwierigkeit}. Aspekt: ${aspekt}. Var: ${variation}-${index}.
 
 PFLICHT:
-1. Echte Mathe/Physik-Aufgabe zum Thema "${thema}" - kein Allgemeinwissen, keine Trickfrage.
-2. Rechne die Aufgabe SELBST durch bevor du die Loesung notierst. Loesung MUSS nachweisbar korrekt sein.
-3. Frage steht alleine: keine Verweise auf Bilder/Skizzen/Diagramme. Alle Werte/Infos im Fragetext.
-4. Beispiel FALSCH (Klasse 1, Addition): "Wie viele Finger zeigt die Hand?" - kein Kontext, eine Hand hat 5 Finger.
-5. Beispiel RICHTIG (Klasse 1, Addition): "Anna hat 3 Aepfel und bekommt 4 dazu. Wie viele Aepfel hat sie?"
-6. Genau 4 Antwortmoeglichkeiten, eine richtig, drei plausibel-falsch (haeufige Schuelerfehler).
-7. Position der richtigen Antwort variieren (nicht immer A).
-8. Echte deutsche Umlaute (ä ö ü ß).
-9. erklaerung = kurzer Rechenweg in 1 Satz, passend zur richtigen Loesung.
-10. loesung = WORTLAUT der richtigen Antwort (Text, kein Index).
-11. NIE KI/AI/Anthropic erwaehnen.
+- Echte Mathe/Physik-Aufgabe zum Thema "${thema}" - kein Allgemeinwissen
+- Rechne selbst nach. Loesung MUSS nachweisbar korrekt sein.
+- Frage komplett aus Text verstehbar - keine Verweise auf Bilder/Skizzen
+- Bsp falsch: "Wie viele Finger zeigt die Hand?" (kein Kontext, eine Hand hat 5 Finger)
+- Bsp richtig: "Anna hat 3 Aepfel, bekommt 4 dazu. Wie viele?"
+- 4 Antworten, eine richtig, drei plausibel-falsch, Position variieren
+- echte Umlaute (ä ö ü ß)
+- erklaerung = 1 satz rechenweg
+- loesung = WORTLAUT der richtigen antwort
+- niemals KI/AI erwaehnen
 
-Antwort NUR als JSON:
+NUR JSON:
 {"frage":"...","antworten":["a","b","c","d"],"loesung":"<wortlaut>","erklaerung":"<rechenweg>"}`;
 }
 
 async function generiereEineFrage(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): Promise<Frage | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FRAGE_TIMEOUT_MS);
   try {
     const res = await fetch(ANTHROPIC_URL, {
       method: "POST",
@@ -54,11 +57,13 @@ async function generiereEineFrage(fach: string, klasse: string, thema: string, s
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 300,
+        max_tokens: 280,
         temperature: 0.85,
         messages: [{ role: "user", content: bauPrompt(fach, klasse, thema, schwierigkeit, variation, index) }],
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!res.ok) return null;
     const data = await res.json();
@@ -72,7 +77,6 @@ async function generiereEineFrage(fach: string, klasse: string, thema: string, s
     const antworten: string[] = Array.isArray(parsed.antworten) ? parsed.antworten : [];
     if (antworten.length < 2 || !parsed.frage) return null;
 
-    // Konvertiere loesung-text -> richtig-index
     let richtig = 0;
     if (typeof parsed.loesung === "string") {
       const idx = antworten.findIndex((a: string) => a === parsed.loesung);
@@ -94,6 +98,7 @@ async function generiereEineFrage(fach: string, klasse: string, thema: string, s
       erklaerung: parsed.erklaerung,
     };
   } catch {
+    clearTimeout(timeoutId);
     return null;
   }
 }
@@ -112,7 +117,7 @@ export async function POST(request: Request) {
 
     const variationsId = Math.random().toString(36).slice(2, 8);
 
-    // FUENF PARALLELE CALLS - jede generiert nur 1 frage, viel schneller
+    // 5 parallele calls, jeder mit timeout. wenn was kommt, kommt's. wenn nicht, weggelassen.
     const promises = Array.from({ length: 5 }, (_, i) =>
       generiereEineFrage(fach, klasse, thema, schwierigkeitText, variationsId, i),
     );
@@ -120,9 +125,10 @@ export async function POST(request: Request) {
     const fragen = results.filter((f): f is Frage => f !== null);
 
     if (fragen.length === 0) {
-      return NextResponse.json({ error: "Fehler" }, { status: 500 });
+      return NextResponse.json({ error: "Keine Fragen generiert" }, { status: 500 });
     }
 
+    // Auch wenn nur 3 von 5 ankamen: zurueckgeben, damit der user starten kann
     return NextResponse.json({ fragen });
   } catch (error) {
     console.error("Fehler:", error);
