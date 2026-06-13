@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" fill="none">
+  <defs>
+    <linearGradient id="swoosh" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1769FF" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#1769FF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#3a87ff" stop-opacity="0.9"/>
+    </linearGradient>
+    <style>
+      .a-letter { font-family: 'Cormorant Garamond', 'Playfair Display', 'Times New Roman', serif; font-weight: 400; font-style: italic; fill: #0B1F3A; }
+      .wordmark { font-family: 'Inter', -apple-system, sans-serif; font-weight: 800; letter-spacing: -0.03em; }
+      .tagline { font-family: 'Cormorant Garamond', 'Playfair Display', 'Times New Roman', serif; font-style: italic; font-weight: 500; fill: #475569; }
+    </style>
+  </defs>
+
+  <!-- SYMBOL LEFT - A mit Netflix-Schwung -->
+  <g transform="translate(200, 210)">
+    <!-- Dezenter halb-kreis bogen oben (anstatt vollkreis) -->
+    <path d="M -135 -55 A 150 150 0 0 1 135 -55" stroke="#0B1F3A" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.55"/>
+
+    <!-- Mini-punkte oben rechts (wie im original) -->
+    <circle cx="125" cy="-110" r="3.2" fill="#0B1F3A"/>
+    <circle cx="143" cy="-93" r="2.6" fill="#0B1F3A"/>
+    <circle cx="156" cy="-72" r="2.2" fill="#0B1F3A"/>
+    <circle cx="118" cy="-128" r="2.2" fill="#0B1F3A"/>
+
+    <!-- NETFLIX-style blauer schwung - geht hinter dem A durch wie ein paint-stroke -->
+    <!-- Aussere ribbon, breiter, weicher -->
+    <path d="M -150 75 Q -80 -10 -20 50 Q 50 110 110 30 Q 140 -10 165 -40"
+          stroke="url(#swoosh)" stroke-width="34" stroke-linecap="round" fill="none" opacity="0.45"/>
+    <!-- Innere ribbon, klarer akzent -->
+    <path d="M -148 72 Q -78 -12 -18 48 Q 52 108 112 28 Q 142 -12 167 -42"
+          stroke="#1769FF" stroke-width="18" stroke-linecap="round" fill="none" opacity="0.95"/>
+
+    <!-- Elegant serif italic A (vordergrund) -->
+    <text x="0" y="85" font-size="260" class="a-letter" text-anchor="middle">A</text>
+
+    <!-- Mini swoosh-flick hinter dem A am ende -->
+    <path d="M 165 -42 Q 175 -52 178 -65" stroke="#1769FF" stroke-width="12" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- WORDMARK rechts -->
+  <g transform="translate(440, 200)">
+    <text x="0" y="0" font-size="92" class="wordmark" fill="#0B1F3A">Lern<tspan fill="#1769FF">flix</tspan></text>
+    <text x="6" y="50" font-size="28" class="tagline">lerne mit Anna · Mathe und Physik</text>
+  </g>
+</svg>
