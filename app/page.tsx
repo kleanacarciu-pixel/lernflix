@@ -21,7 +21,7 @@ const F = {
   navyDark: '#08182C',
   navySoft: '#152B4D',
   green: '#10B981',
-  coral: '#ff5b4a',
+  coral: '#10B981',
   yellow: '#FFCB45',
   lavender: '#a78bfa',
   white: '#ffffff',
@@ -103,10 +103,10 @@ export default function Home() {
           display: inline-flex; align-items: center; gap: 8px;
           text-decoration: none; border: none; cursor: pointer;
           transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-          box-shadow: 0 1px 2px rgba(255,91,74,0.10), 0 10px 28px rgba(255,91,74,0.30);
+          box-shadow: 0 1px 2px rgba(16,185,129,0.10), 0 10px 28px rgba(16,185,129,0.30);
           font-family: ${SANS};
         }
-        .btn-coral:hover { background: #e44b3c; box-shadow: 0 1px 2px rgba(255,91,74,0.12), 0 16px 38px rgba(255,91,74,0.38); transform: translateY(-1px); }
+        .btn-coral:hover { background: #0F9F70; box-shadow: 0 1px 2px rgba(16,185,129,0.12), 0 16px 38px rgba(16,185,129,0.38); transform: translateY(-1px); }
 
         .btn-ghost-dark {
           background: rgba(255,255,255,0.04); color: ${F.white};
@@ -227,27 +227,16 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="white">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '40px' : '60px', alignItems: 'center', minHeight: mobil ? 'auto' : '460px' }}>
-          {/* Text - links */}
-          <div style={{ textAlign: mobil ? 'left' : 'center' }}>
-            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '44px' : '68px', fontWeight: 800, lineHeight: 1.05, margin: '0 auto 20px', color: F.white, letterSpacing: '-0.025em', maxWidth: '620px' }}>
-              Die Lern-Plattform für Mathe & Physik.
-            </h1>
-            <p style={{ fontSize: mobil ? '17px' : '19px', color: 'rgba(255,255,255,0.95)', lineHeight: 1.5, margin: '0 auto 32px', maxWidth: '560px', fontWeight: 400 }}>
-              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
-            </p>
-            <a href="/shop" style={{ background: '#FF5B4A', color: F.white, textDecoration: 'none', padding: '18px 42px', borderRadius: '10px', fontSize: '18px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 32px rgba(255,91,74,0.40), inset 0 -3px 0 rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
-              Zum Aufgabenbereich
-            </a>
-          </div>
-          {/* Foto rechts - kostenloses unsplash foto OPVV_UCVH8Q (lachender junge mit brille + rucksack) */}
-          {!mobil && (
-            <div className="fade-up-2" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
-              <div style={{ position: 'relative', width: '100%', maxWidth: '480px', aspectRatio: '4 / 5', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15)' }}>
-                <img src="https://unsplash.com/photos/OPVV_UCVH8Q/download?w=900&fm=jpg&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            </div>
-          )}
+        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', textAlign: 'center', padding: mobil ? '20px 0 10px' : '40px 0 30px' }}>
+          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '84px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 22px', color: F.white, letterSpacing: '-0.03em', maxWidth: '900px' }}>
+            Die Lern-Plattform für<br />Mathe & Physik.
+          </h1>
+          <p style={{ fontSize: mobil ? '17px' : '20px', color: 'rgba(255,255,255,0.92)', lineHeight: 1.5, margin: '0 auto 36px', maxWidth: '620px', fontWeight: 400 }}>
+            Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
+          </p>
+          <a href="/shop" style={{ background: '#10B981', color: F.white, textDecoration: 'none', padding: '20px 48px', borderRadius: '12px', fontSize: '19px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 14px 36px rgba(16,185,129,0.45), inset 0 -4px 0 rgba(0,0,0,0.15)', letterSpacing: '-0.01em' }}>
+            Zum Aufgabenbereich
+          </a>
         </div>
       </section>
 
