@@ -261,7 +261,7 @@ export default function Home() {
           {!mobil && (
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', minHeight: '680px' }}>
               <img
-                src="https://tmpfiles.org/dl/wywKMCUgzRnb/hp_foto-removebg-preview.png"
+                src="/HP_FOTO-removebg-preview.png"
                 alt=""
                 style={{
                   width: '110%',
