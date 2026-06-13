@@ -300,14 +300,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Foto - 4 kinder lachen, 1536x1024 hochaufloesend */}
+          {/* Foto - mathe + physik buecher (1145x1028 hochaufloesend) */}
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '500px', marginTop: mobil ? '8px' : 0 }}>
             <img
-              src="/20260613_170628690_iOS.png"
-              alt="Vier Kinder lernen lachend zusammen"
+              src="/20260613_173033176_iOS.png"
+              alt="Lachende Mathe- und Physik-Buecher umarmen sich"
               style={{
                 width: '100%',
-                maxWidth: mobil ? '420px' : '720px',
+                maxWidth: mobil ? '380px' : '620px',
                 height: 'auto',
                 objectFit: 'contain',
               }}
