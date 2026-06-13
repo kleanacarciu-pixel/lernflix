@@ -46,23 +46,24 @@ NUR JSON:
 }
 
 function bauVerifikationsPrompt(frage: Frage): string {
-  return `Pruefe diese Mathe/Physik-Frage. Antworte NUR mit JSON.
+  return `Pruefe ob die angeblich richtige Antwort wirklich korrekt ist. WICHTIG: Bei jedem Zweifel antworte korrekt:true. Nur bei EINDEUTIGEM Fehler korrekt:false.
 
 Frage: ${frage.frage}
 Antworten: ${JSON.stringify(frage.antworten)}
 Angeblich richtige Antwort: ${frage.antworten[frage.richtig ?? 0]}
 
-Aufgaben:
-1. Loese die Aufgabe selbst Schritt fuer Schritt.
-2. Vergleiche deine Loesung mit der angeblich richtigen Antwort.
-3. Pruefe: Ist die Frage selbsterklaerend (ohne Bild/Kontext loesbar)?
-4. Pruefe: Sind die anderen 3 Antworten plausibel falsch (keine offensichtlichen Quatsch-Optionen)?
+Pruefe NUR EINS: stimmt die Loesung mathematisch/physikalisch? Rechne selbst nach.
+- Wenn rechnung aufgeht: korrekt:true
+- Wenn rechnung NICHT aufgeht und du SICHER bist: korrekt:false
+- Bei interpretationsspielraum oder rundungsfragen: korrekt:true
 
-JSON-Antwort:
-{"korrekt": true/false, "grund": "<kurze begruendung>"}
+NUR JSON-Antwort:
+{"korrekt":true/false,"grund":"<kurz>"}
 
-Beispiel falsch: {"korrekt": false, "grund": "Eine Hand hat 5 Finger, nicht 10"}
-Beispiel richtig: {"korrekt": true, "grund": "3+4=7, stimmt"}`;
+Beispiele:
+- "Eine Hand hat 10 Finger" → {"korrekt":false,"grund":"Hand hat 5 Finger"}
+- "3+4=7" → {"korrekt":true,"grund":"stimmt"}
+- "Pi r^2 mit r=3 ist 28.27" → {"korrekt":true,"grund":"~28.27 stimmt"}`;
 }
 
 async function callAnthropic(prompt: string, maxTokens: number, timeoutMs: number, model: string): Promise<string | null> {
@@ -103,7 +104,9 @@ function parseJsonAusText(text: string): unknown | null {
   try { return JSON.parse(t); } catch { return null; }
 }
 
-async function generiereUndVerifiziereFrage(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): Promise<Frage | null> {
+type FrageMitStatus = { frage: Frage; verifiziert: boolean };
+
+async function generiereUndVerifiziereFrage(fach: string, klasse: string, thema: string, schwierigkeit: string, variation: string, index: number): Promise<FrageMitStatus | null> {
   const rohText = await callAnthropic(bauGenerationsPrompt(fach, klasse, thema, schwierigkeit, variation, index), 400, FRAGE_TIMEOUT_MS, MODEL_GENERATE);
   if (!rohText) return null;
   const parsed = parseJsonAusText(rohText) as { frage?: string; antworten?: string[]; loesung?: string; richtig?: number; erklaerung?: string } | null;
@@ -124,16 +127,22 @@ async function generiereUndVerifiziereFrage(fach: string, klasse: string, thema:
 
   const frage: Frage = { frage: parsed.frage, antworten: parsed.antworten, richtig, erklaerung: parsed.erklaerung };
 
-  // SELBST-CHECK: zweiter Sonnet-call prueft ob die loesung wirklich stimmt
+  // SELBST-CHECK (lenient): verwirft nur bei eindeutigem fehler. timeout ist OK = wir akzeptieren.
   const checkText = await callAnthropic(bauVerifikationsPrompt(frage), 150, 8000, MODEL_VERIFY);
-  if (!checkText) return null;
-  const check = parseJsonAusText(checkText) as { korrekt?: boolean; grund?: string } | null;
-  if (!check || check.korrekt !== true) {
-    console.log(`Frage verworfen: ${check?.grund || "verify fail"}`);
-    return null;
+  let verifiziert = true;
+  if (checkText) {
+    const check = parseJsonAusText(checkText) as { korrekt?: boolean; grund?: string } | null;
+    if (check && check.korrekt === false) {
+      console.log(`Frage verworfen: ${check?.grund || "verify fail"}`);
+      return null; // klarer fehler -> wirklich verwerfen
+    }
+    verifiziert = check?.korrekt === true;
+  } else {
+    // Verify timeout / failure -> trotzdem nehmen aber als nicht-verifiziert markieren
+    verifiziert = false;
   }
 
-  return frage;
+  return { frage, verifiziert };
 }
 
 async function speichereFragen(fach: string, klasse: number, thema: string, schwierigkeit: string, fragen: Frage[]): Promise<void> {
@@ -199,15 +208,17 @@ export async function POST(request: Request) {
     const promises = Array.from({ length: fehlend + 2 }, (_, i) => // +2 buffer falls welche verworfen
       generiereUndVerifiziereFrage(fachText, klasseText, thema, schwierigkeitText, variationsId, i),
     );
-    const generated = (await Promise.all(promises)).filter((f): f is Frage => f !== null);
+    const generated = (await Promise.all(promises)).filter((f): f is FrageMitStatus => f !== null);
 
-    // 3. NEUE FRAGEN IN CACHE SPEICHERN
-    if (generated.length > 0) {
-      // fire-and-forget speichern (nicht warten)
-      speichereFragen(fach, klasseNum, thema, schwierigkeit, generated).catch(() => {});
+    // 3. NUR VERIFIZIERTE FRAGEN IN CACHE SPEICHERN
+    const verifizierteFragen = generated.filter((g) => g.verifiziert).map((g) => g.frage);
+    if (verifizierteFragen.length > 0) {
+      speichereFragen(fach, klasseNum, thema, schwierigkeit, verifizierteFragen).catch(() => {});
     }
 
-    const fragen = [...cached, ...generated].slice(0, ZIEL_FRAGEN);
+    // 4. ALLE GENERIERTEN FRAGEN ZURUECKGEBEN (auch nicht-verifizierte - besser als gar nichts)
+    const alleGenerierten = generated.map((g) => g.frage);
+    const fragen = [...cached, ...alleGenerierten].slice(0, ZIEL_FRAGEN);
     if (fragen.length === 0) {
       return NextResponse.json({ error: "Keine Fragen verfuegbar" }, { status: 500 });
     }
