@@ -257,20 +257,19 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - aggressive radial mask fuer max cutout-effekt */}
+          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - transparenter PNG, kein mask noetig */}
           {!mobil && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '580px' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: '580px' }}>
               <img
-                src="https://images.pexels.com/photos/14139194/pexels-photo-14139194.jpeg?auto=compress&cs=tinysrgb&w=1000"
+                src="https://tmpfiles.org/dl/wywKMCUgzRnb/hp_foto-removebg-preview.png"
                 alt=""
                 style={{
                   maxWidth: '100%',
-                  height: '100%',
+                  maxHeight: '580px',
                   width: 'auto',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  WebkitMaskImage: 'radial-gradient(ellipse 50% 60% at 52% 48%, black 50%, rgba(0,0,0,0.6) 70%, transparent 92%)',
-                  maskImage: 'radial-gradient(ellipse 50% 60% at 52% 48%, black 50%, rgba(0,0,0,0.6) 70%, transparent 92%)',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 20px 30px rgba(15,23,42,0.18))',
                 }}
               />
             </div>
