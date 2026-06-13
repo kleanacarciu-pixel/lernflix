@@ -291,7 +291,7 @@ export default function Home() {
           {/* Foto - 4 kinder lachen, 1536x1024 hochaufloesend */}
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '500px', marginTop: mobil ? '8px' : 0 }}>
             <img
-              src="/20260613_165935048_iOS.png"
+              src="/20260613_170628690_iOS.png"
               alt="Vier Kinder lernen lachend zusammen"
               style={{
                 width: '100%',
