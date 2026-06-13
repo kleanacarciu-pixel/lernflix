@@ -318,19 +318,19 @@ export default function QuizPage() {
   const verfuegbareKlassen = Array.from({ length: 13 }, (_, i) => i + 1); // 1..13
 
   return (
-    <main style={{ minHeight: "100vh", background: "linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)", fontFamily: SANS, color: F.ink, position: "relative", overflow: "hidden" }}>
+    <main style={{ minHeight: "100vh", background: "#ffffff", fontFamily: SANS, color: F.ink, position: "relative", overflow: "hidden" }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
-      {/* Dot-grid pattern fuer textur (matched mit homepage) */}
-      <div style={{ position: "fixed", inset: 0, backgroundImage: "radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)", backgroundSize: "32px 32px", opacity: 0.35, pointerEvents: "none", zIndex: 0 }} />
-      {/* Glow blobs */}
-      <div style={{ position: "fixed", top: "-100px", left: "-100px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
-      <div style={{ position: "fixed", top: "30%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.16) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(30px)", zIndex: 0 }} />
+      {/* Karierte papier textur (matched mit homepage) */}
+      <div style={{ position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(23,105,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.045) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none", zIndex: 0 }} />
+      {/* Dezente glow blobs */}
+      <div style={{ position: "fixed", top: "10%", right: "-150px", width: "550px", height: "550px", borderRadius: "50%", background: "radial-gradient(circle, rgba(23,105,255,0.08) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(40px)", zIndex: 0 }} />
+      <div style={{ position: "fixed", bottom: "-100px", left: "10%", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)", pointerEvents: "none", filter: "blur(50px)", zIndex: 0 }} />
 
       <style>{`
         * { -webkit-font-smoothing: antialiased; }
-        body { background: #FFF9F0; margin: 0; font-family: ${SANS}; }
+        body { background: #ffffff; margin: 0; font-family: ${SANS}; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
         .fade-up { animation: fadeUp 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }

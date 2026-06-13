@@ -14,10 +14,10 @@ type Produkt = {
 };
 
 const F = {
-  bg: '#fffdf8',
-  bgWarm: '#fff8ee',
-  bgCream: '#fef3dd',
-  bgSoft: '#fef6e8',
+  bg: '#ffffff',
+  bgWarm: '#F5F8FF',
+  bgCream: '#ECEEFF',
+  bgSoft: '#FAFCFF',
   ink: '#0F172A',
   inkSoft: '#475569',
   inkMuted: '#94A3B8',
@@ -153,47 +153,46 @@ export default function Shop() {
         </nav>
       </header>
 
-      {/* HERO - cream gradient mit blue accent (matched mit homepage) */}
-      <section style={{ background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '100px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
-        {/* Dot-grid pattern fuer textur */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.45, pointerEvents: 'none' }} />
-        {/* Glow blobs */}
+      {/* HERO - matched mit homepage: weiss + karierte papier + dezente blobs */}
+      <section style={{ background: '#ffffff', color: F.ink, paddingTop: mobil ? '110px' : '140px', paddingBottom: mobil ? '60px' : '100px', paddingLeft: mobil ? '22px' : '56px', paddingRight: mobil ? '22px' : '56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Karierte papier textur */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.045) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        {/* Dezente glow blobs */}
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.30) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
-            <div style={{ position: 'absolute', top: '10%', right: '-100px', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.18) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
-            <div style={{ position: 'absolute', bottom: '-150px', left: '30%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.18) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
+            <div style={{ position: 'absolute', top: '10%', right: '-100px', width: '550px', height: '550px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+            <div style={{ position: 'absolute', bottom: '-150px', left: '30%', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(50px)' }} />
           </>
         )}
         {/* Dezent math-formel pattern */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.04 : 0.06 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 600">
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: mobil ? 0.05 : 0.08 }} preserveAspectRatio="xMidYMid slice" viewBox="0 0 1600 600">
           <text x="20" y="60" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">a² + b² = c²</text>
           <text x="280" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">2x + 3</text>
-          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">∫ x dx</text>
+          <text x="440" y="50" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#7656b0">∫ x dx</text>
           <text x="620" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">π · r²</text>
           <text x="800" y="60" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">sin α</text>
-          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">¾ + ⅖</text>
+          <text x="980" y="80" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#7656b0">¾ + ⅖</text>
           <text x="1140" y="50" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">√25 = 5</text>
           <text x="1340" y="80" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">log x</text>
-          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#1769FF">f(x) = 2x + 5</text>
+          <text x="60" y="220" fontFamily="Inter, sans-serif" fontSize="42" fontWeight="800" fontStyle="italic" fill="#7656b0">f(x) = 2x + 5</text>
           <text x="380" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">x² − 4</text>
           <text x="540" y="210" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">F = m · a</text>
-          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">E = m·c²</text>
+          <text x="800" y="240" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#7656b0">E = m·c²</text>
           <text x="1040" y="210" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">cos β</text>
           <text x="1240" y="240" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">tan γ</text>
-          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">3·4</text>
+          <text x="1400" y="210" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#7656b0">3·4</text>
           <text x="20" y="380" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">v = s / t</text>
           <text x="240" y="400" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">P = U · I</text>
-          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#1769FF">y = mx + b</text>
+          <text x="420" y="370" fontFamily="Inter, sans-serif" fontSize="38" fontWeight="800" fontStyle="italic" fill="#7656b0">y = mx + b</text>
           <text x="700" y="400" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">Δx · Δp</text>
           <text x="920" y="370" fontFamily="Inter, sans-serif" fontSize="36" fontWeight="800" fontStyle="italic" fill="#1769FF">e^x</text>
-          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#1769FF">∑ aᵢ</text>
+          <text x="1080" y="400" fontFamily="Inter, sans-serif" fontSize="30" fontWeight="800" fontStyle="italic" fill="#7656b0">∑ aᵢ</text>
           <text x="80" y="540" fontFamily="Inter, sans-serif" fontSize="32" fontWeight="800" fontStyle="italic" fill="#1769FF">7·8 = 56</text>
           <text x="320" y="560" fontFamily="Inter, sans-serif" fontSize="28" fontWeight="800" fontStyle="italic" fill="#1769FF">17 + 25</text>
-          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#1769FF">a·(b+c)</text>
+          <text x="500" y="530" fontFamily="Inter, sans-serif" fontSize="40" fontWeight="800" fontStyle="italic" fill="#7656b0">a·(b+c)</text>
           <text x="780" y="560" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">x² + 3x + 2</text>
         </svg>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center', zIndex: 1 }}>
           {/* Premium pill eyebrow */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, border: `1px solid ${F.border}`, padding: '8px 18px', borderRadius: '999px', marginBottom: '22px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
             <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.coral, display: 'inline-block' }} />
