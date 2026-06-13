@@ -323,8 +323,10 @@ export default function Home() {
 
 
       {/* SHOP - FEATURED (gross, wichtigster bereich) */}
-      <section id="bereiche" style={{ background: F.bgWarm, padding: mobil ? '70px 22px 40px' : '120px 56px 50px' }}>
-        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
+      <section id="bereiche" style={{ background: 'linear-gradient(180deg, #FAFCFF 0%, #F5F8FF 100%)', padding: mobil ? '70px 22px 40px' : '120px 56px 50px', position: 'relative' }}>
+        {/* Karierte papier textur - matched mit hero */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '13px', color: F.coral, fontWeight: 700, marginBottom: '14px' }}>
               13 Lernpakete · ab 0,99 €
@@ -371,8 +373,10 @@ export default function Home() {
       </section>
 
       {/* 3 GLIEDER: Lernheld / Lernplan / Quiz - gleich gross */}
-      <section style={{ background: F.bgWarm, padding: mobil ? '40px 22px 80px' : '50px 56px 130px' }}>
-        <div style={{ maxWidth: '1320px', margin: '0 auto' }}>
+      <section style={{ background: 'linear-gradient(180deg, #F5F8FF 0%, #ECEEFF 100%)', padding: mobil ? '40px 22px 80px' : '50px 56px 130px', position: 'relative' }}>
+        {/* Karierte papier textur */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.04) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ marginBottom: mobil ? '32px' : '50px', maxWidth: '720px' }}>
             <span style={{ display: 'inline-block', fontSize: '13px', color: F.blue, fontWeight: 700, marginBottom: '14px' }}>
               Auch dabei
@@ -414,15 +418,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Banner - hell und warm */}
-      <section style={{ background: F.bgCream, color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+      {/* CTA Banner - matched mit hero design */}
+      <section style={{ background: 'linear-gradient(180deg, #ECEEFF 0%, #F5F8FF 100%)', color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+        {/* Karierte papier textur */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.05) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         {!mobil && (
           <>
-            <div style={{ position: 'absolute', top: '40px', right: '8%', width: '120px', height: '120px', borderRadius: '50%', background: F.bgPeach, opacity: 0.7, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', bottom: '40px', left: '6%', width: '90px', height: '90px', borderRadius: '50%', background: F.bgMint, opacity: 0.6, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: '20px', right: '5%', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,105,255,0.18) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
+            <div style={{ position: 'absolute', bottom: '20px', left: '5%', width: '280px', height: '280px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.22) 0%, transparent 70%)', pointerEvents: 'none', filter: 'blur(30px)' }} />
           </>
         )}
-        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '60px', fontWeight: 800, color: F.ink, margin: '0 0 20px', letterSpacing: '-0.035em', lineHeight: 1.02 }}>
             Jetzt <span style={{ color: F.coral }}>loslegen</span>.
           </h2>
