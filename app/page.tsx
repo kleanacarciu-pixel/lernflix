@@ -227,35 +227,54 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', textAlign: 'center', padding: mobil ? '20px 0 10px' : '40px 0 30px' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '24px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} />
-            Klasse 1 bis 13 · Mathe + Physik
-          </span>
-          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '82px', fontWeight: 800, lineHeight: 1.02, margin: '0 auto 22px', color: F.ink, letterSpacing: '-0.03em', maxWidth: '900px' }}>
-            Die Lern-Plattform für<br /><span style={{ color: F.blue }}>Mathe & Physik</span>.
-          </h1>
-          <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: '0 auto 32px', maxWidth: '600px', fontWeight: 400 }}>
-            Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
-          </p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '36px' }}>
-            <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)' }}>
-              Loslegen <span style={{ fontSize: '18px' }}>→</span>
-            </a>
-            <a href="/quiz" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: `1.5px solid ${F.border}` }}>
-              Quiz starten
-            </a>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.1fr 1fr', gap: mobil ? '30px' : '50px', alignItems: 'center', padding: mobil ? '20px 0 10px' : '20px 0' }}>
+          {/* Links: text */}
+          <div style={{ textAlign: mobil ? 'left' : 'left' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: 700, marginBottom: '24px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} />
+              Klasse 1 bis 13 · Mathe + Physik
+            </span>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '72px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
+              Die Lern-Plattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
+            </h1>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: '0 0 32px', maxWidth: '500px', fontWeight: 400 }}>
+              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+              <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)' }}>
+                Loslegen <span style={{ fontSize: '18px' }}>→</span>
+              </a>
+              <a href="/quiz" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: '17px 38px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: `1.5px solid ${F.border}` }}>
+                Quiz starten
+              </a>
+            </div>
+            <div style={{ display: 'flex', gap: mobil ? '16px' : '24px', flexWrap: 'wrap', fontSize: '13.5px', color: F.inkSoft, fontWeight: 500 }}>
+              <span><strong style={{ color: F.ink, fontWeight: 800 }}>13</strong> Lernpakete</span>
+              <span style={{ color: F.inkMuted }}>·</span>
+              <span><strong style={{ color: F.ink, fontWeight: 800 }}>61</strong> Quiz-Themen</span>
+              <span style={{ color: F.inkMuted }}>·</span>
+              <span><strong style={{ color: F.ink, fontWeight: 800 }}>ab 0,99 €</strong></span>
+            </div>
           </div>
-          {/* Stats-badges unter den ctas */}
-          <div style={{ display: 'flex', gap: mobil ? '16px' : '32px', justifyContent: 'center', flexWrap: 'wrap', fontSize: '13.5px', color: F.inkSoft, fontWeight: 500 }}>
-            <span><strong style={{ color: F.ink, fontWeight: 800 }}>13</strong> Lernpakete</span>
-            <span style={{ color: F.inkMuted }}>·</span>
-            <span><strong style={{ color: F.ink, fontWeight: 800 }}>61</strong> Quiz-Themen</span>
-            <span style={{ color: F.inkMuted }}>·</span>
-            <span><strong style={{ color: F.ink, fontWeight: 800 }}>Klasse 1—13</strong></span>
-            <span style={{ color: F.inkMuted }}>·</span>
-            <span><strong style={{ color: F.ink, fontWeight: 800 }}>ab 0,99 €</strong></span>
-          </div>
+
+          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - radial mask blended den hintergrund */}
+          {!mobil && (
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '560px' }}>
+              <img
+                src="https://images.pexels.com/photos/14139194/pexels-photo-14139194.jpeg?auto=compress&cs=tinysrgb&w=1000"
+                alt=""
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '560px',
+                  width: 'auto',
+                  height: '100%',
+                  objectFit: 'cover',
+                  WebkitMaskImage: 'radial-gradient(ellipse 65% 80% at 55% 50%, black 55%, transparent 95%)',
+                  maskImage: 'radial-gradient(ellipse 65% 80% at 55% 50%, black 55%, transparent 95%)',
+                }}
+              />
+            </div>
+          )}
         </div>
       </section>
 
