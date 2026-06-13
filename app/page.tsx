@@ -244,7 +244,7 @@ export default function Home() {
           {!mobil && (
             <div className="fade-up-2" style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <div style={{ position: 'relative', width: '100%', maxWidth: '460px', aspectRatio: '4 / 5', borderRadius: '22px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(15,23,42,0.25), 0 8px 24px rgba(15,23,42,0.12)' }}>
-                <img src="https://unsplash.com/photos/LT7gGy5RN3A/download?w=900&fm=jpg&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="https://unsplash.com/photos/yYwExizuTaE/download?w=900&fm=jpg&q=85" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
           )}
