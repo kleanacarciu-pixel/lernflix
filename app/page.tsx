@@ -227,16 +227,71 @@ export default function Home() {
           <text x="1160" y="860" fontFamily="Inter, sans-serif" fontSize="34" fontWeight="800" fontStyle="italic" fill="#1769FF">100 km/h</text>
         </svg>
 
-        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', textAlign: 'center', padding: mobil ? '20px 0 10px' : '40px 0 30px' }}>
-          <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '84px', fontWeight: 800, lineHeight: 1.0, margin: '0 auto 22px', color: F.ink, letterSpacing: '-0.03em', maxWidth: '900px' }}>
-            Die Lern-Plattform für<br /><span style={{ color: F.blue }}>Mathe & Physik</span>.
-          </h1>
-          <p style={{ fontSize: mobil ? '17px' : '20px', color: F.inkSoft, lineHeight: 1.5, margin: '0 auto 36px', maxWidth: '620px', fontWeight: 400 }}>
-            Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe. Klasse 1 bis 13.
-          </p>
-          <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: '18px 40px', borderRadius: '12px', fontSize: '17px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)', letterSpacing: '-0.01em' }}>
-            Loslegen <span style={{ fontSize: '18px' }}>→</span>
-          </a>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.15fr 1fr', gap: mobil ? '40px' : '70px', alignItems: 'center', padding: mobil ? '20px 0 10px' : '20px 0' }}>
+          {/* Links: text */}
+          <div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, color: F.blue, padding: '7px 14px', borderRadius: '999px', fontSize: '12.5px', fontWeight: 700, marginBottom: '22px', boxShadow: '0 4px 14px rgba(23,105,255,0.10)', border: `1px solid ${F.blueLight}` }}>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} />
+              Klasse 1 bis 13 · Mathe + Physik
+            </span>
+            <h1 style={{ fontFamily: SANS, fontSize: mobil ? '46px' : '72px', fontWeight: 800, lineHeight: 1.02, margin: '0 0 22px', color: F.ink, letterSpacing: '-0.03em' }}>
+              Die Lern-Plattform für <span style={{ color: F.blue }}>Mathe & Physik</span>.
+            </h1>
+            <p style={{ fontSize: mobil ? '17px' : '19px', color: F.inkSoft, lineHeight: 1.5, margin: '0 0 32px', maxWidth: '500px', fontWeight: 400 }}>
+              Lernpakete im Shop, dein Lernplan, ein kostenloses Quiz und der Lernheld für die nächste Schulaufgabe.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mobil ? '0' : '24px' }}>
+              <a href="/shop" style={{ background: F.blue, color: F.white, textDecoration: 'none', padding: '16px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px', boxShadow: '0 10px 28px rgba(23,105,255,0.28)' }}>
+                Loslegen <span style={{ fontSize: '18px' }}>→</span>
+              </a>
+              <a href="/quiz" style={{ background: F.white, color: F.ink, textDecoration: 'none', padding: '16px 36px', borderRadius: '12px', fontSize: '16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', border: `1.5px solid ${F.border}` }}>
+                Quiz starten
+              </a>
+            </div>
+          </div>
+
+          {/* Rechts: klassen-picker card */}
+          {!mobil && (
+            <div style={{ position: 'relative' }}>
+              <div style={{ background: F.white, borderRadius: '24px', padding: '32px 30px', boxShadow: '0 24px 60px rgba(23,105,255,0.10), 0 4px 16px rgba(15,23,42,0.04)', border: `1px solid ${F.borderSoft}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                  <p style={{ fontSize: '13px', color: F.ink, fontWeight: 800, margin: 0, letterSpacing: '-0.005em' }}>
+                    In welcher Klasse bist du?
+                  </p>
+                  <span style={{ background: F.bgSky, color: F.blue, padding: '4px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em' }}>Quiz</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '20px' }}>
+                  {Array.from({ length: 13 }, (_, i) => i + 1).map((n) => (
+                    <a key={n} href={`/quiz?klasse=${n}`} style={{ aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: `1.5px solid ${F.border}`, background: F.white, color: F.ink, fontSize: '15px', fontWeight: 800, textDecoration: 'none', transition: 'all 0.15s ease' }}
+                       onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = F.blue; (e.currentTarget as HTMLAnchorElement).style.color = F.white; (e.currentTarget as HTMLAnchorElement).style.borderColor = F.blue; }}
+                       onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = F.white; (e.currentTarget as HTMLAnchorElement).style.color = F.ink; (e.currentTarget as HTMLAnchorElement).style.borderColor = F.border; }}>
+                      {n}
+                    </a>
+                  ))}
+                </div>
+                <div style={{ paddingTop: '18px', borderTop: `1px solid ${F.borderSoft}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: F.inkSoft }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: F.blue }} /> Mathe
+                    </span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#a78bfa' }} /> Physik
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '12px', color: F.inkSoft, fontWeight: 600 }}>61 Themen</span>
+                </div>
+              </div>
+              {/* Floating accent badge */}
+              <div style={{ position: 'absolute', bottom: '-18px', right: '-14px', background: F.blue, color: F.white, padding: '12px 18px', borderRadius: '14px', fontSize: '14px', fontWeight: 800, boxShadow: '0 12px 28px rgba(23,105,255,0.30)', transform: 'rotate(-2deg)' }}>
+                Kostenlos
+              </div>
+              {/* Floating stat */}
+              <div style={{ position: 'absolute', top: '-16px', left: '-14px', background: F.white, color: F.ink, padding: '10px 16px', borderRadius: '14px', fontSize: '13px', fontWeight: 700, boxShadow: '0 12px 28px rgba(15,23,42,0.10)', border: `1px solid ${F.borderSoft}`, transform: 'rotate(-3deg)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: F.blue }}>13</span>
+                <span style={{ fontSize: '12px', color: F.inkSoft }}>Lernpakete<br />ab 0,99 €</span>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
