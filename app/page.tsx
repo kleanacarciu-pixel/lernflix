@@ -257,20 +257,18 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - groesser, besser positioniert */}
+          {/* Rechts: Foto vom lachenden jungen mit MATHE-TEST note 1 - gross, oben platziert */}
           {!mobil && (
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', minHeight: '680px' }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
               <img
                 src="/HP_FOTO-removebg-preview.png"
                 alt=""
                 style={{
-                  width: '110%',
-                  maxWidth: '640px',
+                  width: '100%',
+                  maxWidth: '800px',
                   height: 'auto',
                   objectFit: 'contain',
                   filter: 'drop-shadow(0 24px 40px rgba(15,23,42,0.22))',
-                  marginRight: '-30px',
-                  marginBottom: '-40px',
                 }}
               />
             </div>
