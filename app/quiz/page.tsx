@@ -248,26 +248,40 @@ export default function QuizPage() {
     }
   }, [thema, schwierigkeit, klassenFilter, aktiverTab]);
 
-  function startQuiz() {
+  async function startQuiz() {
     if (!thema || !schwierigkeit) return;
+
+    // 1. Wenn preload bereits durch ist: sofort starten
     if (vorgeladeneRef.current.length > 0) {
       setFragen(vorgeladeneRef.current);
       setSchritt("quiz");
       setAktuelle(0);
       setPunkte(0);
-    } else {
-      setLaden(true);
-      const interval = setInterval(() => {
-        if (vorgeladeneRef.current.length > 0) {
-          setFragen(vorgeladeneRef.current);
-          setSchritt("quiz");
-          setAktuelle(0);
-          setPunkte(0);
-          setLaden(false);
-          clearInterval(interval);
-        }
-      }, 80); // schneller polling damit es responsive ist
-      setTimeout(() => { clearInterval(interval); setLaden(false); }, 30000);
+      return;
+    }
+
+    // 2. Sonst: direkt jetzt fetchen (kein polling-mist mehr)
+    setLaden(true);
+    try {
+      const themaPlain = thema.replace(/^[^a-zA-ZÄÖÜäöüß0-9]+/, "").trim();
+      const res = await fetch("/api/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ thema: themaPlain, schwierigkeit, klasse: klassenFilter, fach: aktiverTab }),
+      });
+      const data = await res.json();
+      if (data && data.fragen && data.fragen.length > 0) {
+        setFragen(data.fragen);
+        setSchritt("quiz");
+        setAktuelle(0);
+        setPunkte(0);
+      } else {
+        alert("Fragen konnten nicht geladen werden. Bitte erneut versuchen.");
+      }
+    } catch {
+      alert("Verbindungsfehler. Bitte erneut versuchen.");
+    } finally {
+      setLaden(false);
     }
   }
 
