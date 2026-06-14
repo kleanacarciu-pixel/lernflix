@@ -7,8 +7,9 @@ export const runtime = "edge";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-haiku-4-5-20251001";
 const ZIEL_FRAGEN = 5;
+const GENERIEREN_BEIM_CACHE_MISS = 8; // 5 zurueck + 3 extra fuer naechste user
 const TIMEOUT_PRO_FRAGE_MS = 14_000;
-const MAX_PARALLEL = 7;
+const MAX_PARALLEL = 10;
 const CACHE_POOL_GROESSE = 30;
 
 // === TYPES ===
@@ -274,10 +275,9 @@ export async function POST(request: Request): Promise<Response> {
     }
     console.log(`[quiz] Cache-miss: ${cached.length}/${ZIEL_FRAGEN} vorhanden, generiere rest`);
 
-    // 2. GENERIEREN
+    // 2. GENERIEREN - 8 statt 5: die 3 extras kommen in den cache fuer naechste user
     const variation = Math.random().toString(36).slice(2, 8);
-    const fehlend = ZIEL_FRAGEN - cached.length;
-    const generierZahl = Math.min(MAX_PARALLEL, fehlend + 2);
+    const generierZahl = Math.min(MAX_PARALLEL, GENERIEREN_BEIM_CACHE_MISS);
 
     const ergebnisse = await Promise.all(
       Array.from({ length: generierZahl }, (_, i) =>
@@ -287,11 +287,9 @@ export async function POST(request: Request): Promise<Response> {
     const neueFragen = ergebnisse.filter((f): f is Frage => f !== null);
     console.log(`[quiz] Generiert: ${neueFragen.length}/${generierZahl} erfolgreich`);
 
-    // 3. CACHE FILL (fire-and-forget - kein await damit nicht blockiert)
+    // 3. CACHE FILL - AWAIT damit es zuverlaessig persisted wird in edge runtime
     if (neueFragen.length > 0) {
-      speichereInCache(fach, klasseNum, thema, schwierigkeit, neueFragen).catch((e) => {
-        console.error("[quiz] Cache-fill catch:", String(e));
-      });
+      await speichereInCache(fach, klasseNum, thema, schwierigkeit, neueFragen);
     }
 
     const fragen = [...cached, ...neueFragen].slice(0, ZIEL_FRAGEN);
