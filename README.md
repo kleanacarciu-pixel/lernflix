@@ -1,5 +1,37 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Content-Engine (Phase 1)
+
+Aus einem Themen-Queue erzeugt die Engine automatisch ein fertiges, fachlich
+geprüftes Short-Paket (noch **kein** Video, noch **kein** Posten).
+
+**Ablauf:** `GET /api/generate` → nimmt das nächste `pending`-Topic →
+`generatePaket()` (`lib/brain.ts`) erstellt Hook/Skript/On-Screen-Texte →
+`checkMathe()` (`lib/qa.ts`) prüft die Mathematik fachlich → Ergebnis landet in
+`content_log`, das Topic wird auf `done` (QA ok) oder `failed` gesetzt.
+
+Modell für beide Schritte: `claude-sonnet-4-6`. Alle Keys werden **nur**
+serverseitig gelesen.
+
+### Setup (das muss Kleana manuell machen)
+
+1. **Supabase-SQL ausführen.** Im Supabase SQL-Editor den Inhalt von
+   [`supabase/content_engine_schema.sql`](supabase/content_engine_schema.sql)
+   ausführen. Das legt die Tabellen `topics` + `content_log` an und seedet die
+   8 Themen (Klasse 9) als `pending`.
+2. **`.env` füllen.** [`.env.example`](.env.example) nach `.env` kopieren und
+   die drei Keys eintragen:
+   - `ANTHROPIC_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY` (Service-Role-Key, nicht den anon-Key!)
+3. **Starten:** `npm install` (falls noch nicht geschehen), dann `npm run dev`.
+4. **Testen:** im Browser `http://localhost:3000/api/generate` öffnen. Du
+   solltest ein geprüftes Short-Paket sehen — und in Supabase einen neuen
+   Eintrag in `content_log` mit `qa_ok = true`. Jeder weitere Aufruf arbeitet
+   das nächste Topic ab. Sind alle Themen abgearbeitet, kommt `{ done: true }`.
+
+> **Phase 2** (JSON2Video → fertiges MP4) folgt, sobald dieser Durchlauf sauber läuft.
+
 ## Getting Started
 
 First, run the development server:
