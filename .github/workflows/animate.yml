@@ -1,0 +1,55 @@
+name: Manim Animation Render
+
+# Manuell aus dem Actions-Tab starten (Run workflow). Optional eine content_log-id
+# angeben; leer = naechstes geprueftes Paket (qa_ok=true, animation_status none).
+on:
+  workflow_dispatch:
+    inputs:
+      row_id:
+        description: "content_log id (leer lassen = naechstes qa_ok=true Paket)"
+        required: false
+        default: ""
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System-Abhaengigkeiten (LaTeX, ffmpeg, cairo, pango)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg sox dvisvgm pkg-config \
+            libcairo2-dev libpango1.0-dev \
+            texlive texlive-latex-extra texlive-fonts-extra texlive-science
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python-Pakete
+        run: |
+          python -m pip install --upgrade pip
+          pip install "manim>=0.18,<0.19" "manim-voiceover[elevenlabs,gtts]>=0.3.7" requests
+
+      - name: Animation rendern
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ROW_ID: ${{ github.event.inputs.row_id }}
+        run: python scripts/render_animation.py
+
+      - name: Szene als Artefakt sichern (zum Debuggen)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manim-output
+          path: |
+            scene.py
+            media/videos/**/*.mp4
+          if-no-files-found: ignore
+          retention-days: 7

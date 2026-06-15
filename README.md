@@ -68,6 +68,47 @@ unter dem 60-s-Limit des Hobby-Plans.
 
 > **Phase 3** (Zeitplan → automatisches Posten) folgt, sobald die Videos passen.
 
+## Content-Engine (Phase 2b) — echte Mathe-Animation (Manim)
+
+Statt einfacher Text-Overlays erzeugt diese Variante **programmierte Mathe-Animationen**
+im 3Blue1Brown-Stil: Formeln bauen sich Schritt für Schritt auf, Flächen/Geometrie
+werden gezeigt, und die **Stimme ist synchron zur Animation** (via
+[`manim-voiceover`](https://github.com/ManimCommunity/manim-voiceover) — jede gesprochene
+Aussage läuft genau so lange wie ihre Animation).
+
+Manim braucht Python + LaTeX und läuft **nicht** auf Vercel. Daher rendert ein
+**GitHub-Actions-Workflow** ([`.github/workflows/animate.yml`](.github/workflows/animate.yml)):
+
+**Ablauf:** Workflow starten → nimmt das nächste geprüfte Paket (`qa_ok = true`,
+`animation_status = 'none'`) → Claude (`claude-sonnet-4-6`) schreibt aus dem Paket ein
+`manim-voiceover`-Skript (9:16, deutsche Stimme, Schritt-für-Schritt-Mathe, Marken-Ton
+„Anna", witzig) → Manim rendert das MP4 (mit **Selbst-Reparatur**: crasht der Code, geht
+Fehler + Code zurück an Claude) → Upload nach Supabase Storage → `animation_url` +
+`animation_status = 'ready'` (sonst `failed`).
+
+### Setup Phase 2b (das muss Kleana manuell machen)
+
+1. **Supabase-SQL ausführen:**
+   [`supabase/phase2b_animation_columns.sql`](supabase/phase2b_animation_columns.sql)
+   (fügt `animation_url`, `animation_status`, `manim_code` hinzu).
+2. **Storage-Bucket anlegen:** Supabase → **Storage** → **New bucket** → Name **`shorts`**
+   → **Public** aktivieren (dorthin lädt der Renderer die MP4s).
+3. **ElevenLabs-Key holen:** bei [elevenlabs.io](https://elevenlabs.io) anmelden (Free-Tier
+   reicht zum Start), API-Key kopieren — er liefert die natürliche, synchrone Stimme.
+4. **GitHub-Secrets setzen:** Repo → **Settings → Secrets and variables → Actions →
+   New repository secret**, diese vier anlegen:
+   - `ANTHROPIC_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ELEVENLABS_API_KEY`
+5. **Workflow starten:** Repo → **Actions** → **„Manim Animation Render"** → **Run workflow**
+   (Feld leer lassen = nächstes Paket; oder eine `content_log`-id eintragen). Der Lauf dauert
+   einige Minuten (LaTeX-Installation + Render). Ergebnis: `animation_url` in `content_log`.
+
+> **Hinweis:** Von Claude generierter Animationscode kann beim ersten Mal fehlschlagen — der
+> Workflow repariert bis zu 4×. Der Look/Stil lässt sich über den Prompt in
+> [`scripts/render_animation.py`](scripts/render_animation.py) (`SYSTEM_PROMPT`) weiter justieren.
+
 ## Getting Started
 
 First, run the development server:
