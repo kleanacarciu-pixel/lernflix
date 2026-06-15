@@ -27,9 +27,11 @@ import textwrap
 import requests
 
 # ---------------------------------------------------------------- Konfiguration
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+# .strip(): Secrets werden beim Einfuegen (GitHub-UI) gerne mit einem
+# Zeilenumbruch/Leerzeichen kopiert — das wuerde HTTP-Header zerstoeren.
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"].strip()
+SUPABASE_URL = os.environ["SUPABASE_URL"].strip().rstrip("/")
+SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "").strip()
 ROW_ID = os.environ.get("ROW_ID", "").strip()
 
