@@ -138,55 +138,77 @@ export function buildMovieSpec(paket: Paket): MovieSpec {
 type SubmitResponse = { success?: boolean; project?: string; movie?: { project?: string } };
 type StatusResponse = { movie?: { status?: string; url?: string; message?: string } };
 
-/**
- * Schickt das Movie-Objekt an JSON2Video, pollt bis "done" und gibt die
- * fertige MP4-URL zurueck. Wirft bei Fehler oder Timeout.
- */
-export async function renderVideo(spec: MovieSpec): Promise<string> {
-  const apiKey = process.env.JSON2VIDEO_API_KEY;
-  if (!apiKey) {
-    throw new Error("JSON2VIDEO_API_KEY fehlt (nur serverseitig setzen).");
-  }
+export type RenderStatus =
+  | { status: "done"; url: string }
+  | { status: "running" }
+  | { status: "error"; message: string };
 
-  // 1. Render-Job starten.
+function apiKey(): string {
+  const key = process.env.JSON2VIDEO_API_KEY;
+  if (!key) throw new Error("JSON2VIDEO_API_KEY fehlt (nur serverseitig setzen).");
+  return key;
+}
+
+/**
+ * Startet einen Render-Job und gibt sofort die project-id zurueck (schnell,
+ * Hobby-Plan-tauglich). Das eigentliche Rendern laeuft serverseitig bei
+ * JSON2Video weiter; der Status wird spaeter via pollRender() abgefragt.
+ */
+export async function submitRender(spec: MovieSpec): Promise<string> {
   const submit = await fetch(J2V_BASE, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey() },
     body: JSON.stringify(spec),
   });
   if (!submit.ok) {
     const t = await submit.text().catch(() => "");
     throw new Error(`JSON2Video submit ${submit.status}: ${t.slice(0, 400)}`);
   }
-  const submitData = (await submit.json()) as SubmitResponse;
-  const project = submitData.project ?? submitData.movie?.project;
+  const data = (await submit.json()) as SubmitResponse;
+  const project = data.project ?? data.movie?.project;
   if (!project) {
-    throw new Error(`JSON2Video: keine project-id in Antwort: ${JSON.stringify(submitData).slice(0, 300)}`);
+    throw new Error(`JSON2Video: keine project-id in Antwort: ${JSON.stringify(data).slice(0, 300)}`);
   }
+  return project;
+}
 
-  // 2. Status pollen bis done / error / timeout.
+/** Fragt den Render-Status genau einmal ab (schnell). */
+export async function pollRender(project: string): Promise<RenderStatus> {
+  const res = await fetch(`${J2V_BASE}/?project=${encodeURIComponent(project)}`, {
+    headers: { "x-api-key": apiKey() },
+  });
+  if (!res.ok) {
+    // transienter Fehler -> als "laeuft noch" behandeln, naechster Aufruf prueft erneut
+    return { status: "running" };
+  }
+  const data = (await res.json()) as StatusResponse;
+  const status = data.movie?.status;
+  if (status === "done" && data.movie?.url) {
+    return { status: "done", url: data.movie.url };
+  }
+  if (status === "error") {
+    return { status: "error", message: data.movie?.message ?? "unbekannt" };
+  }
+  return { status: "running" };
+}
+
+/**
+ * Synchrone Variante (startet + pollt bis done). Praktisch fuer lokale Laeufe
+ * ohne Zeitlimit. Auf dem Vercel-Hobby-Plan stattdessen submitRender +
+ * pollRender ueber mehrere Aufrufe nutzen (siehe app/api/render/route.ts).
+ */
+export async function renderVideo(spec: MovieSpec): Promise<string> {
+  const project = await submitRender(spec);
+
   const startZeit = Date.now();
-  const timeoutMs = 290_000; // knapp unter maxDuration der Route
+  const timeoutMs = 290_000;
   const intervalMs = 4_000;
 
   while (Date.now() - startZeit < timeoutMs) {
     await sleep(intervalMs);
-
-    const res = await fetch(`${J2V_BASE}/?project=${encodeURIComponent(project)}`, {
-      headers: { "x-api-key": apiKey },
-    });
-    if (!res.ok) continue; // transienter Fehler -> weiter pollen
-
-    const data = (await res.json()) as StatusResponse;
-    const status = data.movie?.status;
-    if (status === "done" && data.movie?.url) {
-      return data.movie.url;
-    }
-    if (status === "error") {
-      throw new Error(`JSON2Video render error: ${data.movie?.message ?? "unbekannt"}`);
-    }
-    // sonst: "running"/"pending" -> weiter pollen
+    const r = await pollRender(project);
+    if (r.status === "done") return r.url;
+    if (r.status === "error") throw new Error(`JSON2Video render error: ${r.message}`);
   }
-
   throw new Error("JSON2Video: Timeout beim Rendern (Status nicht 'done').");
 }
