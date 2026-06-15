@@ -2,7 +2,7 @@
 // Eigener Anthropic-Aufruf, konservativ: im Zweifel ok=false.
 // Nur serverseitig nutzen (verwendet ANTHROPIC_API_KEY).
 
-import { callAnthropic, parseJsonLoose, type ChatMessage } from "@/lib/anthropic";
+import { callAnthropicJson, type ChatMessage } from "@/lib/anthropic";
 import type { Paket } from "@/lib/brain";
 
 export type QaErgebnis = {
@@ -29,7 +29,7 @@ ${paket.skript}
 ON-SCREEN-TEXTE:
 ${onScreen}
 
-Rechne relevante Schritte selbst nach. Antworte AUSSCHLIESSLICH mit JSON in GENAU dieser Form:
+Rechne relevante Schritte selbst nach. Antworte AUSSCHLIESSLICH mit JSON in GENAU dieser Form — beginne direkt mit '{', kein Vorwort, keine Erklaerung:
 {
   "ok": true oder false,
   "problems": ["string", "..."]
@@ -67,14 +67,13 @@ export async function checkMathe(paket: Paket): Promise<QaErgebnis> {
   ];
 
   try {
-    const antwort = await callAnthropic({
+    const roh = await callAnthropicJson({
       system: SYSTEM_PROMPT,
       messages,
       maxTokens: 800,
       temperature: 0, // deterministische, strenge Pruefung
     });
 
-    const roh = parseJsonLoose(antwort);
     return normalisiere(roh);
   } catch (e) {
     return { ok: false, problems: [`QA-Aufruf fehlgeschlagen: ${String(e)}`] };
