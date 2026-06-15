@@ -108,3 +108,44 @@ export function parseJsonLoose<T = unknown>(raw: string): T {
   }
   throw new Error(`JSON-Parsing fehlgeschlagen: ${String(letzterFehler)}`);
 }
+
+const JSON_NUDGE =
+  "\n\nWICHTIG: Antworte AUSSCHLIESSLICH mit dem JSON-Objekt. Beginne deine Antwort direkt mit '{' und beende sie mit '}'. KEIN Vorwort, KEINE Erklaerung, KEIN Markdown, KEIN Text davor oder danach.";
+
+function lastUserIndex(messages: ChatMessage[]): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === "user") return i;
+  }
+  return messages.length - 1;
+}
+
+/**
+ * Ruft die API auf und parst die Antwort als JSON. Falls das Modell doch mal
+ * Prosa statt JSON liefert (ohne Prefill kann das passieren), wird der Aufruf
+ * einmal mit einer verschaerften Anweisung wiederholt.
+ */
+export async function callAnthropicJson<T = unknown>(opts: CallOptions): Promise<T> {
+  const maxAttempts = 2;
+  let letzterFehler: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    // Beim Wiederholungsversuch die letzte User-Nachricht verschaerfen.
+    const messages =
+      attempt === 1
+        ? opts.messages
+        : opts.messages.map((m, i) =>
+            i === lastUserIndex(opts.messages)
+              ? { ...m, content: m.content + JSON_NUDGE }
+              : m,
+          );
+
+    const text = await callAnthropic({ ...opts, messages });
+    try {
+      return parseJsonLoose<T>(text);
+    } catch (e) {
+      letzterFehler = e;
+    }
+  }
+
+  throw new Error(`JSON nach ${maxAttempts} Versuchen ungueltig: ${String(letzterFehler)}`);
+}

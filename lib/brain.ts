@@ -1,7 +1,7 @@
 // lib/brain.ts — erzeugt aus (Thema, Klassenstufe) ein fertiges Short-Paket.
 // Nur serverseitig nutzen (verwendet ANTHROPIC_API_KEY).
 
-import { callAnthropic, parseJsonLoose, type ChatMessage } from "@/lib/anthropic";
+import { callAnthropicJson, type ChatMessage } from "@/lib/anthropic";
 
 export type Paket = {
   thema: string;
@@ -29,7 +29,7 @@ FACHLICHE SORGFALT (oberste Prioritaet — ein strenger Fachgutachter prueft jed
 - Keine irrefuehrenden Vereinfachungen, keine fehlenden Voraussetzungen.`;
 
 // Genaue Zielstruktur als Beispiel im Prompt, damit das Modell das Schema trifft.
-const SCHEMA_HINWEIS = `Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in GENAU dieser Form (keine Erklaerung davor oder danach):
+const SCHEMA_HINWEIS = `Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in GENAU dieser Form — beginne direkt mit '{', keine Erklaerung davor oder danach:
 {
   "thema": "string",
   "hook": "string (0-3 Sek., max 1 Satz, macht neugierig)",
@@ -95,13 +95,12 @@ export async function generatePaket(thema: string, klassenstufe: string): Promis
     { role: "user", content: buildUserPrompt(thema, klassenstufe) },
   ];
 
-  const antwort = await callAnthropic({
+  const roh = await callAnthropicJson({
     system: SYSTEM_PROMPT,
     messages,
     maxTokens: 1500,
     temperature: 0.7,
   });
 
-  const roh = parseJsonLoose(antwort);
   return normalisiere(roh, thema);
 }
