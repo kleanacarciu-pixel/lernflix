@@ -58,6 +58,19 @@ ${pruefText}
 
 ⚠️ KRITISCH: Du MUSST den echten Stundenplan oben verwenden! Schau für jeden Tag was hinter ">>> MORGEN" steht – GENAU diese Fächer werden gelernt. NIEMALS einfach nur "Mathematik" für alles. Wenn morgen Französisch, Geschichte und Biologie ist, dann plane HEUTE Blöcke für Französisch, Geschichte UND Biologie – jedes Fach einzeln!
 
+⚠️ STARTZEIT DES PLANS = SCHULENDE!
+- Erste Pause beginnt IMMER zum Schulende-Zeitpunkt – NICHT um 14:00!
+- Wenn Schule bis 16:00 geht → Pause 16:00–16:30 → Lernen ab 16:30
+- Wenn Schule bis 13:00 geht → Pause 13:00–13:30 → Lernen ab 13:30
+- Wenn Schule bis 17:00 geht → Pause 17:00–17:30 → Lernen ab 17:30
+- Lies "Schule HH:MM-HH:MM" aus dem Stundenplan und nimm die zweite Zeit als Startpunkt.
+- Bei "frei" oder "schulfrei" als Schulzeit: Plan startet um 10:00.
+
+⚠️ ECHTE DEUTSCHE UMLAUTE PFLICHT:
+- IMMER ä ö ü ß schreiben – NIEMALS ae oe ue ss!
+- "Bücher" NICHT "Buecher". "Französisch" NICHT "Franzoesisch". "zählen" NICHT "zaehlen". "schließen" NICHT "schliessen". "Übungen" NICHT "Uebungen".
+- Das ist Pflicht in ALLEN Feldern: titel, beschreibung, schritte, tipps, regeln.
+
 Der Lern-Nachmittag bereitet IMMER den NÄCHSTEN Schultag vor! NICHT zufällige Fächer.
 
 Für jeden Tag plane in dieser Reihenfolge:
@@ -94,13 +107,13 @@ Wenn im Stundenplan ein Nachmittag-Termin steht (z.B. "Tennis 17-19"):
   "fach_tipps": [{"fach": "Fach", "tipp": "konkrete Lernmethode"}],
   "tage": {
     "Mo": [
-      {"zeit": "14:00", "titel": "Pause & Erholen", "beschreibung": "30 Min Pause: etwas essen, ausruhen, Kopf frei machen.", "schritte": [], "typ": "pause", "dauer": "30 Min"},
-      {"zeit": "14:30", "titel": "Konzentration starten", "beschreibung": "Mach deinen Kopf bereit zum Lernen.", "schritte": ["1 Minute tief durchatmen", "Augen schliessen und bis 20 zaehlen"], "typ": "konzentration", "dauer": "2 Min"},
-      {"zeit": "14:32", "titel": "Hausaufgaben Mathe", "beschreibung": "Du hast 3 Mathe-Aufgaben auf.", "schritte": ["Heft und Buch aufschlagen", "Formel oben notieren", "Aufgabe 1 loesen", "Aufgabe 2 loesen", "Aufgabe 3 loesen", "Kontrollieren und Haken machen"], "typ": "fokus", "fach": "Mathematik", "dauer": "38 Min"},
-      {"zeit": "15:10", "titel": "Pause", "beschreibung": "10 Minuten: aufstehen, strecken, Wasser trinken.", "schritte": [], "typ": "pause", "dauer": "10 Min"},
-      {"zeit": "15:20", "titel": "Franzoesisch lernen", "beschreibung": "Morgen hast du Franzoesisch - bereite dich vor.", "schritte": ["Heft aufschlagen", "Den Stoff durchlesen", "Wichtigste rausschreiben", "Vokabeln mit Karteikarten ueben"], "typ": "fokus", "fach": "Franzoesisch", "dauer": "25 Min"},
-      {"zeit": "16:00", "titel": "Tennis", "beschreibung": "Dein Training - viel Spass! Danach geht der Plan weiter.", "schritte": [], "typ": "termin", "dauer": "17-19 Uhr"},
-      {"zeit": "19:30", "titel": "Vokabeln beim Abendessen", "beschreibung": "Nach dem Training leicht: Vokabeln mit Karteikarten.", "schritte": ["10 neue Vokabeln anschauen", "Mit Karteikarten abfragen"], "typ": "fokus", "fach": "Franzoesisch", "dauer": "15 Min"}
+      {"zeit": "<SCHULENDE>", "titel": "Pause & Erholen", "beschreibung": "30 Min Pause: etwas essen, ausruhen, Kopf frei machen.", "schritte": [], "typ": "pause", "dauer": "30 Min"},
+      {"zeit": "<SCHULENDE+30>", "titel": "Konzentration starten", "beschreibung": "Mach deinen Kopf bereit zum Lernen.", "schritte": ["1 Minute tief durchatmen", "Augen schließen und bis 20 zählen"], "typ": "konzentration", "dauer": "2 Min"},
+      {"zeit": "<SCHULENDE+32>", "titel": "Hausaufgaben Mathe", "beschreibung": "Du hast 3 Mathe-Aufgaben auf.", "schritte": ["Heft und Buch aufschlagen", "Formel oben notieren", "Aufgabe 1 lösen", "Aufgabe 2 lösen", "Aufgabe 3 lösen", "Kontrollieren und Haken machen"], "typ": "fokus", "fach": "Mathematik", "dauer": "38 Min"},
+      {"zeit": "...", "titel": "Pause", "beschreibung": "10 Minuten: aufstehen, strecken, Wasser trinken.", "schritte": [], "typ": "pause", "dauer": "10 Min"},
+      {"zeit": "...", "titel": "Französisch lernen", "beschreibung": "Morgen hast du Französisch - bereite dich vor.", "schritte": ["Heft aufschlagen", "Den Stoff durchlesen", "Wichtigste rausschreiben", "Vokabeln mit Karteikarten üben"], "typ": "fokus", "fach": "Französisch", "dauer": "25 Min"},
+      {"zeit": "...", "titel": "Tennis", "beschreibung": "Dein Training - viel Spaß! Danach geht der Plan weiter.", "schritte": [], "typ": "termin", "dauer": "17-19 Uhr"},
+      {"zeit": "...", "titel": "Vokabeln beim Abendessen", "beschreibung": "Nach dem Training leicht: Vokabeln mit Karteikarten.", "schritte": ["10 neue Vokabeln anschauen", "Mit Karteikarten abfragen"], "typ": "fokus", "fach": "Französisch", "dauer": "15 Min"}
     ],
     "Di": [], "Mi": [], "Do": [], "Fr": [], "Sa": [], "So": []
   },
