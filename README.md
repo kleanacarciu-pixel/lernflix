@@ -30,7 +30,38 @@ serverseitig gelesen.
    Eintrag in `content_log` mit `qa_ok = true`. Jeder weitere Aufruf arbeitet
    das nächste Topic ab. Sind alle Themen abgearbeitet, kommt `{ done: true }`.
 
-> **Phase 2** (JSON2Video → fertiges MP4) folgt, sobald dieser Durchlauf sauber läuft.
+## Content-Engine (Phase 2) — Video-Produktion
+
+Aus einem **geprüften** Paket (`qa_ok = true`) rendert die Engine ein fertiges
+9:16-MP4 mit deutscher Stimme und Untertiteln über die **JSON2Video**-v2-API
+(noch **kein** Posten — das kommt in Phase 3).
+
+**Ablauf:** `GET /api/render` → nimmt die nächste `content_log`-Zeile mit
+`qa_ok = true` und `video_status = 'none'` → `buildMovieSpec()` (`lib/video.ts`)
+baut das Movie-Objekt (9:16, weibliche TTS-Stimme spricht Hook + Skript, Hook als
+Titel, On-Screen-Texte als Overlays, automatische Untertitel, heller Marken­hintergrund)
+→ `renderVideo()` schickt es an JSON2Video und pollt bis `done` → `video_url` +
+`video_status = 'ready'` werden gespeichert (bei Fehler `failed`).
+
+### Setup Phase 2 (das muss Kleana manuell machen)
+
+1. **JSON2Video-Key holen:** bei [json2video.com](https://json2video.com) anmelden,
+   API-Key kopieren.
+2. **Key eintragen:** in Vercel als `JSON2VIDEO_API_KEY` (alle Environments) →
+   **neu deployen**. Lokal: in `.env` ergänzen.
+3. **Supabase-SQL ausführen:** den Inhalt von
+   [`supabase/phase2_video_columns.sql`](supabase/phase2_video_columns.sql) im
+   SQL-Editor ausführen (fügt `video_url` + `video_status` zu `content_log` hinzu).
+4. **Testen:** `GET /api/render` aufrufen (lokal `http://localhost:3000/api/render`
+   oder die Vercel-URL). Das Rendern dauert länger als der Text — **kurz warten**.
+   Die zurückgegebene `video_url` im Browser öffnen und das Short prüfen
+   (deutsche Stimme, lesbare Formeln/Texte, Untertitel vorhanden?).
+
+> **Hinweis Vercel-Hobby-Plan:** Serverless-Funktionen werden dort bei 60 s
+> gekappt. Dauert ein Render länger, läuft `/api/render` am besten **lokal**
+> (`npm run dev`, kein Zeitlimit) oder mit Vercel-Pro.
+
+> **Phase 3** (Zeitplan → automatisches Posten) folgt, sobald die Videos passen.
 
 ## Getting Started
 
