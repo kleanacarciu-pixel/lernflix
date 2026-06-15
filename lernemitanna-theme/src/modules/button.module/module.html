@@ -1,0 +1,82 @@
+{# Module styles #}
+
+{% require_css %}
+  <style>
+    {% scope_css %}
+
+      {# Button wrapper #}
+
+      {% if module.styles.alignment.alignment %}
+        .button-wrapper {
+          text-align: {{ module.styles.alignment.alignment.horizontal_align }};
+        }
+      {% endif %}
+
+      {# Button
+         Standard-Look: Türkis-Verlauf (#2BB3C0 -> #3E7BB6) mit abgerundeten Ecken.
+         Waehlt Anna im Editor eine eigene Hintergrundfarbe, wird der Verlauf
+         durch eine einfarbige Flaeche ersetzt. #}
+
+      {% set accent_gradient = 'linear-gradient(135deg, #2BB3C0 0%, #3E7BB6 100%)' %}
+
+      .button {
+        {% if module.styles.background.color.color %}
+          {# Editor-Override: einfarbig, kein Verlauf #}
+          background-color: rgba({{ module.styles.background.color.color|convert_rgb }}, {{ module.styles.background.color.opacity / 100 }});
+          background-image: none;
+        {% else %}
+          {# Standard: Tuerkis-Verlauf #}
+          background-color: #2BB3C0;
+          background-image: {{ accent_gradient }};
+        {% endif %}
+        {{ module.styles.border.border.css }}
+        {% if module.styles.corner.radius >= 0 %}
+          border-radius: {{ module.styles.corner.radius ~ "px" }};
+        {% endif %}
+        {{ module.styles.text.font.css }}
+        {{ module.styles.spacing.spacing.css }}
+      }
+
+      .button:hover,
+      .button:focus {
+        {% if module.styles.background.color.color %}
+          background-color: rgba({{ color_variant(module.styles.background.color.color, -80)|convert_rgb }}, {{ module.styles.background.color.opacity / 100 }});
+        {% else %}
+          filter: brightness(0.92);
+        {% endif %}
+      }
+
+      .button:active {
+        {% if module.styles.background.color.color %}
+          background-color: rgba({{ color_variant(module.styles.background.color.color, 80)|convert_rgb }}, {{ module.styles.background.color.opacity / 100 }});
+        {% endif %}
+      }
+
+    {% end_scope_css %}
+  </style>
+{% end_require_css %}
+
+{# Sets attributes used for the link field #}
+
+{% set href = module.link.url.href %}
+{% if module.link.url.type == "EMAIL_ADDRESS" %}
+  {% set href = "mailto:" + href %}
+{% endif %}
+{% set rel = [] %}
+{% if module.link.no_follow %}
+  {% do rel.append("nofollow") %}
+{% endif %}
+{% if module.link.open_in_new_tab %}
+  {% do rel.append("noopener") %}
+{% endif %}
+
+{# Button #}
+
+<div class="button-wrapper">
+  <a class="button" href="{{ href|escape_url }}"
+  {% if module.link.open_in_new_tab %}target="_blank"{% endif %}
+  {% if rel %}rel="{{ rel|join(" ")|escape_attr }}"{% endif %}
+  >
+    {{ module.button_text|escape_html }}
+  </a>
+</div>
