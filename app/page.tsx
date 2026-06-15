@@ -196,7 +196,7 @@ export default function Home() {
       </header>
 
       {/* HERO - fast weiss, kaum blau */}
-      <section className="fade-up" style={{ background: '#ffffff', color: F.ink, paddingTop: mobil ? '110px' : '150px', paddingBottom: mobil ? '60px' : '110px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
+      <section className="fade-up" style={{ background: '#ffffff', color: F.ink, paddingTop: mobil ? '100px' : '130px', paddingBottom: mobil ? '40px' : '70px', paddingLeft: mobil ? '20px' : '56px', paddingRight: mobil ? '20px' : '56px', position: 'relative', overflow: 'hidden' }}>
         {/* Math-grid pattern wie kariertes papier - sehr dezent */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         {/* Gradient-blobs - viel dezenter */}
@@ -295,7 +295,7 @@ export default function Home() {
       </section>
 
       {/* TRUST STRIP - premium card mit schatten + trennlinien */}
-      <section style={{ background: F.white, padding: mobil ? '24px 22px 40px' : '20px 56px 70px', position: 'relative' }}>
+      <section style={{ background: F.white, padding: mobil ? '8px 22px 20px' : '10px 56px 30px', position: 'relative' }}>
         <div style={{ maxWidth: '1180px', margin: '0 auto', background: F.white, borderRadius: '20px', boxShadow: '0 20px 50px rgba(15,23,42,0.08), 0 4px 16px rgba(15,23,42,0.04)', border: `1px solid ${F.borderSoft}`, padding: mobil ? '28px 24px' : '32px 48px', display: 'grid', gridTemplateColumns: mobil ? '1fr' : 'repeat(3, 1fr)', gap: 0 }}>
           {[
             { num: '13', t: 'Lernpakete', sub: 'Mathe + Physik · ab 0,99 €' },
@@ -321,7 +321,7 @@ export default function Home() {
 
 
       {/* SHOP - FEATURED (gross, wichtigster bereich) */}
-      <section id="bereiche" style={{ background: '#ffffff', padding: mobil ? '70px 22px 40px' : '120px 56px 50px', position: 'relative' }}>
+      <section id="bereiche" style={{ background: '#ffffff', padding: mobil ? '30px 22px 30px' : '40px 56px 40px', position: 'relative' }}>
         {/* Karierte papier textur - sehr dezent */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
@@ -360,7 +360,7 @@ export default function Home() {
       </section>
 
       {/* 3 GLIEDER: Lernheld / Lernplan / Quiz - gleich gross */}
-      <section style={{ background: '#ffffff', padding: mobil ? '40px 22px 80px' : '50px 56px 130px', position: 'relative' }}>
+      <section style={{ background: '#ffffff', padding: mobil ? '30px 22px 50px' : '40px 56px 80px', position: 'relative' }}>
         {/* Karierte papier textur - sehr dezent */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
@@ -406,7 +406,7 @@ export default function Home() {
       </section>
 
       {/* CTA Banner - fast weiss, dezent */}
-      <section style={{ background: '#ffffff', color: F.ink, padding: mobil ? '60px 22px' : '100px 56px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: '#ffffff', color: F.ink, padding: mobil ? '40px 22px 60px' : '60px 56px 80px', position: 'relative', overflow: 'hidden' }}>
         {/* Karierte papier textur - sehr dezent */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         {!mobil && (
