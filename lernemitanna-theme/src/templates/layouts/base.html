@@ -2,8 +2,10 @@
   templateType: none
 -->
 <!doctype html>
-<html lang="{{ html_lang }}" {{ html_lang_dir }}>
+<html lang="{{ html_lang }}" {{ html_lang_dir }} class="no-js">
   <head>
+    {# Tauscht .no-js gegen .js, bevor gerendert wird – verhindert Aufblitzen der Reveal-Animationen #}
+    <script>document.documentElement.className = document.documentElement.className.replace('no-js', 'js');</script>
     <meta charset="utf-8">
     {% if page_meta.html_title or pageTitle %}<title>{{ page_meta.html_title or pageTitle }}</title>{% endif %}
     {% if brand_settings.favicon.src %}<link rel="shortcut icon" href="{{ brand_settings.favicon.src }}" />{% endif %}
@@ -35,6 +37,7 @@
       {% endblock footer %}
     </div>
     {{ require_js(get_asset_url("../../js/main.js")) }}
+    {{ require_js(get_asset_url("../../js/brand.js")) }}
     {# To see a full list of what is included via standard_footer_includes please reference this article: https://developers.hubspot.com/docs/cms/hubl/variables#required-page-template-variables #}
     {{ standard_footer_includes }}
   </body>

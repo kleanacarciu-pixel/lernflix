@@ -1,0 +1,21 @@
+{# "So starten wir gemeinsam" – 4 nummerierte Schritte mit Verbindungslinie #}
+<section class="section steps reveal" id="ablauf">
+  <div class="content-wrapper">
+
+    <div class="section__head">
+      {% if module.eyebrow %}<p class="eyebrow">{{ module.eyebrow }}</p>{% endif %}
+      {% if module.heading %}<h2 class="section__title">{{ module.heading }}</h2>{% endif %}
+    </div>
+
+    <ol class="steps__grid">
+      {% for step in module.step %}
+        <li class="step">
+          <span class="step__num">{{ loop.index }}</span>
+          <h3 class="step__title">{{ step.title }}</h3>
+          <p class="step__text">{{ step.text }}</p>
+        </li>
+      {% endfor %}
+    </ol>
+
+  </div>
+</section>

@@ -20,7 +20,7 @@
           }
         },
         "default": {
-          "color": "#1A1A1A"
+          "color": "#14110F"
         }
       },
       {
@@ -483,14 +483,14 @@
             "label": "Color",
             "name": "color",
             "type": "color",
-            "help_text": "Basisfarbe des Buttons. Der Türkis-Verlauf (#2BB3C0 → #3E7BB6) wird in css/theme-overrides.css als background-image darübergelegt.",
+            "help_text": "Primaerer Button-Hintergrund (Ink). Tuerkis dient nur als dezenter Akzent.",
             "inherited_value": {
               "property_value_paths": {
                 "color": "theme.global_colors.primary.color"
               }
             },
             "default": {
-              "color": "#2BB3C0",
+              "color": "#14110F",
               "opacity": 100
             }
           }
@@ -513,7 +513,7 @@
                 },
                 "opacity": 100,
                 "style": "none",
-                "color": "#2BB3C0"
+                "color": "#14110F"
               },
               "right": {
                 "width": {
@@ -522,7 +522,7 @@
                 },
                 "opacity": 100,
                 "style": "none",
-                "color": "#2BB3C0"
+                "color": "#14110F"
               },
               "bottom": {
                 "width": {
@@ -531,7 +531,7 @@
                 },
                 "opacity": 100,
                 "style": "none",
-                "color": "#2BB3C0"
+                "color": "#14110F"
               },
               "left": {
                 "width": {
@@ -540,7 +540,7 @@
                 },
                 "opacity": 100,
                 "style": "none",
-                "color": "#2BB3C0"
+                "color": "#14110F"
               }
             }
           }
@@ -559,7 +559,7 @@
             "max": 100,
             "step": 1,
             "suffix": "px",
-            "default": 50
+            "default": 8
           }
         ]
       },
@@ -632,7 +632,7 @@
                 "type": "color",
                 "default": {
                   "opacity": 100,
-                  "color": "#1a334e"
+                  "color": "#2B2520"
                 }
               }
             ]
@@ -654,7 +654,7 @@
                     },
                     "opacity": 100,
                     "style": "solid",
-                    "color": "#1a334e"
+                    "color": "#2B2520"
                   },
                   "right": {
                     "width": {
@@ -663,7 +663,7 @@
                     },
                     "opacity": 100,
                     "style": "solid",
-                    "color": "#1a334e"
+                    "color": "#2B2520"
                   },
                   "bottom": {
                     "width": {
@@ -672,7 +672,7 @@
                     },
                     "opacity": 100,
                     "style": "solid",
-                    "color": "#1a334e"
+                    "color": "#2B2520"
                   },
                   "left": {
                     "width": {
@@ -681,7 +681,7 @@
                     },
                     "opacity": 100,
                     "style": "solid",
-                    "color": "#1a334e"
+                    "color": "#2B2520"
                   }
                 }
               }
@@ -1265,7 +1265,7 @@
                     "type": "color",
                     "default": {
                       "opacity": 100,
-                      "color": "#1a334e"
+                      "color": "#2B2520"
                     }
                   }
                 ]
@@ -1286,7 +1286,7 @@
                           "value": 1,
                           "units": "px"
                         },
-                        "color": "#1a334e",
+                        "color": "#2B2520",
                         "opacity": 100,
                         "style": "none"
                       },
@@ -1295,7 +1295,7 @@
                           "value": 1,
                           "units": "px"
                         },
-                        "color": "#1a334e",
+                        "color": "#2B2520",
                         "opacity": 100,
                         "style": "none"
                       },
@@ -1304,7 +1304,7 @@
                           "value": 1,
                           "units": "px"
                         },
-                        "color": "#1a334e",
+                        "color": "#2B2520",
                         "opacity": 100,
                         "style": "none"
                       },
@@ -1313,7 +1313,7 @@
                           "value": 1,
                           "units": "px"
                         },
-                        "color": "#1a334e",
+                        "color": "#2B2520",
                         "opacity": 100,
                         "style": "none"
                       }
@@ -1915,6 +1915,7 @@
               }
             },
             "default": {
+              "color": "#FFFFFF",
               "opacity": 100
             }
           }

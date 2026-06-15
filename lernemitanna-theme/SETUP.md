@@ -3,46 +3,63 @@
 Dieses Theme basiert auf dem offiziellen [HubSpot CMS Theme Boilerplate](https://github.com/HubSpot/cms-theme-boilerplate)
 und wurde an das Design von **Lerne mit Anna** angepasst.
 
+Designkonzept **„Teacher's Annotation"**: ruhige, editoriale Basis mit viel
+Weißraum, großen Serifen-Headlines und dezenten, handgezeichneten Türkis-Akzenten
+(eingekreiste Zahl, sich selbst zeichnende Unterstreichung, kleine Pfeile).
+Keine bunten Verläufe – ein einziger Akzentton.
+
 ## 1. Design-System
 
-Alle zentralen Werte werden über `src/fields.json` (Standardwerte) und
-`src/css/theme-overrides.css` (Ausgabe-CSS) gesteuert und sind im HubSpot
-Design Manager bearbeitbar.
+Zentrale Werte liegen in `src/fields.json` (Standardwerte, im Design Manager
+editierbar) und `src/css/theme-overrides.css` / `src/css/components/_brand.css`.
 
 ### Farben
-| Verwendung            | Farbe                              | Wo gesetzt |
-|-----------------------|------------------------------------|------------|
-| Hintergrund           | Weiß `#FFFFFF` (Seiteninhalt)      | Body-Default |
-| Flächen / Header / Footer | Beige `#F3EDE4`                | `global_colors.secondary` |
-| Text                  | Schwarz `#1A1A1A`                  | `global_colors.primary` |
-| Akzent (Buttons/Icons)| Türkis-Verlauf `#2BB3C0 → #3E7BB6` | `theme-overrides.css` (`accent_gradient`) |
-
-> Der Türkis-Verlauf ist als `linear-gradient(135deg, #2BB3C0 0%, #3E7BB6 100%)`
-> zentral in `src/css/theme-overrides.css` (Abschnitt „1d. Buttons") definiert.
-> Beide Farbstopps dort an einer Stelle änderbar.
+| Verwendung                | Farbe              | Wo gesetzt |
+|---------------------------|--------------------|------------|
+| Hintergrund / Header       | Weiß `#FFFFFF`     | Body-Default, `header.background` |
+| Ruhige Flächen / Footer    | Beige `#F3EDE4`    | `global_colors.secondary` |
+| Text & primäre Buttons     | Ink `#14110F`      | `global_colors.primary`, `buttons.background` |
+| Akzent (Links, Icons, Annotationen) | Türkis `#1D9E75` (Vollton) | `_brand.css` / `theme-overrides.css` (`accent_color`) |
 
 ### Schriften
 - **Überschriften (H1–H6):** `Playfair Display` (Serife) – `global_fonts.secondary`
 - **Fließtext / Navigation / Buttons:** `Inter` (Sans-Serif) – `global_fonts.primary`
 
-Beide werden automatisch von Google Fonts geladen.
+### Buttons
+- Primär: ruhiger **Ink-Button** (`#14110F`), leicht abgerundet (`8px`),
+  dezenter Hover-Lift – kein Verlauf. Modul: `src/modules/button.module`.
+- Auf dem dunklen CTA-Band wird der Button automatisch hell.
 
-### Button-Modul
-Wiederverwendbares Modul unter `src/modules/button.module`:
-- Standard: Türkis-Verlauf, weiße Schrift, stark abgerundete Ecken (`border-radius: 50px`).
-- Editor-Override: Wird im Editor eine Hintergrundfarbe gewählt, ersetzt eine
-  einfarbige Fläche den Verlauf.
+## 2. Startseite (`src/templates/home.html`)
 
-## 2. Layout (globale Module)
+Die Startseite ist ein **Page-Template**; jede Sektion ist ein eigenes,
+im Editor bearbeitbares Modul (Texte/Bilder über HubL-Felder):
 
-- **Header** (`src/templates/partials/header.html`): Logo links, Navigation rechts.
-  Die Menüpunkte **Leistungen, Kurse, Blog, Mehr** werden in HubSpot unter
-  *Einstellungen → Website → Navigationen* im Menü `default` gepflegt.
-- **Footer** (`src/templates/partials/footer.html`): Links zu *Datenschutzerklärung,
-  Impressum, AGB, Kontakt* sowie der Copyright-Hinweis „© Lerne mit Anna {{ year }}".
+| Reihenfolge | Modul (`src/modules/…`) | Inhalt |
+|---|---|---|
+| 1 | `hero.module`         | Eyebrow, Headline mit animierter Unterstreichung, Ink-Button + Text-Link, „Mathe-Test"-Block mit eingekreister Note |
+| 2 | `trust-bar.module`    | 4 Kennzahlen (Erfahrung, Einzelunterricht, flexibel, Lernpläne) |
+| 3 | `lernweg.module`      | 4 Karten (Nachhilfe, Kurse, Blog, Über mich) mit Icon, Hover-Lift, Pfeil |
+| 4 | `ideal-list.module`   | „Ideal für dich, wenn …" – 7 Punkte mit Icons |
+| 5 | `steps.module`        | „So starten wir gemeinsam" – 4 Schritte mit Verbindungslinie |
+| 6 | `testimonials.module` | 3 Referenz-Karten mit Sternen |
+| 7 | `cta-band.module`     | Abschluss-CTA auf Ink-Band |
 
-Header und Footer sind globale Partials und damit auf allen Seiten im Editor
-zentral bearbeitbar.
+**Header & Footer** sind globale Partials (`src/templates/partials/`):
+- Sticky-Header (Schatten erst beim Scrollen), Logo links, Navigation
+  *Leistungen, Kurse, Blog, Mehr* (Menü `default` unter
+  *Einstellungen → Website → Navigationen* pflegen).
+- Footer: Datenschutzerklärung, Impressum, AGB, Kontakt + „© Lerne mit Anna {{ year }}".
+
+### Politur (`src/js/brand.js`, `_brand.css`)
+- Sanftes Einblenden der Sektionen beim Scrollen (IntersectionObserver).
+- Hover-Effekte auf Karten & Buttons, Smooth-Scroll für Anker-Links.
+- Hero-Unterstreichung & eingekreiste Note als Inline-SVG mit
+  `stroke-dashoffset`-Animation (zeichnen sich selbst).
+- Mobile-first responsiv, Fokus-Stile und `prefers-reduced-motion` berücksichtigt.
+
+> Icons liegen zentral als HubL-Makro in
+> `src/templates/partials/brand-icons.html` (`brand_icon("name")`).
 
 ## 3. Theme lokal in der Vorschau ansehen
 
@@ -64,12 +81,10 @@ Vorschau lokal und aktualisiert sich bei jeder Dateiänderung.
    ```bash
    hs cms theme preview --src lernemitanna-theme/src --dest "Lerne mit Anna"
    ```
-   Die CLI lädt das Theme hoch, startet einen lokalen Server und öffnet eine URL
-   (z. B. `https://localhost:...`). Änderungen an Dateien werden automatisch
-   übernommen – Seite neu laden genügt.
-
+   Die CLI lädt das Theme hoch, startet einen lokalen Server und öffnet eine URL.
+   Dateiänderungen werden automatisch übernommen – Seite neu laden genügt.
 4. Zum Beenden im Terminal `Strg + C` drücken.
 
-> Hinweis: Ohne verbundenen Account lassen sich die Dateien zwar bearbeiten, eine
-> echte HubL-Vorschau ist aber nicht möglich, da der Verlauf, die Module und die
-> Navigation serverseitig gerendert werden.
+> Ohne verbundenen Account lassen sich die Dateien zwar bearbeiten, eine echte
+> HubL-Vorschau ist aber nicht möglich, da Module, Navigation und Animationen
+> serverseitig gerendert werden.

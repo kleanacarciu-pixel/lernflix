@@ -67,11 +67,10 @@
 
 /* 1d. Buttons */
 
-{# Türkis-Akzent-Verlauf von "Lerne mit Anna" – wird als background-image über die
-   Button-Basisfarbe gelegt. Beide Stopps hier zentral pflegbar. #}
-{% set accent_gradient_start = '#2BB3C0' %}
-{% set accent_gradient_end = '#3E7BB6' %}
-{% set accent_gradient = 'linear-gradient(135deg, ' ~ accent_gradient_start ~ ' 0%, ' ~ accent_gradient_end ~ ' 100%)' %}
+{# Türkis-Akzent von "Lerne mit Anna" – eine ruhige Volltonfarbe (kein Verlauf).
+   Wird zentral hier gepflegt und z. B. fuer Links, Icons und handgezeichnete
+   Annotationen verwendet. #}
+{% set accent_color = '#1D9E75' %}
 
 {% set button_font = theme.buttons.text.font %}
 {% set button_text_transform = theme.buttons.text.transform %}
@@ -277,14 +276,13 @@ button,
   {{ button_border }}
   {{ button_spacing }}
   {{ button_font.style }};
-  {# Basisfarbe als Fallback, darüber der Türkis-Verlauf #}
+  {# Primaerer Button: ruhiges Ink, kein Verlauf #}
   background-color: {{ button_bg_color }};
-  background-image: {{ accent_gradient }};
   border-radius: {{ button_corner_radius }};
   color: {{ button_font.color }};
   font-size: {{ button_font.size ~ button_font.size_unit }};
   text-transform: {{ button_text_transform }};
-  transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 button:hover,
@@ -297,12 +295,10 @@ button:focus,
 .hs-blog-post-listing__post-button:focus {
   {{ button_border_hover }};
   color: {{ button_color_hover }};
-  {# Verlauf beibehalten, beim Hover leicht abdunkeln und anheben #}
-  background-image: {{ accent_gradient }};
+  background-color: {{ button_background_hover }};
   border-radius: {{ button_corner_radius_hover }};
-  filter: brightness(0.92);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(43, 179, 192, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(20, 17, 15, 0.18);
 }
 
 button:active,
@@ -753,17 +749,15 @@ tfoot td {
 /* Social follow */
 
 .social-links__icon {
-  {# Türkis-Akzent statt des schwarzen Primärwerts #}
-  background-color: {{ accent_gradient_start }};
-  background-image: {{ accent_gradient }};
+  {# Türkis-Akzent (Vollton) #}
+  background-color: {{ accent_color }};
 }
 
 .social-links__icon:hover,
 .social-links__icon:focus {
-  background-color: {{ color_variant(accent_gradient_start, -40) }};
-  filter: brightness(0.92);
+  background-color: {{ color_variant(accent_color, -40) }};
 }
 
 .social-links__icon:active {
-  background-color: {{ color_variant(accent_gradient_start, 40) }};
+  background-color: {{ color_variant(accent_color, 40) }};
 }

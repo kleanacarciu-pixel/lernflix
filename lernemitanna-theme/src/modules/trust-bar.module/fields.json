@@ -1,0 +1,18 @@
+[
+  {
+    "label": "Kennzahl",
+    "name": "stat",
+    "type": "group",
+    "occurrence": { "default": 4, "min": 1, "max": 6, "sorting_label_field": "stat.value" },
+    "default": [
+      { "value": "5+", "label": "Jahre Erfahrung" },
+      { "value": "100 %", "label": "Einzelunterricht" },
+      { "value": "Online & vor Ort", "label": "Flexibel lernen" },
+      { "value": "Individuell", "label": "Lernplaene" }
+    ],
+    "children": [
+      { "label": "Wert", "name": "value", "type": "text", "default": "5+" },
+      { "label": "Beschriftung", "name": "label", "type": "text", "default": "Jahre Erfahrung" }
+    ]
+  }
+]

@@ -84,3 +84,41 @@
   height: auto;
   max-width: 100%;
 }
+
+/* Cards (card module)
+   Responsives Raster: 3 Spalten am Desktop, 1 Spalte mobil.
+   Karten erhalten standardmaessig eine weisse Flaeche mit abgerundeten Ecken
+   und dezentem Schatten – passend zum Look von "Lerne mit Anna". Eigene
+   Karten-Stile aus dem Editor (Hintergrund/Rahmen/Radius) ueberschreiben dies. */
+
+.cards {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 767px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cards__card {
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.06);
+  padding: 2rem;
+}
+
+.card__image {
+  margin-bottom: 1rem;
+  max-width: 100%;
+}
+
+.card__text > :first-child {
+  margin-top: 0;
+}
+
+.card__text > :last-child {
+  margin-bottom: 0;
+}
