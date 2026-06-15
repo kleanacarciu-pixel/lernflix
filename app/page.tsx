@@ -325,17 +325,6 @@ export default function Home() {
         {/* Karierte papier textur - sehr dezent */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
         <div style={{ maxWidth: '1320px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div style={{ marginBottom: mobil ? '36px' : '52px', maxWidth: '720px' }}>
-            <span style={{ display: 'inline-block', fontSize: '13px', color: F.coral, fontWeight: 700, marginBottom: '14px' }}>
-              13 Lernpakete · ab 0,99 €
-            </span>
-            <h2 style={{ fontFamily: SANS, fontSize: mobil ? '38px' : '56px', fontWeight: 800, color: F.ink, margin: '0 0 14px', letterSpacing: '-0.03em', lineHeight: 1.02 }}>
-              Lernmaterialien.
-            </h2>
-            <p style={{ fontSize: mobil ? '16px' : '18px', color: F.inkSoft, margin: 0, lineHeight: 1.55, fontWeight: 400 }}>
-              Lernpakete für Mathe und Physik. Mit Erklärungen, Skizzen und Übungen.
-            </p>
-          </div>
           <a href="/shop" className="feature" style={{ display: 'block', textDecoration: 'none', borderRadius: '32px', overflow: 'hidden', background: F.white, color: F.ink, boxShadow: '0 16px 50px rgba(15,23,42,0.08)', border: `1px solid ${F.border}`, padding: mobil ? '40px 28px' : '64px 72px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.2fr 1fr', gap: mobil ? '32px' : '60px', alignItems: 'center' }}>
               <div>
