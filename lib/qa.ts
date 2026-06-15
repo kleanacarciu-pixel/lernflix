@@ -64,8 +64,6 @@ function normalisiere(roh: unknown): QaErgebnis {
 export async function checkMathe(paket: Paket): Promise<QaErgebnis> {
   const messages: ChatMessage[] = [
     { role: "user", content: buildUserPrompt(paket) },
-    // Prefill fuer sauberes JSON.
-    { role: "assistant", content: "{" },
   ];
 
   try {
@@ -76,8 +74,7 @@ export async function checkMathe(paket: Paket): Promise<QaErgebnis> {
       temperature: 0, // deterministische, strenge Pruefung
     });
 
-    const json = antwort.trim().startsWith("{") ? antwort : `{${antwort}`;
-    const roh = parseJsonLoose(json);
+    const roh = parseJsonLoose(antwort);
     return normalisiere(roh);
   } catch (e) {
     return { ok: false, problems: [`QA-Aufruf fehlgeschlagen: ${String(e)}`] };

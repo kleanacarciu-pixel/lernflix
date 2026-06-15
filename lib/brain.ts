@@ -78,14 +78,12 @@ function normalisiere(roh: unknown, thema: string): Paket {
 
 /**
  * Erzeugt ein Short-Paket fuer das gegebene Thema/Klassenstufe.
- * Nutzt die Prefill-Technik: die Assistant-Antwort beginnt mit "{",
- * damit das Modell sofort sauberes JSON liefert.
+ * Das Modell wird per Prompt strikt auf reines JSON festgelegt; das Parsing
+ * ist robust (Markdown-Fences/Prosa drumherum werden toleriert).
  */
 export async function generatePaket(thema: string, klassenstufe: string): Promise<Paket> {
   const messages: ChatMessage[] = [
     { role: "user", content: buildUserPrompt(thema, klassenstufe) },
-    // Prefill: zwingt das Modell, die Antwort als JSON-Objekt fortzusetzen.
-    { role: "assistant", content: "{" },
   ];
 
   const antwort = await callAnthropic({
@@ -95,8 +93,6 @@ export async function generatePaket(thema: string, klassenstufe: string): Promis
     temperature: 0.7,
   });
 
-  // Wegen Prefill fehlt die oeffnende Klammer in der Antwort.
-  const json = antwort.trim().startsWith("{") ? antwort : `{${antwort}`;
-  const roh = parseJsonLoose(json);
+  const roh = parseJsonLoose(antwort);
   return normalisiere(roh, thema);
 }
