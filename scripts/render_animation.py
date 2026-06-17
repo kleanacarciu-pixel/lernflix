@@ -296,6 +296,11 @@ def main():
         if not mp4:
             raise RuntimeError(f"Render nach {MAX_REPAIRS} Versuchen fehlgeschlagen:\n{(last_error or '')[-800:]}")
 
+        # Schutz: wenn ElevenLabs gewollt war, aber auf Roboter-gTTS ausgewichen
+        # wurde, das Ergebnis NICHT hochladen (lieber failed als Roboter-Stimme).
+        if ELEVENLABS_API_KEY and "GTTSService" in code:
+            raise RuntimeError("ElevenLabs liess sich nicht laden (Fallback auf gTTS) — Video verworfen.")
+
         dest = f"short-{row_id}.mp4"
         url = upload_to_storage(mp4, dest)
         update_row(row_id, {"animation_url": url, "animation_status": "ready", "manim_code": code})
