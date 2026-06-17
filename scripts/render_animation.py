@@ -35,6 +35,13 @@ SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "").strip()
 ROW_ID = os.environ.get("ROW_ID", "").strip()
 
+# Die (alte) elevenlabs-Lib liest den Key aus ELEVEN_API_KEY. Sonst fragt
+# manim-voiceover interaktiv nach -> EOFError in CI -> Fallback auf Roboter-gTTS.
+# Deshalb beide Varianten setzen, damit echt ElevenLabs benutzt wird.
+if ELEVENLABS_API_KEY:
+    os.environ["ELEVEN_API_KEY"] = ELEVENLABS_API_KEY
+    os.environ["ELEVENLABS_API_KEY"] = ELEVENLABS_API_KEY
+
 MODEL = "claude-sonnet-4-6"
 BUCKET = "shorts"            # oeffentlicher Supabase-Storage-Bucket
 MAX_REPAIRS = 4             # Versuche, von Claude generierten Code zu reparieren
@@ -131,7 +138,7 @@ def speech_service_snippet():
         imp = "from manim_voiceover.services.elevenlabs import ElevenLabsService"
         setup = (
             f'self.set_speech_service(ElevenLabsService(voice_id="{ELEVEN_VOICE_ID}", '
-            'voice_settings={"stability": 0.45, "similarity_boost": 0.75, "speed": 1.08}))'
+            'voice_settings={"stability": 0.4, "similarity_boost": 0.8}))'
         )
     else:
         imp = "from manim_voiceover.services.gtts import GTTSService"
@@ -139,29 +146,34 @@ def speech_service_snippet():
     return imp, setup
 
 
-SYSTEM_PROMPT = """Du bist Experte fuer Manim Community Edition (v0.18+) und manim-voiceover.
-Du schreibst EIN vollstaendiges, lauffaehiges Python-Skript fuer ein deutsches Mathe-Erklaer-Short
-(Hochformat 9:16, ca. 30-45 Sekunden) im Stil von 3Blue1Brown — aber kurz, modern und mit
-Persoenlichkeit der Marke "Anna": witzig, klar, selbstbewusst, einzigartig. Kein Kinderkram.
+SYSTEM_PROMPT = """Du bist Profi fuer virale Mathe-Shorts UND Experte fuer Manim Community Edition
+(v0.18+) mit manim-voiceover. Du schreibst EIN lauffaehiges Python-Skript fuer ein deutsches
+9:16-Short (ca. 25-35 Sekunden) der Marke "Anna".
 
-HARTE REGELN:
-- Nur Manim-Bordmittel. KEINE externen Dateien, Bilder, Assets, Fonts oder Internet (ausser TTS).
+STIL — das Wichtigste (das letzte Video war zu kompliziert, langweilig und voll. Mach das GEGENTEIL):
+- SIMPEL: EINE einzige Kernidee. Erklaere sie so, dass es sofort "klick" macht. Keine
+  Herleitungen, keine Fachsprache, kein ueberladenes Bild.
+- GROSS & LUFTIG: meist nur EIN grosses Element gleichzeitig auf dem Schirm, viel Leerraum,
+  zentriert. Schrift riesig (font_size 60-110). Nie mehr als 2-3 Dinge gleichzeitig sichtbar.
+- SCHNELL & ENERGISCH: kurze, knackige Saetze. Tempo wie ein guter TikTok — keine langen Pausen,
+  kein monotones Vorlesen.
+- WITZIG & MENSCHLICH: Anna ist locker, schlagfertig, ein kleiner Spruch oder Aha-Vergleich gehoert
+  rein (z.B. ein Alltags-Bild). Kein Lehrer-Ton, kein Kinderkram.
+- HOOK in den ersten ~2 Sekunden, der neugierig macht ("Fast jeder macht das falsch ..." o.ae.).
+- Ende: ein befriedigender Aha-Moment + kurzer CTA "lernflix.lernemitanna.de".
+
+TECHNIK (hart einhalten, sonst crasht der Render):
+- Nur Manim-Bordmittel. KEINE externen Dateien/Bilder/Fonts/Internet (ausser TTS).
 - Genau eine Szene: `class Short(VoiceoverScene):` mit `def construct(self):`.
-- Erste Zeile in construct(): die vorgegebene set_speech_service(...)-Zeile (unveraendert uebernehmen).
-- Hintergrund hell setzen: `self.camera.background_color = "#EAF3FF"`. Textfarbe dunkel "#15233A",
-  Akzentfarbe "#C77B96". Sorge IMMER fuer hohen Kontrast (kein heller Text auf hellem Grund).
-- VOICE-VISUAL-SYNC ist Pflicht: Jede gesprochene Aussage steht in einem
-  `with self.voiceover(text="...") as tracker:`-Block, und die Animation in DIESEM Block zeigt
-  GENAU das, was gerade gesagt wird. Nutze `run_time=tracker.duration` (oder Teile davon) fuer die
-  Hauptanimation, damit Stimme und Bild zusammen enden.
-- 4 bis 7 voiceover-Bloecke. Reihenfolge: kurzer Hook -> Schritt-fuer-Schritt-Erklaerung
-  (Formeln transformieren, wichtige Teile farbig hervorheben, Geometrie/Flaechen zeigen wo sinnvoll)
-  -> knackiges Ende mit CTA "lernflix.lernemitanna.de".
-- Mathe MUSS exakt korrekt sein. Formeln mit MathTex(...), deutscher Fliesstext mit Text(...).
-- Hochformat: das Bild ist schmal und hoch. Halte ALLES mit Rand im sichtbaren Bereich, nichts darf
-  abgeschnitten werden. Lieber wenige, grosse, gut lesbare Elemente als viele kleine. Raeume alte
-  Objekte weg (FadeOut/Transform), bevor das Bild zu voll wird.
-- Echte deutsche Umlaute (ae oe ue ss NICHT verwenden).
+- ERSTE Zeile in construct(): die vorgegebene set_speech_service(...)-Zeile EXAKT uebernehmen.
+- `self.camera.background_color = "#EAF3FF"`; Text dunkel "#15233A"; Akzent "#C77B96" zum Hervorheben.
+- VOICE-VISUAL-SYNC: Jede Aussage in einem `with self.voiceover(text="...") as tracker:`-Block, und die
+  Animation darin zeigt GENAU das Gesagte. `run_time=tracker.duration` fuer die Hauptanimation.
+- NUR 3 bis 5 voiceover-Bloecke. Kurze Saetze.
+- Mathe exakt korrekt. Formeln mit MathTex(...), deutscher Text mit Text(...). Echte Umlaute (ae/oe/ue/ss
+  NICHT verwenden).
+- Hochformat schmal+hoch: ALLES mit Rand im Bild halten (nutze .scale_to_fit_width(6.5) o.ae. fuer breite
+  Objekte), nichts abschneiden. Vor jedem neuen Schritt Altes mit FadeOut entfernen, damit es nie voll wird.
 - Gib NUR den vollstaendigen Python-Code aus, in EINEM ```python ... ``` Block. Keine Erklaerung."""
 
 
@@ -203,6 +215,8 @@ def repair_code(code, error_log):
         Das folgende Manim-Skript ist beim Rendern fehlgeschlagen. Behebe den Fehler und gib den
         KORRIGIERTEN, vollstaendigen Code zurueck (nur ```python ... ```). Behalte Stil, Marke und den
         Voice-Visual-Sync. Achte auf gueltige Manim-v0.18-API und dass nichts aus dem Bild laeuft.
+        WICHTIG: Aendere NIEMALS die set_speech_service(...)-Zeile (kein Wechsel zu GTTS oder einer
+        anderen Stimme) — die Stimme MUSS ElevenLabs bleiben.
 
         FEHLER (gekuerzt):
         {error_log[-3000:]}
