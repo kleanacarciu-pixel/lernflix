@@ -46,8 +46,68 @@ MODEL = "claude-sonnet-4-6"
 BUCKET = "shorts"            # oeffentlicher Supabase-Storage-Bucket
 MAX_REPAIRS = 4             # Versuche, von Claude generierten Code zu reparieren
 
-# ElevenLabs "Emilia" — deutsche weibliche Stimme (via manim-voiceover).
+# ElevenLabs "Emilia" — deutsche weibliche Stimme.
 ELEVEN_VOICE_ID = "Dt2jDzhoZC0pZw5bmy2S"
+
+# Eigener manim-voiceover SpeechService, der ElevenLabs DIREKT per REST anspricht.
+# Umgeht die kaputte manim_voiceover.services.elevenlabs (voices()/Init-Fehler).
+# Wird zur Laufzeit als eleven_rest.py neben scene.py geschrieben.
+ELEVEN_REST_PY = '''\
+"""Direkter ElevenLabs-SpeechService fuer manim-voiceover (REST, ohne elevenlabs-Lib)."""
+import hashlib
+import json
+import os
+from pathlib import Path
+
+import requests
+from manim_voiceover.services.base import SpeechService
+
+
+class ElevenRestService(SpeechService):
+    def __init__(self, voice_id, model_id="eleven_multilingual_v2",
+                 stability=0.4, similarity_boost=0.8, **kwargs):
+        self.voice_id = voice_id
+        self.model_id = model_id
+        self.stability = stability
+        self.similarity_boost = similarity_boost
+        SpeechService.__init__(self, **kwargs)
+
+    def generate_from_text(self, text, cache_dir=None, path=None):
+        if cache_dir is None:
+            cache_dir = self.cache_dir
+        if path is None:
+            h = hashlib.sha256(
+                json.dumps({"t": text, "v": self.voice_id, "m": self.model_id}).encode("utf-8")
+            ).hexdigest()[:20]
+            audio_path = "eleven-" + h + ".mp3"
+        else:
+            audio_path = path
+
+        target = Path(cache_dir) / audio_path
+        if not target.exists():
+            api_key = os.environ.get("ELEVENLABS_API_KEY") or os.environ.get("ELEVEN_API_KEY")
+            if not api_key:
+                raise RuntimeError("ELEVENLABS_API_KEY fehlt fuer ElevenRestService.")
+            resp = requests.post(
+                "https://api.elevenlabs.io/v1/text-to-speech/" + self.voice_id,
+                headers={"xi-api-key": api_key, "accept": "audio/mpeg",
+                         "content-type": "application/json"},
+                json={"text": text, "model_id": self.model_id,
+                      "voice_settings": {"stability": self.stability,
+                                         "similarity_boost": self.similarity_boost}},
+                timeout=180,
+            )
+            if resp.status_code != 200:
+                raise RuntimeError("ElevenLabs TTS " + str(resp.status_code) + ": " + resp.text[:200])
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "wb") as f:
+                f.write(resp.content)
+
+        return {"input_text": text,
+                "input_data": {"input_text": text, "service": "eleven_rest",
+                               "voice_id": self.voice_id, "model_id": self.model_id},
+                "original_audio": audio_path}
+'''
 
 
 # ----------------------------------------------------------------- Supabase REST
@@ -135,11 +195,8 @@ def extract_code(text):
 def speech_service_snippet():
     """Import + Setup-Zeile fuer den TTS-Dienst (ElevenLabs, sonst gTTS)."""
     if ELEVENLABS_API_KEY:
-        imp = "from manim_voiceover.services.elevenlabs import ElevenLabsService"
-        setup = (
-            f'self.set_speech_service(ElevenLabsService(voice_id="{ELEVEN_VOICE_ID}", '
-            'voice_settings={"stability": 0.4, "similarity_boost": 0.8}))'
-        )
+        imp = "from eleven_rest import ElevenRestService"
+        setup = f'self.set_speech_service(ElevenRestService(voice_id="{ELEVEN_VOICE_ID}"))'
     else:
         imp = "from manim_voiceover.services.gtts import GTTSService"
         setup = 'self.set_speech_service(GTTSService(lang="de"))'
@@ -273,6 +330,10 @@ def main():
 
     print(f"== Rendere content_log #{row_id}: {paket.get('thema','?')}")
     update_row(row_id, {"animation_status": "rendering"})
+
+    # Eigenen ElevenLabs-REST-Dienst neben scene.py bereitstellen (importierbar).
+    with open("eleven_rest.py", "w", encoding="utf-8") as f:
+        f.write(ELEVEN_REST_PY)
 
     try:
         code = generate_code(paket)
