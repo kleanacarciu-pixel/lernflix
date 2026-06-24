@@ -1,0 +1,25 @@
+{# "Ideal fuer dich, wenn …" – saubere, einmalige Liste mit kleinen Icons #}
+{% from "../../templates/partials/brand-icons.html" import brand_icon %}
+
+<section class="section section--beige ideal reveal">
+  <div class="content-wrapper">
+
+    <div class="section__head">
+      {% if module.eyebrow %}<p class="eyebrow">{{ module.eyebrow }}</p>{% endif %}
+      {% if module.heading %}<h2 class="section__title">{{ module.heading }}</h2>{% endif %}
+    </div>
+
+    <ul class="ideal__grid">
+      {% for item in module.item %}
+        <li class="ideal__item">
+          <span class="ideal__icon">{{ brand_icon(item.icon) }}</span>
+          <div>
+            <p class="ideal__title">{{ item.title }}</p>
+            <p class="ideal__text">{{ item.text }}</p>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+  </div>
+</section>

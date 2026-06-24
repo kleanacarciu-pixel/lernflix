@@ -1,0 +1,53 @@
+<!--
+  templateType: global_partial
+  label: Footer
+-->
+
+{#
+  Footer von "Lerne mit Anna"
+  ---------------------------
+  Enthaelt die rechtlich noetigen Links (Datenschutzerklaerung, Impressum, AGB,
+  Kontakt) sowie den Copyright-Hinweis.
+
+  Alles liegt in einer dnd_area und ist damit im HubSpot-Editor frei bearbeitbar:
+  Texte, Links und Reihenfolge koennen ohne Code-Aenderung angepasst werden.
+  Die Hrefs sind Platzhalter (#) – im Editor auf den jeweiligen Link gehen und
+  die echte HubSpot-Seite auswaehlen.
+#}
+
+<footer class="footer">
+  {% dnd_area "footer"
+    label="Footer",
+    class="footer__container content-wrapper"
+  %}
+
+    {% dnd_section %}
+      {% dnd_column %}
+
+        {# Zeile 1: Rechtliche Links #}
+        {% dnd_row %}
+          {% dnd_module
+            path="@hubspot/rich_text",
+            html="<nav aria-label='Footer-Navigation' style='text-align: center;'><a href='#'>Datenschutzerklaerung</a> &nbsp;&middot;&nbsp; <a href='#'>Impressum</a> &nbsp;&middot;&nbsp; <a href='#'>AGB</a> &nbsp;&middot;&nbsp; <a href='#'>Kontakt</a></nav>"
+          %}
+          {% end_dnd_module %}
+        {% end_dnd_row %}
+
+        {# Zeile 2: Copyright #}
+        {% dnd_row
+          margin={
+            "top": 12
+          }
+        %}
+          {% dnd_module
+            path="@hubspot/rich_text",
+            html="<div style='text-align: center; font-size: 0.8rem;'><span>&copy; Lerne mit Anna {{ year }}</span></div>"
+          %}
+          {% end_dnd_module %}
+        {% end_dnd_row %}
+
+      {% end_dnd_column %}
+    {% end_dnd_section %}
+
+  {% end_dnd_area %}
+</footer>

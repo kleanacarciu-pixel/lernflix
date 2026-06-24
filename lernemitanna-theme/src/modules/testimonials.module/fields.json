@@ -1,0 +1,31 @@
+[
+  {
+    "label": "Eyebrow",
+    "name": "eyebrow",
+    "type": "text",
+    "default": "Referenzen"
+  },
+  {
+    "label": "Ueberschrift",
+    "name": "heading",
+    "type": "text",
+    "default": "Das sagen Schuelerinnen, Schueler & Eltern"
+  },
+  {
+    "label": "Stimme",
+    "name": "quote_item",
+    "type": "group",
+    "occurrence": { "default": 3, "min": 1, "max": 6, "sorting_label_field": "quote_item.name" },
+    "default": [
+      { "quote": "Endlich verstehe ich Mathe! Anna erklaert so geduldig, dass ich mich viel sicherer fuehle.", "name": "Lena", "role": "Schuelerin, 10. Klasse", "rating": 5 },
+      { "quote": "Von 4 auf 2 in Physik – und mein Sohn lernt jetzt sogar gerne. Klare Empfehlung.", "name": "Familie Berger", "role": "Eltern", "rating": 5 },
+      { "quote": "Die Abi-Vorbereitung war goldwert. Strukturiert, ruhig und genau auf mich abgestimmt.", "name": "Jonas", "role": "Abiturient", "rating": 5 }
+    ],
+    "children": [
+      { "label": "Zitat", "name": "quote", "type": "text", "default": "Zitat hier eintragen." },
+      { "label": "Name", "name": "name", "type": "text", "default": "Name" },
+      { "label": "Rolle", "name": "role", "type": "text", "default": "Schuelerin" },
+      { "label": "Sterne", "name": "rating", "type": "number", "min": 1, "max": 5, "step": 1, "default": 5 }
+    ]
+  }
+]

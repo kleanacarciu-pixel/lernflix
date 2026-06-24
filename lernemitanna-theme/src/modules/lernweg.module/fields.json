@@ -1,0 +1,61 @@
+[
+  {
+    "label": "Eyebrow",
+    "name": "eyebrow",
+    "type": "text",
+    "default": "Dein Weg"
+  },
+  {
+    "label": "Ueberschrift",
+    "name": "heading",
+    "type": "text",
+    "default": "Waehle deinen Lernweg"
+  },
+  {
+    "label": "Einleitung",
+    "name": "lead",
+    "type": "text",
+    "default": "Ob regelmaessige Nachhilfe, gezielte Kurse oder ein erstes Kennenlernen – such dir aus, was zu dir passt."
+  },
+  {
+    "label": "Karte",
+    "name": "card",
+    "type": "group",
+    "occurrence": { "default": 4, "min": 1, "max": 6, "sorting_label_field": "card.title" },
+    "default": [
+      { "icon": "teacher", "title": "Nachhilfe", "text": "Regelmaessiger Einzelunterricht in Mathe & Physik – ganz in deinem Tempo.", "link_text": "Mehr erfahren", "link": { "url": { "href": "/leistungen", "type": "EXTERNAL" } } },
+      { "icon": "laptop", "title": "Kurse", "text": "Kompakte Abi- & Pruefungs-Kurse zur gezielten Vorbereitung.", "link_text": "Kurse ansehen", "link": { "url": { "href": "/kurse", "type": "EXTERNAL" } } },
+      { "icon": "blog", "title": "Blog", "text": "Tipps und Lernstrategien fuer Schuelerinnen, Schueler und Eltern.", "link_text": "Zum Blog", "link": { "url": { "href": "/blog", "type": "EXTERNAL" } } },
+      { "icon": "person", "title": "Ueber mich", "text": "Wer hinter \"Lerne mit Anna\" steckt und wie ich unterrichte.", "link_text": "Anna kennenlernen", "link": { "url": { "href": "/ueber-mich", "type": "EXTERNAL" } } }
+    ],
+    "children": [
+      {
+        "label": "Icon",
+        "name": "icon",
+        "type": "choice",
+        "display": "select",
+        "default": "teacher",
+        "choices": [
+          ["teacher", "Lehrkraft / Nachhilfe"],
+          ["laptop", "Laptop / Kurse"],
+          ["blog", "Dokument / Blog"],
+          ["person", "Person / Ueber mich"],
+          ["books", "Buecher"],
+          ["formula", "Formel"],
+          ["handshake", "Handschlag"],
+          ["house", "Haus"],
+          ["clipboard", "Lernplan"]
+        ]
+      },
+      { "label": "Titel", "name": "title", "type": "text", "default": "Nachhilfe" },
+      { "label": "Kurztext", "name": "text", "type": "text", "default": "Kurze Beschreibung." },
+      { "label": "Link-Text", "name": "link_text", "type": "text", "default": "Mehr erfahren" },
+      {
+        "label": "Link",
+        "name": "link",
+        "type": "link",
+        "default": { "url": { "href": "#", "type": "EXTERNAL" }, "open_in_new_tab": false, "no_follow": false }
+      }
+    ]
+  }
+]
