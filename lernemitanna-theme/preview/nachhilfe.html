@@ -24,6 +24,7 @@ p{margin:0}
 .section__head{text-align:center;max-width:720px;margin:0 auto clamp(32px,5vw,52px)}
 .eyebrow{font-family:'Caveat',cursive;font-size:1.7rem;color:var(--teal)}
 .section__title{font-size:clamp(1.9rem,4vw,2.7rem);font-weight:700;margin-top:2px}
+svg{stroke-width:2}
 
 /* Buttons */
 .btn{display:inline-block;background:var(--grad);color:#fff;text-decoration:none;font-weight:600;
@@ -37,7 +38,7 @@ p{margin:0}
 .logo{display:flex;align-items:center;text-decoration:none}.logo img{height:56px;display:block}
 .nav{display:flex;align-items:center;gap:24px;margin-left:8px}
 .nav>a,.nav__item>a{text-decoration:none;color:var(--ink);font-weight:500;cursor:pointer}
-.nav>a:hover,.nav__item>a:hover,.nav>a.active{color:var(--teal)}
+.nav>a:hover,.nav__item>a:hover,.nav>a.active,.nav__item>a.active{color:var(--teal)}
 .nav__item{position:relative}.nav__item>a::after{content:" ▾";font-size:.7em;color:var(--muted)}
 .sub{position:absolute;top:100%;left:-14px;min-width:210px;background:#fff;border:1px solid var(--hairline);
   border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.1);padding:8px;display:none}
@@ -59,42 +60,44 @@ p{margin:0}
 @media(max-width:860px){.hero{background-position:80% center}.hero__scrim{background:linear-gradient(90deg,rgba(12,14,18,.9) 0%,rgba(12,14,18,.6) 60%,rgba(12,14,18,.15) 100%)}.hero__text{max-width:80%}}
 
 /* Benefits */
-.benefits{background:#fff}
 .benefits__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 @media(max-width:820px){.benefits__grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.benefits__grid{grid-template-columns:1fr}}
 .benefit{border:1px solid var(--hairline);border-radius:18px;padding:26px;transition:transform .25s,box-shadow .25s}
 .benefit:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(26,26,26,.08)}
-.benefit__icon{width:60px;height:60px;border-radius:14px;background:var(--soft);color:var(--teal);display:grid;place-items:center;margin-bottom:16px}
-.benefit__icon svg{width:36px;height:36px}
+.benefit__icon{width:56px;height:56px;border-radius:14px;background:var(--soft);color:var(--teal);display:grid;place-items:center;margin-bottom:16px}
+.benefit__icon svg{width:30px;height:30px}
 .benefit h3{font-size:1.25rem;margin-bottom:6px}
 .benefit p{color:var(--muted)}
 
 /* Ideal */
 .ideal{background:var(--mint)}
-.ideal__inner{display:grid;grid-template-columns:1.2fr .8fr;gap:clamp(32px,5vw,56px);align-items:center}
-@media(max-width:820px){.ideal__inner{grid-template-columns:1fr}.ideal__art{order:-1;max-width:320px;margin:0 auto}}
+.ideal__inner{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(32px,5vw,56px);align-items:center}
+@media(max-width:820px){.ideal__inner{grid-template-columns:1fr}.ideal__art{order:-1;max-width:360px;margin:0 auto}}
 .ideal__title{font-size:clamp(1.9rem,4vw,2.6rem);font-weight:700;margin-bottom:24px}
 .ideal__list{list-style:none;margin:0;padding:0;display:grid;gap:16px}
 .ideal__item{display:flex;gap:14px;align-items:flex-start}
 .ideal__check{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;margin-top:2px}
-.ideal__check svg{width:16px;height:16px}
+.ideal__check svg{width:15px;height:15px;stroke-width:3}
 .ideal__item b{font-weight:600}.ideal__item span{color:var(--muted)}
-.ideal__art svg{width:100%;height:auto;color:var(--teal)}
+.ideal__card{background:#fff;border-radius:22px;box-shadow:0 20px 50px rgba(43,179,192,.16);padding:38px 30px;text-align:center}
+.ideal__card svg{width:88px;height:88px;color:var(--teal)}
+.ideal__card p{font-family:'Caveat',cursive;font-size:1.7rem;color:var(--ink);margin-top:12px}
 
 /* Steps */
-.steps__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative;counter-reset:s}
+.steps__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;position:relative}
 @media(max-width:820px){.steps__grid{grid-template-columns:1fr;gap:26px}}
-@media(min-width:821px){.steps__grid::before{content:"";position:absolute;top:30px;left:12.5%;right:12.5%;height:2px;background:var(--hairline)}}
+@media(min-width:821px){.steps__grid::before{content:"";position:absolute;top:34px;left:12.5%;right:12.5%;height:2px;background:var(--hairline)}}
 .step{text-align:center;position:relative}
-.step__num{position:relative;z-index:1;width:60px;height:60px;border-radius:50%;background:#fff;border:2px solid var(--teal);color:var(--teal);display:grid;place-items:center;margin:0 auto 14px}
+.step__num{position:relative;z-index:1;width:68px;height:68px;border-radius:50%;background:#fff;border:2px solid var(--teal);color:var(--teal);display:grid;place-items:center;margin:0 auto 16px}
 .step__num svg{width:30px;height:30px}
+.step__badge{position:absolute;top:-6px;right:calc(50% - 40px);width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;font-size:.8rem;font-weight:700;display:grid;place-items:center;z-index:2}
 .step h3{font-size:1.15rem;margin-bottom:4px}.step p{color:var(--muted);max-width:24ch;margin:0 auto}
 
 /* CTA highlight */
 .cta{background:var(--grad);color:#fff;text-align:center}
 .cta h2{color:#fff;font-size:clamp(2rem,4.4vw,3rem);margin-bottom:10px}
-.cta p{font-size:1.15rem;color:rgba(255,255,255,.9);margin-bottom:26px}
+.cta p{font-size:1.15rem;color:rgba(255,255,255,.92);margin-bottom:26px}
 .cta .btn{background:#fff;color:var(--teal)}
 .cta .btn:hover{background:var(--cream)}
 
@@ -150,13 +153,13 @@ p{margin:0}
       <a href="#" title="führt zu lernflix">Shop ↗</a>
       <a href="#">Blog</a>
       <div class="nav__item"><a href="#">Mehr</a>
-        <div class="sub"><a href="#">Über LMA</a><a href="#">Referenzen</a><a href="#">Kontakt</a></div>
+        <div class="sub"><a href="#">Über LMA</a><a href="#">Referenzen</a><a href="#probestunde">Kontakt</a></div>
       </div>
     </nav>
     <div class="header__contact" aria-label="Kontakt">
-      <a href="mailto:lernemitanna@outlook.com" aria-label="E-Mail"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></a>
-      <a href="https://www.instagram.com/lernemitanna/" aria-label="Instagram"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
-      <a href="tel:+4917624700519" aria-label="Telefon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h4l2 5-3 2a14 14 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></a>
+      <a href="mailto:lernemitanna@outlook.com" aria-label="E-Mail"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></a>
+      <a href="https://www.instagram.com/lernemitanna/" aria-label="Instagram"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+      <a href="tel:+4917624700519" aria-label="Telefon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.83 19a15.9 15.9 0 0 1-6.9-6.9C6.63 11.5 6.3 8.5 8 7l1.5 1.5-1 3 2.5 3.5 3-1 1.5 1.5c-1.5 1.7-2.7 2.3-3.17 3.5z"/></svg></a>
     </div>
   </div>
 </header>
@@ -176,33 +179,30 @@ p{margin:0}
 <!-- WARUM NACHHILFE BEI ANNA -->
 <section class="section benefits">
   <div class="wrap">
-    <div class="section__head">
-      <p class="eyebrow">Deine Vorteile</p>
-      <h2 class="section__title">Warum Nachhilfe bei Anna?</h2>
-    </div>
+    <div class="section__head"><p class="eyebrow">Deine Vorteile</p><h2 class="section__title">Warum Nachhilfe bei Anna?</h2></div>
     <div class="benefits__grid">
       <div class="benefit">
-        <span class="benefit__icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17" r="5"/><path d="M8 34c0-6 3.5-9 8-9s8 3 8 9"/><path d="M5 40h23M9 40v8M24 40v8"/><circle cx="46" cy="14" r="4.5"/><path d="M46 18.5v14M46 22l-7 4M46 32.5l-4 12M46 32.5l4 12"/></svg></span>
+        <span class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
         <h3>100 % Einzelunterricht</h3>
         <p>Volle Aufmerksamkeit. Jedes Thema wird erklärt, bis es sitzt.</p>
       </div>
       <div class="benefit">
-        <span class="benefit__icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 52h26L8 26z"/><path d="M13 47h9"/><circle cx="45" cy="15" r="2.2"/><path d="M45 17l-8 30M45 17l8 30M35 47l3 4M55 47l-3 4"/><path d="M40 31l3 3 6-7"/></svg></span>
+        <span class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg></span>
         <h3>Mathematik &amp; Physik als Schwerpunkt</h3>
         <p>Spezialisierung auf zwei Kernfächer mit klarer Struktur.</p>
       </div>
       <div class="benefit">
-        <span class="benefit__icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24l11-5 10 7"/><path d="M60 24l-11-5-9 6"/><path d="M25 26l7 6 5-4 6 4"/><path d="M32 32l-6 6M26 28l-6 6"/></svg></span>
+        <span class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg></span>
         <h3>Kostenlose Probestunde</h3>
         <p>Unverbindlich kennenlernen und direkt ausprobieren.</p>
       </div>
       <div class="benefit">
-        <span class="benefit__icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="18" width="26" height="16" rx="1.5"/><path d="M2 40h34l-3-4H5z"/><path d="M38 30l11-9 11 9"/><path d="M41 28v12h16V28"/><rect x="46" y="32" width="6" height="8"/></svg></span>
+        <span class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5a2 2 0 0 1 2 2v8.5a2 2 0 0 0 .2.9l1.1 2.1a1 1 0 0 1-.9 1.5H3.6a1 1 0 0 1-.9-1.5l1.1-2.1a2 2 0 0 0 .2-.9V7a2 2 0 0 1 2-2z"/><path d="M20 16H4"/></svg></span>
         <h3>Flexibel online &amp; vor Ort</h3>
         <p>Lernen, wie es in deinen Alltag passt. Digital oder in Präsenz.</p>
       </div>
       <div class="benefit">
-        <span class="benefit__icon"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="10" width="32" height="44" rx="3"/><rect x="24" y="6" width="16" height="8" rx="2"/><path d="M23 25l4 4 6-7M38 27h8M23 39l4 4 6-7M38 41h8"/></svg></span>
+        <span class="benefit__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
         <h3>Individuelle Lernpläne</h3>
         <p>Passend zu deinem Ziel, Tempo und Lernstil.</p>
       </div>
@@ -221,16 +221,19 @@ p{margin:0}
     <div>
       <h2 class="ideal__title">Ideal für dich, wenn …</h2>
       <ul class="ideal__list">
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>Mathe &amp; Physik schwierig sind</b> – wir gehen es Schritt für Schritt an.</span></li>
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>du Lücken schließen willst</b> – altes Wissen auffrischen.</span></li>
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>du gezielte Unterstützung suchst</b> – fokussiert lernen statt überfordert sein.</span></li>
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>du Struktur brauchst</b> – mit klarem Plan zum Ziel.</span></li>
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>du flexibel lernen möchtest</b> – online oder vor Ort.</span></li>
-        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span><span><b>du dich aufs Abi vorbereitest</b> – sicher in Mathe &amp; Physik starten.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>Mathe &amp; Physik schwierig sind</b> – wir gehen es Schritt für Schritt an.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>du Lücken schließen willst</b> – altes Wissen auffrischen.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>du gezielte Unterstützung suchst</b> – fokussiert lernen statt überfordert sein.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>du Struktur brauchst</b> – mit klarem Plan zum Ziel.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>du flexibel lernen möchtest</b> – online oder vor Ort.</span></li>
+        <li class="ideal__item"><span class="ideal__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><b>du dich aufs Abi vorbereitest</b> – sicher in Mathe &amp; Physik starten.</span></li>
       </ul>
     </div>
     <div class="ideal__art">
-      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17" r="6"/><path d="M6 38c0-7 4-11 10-11s10 4 10 11"/><path d="M3 44h26M8 44v9M24 44v9"/><circle cx="47" cy="13" r="5.5"/><path d="M47 18.5v16M47 22l-8 5M47 34.5l-5 14M47 34.5l5 14"/><rect x="36" y="20" width="12" height="9" rx="1" transform="rotate(-8 42 24)"/></svg>
+      <div class="ideal__card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+        <p>Du schaffst das!</p>
+      </div>
     </div>
   </div>
 </section>
@@ -240,10 +243,10 @@ p{margin:0}
   <div class="wrap">
     <div class="section__head"><p class="eyebrow">Der Ablauf</p><h2 class="section__title">So starten wir gemeinsam</h2></div>
     <div class="steps__grid">
-      <div class="step"><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg></span><h3>Kontaktaufnahme</h3><p>Schreib mir per Formular, E-Mail oder WhatsApp.</p></div>
-      <div class="step"><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10l5-2 4 3M22 10l-5-2-3 2M10 11l3 2 2-1 2 2"/></svg></span><h3>Kostenlose Probestunde</h3><p>Wir lernen uns kennen und besprechen Ziele.</p></div>
-      <div class="step"><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><path d="M8.5 10l1.5 1.5 2.5-3M8.5 15l1.5 1.5 2.5-3"/></svg></span><h3>Individueller Lernplan</h3><p>Auf deine Bedürfnisse abgestimmt.</p></div>
-      <div class="step"><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6C9 4 5 4.5 3 5.5v12C5 16.5 9 16 12 18c3-2 7-1.5 9-.5v-12C19 4.5 15 4 12 6z"/><path d="M12 6v12"/></svg></span><h3>Regelmäßiger Unterricht</h3><p>Einzelstunden, flexibel, strukturiert und motivierend.</p></div>
+      <div class="step"><span class="step__badge">1</span><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span><h3>Kontaktaufnahme</h3><p>Schreib mir per Formular, E-Mail oder WhatsApp.</p></div>
+      <div class="step"><span class="step__badge">2</span><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></span><h3>Kostenlose Probestunde</h3><p>Wir lernen uns kennen und besprechen Ziele.</p></div>
+      <div class="step"><span class="step__badge">3</span><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span><h3>Individueller Lernplan</h3><p>Auf deine Bedürfnisse abgestimmt.</p></div>
+      <div class="step"><span class="step__badge">4</span><span class="step__num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span><h3>Regelmäßiger Unterricht</h3><p>Einzelstunden, flexibel, strukturiert und motivierend.</p></div>
     </div>
   </div>
 </section>
@@ -277,11 +280,11 @@ p{margin:0}
     <div>
       <p class="trial__eyebrow">Kostenlose Probestunde</p>
       <h2 class="trial__title">Lernen wir uns kennen</h2>
-      <p class="trial__lead">Schreib mir uber das Formular, per E-Mail oder ruf mich an. Ich melde mich zeitnah bei dir. Die erste Stunde ist kostenlos und unverbindlich.</p>
+      <p class="trial__lead">Schreib mir über das Formular, per E-Mail oder ruf mich an. Ich melde mich zeitnah bei dir. Die erste Stunde ist kostenlos und unverbindlich.</p>
       <ul class="trial__contacts">
-        <li><a href="mailto:lernemitanna@outlook.com"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> lernemitanna@outlook.com</a></li>
-        <li><a href="tel:+4917624700519"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h4l2 5-3 2a14 14 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg> +49 (0) 176 24 700 519</a></li>
-        <li><a href="https://www.instagram.com/lernemitanna/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg> @lernemitanna</a></li>
+        <li><a href="mailto:lernemitanna@outlook.com"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> lernemitanna@outlook.com</a></li>
+        <li><a href="tel:+4917624700519"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M13.83 19a15.9 15.9 0 0 1-6.9-6.9C6.63 11.5 6.3 8.5 8 7l1.5 1.5-1 3 2.5 3.5 3-1 1.5 1.5c-1.5 1.7-2.7 2.3-3.17 3.5z"/></svg> +49 (0) 176 24 700 519</a></li>
+        <li><a href="https://www.instagram.com/lernemitanna/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg> @lernemitanna</a></li>
       </ul>
     </div>
     <form class="trial__form" id="trialForm" novalidate>
@@ -296,7 +299,7 @@ p{margin:0}
       </div>
       <div class="field"><label for="f-msg">Nachricht</label><textarea id="f-msg" name="msg" rows="4" placeholder="Worum geht es? Wann passt es dir am besten?"></textarea></div>
       <button class="btn" type="submit">Absenden</button>
-      <p class="trial__success" id="trialOk" hidden>Danke! Deine Anfrage ist unterwegs. Ich melde mich zeitnah bei dir. &#127807;</p>
+      <p class="trial__success" id="trialOk" hidden>Danke! Deine Anfrage ist unterwegs. Ich melde mich zeitnah bei dir. 🌿</p>
     </form>
   </div>
 </section>
