@@ -69,6 +69,7 @@ table.grid{border-collapse:collapse;width:100%;min-width:640px}
 .warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
 .okbox{background:rgba(43,179,192,.12);border:1px solid rgba(43,179,192,.4);color:#127a5c;padding:12px 14px;border-radius:10px;font-weight:500}
 .acts{display:flex;gap:10px;margin-top:18px}
+.col{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .btn{flex:1;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;cursor:pointer}
 .btn.p{background:var(--grad);color:#fff}.btn.g{background:#eee;color:#333}
 </style>
@@ -148,7 +149,8 @@ function me(){return students.Max;}
 function slotInfo(date,hour){
   var dk=iso(date)+'-'+hour, ov=overrides[dk];
   if(ov&&ov.cancel) return null;                       // frei (abgesagt)
-  if(ov&&ov.req) return {name:ov.req,st:'req'};
+  if(ov&&ov.book) return {name:ov.book,st:'ok'};       // bestätigte Einzelstunde
+  if(ov&&ov.req) return {name:ov.req,st:'req',fix:ov.fix};
   var fx=fixed[((date.getDay()+6)%7)+'-'+hour];
   if(fx) return {name:fx,st:'ok'};
   return null;
@@ -233,14 +235,18 @@ document.getElementById('cal').addEventListener('click',function(e){
   var lbl=pretty(dk);
   if(c.classList.contains('free')){
     if(view==='public') modal('<h2>Probestunde anfragen</h2><p>'+lbl+'</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="reqSlot(\''+dk+'\',\'Neu\')">Anfragen</button></div>');
-    else if(view==='max'){var s=me();var t=s.nach>0?'Nachhol-Guthaben (von Anna) wird eingelöst.':(s.minus>0?'Minus-Stunde wird nachgeholt (Minus −1).':'Zählt als Extra-Stunde (Plus +1).');
-      modal('<h2>Stunde buchen</h2><p>'+lbl+'</p><div class="okbox">'+t+'</div><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="bookExtra(\''+dk+'\')">Buchen</button></div>');}
+    else if(view==='max')
+      modal('<h2>Termin: '+lbl+'</h2><p>Wie möchtest du diesen Slot nutzen?</p><div class="col">'
+        +'<button class="btn p" onclick="reqFixed(\''+dk+'\')">Fester wöchentlicher Termin</button>'
+        +'<button class="btn p" onclick="startExtra(\''+dk+'\')">Einmalige Extra-/Nachholstunde</button>'
+        +'<button class="btn g" onclick="close()">Abbrechen</button></div>');
     else modal('<h2>'+lbl+'</h2><p>Freier Slot.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
     return;
   }
   if(!info) return;
   if(view==='admin'&&info.st==='ok'&&students[info.name]){ modal('<h2>Stunde absagen (du)</h2><p><b>'+info.name+'</b> · '+lbl+'</p><div class="okbox">'+info.name+' bekommt Nachhol-Guthaben (kein Minus) und eine Mail.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="adminCancel(\''+dk+'\',\''+info.name+'\')">Absagen</button></div>'); return; }
-  if(view==='admin'&&info.st==='req'){ modal('<h2>Anfrage bestätigen</h2><p><b>'+info.name+'</b> · '+lbl+'</p><div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+dk+'\',\''+info.name+'\')">Bestätigen &amp; Mail</button></div>'); return; }
+  if(view==='admin'&&info.st==='req'){ var isFix=info.fix;
+    modal('<h2>'+(isFix?'Festen Termin bestätigen':'Anfrage bestätigen')+'</h2><p><b>'+info.name+'</b> · '+lbl+'</p>'+(isFix?'<div class="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div>':'')+'<div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+dk+'\',\''+info.name+'\')">Bestätigen &amp; Mail</button></div>'); return; }
   if(view==='max'&&info.name==='Max'&&info.st==='ok'){
     var hu=hoursUntil(dk);
     if(hu>=4) modal('<h2>Termin absagen</h2><p>'+lbl+'</p><div class="okbox">Mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancelMine(\''+dk+'\',true)">Absagen</button></div>');
@@ -251,10 +257,16 @@ document.getElementById('cal').addEventListener('click',function(e){
 });
 
 function reqSlot(dk,name){ overrides[dk]={req:name}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function reqFixed(dk){ overrides[dk]={req:'Max',fix:true}; close(); render(); modal('<h2>Fester Termin angefragt ✓</h2><p>Sobald Anna bestätigt, findet dieser Termin <b>jede Woche</b> statt. Du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function startExtra(dk){ var s=me();var t=s.nach>0?'Nachhol-Guthaben (von Anna) wird eingelöst.':(s.minus>0?'Minus-Stunde wird nachgeholt (Minus −1).':'Zählt als Extra-Stunde (Plus +1).');
+  modal('<h2>Einmalige Stunde</h2><p>'+pretty(dk)+'</p><div class="okbox">'+t+'</div><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="bookExtra(\''+dk+'\')">Buchen</button></div>'); }
 function bookExtra(dk){var s=me(),msg;if(s.nach>0){s.nach--;s.nachD.pop();msg='Nachhol-Guthaben eingelöst.';}else if(s.minus>0){s.minus--;s.minusD.pop();msg='Minus-Stunde nachgeholt.';}else{s.plus++;s.plusD.push(dm(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2])));msg='Extra-Stunde (Plus +1).';} overrides[dk]={req:'Max'}; close(); render(); modal('<h2>Gebucht ✓</h2><p>'+msg+' Anna bestätigt, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function cancelMine(dk,credit){ overrides[dk]={cancel:true}; if(credit&&me().minus<3){me().minus++;me().minusD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+me().minus+'/3).':'Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function adminCancel(dk,name){ overrides[dk]={cancel:true}; if(students[name]){students[name].nach++; if(students[name].nachD) students[name].nachD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt ✓</h2><p>'+name+' bekommt Nachhol-Guthaben (+1), kein Minus. Mail gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function confirmReq(dk,name){ overrides[dk]={req:name,ok:true}; fixed['__x']=0; delete overrides[dk]; overrides[dk]={req:name}; close(); render(); modal('<h2>Bestätigt ✓</h2><p>Termin bestätigt. Bestätigungs-Mail an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function confirmReq(dk,name){ var ov=overrides[dk]||{}, msg;
+  if(ov.fix){ var p=dk.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); fixed[((d.getDay()+6)%7)+'-'+p[3]]=name; delete overrides[dk]; msg='Als <b>fester wöchentlicher Termin</b> bestätigt – ab jetzt jede Woche.'; }
+  else { overrides[dk]={book:name}; msg='Termin bestätigt.'; }
+  close(); render(); modal('<h2>Bestätigt ✓</h2><p>'+msg+' Bestätigungs-Mail an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 
 document.getElementById('viewseg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;[].forEach.call(this.children,function(x){x.classList.remove('on');});b.classList.add('on');view=b.dataset.v;render();});
 document.getElementById('weeks').addEventListener('click',function(e){var b=e.target.closest('.wk');if(!b)return;var p=b.dataset.d.split('-');weekStart=new Date(+p[0],+p[1]-1,+p[2]);render();});
