@@ -22,7 +22,7 @@ h1,h2{font-family:'Playfair Display',serif;margin:0}
 /* Bilanz-Leiste (Schüler) */
 .balance{margin-left:auto;display:flex;gap:10px;align-items:center}
 .pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 15px;font-weight:600;font-size:.92rem}
-.pill .m{color:#c0562b}.pill .p{color:#127a5c}
+.pill .m{color:#c0562b}.pill .p{color:#127a5c}.pill .n{color:#3E7BB6}
 .balance .lbl{color:var(--muted);font-weight:500}
 /* Admin-Übersicht */
 .overview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
@@ -75,12 +75,13 @@ table.grid{border-collapse:collapse;width:100%;min-width:720px}
       <span class="lbl">Deine Stunden:</span>
       <span class="pill"><span class="m">Minus <b id="minus">2</b>/3</span></span>
       <span class="pill"><span class="p">Plus <b id="plus">1</b></span></span>
+      <span class="pill"><span class="n">Nachholen (Anna) <b id="nach">0</b></span></span>
     </div>
   </div>
 
   <div class="overview" id="overview">
     <h2>Übersicht: Plus- &amp; Minus-Stunden</h2>
-    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th></tr></thead>
+    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol (Anna)</th></tr></thead>
     <tbody id="ovbody"></tbody></table>
   </div>
 
@@ -104,13 +105,13 @@ function avail(d,h){ if(d<5) return h>=13&&h<=19; return h>=9&&h<=18; }
 
 // Schüler mit Bilanz + festem Termin
 var students={
- Max:   {minus:2, plus:1, fix:'Di 14:00'},
- Lena:  {minus:0, plus:2, fix:'Mo 16:00'},
- Jonas: {minus:1, plus:0, fix:'Mi 17:00'},
- Mila:  {minus:0, plus:0, fix:'Do 17:00'},
- Sophie:{minus:0, plus:1, fix:'Fr 15:00'},
- Emma:  {minus:0, plus:0, fix:'Sa 10:00'},
- Ben:   {minus:3, plus:0, fix:'So 11:00'}
+ Max:   {minus:2, plus:1, nach:0, fix:'Di 14:00'},
+ Lena:  {minus:0, plus:2, nach:1, fix:'Mo 16:00'},
+ Jonas: {minus:1, plus:0, nach:0, fix:'Mi 17:00'},
+ Mila:  {minus:0, plus:0, nach:0, fix:'Do 17:00'},
+ Sophie:{minus:0, plus:1, nach:0, fix:'Fr 15:00'},
+ Emma:  {minus:0, plus:0, nach:0, fix:'Sa 10:00'},
+ Ben:   {minus:3, plus:0, nach:0, fix:'So 11:00'}
 };
 var book={
  '1-14':{name:'Max',mine:true,st:'ok',when:'late'},
@@ -144,6 +145,7 @@ function render(){
   document.getElementById('balance').style.display = view==='max' ? '' : 'none';
   document.getElementById('minus').textContent=me().minus;
   document.getElementById('plus').textContent=me().plus;
+  document.getElementById('nach').textContent=me().nach;
   // Admin-Übersicht
   var ov=document.getElementById('overview'); ov.style.display = view==='admin' ? '' : 'none';
   if(view==='admin'){
@@ -151,7 +153,8 @@ function render(){
     Object.keys(students).forEach(function(n){var s=students[n];
       rows+='<tr><td><b>'+n+'</b></td><td>'+s.fix+'</td>'
         +'<td><span class="tag '+(s.minus?'m':'z')+'">'+s.minus+'</span></td>'
-        +'<td><span class="tag '+(s.plus?'p':'z')+'">'+s.plus+'</span></td></tr>';
+        +'<td><span class="tag '+(s.plus?'p':'z')+'">'+s.plus+'</span></td>'
+        +'<td><span class="tag '+(s.nach?'p':'z')+'">'+s.nach+'</span></td></tr>';
     });
     document.getElementById('ovbody').innerHTML=rows;
   }
@@ -172,6 +175,7 @@ document.getElementById('cal').addEventListener('click',function(e){
     return;
   }
   if(!b) return;
+  if(view==='admin' && b.st==='ok' && students[b.name]){ modal('<h2>Stunde absagen (du)</h2><p><b>'+b.name+'</b> · '+day+' '+hour+' Uhr</p><div class="ok">'+b.name+' bekommt ein kostenloses Nachhol-Guthaben (keine Minus-Stunde) und eine Mail.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="adminCancel(\''+key+'\')">Stunde absagen</button></div>'); return; }
   if(b.st==='req' && view==='admin'){ modal('<h2>Anfrage bestätigen</h2><p><b>'+b.name+'</b> möchte '+day+' '+hour+' Uhr.</p><div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+key+'\')">Bestätigen &amp; Mail senden</button></div>'); return; }
   if(b.mine && b.st==='ok' && view==='max'){
     if(b.when==='ontime'){
@@ -185,12 +189,15 @@ document.getElementById('cal').addEventListener('click',function(e){
 
 function req(key,name){ book[key]={name:name,mine:(name==='Max'),st:'req',when:'ontime'}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Anna wurde benachrichtigt und bestätigt den Termin. Du bekommst dann eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function bookExtra(key){
-  var isNach = me().minus>0;
-  if(isNach) me().minus--; else me().plus++;
+  var s=me(), msg;
+  if(s.nach>0){ s.nach--; msg='Nachhol-Guthaben (von Anna) eingelöst (jetzt '+s.nach+').'; }
+  else if(s.minus>0){ s.minus--; msg='Minus-Stunde nachgeholt (jetzt '+s.minus+'/3).'; }
+  else { s.plus++; msg='Extra-Stunde gezählt (Plus +1, jetzt '+s.plus+').'; }
   book[key]={name:'Max',mine:true,st:'req',when:'ontime'};
   close(); render();
-  modal('<h2>Gebucht ✓</h2><p>'+(isNach?'Nachholstunde eingelöst (Minus −1, jetzt '+me().minus+'/3).':'Extra-Stunde gezählt (Plus +1, jetzt '+me().plus+').')+' Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
+  modal('<h2>Gebucht ✓</h2><p>'+msg+' Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
 }
+function adminCancel(key){ var b=book[key]; if(students[b.name]) students[b.name].nach++; delete book[key]; close(); render(); modal('<h2>Abgesagt \u2713</h2><p>'+b.name+' bekommt ein Nachhol-Guthaben (+1), keine Minus-Stunde. Bestätigungs-Mail gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function confirmReq(key){ book[key].st='ok'; close(); render(); modal('<h2>Bestätigt ✓</h2><p>Termin bestätigt. Bestätigungs-Mail an '+book[key].name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function cancel(key,credit){ delete book[key]; if(credit&&me().minus<3) me().minus++; close(); render(); modal('<h2>'+(credit?'Abgesagt ✓':'Abgesagt')+'</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+me().minus+'/3). Nachholbar.':'Abgesagt. Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 

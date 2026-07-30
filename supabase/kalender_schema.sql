@@ -18,14 +18,16 @@ create table if not exists public.profiles (
   user_id     uuid primary key references auth.users(id) on delete cascade,
   name        text not null,
   role        text not null default 'student' check (role in ('student','admin')),
-  minus_hours int  not null default 0 check (minus_hours >= 0 and minus_hours <= 3), -- max. 3 Minus
-  plus_hours  int  not null default 0 check (plus_hours >= 0),                        -- Extra-Stunden (abzurechnen)
+  minus_hours    int not null default 0 check (minus_hours >= 0 and minus_hours <= 3), -- max. 3 Minus
+  plus_hours     int not null default 0 check (plus_hours >= 0),                        -- Extra-Stunden (abzurechnen)
+  makeup_credits int not null default 0 check (makeup_credits >= 0),                    -- Nachhol-Guthaben aus Anna-Absagen (kein Minus)
   created_at  timestamptz not null default now()
 );
 -- Konto-Regeln (serverseitig umgesetzt):
---   * Absage >= 4 Std. vorher -> minus_hours + 1 (nur solange minus_hours < 3, sonst zählt sie nicht)
---   * Absage <  4 Std. vorher -> keine Gutschrift
---   * Extra-Stunde gebucht     -> falls minus_hours > 0: minus_hours - 1 (Nachholen); sonst plus_hours + 1
+--   * Schüler sagt >= 4 Std. vorher ab -> minus_hours + 1 (nur solange < 3, sonst zählt sie nicht)
+--   * Schüler sagt <  4 Std. vorher ab -> keine Gutschrift
+--   * Anna sagt eine Stunde ab         -> makeup_credits + 1 (kostenlos nachholbar, KEIN Minus), Mail an Schüler
+--   * Extra-/Nachhol-Stunde gebucht    -> Reihenfolge: makeup_credits-1  →  minus_hours-1  →  sonst plus_hours+1
 
 -- ---------------------------------------------------------------------------
 -- 2) FESTE SLOTS  (wiederkehrender Wochentermin je Schüler)
