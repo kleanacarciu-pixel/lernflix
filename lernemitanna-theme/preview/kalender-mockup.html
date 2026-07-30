@@ -8,54 +8,61 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#1A1A1A;--paper:#fff;--cream:#F5F0E9;--muted:#5f574f;--teal:#2BB3C0;--blue:#3E7BB6;--grad:linear-gradient(135deg,#2BB3C0,#3E7BB6);--line:rgba(26,26,26,.12)}
+:root{--ink:#1A1A1A;--paper:#fff;--muted:#5f574f;--teal:#2BB3C0;--blue:#3E7BB6;--grad:linear-gradient(135deg,#2BB3C0,#3E7BB6);--line:rgba(26,26,26,.12)}
 *{box-sizing:border-box}body{margin:0;font-family:'Inter',sans-serif;color:var(--ink);background:#f4f6f7;line-height:1.5}
-h1,h2{font-family:'Playfair Display',serif;margin:0}
-.wrap{max-width:1080px;margin:0 auto;padding:24px}
-.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:8px}
-.top h1{font-size:1.7rem}
-.hint{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--muted);font-size:.92rem;margin-bottom:18px}
+h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding:24px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:8px}.top h1{font-size:1.6rem}
+.hint{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--muted);font-size:.9rem;margin-bottom:16px}
 .bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
 .seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px}
-.seg button{border:0;background:none;padding:8px 16px;border-radius:999px;font:inherit;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button{border:0;background:none;padding:8px 15px;border-radius:999px;font:inherit;font-weight:600;cursor:pointer;color:var(--muted)}
 .seg button.on{background:var(--grad);color:#fff}
-/* Bilanz-Leiste (Schüler) */
-.balance{margin-left:auto;display:flex;gap:10px;align-items:center}
-.pill{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 15px;font-weight:600;font-size:.92rem}
-.pill .m{color:#c0562b}.pill .p{color:#127a5c}.pill .n{color:#3E7BB6}
+.balance{margin-left:auto;display:flex;gap:8px;align-items:center}
 .balance .lbl{color:var(--muted);font-weight:500}
-/* Admin-Übersicht */
+.pill{position:relative;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600;font-size:.9rem;cursor:default}
+.pill .m{color:#c0562b}.pill .p{color:#127a5c}.pill .n{color:#3E7BB6}
+.pill .tip{display:none;position:absolute;top:120%;right:0;z-index:5;background:#1f2937;color:#fff;padding:9px 12px;border-radius:10px;font-weight:500;font-size:.82rem;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.pill .tip b{color:#8fe3d8;font-weight:600}
+.pill:hover .tip{display:block}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:18px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+.side{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:max-content}
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mnav b{font-family:'Playfair Display',serif;font-size:1.05rem}
+.mnav button{border:1px solid var(--line);background:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:1rem}
+.wk{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;margin-bottom:7px;cursor:pointer;font:inherit;font-size:.86rem}
+.wk small{color:var(--muted)}
+.wk.on{background:rgba(43,179,192,.12);border-color:var(--teal);color:#127a5c;font-weight:600}
 .overview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
-.overview h2{font-size:1.15rem;margin-bottom:10px}
-.otbl{width:100%;border-collapse:collapse;font-size:.92rem}
+.overview h3{font-size:1.1rem;margin-bottom:10px}
+.otbl{width:100%;border-collapse:collapse;font-size:.9rem}
 .otbl th,.otbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
 .otbl th{color:var(--muted);font-weight:600}
-.tag{display:inline-block;min-width:26px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;font-size:.85rem}
-.tag.m{background:#fbe3d8;color:#b4491f}.tag.p{background:#dcf3ec;color:#127a5c}.tag.z{background:#eee;color:#888}
-.legend{display:flex;flex-wrap:wrap;gap:16px;margin:6px 0 16px;font-size:.85rem;color:var(--muted)}
-.legend span{display:inline-flex;align-items:center;gap:7px}
-.dot{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
-.d-free{background:#eafaf7}.d-busy{background:#cfd6da}.d-mine{background:var(--grad);border:0}.d-req{background:#fff3d6}.d-closed{background:#f0f0f0}
-.cal{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto}
-table.grid{border-collapse:collapse;width:100%;min-width:720px}
+.tag{display:inline-block;min-width:24px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;font-size:.82rem}
+.tag.m{background:#fbe3d8;color:#b4491f}.tag.p{background:#dcf3ec;color:#127a5c}.tag.z{background:#eee;color:#999}
+.calwrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:auto}
+.wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+.wkhead b{font-family:'Playfair Display',serif;font-size:1.05rem}
+.wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+table.grid{border-collapse:collapse;width:100%;min-width:640px}
 .grid th,.grid td{border:1px solid var(--line);text-align:center;padding:0}
-.grid thead th{background:#fafafa;padding:12px 6px;font-size:.9rem}
-.grid tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);width:64px;font-weight:600}
-.cell{height:46px;font-size:.8rem;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center}
-.cell.free{background:#eafaf7;color:#127a5c}
-.cell.busy{background:#cfd6da;color:#3a4145}
-.cell.mine{background:var(--grad);color:#fff;font-weight:600}
-.cell.req{background:#fff3d6;color:#8a6d1a}
-.cell.closed{background:#f4f4f4;cursor:default;color:#bbb}
-.cell.free:hover,.cell.mine:hover,.cell.req:hover{outline:2px solid var(--teal);outline-offset:-2px}
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.grid thead th{background:#fafafa;padding:8px 4px;font-size:.82rem;line-height:1.2}
+.grid thead th small{display:block;color:var(--muted);font-weight:500}
+.grid thead th.today{color:var(--teal)}
+.grid tbody th{background:#fafafa;font-size:.78rem;color:var(--muted);width:56px;font-weight:600}
+.cell{height:42px;font-size:.76rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.cell.free{background:#eafaf7;color:#127a5c}.cell.busy{background:#cfd6da;color:#3a4145}
+.cell.mine{background:var(--grad);color:#fff;font-weight:600}.cell.req{background:#fff3d6;color:#8a6d1a}
+.cell.closed{background:#f4f4f4;cursor:default;color:#ccc}.cell.past{opacity:.5;cursor:default}
+.cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover{outline:2px solid var(--teal);outline-offset:-2px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
 .ov.show{display:flex}
 .modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
-.modal h2{font-size:1.3rem;margin-bottom:8px}
-.modal p{color:var(--muted);margin:0 0 8px}
-.modal .warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
-.modal .ok{background:rgba(43,179,192,.12);border:1px solid rgba(43,179,192,.4);color:#127a5c;padding:12px 14px;border-radius:10px;font-weight:500}
-.modal .acts{display:flex;gap:10px;margin-top:18px}
+.modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
+.warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
+.okbox{background:rgba(43,179,192,.12);border:1px solid rgba(43,179,192,.4);color:#127a5c;padding:12px 14px;border-radius:10px;font-weight:500}
+.acts{display:flex;gap:10px;margin-top:18px}
 .btn{flex:1;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;cursor:pointer}
 .btn.p{background:var(--grad);color:#fff}.btn.g{background:#eee;color:#333}
 </style>
@@ -63,7 +70,7 @@ table.grid{border-collapse:collapse;width:100%;min-width:720px}
 <body>
 <div class="wrap">
   <div class="top"><h1>📅 Terminkalender</h1></div>
-  <div class="hint">Interaktives <b>Muster</b>. Der Umschalter unten ist nur zum Zeigen — im echten System kommt die Ansicht automatisch je Login. Probier: als „Schüler: Max" auf deinen Termin klicken (Di = zu spät, Do = rechtzeitig) und ein freies Feld buchen.</div>
+  <div class="hint">Muster mit <b>Monats-/Wochen-Navigation</b> (links) und echten Datumsangaben. Der Ansichts-Umschalter ist nur zum Zeigen. Fahr mit der Maus über „Minus" bzw. „Plus" → die <b>Datumsangaben</b> erscheinen.</div>
 
   <div class="bar">
     <div class="seg" id="viewseg">
@@ -73,27 +80,27 @@ table.grid{border-collapse:collapse;width:100%;min-width:720px}
     </div>
     <div class="balance" id="balance">
       <span class="lbl">Deine Stunden:</span>
-      <span class="pill"><span class="m">Minus <b id="minus">2</b>/3</span></span>
-      <span class="pill"><span class="p">Plus <b id="plus">1</b></span></span>
-      <span class="pill"><span class="n">Nachholen (Anna) <b id="nach">0</b></span></span>
+      <span class="pill"><span class="m">Minus <b id="minus">2</b>/3</span><span class="tip" id="tipM"></span></span>
+      <span class="pill"><span class="p">Plus <b id="plus">1</b></span><span class="tip" id="tipP"></span></span>
+      <span class="pill"><span class="n">Nachholen (Anna) <b id="nach">0</b></span><span class="tip" id="tipN"></span></span>
     </div>
   </div>
 
   <div class="overview" id="overview">
-    <h2>Übersicht: Plus- &amp; Minus-Stunden</h2>
-    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol (Anna)</th></tr></thead>
-    <tbody id="ovbody"></tbody></table>
+    <h3>Übersicht: Plus- &amp; Minus-Stunden</h3>
+    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol (Anna)</th></tr></thead><tbody id="ovbody"></tbody></table>
   </div>
 
-  <div class="legend">
-    <span><i class="dot d-free"></i>Frei</span>
-    <span><i class="dot d-busy"></i>Belegt</span>
-    <span><i class="dot d-mine"></i>Dein Termin</span>
-    <span><i class="dot d-req"></i>Angefragt</span>
-    <span><i class="dot d-closed"></i>Geschlossen</span>
+  <div class="layout">
+    <div class="side">
+      <div class="mnav"><button id="pm">‹</button><b id="mlabel"></b><button id="nm">›</button></div>
+      <div id="weeks"></div>
+    </div>
+    <div class="calwrap">
+      <div class="wkhead"><button id="pw">‹ Woche</button><b id="wlabel"></b><button id="nw">Woche ›</button></div>
+      <table class="grid" id="cal"></table>
+    </div>
   </div>
-
-  <div class="cal"><table class="grid" id="cal"></table></div>
 </div>
 
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
@@ -101,11 +108,26 @@ table.grid{border-collapse:collapse;width:100%;min-width:720px}
 <script>
 var DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];
 var HOURS=[9,10,11,12,13,14,15,16,17,18,19];
-function avail(d,h){ if(d<5) return h>=13&&h<=19; return h>=9&&h<=18; }
+var MONTHS=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+function avail(dow,h){ return dow<5 ? (h>=13&&h<=19) : (h>=9&&h<=18); }
+function mondayOf(d){var x=new Date(d);var k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);x.setHours(0,0,0,0);return x;}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function dm(d){return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.';}
+function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 
-// Schüler mit Bilanz + festem Termin
+var NOW=new Date();
+var weekStart=mondayOf(NOW);
+var viewMonth=new Date(NOW.getFullYear(),NOW.getMonth(),1);
+
+// Wiederkehrende feste Termine (Wochentag-Stunde -> Schüler)
+var fixed={'1-14':'Max','0-16':'Lena','2-17':'Jonas','3-17':'Mila','4-15':'Sophie','5-10':'Emma','6-11':'Ben'};
+// Datums-spezifische Änderungen: overrides['2026-07-08-14']={cancel:true} oder {req:'Max'}
+var overrides={};
+// Beispiel-Anfrage (Sa dieser Woche, 14:00) von Max
+overrides[iso(addDays(weekStart,5))+'-14']={req:'Max'};
+
 var students={
- Max:   {minus:2, plus:1, nach:0, fix:'Di 14:00'},
+ Max:   {minus:2, plus:1, nach:0, fix:'Di 14:00', minusD:['Di 24.06.','Do 03.07.'], plusD:['Fr 20.06.'], nachD:[]},
  Lena:  {minus:0, plus:2, nach:1, fix:'Mo 16:00'},
  Jonas: {minus:1, plus:0, nach:0, fix:'Mi 17:00'},
  Mila:  {minus:0, plus:0, nach:0, fix:'Do 17:00'},
@@ -113,96 +135,118 @@ var students={
  Emma:  {minus:0, plus:0, nach:0, fix:'Sa 10:00'},
  Ben:   {minus:3, plus:0, nach:0, fix:'So 11:00'}
 };
-var book={
- '1-14':{name:'Max',mine:true,st:'ok',when:'late'},
- '3-15':{name:'Max',mine:true,st:'ok',when:'ontime'},
- '0-16':{name:'Lena',st:'ok'},'2-17':{name:'Jonas',st:'ok'},'3-17':{name:'Mila',st:'ok'},
- '4-15':{name:'Sophie',st:'ok'},'5-10':{name:'Emma',st:'ok'},'6-11':{name:'Ben',st:'ok'},
- '5-14':{name:'Max',mine:true,st:'req',when:'ontime'}
-};
 var view='public';
 function me(){return students.Max;}
 
-function render(){
-  var t=document.getElementById('cal'); var html='<thead><tr><th></th>';
-  DAYS.forEach(function(d){html+='<th>'+d+'</th>';}); html+='</tr></thead><tbody>';
+function slotInfo(date,hour){
+  var dk=iso(date)+'-'+hour, ov=overrides[dk];
+  if(ov&&ov.cancel) return null;                       // frei (abgesagt)
+  if(ov&&ov.req) return {name:ov.req,st:'req'};
+  var fx=fixed[((date.getDay()+6)%7)+'-'+hour];
+  if(fx) return {name:fx,st:'ok'};
+  return null;
+}
+
+function renderSidebar(){
+  document.getElementById('mlabel').textContent=MONTHS[viewMonth.getMonth()]+' '+viewMonth.getFullYear();
+  var first=new Date(viewMonth), last=new Date(viewMonth.getFullYear(),viewMonth.getMonth()+1,0);
+  var m=mondayOf(first), out='';
+  while(m<=last){
+    var end=addDays(m,6), sel=(iso(m)===iso(weekStart));
+    out+='<button class="wk'+(sel?' on':'')+'" data-d="'+iso(m)+'">Woche <small>'+dm(m)+'–'+dm(end)+'</small></button>';
+    m=addDays(m,7);
+  }
+  document.getElementById('weeks').innerHTML=out;
+}
+function renderGrid(){
+  document.getElementById('wlabel').textContent=dm(weekStart)+' – '+dm(addDays(weekStart,6));
+  var html='<thead><tr><th></th>';
+  DAYS.forEach(function(d,i){var dt=addDays(weekStart,i);var today=iso(dt)===iso(NOW);
+    html+='<th class="'+(today?'today':'')+'">'+d+'<small>'+dm(dt)+'</small></th>';});
+  html+='</tr></thead><tbody>';
   HOURS.forEach(function(h){
     html+='<tr><th>'+h+':00</th>';
     DAYS.forEach(function(d,di){
-      var key=di+'-'+h;
-      if(!avail(di,h)){ html+='<td><div class="cell closed"></div></td>'; return; }
-      var b=book[key];
-      if(!b){ html+='<td><div class="cell free" data-k="'+key+'">frei</div></td>'; return; }
-      var cls,label;
-      if(view==='admin'){ cls=b.st==='req'?'req':(b.mine?'mine':'busy'); label=b.name+(b.st==='req'?' (Anfrage)':''); }
-      else if(view==='max'){ if(b.mine){ cls=b.st==='req'?'req':'mine'; label=b.st==='req'?'Angefragt':'Dein Termin'; } else { cls='busy'; label='Belegt'; } }
+      var dt=addDays(weekStart,di), dow=di;
+      if(!avail(dow,h)){ html+='<td><div class="cell closed"></div></td>'; return; }
+      var info=slotInfo(dt,h), dk=iso(dt)+'-'+h;
+      var past=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),h)<NOW;
+      if(!info){ html+='<td><div class="cell free'+(past?' past':'')+'" data-k="'+dk+'">'+(past?'':'frei')+'</div></td>'; return; }
+      var mine=(info.name==='Max'), cls,label;
+      if(view==='admin'){ cls=info.st==='req'?'req':(mine?'mine':'busy'); label=info.name+(info.st==='req'?' (Anfrage)':''); }
+      else if(view==='max'){ if(mine){cls=info.st==='req'?'req':'mine';label=info.st==='req'?'Angefragt':'Du';}else{cls='busy';label='Belegt';} }
       else { cls='busy'; label='Belegt'; }
-      html+='<td><div class="cell '+cls+'" data-k="'+key+'">'+label+'</div></td>';
+      html+='<td><div class="cell '+cls+(past?' past':'')+'" data-k="'+dk+'">'+label+'</div></td>';
     });
     html+='</tr>';
   });
-  t.innerHTML=html+'</tbody>';
-  document.getElementById('balance').style.display = view==='max' ? '' : 'none';
-  document.getElementById('minus').textContent=me().minus;
-  document.getElementById('plus').textContent=me().plus;
-  document.getElementById('nach').textContent=me().nach;
-  // Admin-Übersicht
-  var ov=document.getElementById('overview'); ov.style.display = view==='admin' ? '' : 'none';
-  if(view==='admin'){
-    var rows='';
-    Object.keys(students).forEach(function(n){var s=students[n];
-      rows+='<tr><td><b>'+n+'</b></td><td>'+s.fix+'</td>'
-        +'<td><span class="tag '+(s.minus?'m':'z')+'">'+s.minus+'</span></td>'
-        +'<td><span class="tag '+(s.plus?'p':'z')+'">'+s.plus+'</span></td>'
-        +'<td><span class="tag '+(s.nach?'p':'z')+'">'+s.nach+'</span></td></tr>';
-    });
-    document.getElementById('ovbody').innerHTML=rows;
-  }
+  document.getElementById('cal').innerHTML=html+'</tbody>';
 }
+function renderBalance(){
+  var s=me(), show=view==='max';
+  document.getElementById('balance').style.display=show?'':'none';
+  if(!show) return;
+  document.getElementById('minus').textContent=s.minus;
+  document.getElementById('plus').textContent=s.plus;
+  document.getElementById('nach').textContent=s.nach;
+  document.getElementById('tipM').innerHTML='<b>Minus-Stunden:</b><br>'+(s.minusD.length?s.minusD.join('<br>'):'keine');
+  document.getElementById('tipP').innerHTML='<b>Plus-Stunden:</b><br>'+(s.plusD.length?s.plusD.join('<br>'):'keine');
+  document.getElementById('tipN').innerHTML='<b>Nachholen (Anna):</b><br>'+(s.nachD.length?s.nachD.join('<br>'):'keine');
+}
+function renderOverview(){
+  var ov=document.getElementById('overview'); ov.style.display=view==='admin'?'':'none';
+  if(view!=='admin') return;
+  var rows='';
+  Object.keys(students).forEach(function(n){var s=students[n];
+    rows+='<tr><td><b>'+n+'</b></td><td>'+s.fix+'</td>'
+      +'<td><span class="tag '+(s.minus?'m':'z')+'">'+s.minus+'</span></td>'
+      +'<td><span class="tag '+(s.plus?'p':'z')+'">'+s.plus+'</span></td>'
+      +'<td><span class="tag '+(s.nach?'p':'z')+'">'+s.nach+'</span></td></tr>';});
+  document.getElementById('ovbody').innerHTML=rows;
+}
+function render(){ renderSidebar(); renderGrid(); renderBalance(); renderOverview(); }
+
 function modal(html){document.getElementById('modal').innerHTML=html;document.getElementById('ov').classList.add('show');}
 function close(){document.getElementById('ov').classList.remove('show');}
+function hoursUntil(dk){var p=dk.split('-');var d=new Date(+p[0],+p[1]-1,+p[2],+p[3]);return (d-new Date())/3600000;}
+function pretty(dk){var p=dk.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);return DAYS[(d.getDay()+6)%7]+' '+dm(d)+' um '+p[3]+':00';}
 
 document.getElementById('cal').addEventListener('click',function(e){
-  var c=e.target.closest('.cell'); if(!c||!c.dataset.k) return;
-  var key=c.dataset.k, b=book[key], day=DAYS[key.split('-')[0]], hour=key.split('-')[1]+':00';
+  var c=e.target.closest('.cell'); if(!c||!c.dataset.k||c.classList.contains('closed')||c.classList.contains('past')) return;
+  var dk=c.dataset.k, info=slotInfo(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2]),+dk.split('-')[3]);
+  var lbl=pretty(dk);
   if(c.classList.contains('free')){
-    if(view==='public') modal('<h2>Termin anfragen</h2><p>'+day+' '+hour+' Uhr</p><p>Als kostenlose Probestunde anfragen? Anna bestätigt, du bekommst eine E-Mail.</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="req(\''+key+'\',\'Neuer Schüler\')">Anfragen</button></div>');
-    else if(view==='max'){
-      var extra = me().minus>0 ? 'Du hast noch Minus-Stunden offen → das gilt als <b>Nachholstunde</b> (Minus −1).' : 'Das gilt als <b>Extra-Stunde</b> (Plus +1).';
-      modal('<h2>Extra-/Nachholstunde buchen</h2><p>'+day+' '+hour+' Uhr</p><div class="ok">'+extra+'</div><p>Anna bestätigt, dann bekommst du eine Bestätigungs-Mail.</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="bookExtra(\''+key+'\')">Buchen</button></div>');
-    }
-    else modal('<h2>'+day+' '+hour+'</h2><p>Freier Slot.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
+    if(view==='public') modal('<h2>Probestunde anfragen</h2><p>'+lbl+'</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="reqSlot(\''+dk+'\',\'Neu\')">Anfragen</button></div>');
+    else if(view==='max'){var s=me();var t=s.nach>0?'Nachhol-Guthaben (von Anna) wird eingelöst.':(s.minus>0?'Minus-Stunde wird nachgeholt (Minus −1).':'Zählt als Extra-Stunde (Plus +1).');
+      modal('<h2>Stunde buchen</h2><p>'+lbl+'</p><div class="okbox">'+t+'</div><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="bookExtra(\''+dk+'\')">Buchen</button></div>');}
+    else modal('<h2>'+lbl+'</h2><p>Freier Slot.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
     return;
   }
-  if(!b) return;
-  if(view==='admin' && b.st==='ok' && students[b.name]){ modal('<h2>Stunde absagen (du)</h2><p><b>'+b.name+'</b> · '+day+' '+hour+' Uhr</p><div class="ok">'+b.name+' bekommt ein kostenloses Nachhol-Guthaben (keine Minus-Stunde) und eine Mail.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="adminCancel(\''+key+'\')">Stunde absagen</button></div>'); return; }
-  if(b.st==='req' && view==='admin'){ modal('<h2>Anfrage bestätigen</h2><p><b>'+b.name+'</b> möchte '+day+' '+hour+' Uhr.</p><div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+key+'\')">Bestätigen &amp; Mail senden</button></div>'); return; }
-  if(b.mine && b.st==='ok' && view==='max'){
-    if(b.when==='ontime'){
-      if(me().minus>=3) modal('<h2>Absagen</h2><div class="warn">Du hast schon 3 Minus-Stunden (Maximum). Hol sie zuerst nach — diese Absage zählt NICHT als Minus.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',false)">Trotzdem absagen</button></div>');
-      else modal('<h2>Termin absagen</h2><p>'+day+' '+hour+' Uhr</p><div class="ok">Mehr als 4 Stunden vorher: wird als <b>Minus-Stunde</b> gutgeschrieben (nachholbar).</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',true)">Absagen</button></div>');
-    } else modal('<h2>Absage zu spät</h2><p>'+day+' '+hour+' Uhr</p><div class="warn">Weniger als 4 Stunden vorher: Diese Stunde zählt <b>nicht</b> als Minus-Stunde. Bitte mindestens 4 Std. vorher absagen.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',false)">Verstanden, absagen</button></div>');
+  if(!info) return;
+  if(view==='admin'&&info.st==='ok'&&students[info.name]){ modal('<h2>Stunde absagen (du)</h2><p><b>'+info.name+'</b> · '+lbl+'</p><div class="okbox">'+info.name+' bekommt Nachhol-Guthaben (kein Minus) und eine Mail.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="adminCancel(\''+dk+'\',\''+info.name+'\')">Absagen</button></div>'); return; }
+  if(view==='admin'&&info.st==='req'){ modal('<h2>Anfrage bestätigen</h2><p><b>'+info.name+'</b> · '+lbl+'</p><div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+dk+'\',\''+info.name+'\')">Bestätigen &amp; Mail</button></div>'); return; }
+  if(view==='max'&&info.name==='Max'&&info.st==='ok'){
+    var hu=hoursUntil(dk);
+    if(hu>=4) modal('<h2>Termin absagen</h2><p>'+lbl+'</p><div class="okbox">Mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancelMine(\''+dk+'\',true)">Absagen</button></div>');
+    else modal('<h2>Absage zu spät</h2><p>'+lbl+'</p><div class="warn">Weniger als 4 Std. vorher: zählt <b>nicht</b> als Minus-Stunde.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancelMine(\''+dk+'\',false)">Trotzdem absagen</button></div>');
     return;
   }
-  if(view==='max' && b.st==='req'){ modal('<h2>Angefragt</h2><p>'+day+' '+hour+' wartet auf Annas Bestätigung.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); return; }
+  if(view==='max'&&info.st==='req') modal('<h2>Angefragt</h2><p>'+lbl+' wartet auf Annas Bestätigung.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
 });
 
-function req(key,name){ book[key]={name:name,mine:(name==='Max'),st:'req',when:'ontime'}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Anna wurde benachrichtigt und bestätigt den Termin. Du bekommst dann eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function bookExtra(key){
-  var s=me(), msg;
-  if(s.nach>0){ s.nach--; msg='Nachhol-Guthaben (von Anna) eingelöst (jetzt '+s.nach+').'; }
-  else if(s.minus>0){ s.minus--; msg='Minus-Stunde nachgeholt (jetzt '+s.minus+'/3).'; }
-  else { s.plus++; msg='Extra-Stunde gezählt (Plus +1, jetzt '+s.plus+').'; }
-  book[key]={name:'Max',mine:true,st:'req',when:'ontime'};
-  close(); render();
-  modal('<h2>Gebucht ✓</h2><p>'+msg+' Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
-}
-function adminCancel(key){ var b=book[key]; if(students[b.name]) students[b.name].nach++; delete book[key]; close(); render(); modal('<h2>Abgesagt \u2713</h2><p>'+b.name+' bekommt ein Nachhol-Guthaben (+1), keine Minus-Stunde. Bestätigungs-Mail gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function confirmReq(key){ book[key].st='ok'; close(); render(); modal('<h2>Bestätigt ✓</h2><p>Termin bestätigt. Bestätigungs-Mail an '+book[key].name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function cancel(key,credit){ delete book[key]; if(credit&&me().minus<3) me().minus++; close(); render(); modal('<h2>'+(credit?'Abgesagt ✓':'Abgesagt')+'</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+me().minus+'/3). Nachholbar.':'Abgesagt. Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function reqSlot(dk,name){ overrides[dk]={req:name}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function bookExtra(dk){var s=me(),msg;if(s.nach>0){s.nach--;s.nachD.pop();msg='Nachhol-Guthaben eingelöst.';}else if(s.minus>0){s.minus--;s.minusD.pop();msg='Minus-Stunde nachgeholt.';}else{s.plus++;s.plusD.push(dm(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2])));msg='Extra-Stunde (Plus +1).';} overrides[dk]={req:'Max'}; close(); render(); modal('<h2>Gebucht ✓</h2><p>'+msg+' Anna bestätigt, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function cancelMine(dk,credit){ overrides[dk]={cancel:true}; if(credit&&me().minus<3){me().minus++;me().minusD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+me().minus+'/3).':'Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function adminCancel(dk,name){ overrides[dk]={cancel:true}; if(students[name]){students[name].nach++; if(students[name].nachD) students[name].nachD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt ✓</h2><p>'+name+' bekommt Nachhol-Guthaben (+1), kein Minus. Mail gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function confirmReq(dk,name){ overrides[dk]={req:name,ok:true}; fixed['__x']=0; delete overrides[dk]; overrides[dk]={req:name}; close(); render(); modal('<h2>Bestätigt ✓</h2><p>Termin bestätigt. Bestätigungs-Mail an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 
-document.getElementById('viewseg').addEventListener('click',function(e){var b=e.target.closest('button'); if(!b)return; [].forEach.call(this.children,function(x){x.classList.remove('on');}); b.classList.add('on'); view=b.dataset.v; render();});
-document.getElementById('ov').addEventListener('click',function(e){ if(e.target===this) close(); });
+document.getElementById('viewseg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;[].forEach.call(this.children,function(x){x.classList.remove('on');});b.classList.add('on');view=b.dataset.v;render();});
+document.getElementById('weeks').addEventListener('click',function(e){var b=e.target.closest('.wk');if(!b)return;var p=b.dataset.d.split('-');weekStart=new Date(+p[0],+p[1]-1,+p[2]);render();});
+document.getElementById('pm').onclick=function(){viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-1,1);renderSidebar();};
+document.getElementById('nm').onclick=function(){viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()+1,1);renderSidebar();};
+document.getElementById('pw').onclick=function(){weekStart=addDays(weekStart,-7);viewMonth=new Date(weekStart.getFullYear(),weekStart.getMonth(),1);render();};
+document.getElementById('nw').onclick=function(){weekStart=addDays(weekStart,7);viewMonth=new Date(weekStart.getFullYear(),weekStart.getMonth(),1);render();};
+document.getElementById('ov').addEventListener('click',function(e){if(e.target===this)close();});
 render();
 </script>
 </body>
