@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminkalender – Mockup | Lerne mit Anna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1A1A1A;--paper:#fff;--cream:#F5F0E9;--muted:#5f574f;--teal:#2BB3C0;--blue:#3E7BB6;--grad:linear-gradient(135deg,#2BB3C0,#3E7BB6);--line:rgba(26,26,26,.12)}
+*{box-sizing:border-box}body{margin:0;font-family:'Inter',sans-serif;color:var(--ink);background:#f4f6f7;line-height:1.5}
+h1,h2{font-family:'Playfair Display',serif;margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding:24px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:8px}
+.top h1{font-size:1.7rem}
+.hint{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--muted);font-size:.92rem;margin-bottom:18px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px}
+.seg button{border:0;background:none;padding:8px 16px;border-radius:999px;font:inherit;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--grad);color:#fff}
+.minus{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:600}
+.minus b{color:var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin:6px 0 16px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+.d-free{background:#eafaf7}.d-busy{background:#cfd6da}.d-mine{background:var(--grad);border:0}.d-req{background:#fff3d6}.d-closed{background:#f0f0f0}
+.cal{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:720px}
+th,td{border:1px solid var(--line);text-align:center;padding:0}
+thead th{background:#fafafa;padding:12px 6px;font-size:.9rem}
+tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);width:64px;font-weight:600}
+.cell{height:46px;font-size:.8rem;cursor:pointer;position:relative}
+.cell.free{background:#eafaf7;color:#127a5c}
+.cell.busy{background:#cfd6da;color:#3a4145}
+.cell.mine{background:var(--grad);color:#fff;font-weight:600}
+.cell.req{background:#fff3d6;color:#8a6d1a}
+.cell.closed{background:#f4f4f4;cursor:default;color:#bbb}
+.cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy.clickable:hover{outline:2px solid var(--teal);outline-offset:-2px}
+/* Modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.ov.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.modal h2{font-size:1.3rem;margin-bottom:8px}
+.modal p{color:var(--muted);margin:0 0 8px}
+.modal .warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
+.modal .ok{background:rgba(43,179,192,.12);border:1px solid rgba(43,179,192,.4);color:#127a5c;padding:12px 14px;border-radius:10px;font-weight:500}
+.modal .acts{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;cursor:pointer}
+.btn.p{background:var(--grad);color:#fff}.btn.g{background:#eee;color:#333}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>📅 Terminkalender</h1></div>
+  <div class="hint">Interaktives <b>Muster</b> zum Ausprobieren. Wechsle die Ansicht (unten), klick auf Felder. Das echte System mit Login, Datenbank und Bestätigungs-Mails wird danach in lernflix gebaut.</div>
+
+  <div class="bar">
+    <div class="seg" id="viewseg">
+      <button data-v="public" class="on">Öffentlich</button>
+      <button data-v="max">Schüler: Max</button>
+      <button data-v="admin">Anna (Admin)</button>
+    </div>
+    <div class="minus" id="minusbox">Max: <b><span id="minus">2</span>/4</b> Minus-Stunden</div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot d-free"></i>Frei</span>
+    <span><i class="dot d-busy"></i>Belegt</span>
+    <span><i class="dot d-mine"></i>Dein Termin</span>
+    <span><i class="dot d-req"></i>Angefragt</span>
+    <span><i class="dot d-closed"></i>Geschlossen</span>
+  </div>
+
+  <div class="cal"><table id="cal"></table></div>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+
+<script>
+var DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'];
+var HOURS=[9,10,11,12,13,14,15,16,17,18,19];
+function avail(d,h){ if(d<5) return h>=13&&h<=19; return h>=9&&h<=18; } // Mo-Fr 13-20, Sa/So 9-19
+// Buchungen: key "d-h"
+var book={
+ '1-14':{name:'Max',mine:true,st:'ok',when:'late'},   // Di 14:00 (in <4h -> spät)
+ '3-15':{name:'Max',mine:true,st:'ok',when:'ontime'}, // Do 15:00 (früh genug)
+ '0-16':{name:'Lena',st:'ok'},
+ '2-17':{name:'Jonas',st:'ok'},
+ '3-17':{name:'Mila',st:'ok'},
+ '4-15':{name:'Sophie',st:'ok'},
+ '5-10':{name:'Emma',st:'ok'},
+ '6-11':{name:'Ben',st:'ok'},
+ '5-14':{name:'Max',mine:true,st:'req',when:'ontime'} // Nachhol-Anfrage Sa 14:00
+};
+var minus=2, view='public';
+
+function render(){
+  var t=document.getElementById('cal'); var html='<thead><tr><th></th>';
+  DAYS.forEach(function(d){html+='<th>'+d+'</th>';}); html+='</tr></thead><tbody>';
+  HOURS.forEach(function(h){
+    html+='<tr><th>'+h+':00</th>';
+    DAYS.forEach(function(d,di){
+      var key=di+'-'+h;
+      if(!avail(di,h)){ html+='<td><div class="cell closed"></div></td>'; return; }
+      var b=book[key];
+      if(!b){ html+='<td><div class="cell free" data-k="'+key+'">frei</div></td>'; return; }
+      var cls,label;
+      if(view==='admin'){ cls=b.st==='req'?'req':(b.mine?'mine':'busy'); label=b.name+(b.st==='req'?' (Anfrage)':''); }
+      else if(view==='max'){
+        if(b.mine){ cls=b.st==='req'?'req':'mine'; label=b.st==='req'?'Angefragt':'Dein Termin'; }
+        else { cls='busy'; label='Belegt'; }
+      } else { cls='busy'; label='Belegt'; } // public
+      html+='<td><div class="cell '+cls+'" data-k="'+key+'">'+label+'</div></td>';
+    });
+    html+='</tr>';
+  });
+  t.innerHTML=html+'</tbody>';
+  document.getElementById('minusbox').style.display = view==='max' ? '' : 'none';
+  document.getElementById('minus').textContent=minus;
+}
+
+function modal(html){ document.getElementById('modal').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function close(){ document.getElementById('ov').classList.remove('show'); }
+
+document.getElementById('cal').addEventListener('click',function(e){
+  var c=e.target.closest('.cell'); if(!c||!c.dataset.k) return;
+  var key=c.dataset.k, b=book[key];
+  var day=DAYS[key.split('-')[0]], hour=key.split('-')[1]+':00';
+
+  if(c.classList.contains('free')){
+    if(view==='public') modal('<h2>Termin anfragen</h2><p>'+day+' '+hour+' Uhr</p><p>Möchtest du diese Zeit für eine kostenlose Probestunde anfragen? Anna bestätigt und du bekommst eine E-Mail.</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="req(\''+key+'\',\'Neuer Schüler\')">Anfragen</button></div>');
+    else if(view==='max') modal('<h2>Nachholstunde buchen</h2><p>'+day+' '+hour+' Uhr</p><p>Diese freie Stunde als Nachholtermin buchen? Anna bestätigt, dann bekommst du eine Bestätigungs-Mail.</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="req(\''+key+'\',\'Max\')">Buchen</button></div>');
+    else modal('<h2>'+day+' '+hour+'</h2><p>Freier Slot. (In der Admin-Ansicht kannst du hier später selbst Termine eintragen.)</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
+    return;
+  }
+  if(!b) return;
+  // Anfrage bestätigen (Admin)
+  if(b.st==='req' && view==='admin'){
+    modal('<h2>Anfrage bestätigen</h2><p><b>'+b.name+'</b> möchte '+day+' '+hour+' Uhr.</p><div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+key+'\')">Bestätigen &amp; Mail senden</button></div>');
+    return;
+  }
+  // Max sagt seinen Termin ab
+  if(b.mine && b.st==='ok' && view==='max'){
+    if(b.when==='ontime'){
+      if(minus>=4){
+        modal('<h2>Absagen</h2><div class="warn">Du hast schon 4 Minus-Stunden. Hol sie zuerst nach, bevor du weitere sammelst.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',false)">Trotzdem absagen (ohne Minus)</button></div>');
+      } else {
+        modal('<h2>Termin absagen</h2><p>'+day+' '+hour+' Uhr</p><div class="ok">Mehr als 4 Stunden vorher: Diese Stunde wird als <b>Minus-Stunde</b> gutgeschrieben und kann später nachgeholt werden.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',true)">Absagen</button></div>');
+      }
+    } else {
+      modal('<h2>Absage zu spät</h2><p>'+day+' '+hour+' Uhr</p><div class="warn">Es sind weniger als 4 Stunden bis zum Termin. Es tut mir leid, aber diese Stunde zählt <b>nicht</b> als Minus-Stunde. Bitte sag mindestens 4 Stunden vorher ab.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancel(\''+key+'\',false)">Verstanden, absagen</button></div>');
+    }
+    return;
+  }
+  // Max: fremder / eigener angefragter
+  if(view==='max' && b.st==='req'){ modal('<h2>Angefragt</h2><p>'+day+' '+hour+' Uhr wartet auf Annas Bestätigung.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); return; }
+});
+
+function req(key,name){ book[key]={name:name,mine:(name==='Max'),st:'req',when:'ontime'}; close(); render(); toast(); }
+function confirmReq(key){ book[key].st='ok'; close(); render(); modal('<h2>Bestätigt ✓</h2><p>Termin bestätigt. Eine Bestätigungs-Mail wurde an '+book[key].name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function cancel(key,credit){ delete book[key]; if(credit&&minus<4) minus++; close(); render(); modal('<h2>'+(credit?'Abgesagt ✓':'Abgesagt')+'</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+minus+'/4). Du kannst sie später nachholen.':'Der Termin wurde abgesagt. Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function toast(){ modal('<h2>Anfrage gesendet ✓</h2><p>Anna wurde benachrichtigt und bestätigt den Termin. Du bekommst dann eine Bestätigungs-Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+
+document.getElementById('viewseg').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  [].forEach.call(this.children,function(x){x.classList.remove('on');}); b.classList.add('on');
+  view=b.dataset.v; render();
+});
+document.getElementById('ov').addEventListener('click',function(e){ if(e.target===this) close(); });
+render();
+</script>
+</body>
+</html>
