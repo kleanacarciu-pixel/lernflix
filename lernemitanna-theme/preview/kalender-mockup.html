@@ -75,7 +75,7 @@ table.grid{border-collapse:collapse;width:100%;min-width:640px}
 .acts{display:flex;gap:10px;margin-top:18px}
 .col{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .btn{flex:1;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:600;cursor:pointer}
-.btn.p{background:var(--grad);color:#fff}.btn.g{background:#eee;color:#333}
+.btn.p{background:var(--grad);color:#fff}.btn.g{background:#eee;color:#333}.btn.r{background:#f7dcd4;color:#b4491f}
 </style>
 </head>
 <body>
@@ -250,7 +250,7 @@ document.getElementById('cal').addEventListener('click',function(e){
   if(!info) return;
   if(view==='admin'&&info.st==='ok'&&students[info.name]){ modal('<h2>Stunde absagen (du)</h2><p><b>'+info.name+'</b> · '+lbl+'</p><div class="okbox">'+info.name+' bekommt Nachhol-Guthaben (kein Minus) und eine Mail.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="adminCancel(\''+dk+'\',\''+info.name+'\')">Absagen</button></div>'); return; }
   if(view==='admin'&&info.st==='req'){ var isFix=info.fix;
-    modal('<h2>'+(isFix?'Festen Termin bestätigen':'Anfrage bestätigen')+'</h2><p><b>'+info.name+'</b> · '+lbl+'</p>'+(isFix?'<div class="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div>':'')+'<div class="acts"><button class="btn g" onclick="close()">Später</button><button class="btn p" onclick="confirmReq(\''+dk+'\',\''+info.name+'\')">Bestätigen &amp; Mail</button></div>'); return; }
+    modal('<h2>'+(isFix?'Festen Termin bestätigen':'Anfrage bestätigen')+'</h2><p><b>'+info.name+'</b> · '+lbl+'</p>'+(isFix?'<div class="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div>':'')+'<div class="col"><button class="btn p" onclick="confirmReq(\''+dk+'\',\''+info.name+'\')">Bestätigen &amp; Mail</button><button class="btn r" onclick="rejectReq(\''+dk+'\',\''+info.name+'\')">Absagen &amp; Mail</button><button class="btn g" onclick="close()">Abbrechen (Fenster schließen)</button></div>'); return; }
   if(view==='max'&&info.name==='Max'&&info.st==='ok'){
     var hu=hoursUntil(dk);
     if(hu>=4) modal('<h2>Termin absagen</h2><p>'+lbl+'</p><div class="okbox">Mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancelMine(\''+dk+'\',true)">Absagen</button></div>');
@@ -271,6 +271,7 @@ function confirmReq(dk,name){ var ov=overrides[dk]||{}, msg;
   if(ov.fix){ var p=dk.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); fixed[((d.getDay()+6)%7)+'-'+p[3]]=name; delete overrides[dk]; msg='Als <b>fester wöchentlicher Termin</b> bestätigt – ab jetzt jede Woche.'; }
   else { overrides[dk]={book:name}; msg='Termin bestätigt.'; }
   close(); render(); modal('<h2>Bestätigt ✓</h2><p>'+msg+' Bestätigungs-Mail an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function rejectReq(dk,name){ delete overrides[dk]; close(); render(); modal('<h2>Anfrage abgesagt</h2><p>Der Slot ist wieder frei. <b>Absage-Mail</b> an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 
 document.getElementById('addstu').addEventListener('click',function(){
   modal('<h2>Neuen Schüler anlegen</h2><p>Kleana legt den Zugang an – der Schüler bekommt eine Einladung per Mail und ein eigenes Passwort.</p>'
