@@ -35,7 +35,11 @@ h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
 .wk small{color:var(--muted)}
 .wk.on{background:rgba(43,179,192,.12);border-color:var(--teal);color:#127a5c;font-weight:600}
 .overview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
-.overview h3{font-size:1.1rem;margin-bottom:10px}
+.overview h3{font-size:1.1rem}
+.ovh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.minibtn{border:0;background:var(--grad);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;font-size:.85rem}
+.modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px}
+.modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}
 .otbl{width:100%;border-collapse:collapse;font-size:.9rem}
 .otbl th,.otbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
 .otbl th{color:var(--muted);font-weight:600}
@@ -83,19 +87,19 @@ table.grid{border-collapse:collapse;width:100%;min-width:640px}
     <div class="seg" id="viewseg">
       <button data-v="public" class="on">Öffentlich</button>
       <button data-v="max">Schüler: Max</button>
-      <button data-v="admin">Anna (Admin)</button>
+      <button data-v="admin">Kleana (Admin)</button>
     </div>
     <div class="balance" id="balance">
       <span class="lbl">Deine Stunden:</span>
       <span class="pill"><span class="m">Minus <b id="minus">2</b>/3</span><span class="tip" id="tipM"></span></span>
       <span class="pill"><span class="p">Plus <b id="plus">1</b></span><span class="tip" id="tipP"></span></span>
-      <span class="pill"><span class="n">Nachholen (Anna) <b id="nach">0</b></span><span class="tip" id="tipN"></span></span>
+      <span class="pill"><span class="n">Nachholen (Kleana) <b id="nach">0</b></span><span class="tip" id="tipN"></span></span>
     </div>
   </div>
 
   <div class="overview" id="overview">
-    <h3>Übersicht: Plus- &amp; Minus-Stunden</h3>
-    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol (Anna)</th></tr></thead><tbody id="ovbody"></tbody></table>
+    <div class="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button class="minibtn" id="addstu">+ Neuen Schüler anlegen</button></div>
+    <table class="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol (Kleana)</th></tr></thead><tbody id="ovbody"></tbody></table>
   </div>
 
   <div class="layout">
@@ -201,7 +205,7 @@ function renderBalance(){
   document.getElementById('nach').textContent=s.nach;
   document.getElementById('tipM').innerHTML='<b>Minus-Stunden:</b><br>'+(s.minusD.length?s.minusD.join('<br>'):'keine');
   document.getElementById('tipP').innerHTML='<b>Plus-Stunden:</b><br>'+(s.plusD.length?s.plusD.join('<br>'):'keine');
-  document.getElementById('tipN').innerHTML='<b>Nachholen (Anna):</b><br>'+(s.nachD.length?s.nachD.join('<br>'):'keine');
+  document.getElementById('tipN').innerHTML='<b>Nachholen (Kleana):</b><br>'+(s.nachD.length?s.nachD.join('<br>'):'keine');
 }
 function renderOverview(){
   var ov=document.getElementById('overview'); ov.style.display=view==='admin'?'':'none';
@@ -217,7 +221,7 @@ function renderOverview(){
 function renderLegend(){
   var items=[{c:'sw-free',t:'frei / buchbar'}];
   if(view==='public'){ items.push({c:'sw-busy',t:'belegt'}); }
-  else if(view==='max'){ items.push({c:'sw-mine',t:'deine Stunde'},{c:'sw-req',t:'angefragt (wartet auf Anna)'},{c:'sw-busy',t:'belegt (andere)'}); }
+  else if(view==='max'){ items.push({c:'sw-mine',t:'deine Stunde'},{c:'sw-req',t:'angefragt (wartet auf Kleana)'},{c:'sw-busy',t:'belegt (andere)'}); }
   else { items.push({c:'sw-mine',t:'ausgewählter Schüler'},{c:'sw-req',t:'Anfrage (bestätigen)'},{c:'sw-busy',t:'belegt (andere)'}); }
   items.push({c:'sw-closed',t:'geschlossen'});
   document.getElementById('legend').innerHTML=items.map(function(x){return '<span><i class="'+x.c+'"></i>'+x.t+'</span>';}).join('');
@@ -234,7 +238,7 @@ document.getElementById('cal').addEventListener('click',function(e){
   var dk=c.dataset.k, info=slotInfo(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2]),+dk.split('-')[3]);
   var lbl=pretty(dk);
   if(c.classList.contains('free')){
-    if(view==='public') modal('<h2>Probestunde anfragen</h2><p>'+lbl+'</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="reqSlot(\''+dk+'\',\'Neu\')">Anfragen</button></div>');
+    if(view==='public') modal('<h2>Probestunde anfragen</h2><p>'+lbl+'</p><p style="font-size:.85rem">Neu hier? Nach der Probestunde legt Kleana deinen Zugang an – danach kannst du feste Termine buchen.</p><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="reqSlot(\''+dk+'\',\'Neu\')">Anfragen</button></div>');
     else if(view==='max')
       modal('<h2>Termin: '+lbl+'</h2><p>Wie möchtest du diesen Slot nutzen?</p><div class="col">'
         +'<button class="btn p" onclick="reqFixed(\''+dk+'\')">Fester wöchentlicher Termin</button>'
@@ -253,14 +257,14 @@ document.getElementById('cal').addEventListener('click',function(e){
     else modal('<h2>Absage zu spät</h2><p>'+lbl+'</p><div class="warn">Weniger als 4 Std. vorher: zählt <b>nicht</b> als Minus-Stunde.</div><div class="acts"><button class="btn g" onclick="close()">Zurück</button><button class="btn p" onclick="cancelMine(\''+dk+'\',false)">Trotzdem absagen</button></div>');
     return;
   }
-  if(view==='max'&&info.st==='req') modal('<h2>Angefragt</h2><p>'+lbl+' wartet auf Annas Bestätigung.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
+  if(view==='max'&&info.st==='req') modal('<h2>Angefragt</h2><p>'+lbl+' wartet auf Kleanas Bestätigung.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
 });
 
-function reqSlot(dk,name){ overrides[dk]={req:name}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Anna bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function reqFixed(dk){ overrides[dk]={req:'Max',fix:true}; close(); render(); modal('<h2>Fester Termin angefragt ✓</h2><p>Sobald Anna bestätigt, findet dieser Termin <b>jede Woche</b> statt. Du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
-function startExtra(dk){ var s=me();var t=s.nach>0?'Nachhol-Guthaben (von Anna) wird eingelöst.':(s.minus>0?'Minus-Stunde wird nachgeholt (Minus −1).':'Zählt als Extra-Stunde (Plus +1).');
+function reqSlot(dk,name){ overrides[dk]={req:name}; close(); render(); modal('<h2>Anfrage gesendet ✓</h2><p>Kleana bestätigt den Termin, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function reqFixed(dk){ overrides[dk]={req:'Max',fix:true}; close(); render(); modal('<h2>Fester Termin angefragt ✓</h2><p>Sobald Kleana bestätigt, findet dieser Termin <b>jede Woche</b> statt. Du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function startExtra(dk){ var s=me();var t=s.nach>0?'Nachhol-Guthaben (von Kleana) wird eingelöst.':(s.minus>0?'Minus-Stunde wird nachgeholt (Minus −1).':'Zählt als Extra-Stunde (Plus +1).');
   modal('<h2>Einmalige Stunde</h2><p>'+pretty(dk)+'</p><div class="okbox">'+t+'</div><div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="bookExtra(\''+dk+'\')">Buchen</button></div>'); }
-function bookExtra(dk){var s=me(),msg;if(s.nach>0){s.nach--;s.nachD.pop();msg='Nachhol-Guthaben eingelöst.';}else if(s.minus>0){s.minus--;s.minusD.pop();msg='Minus-Stunde nachgeholt.';}else{s.plus++;s.plusD.push(dm(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2])));msg='Extra-Stunde (Plus +1).';} overrides[dk]={req:'Max'}; close(); render(); modal('<h2>Gebucht ✓</h2><p>'+msg+' Anna bestätigt, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
+function bookExtra(dk){var s=me(),msg;if(s.nach>0){s.nach--;s.nachD.pop();msg='Nachhol-Guthaben eingelöst.';}else if(s.minus>0){s.minus--;s.minusD.pop();msg='Minus-Stunde nachgeholt.';}else{s.plus++;s.plusD.push(dm(new Date(+dk.split('-')[0],+dk.split('-')[1]-1,+dk.split('-')[2])));msg='Extra-Stunde (Plus +1).';} overrides[dk]={req:'Max'}; close(); render(); modal('<h2>Gebucht ✓</h2><p>'+msg+' Kleana bestätigt, du bekommst eine Mail.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function cancelMine(dk,credit){ overrides[dk]={cancel:true}; if(credit&&me().minus<3){me().minus++;me().minusD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt</h2><p>'+(credit?'+1 Minus-Stunde (jetzt '+me().minus+'/3).':'Keine Minus-Stunde.')+'</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function adminCancel(dk,name){ overrides[dk]={cancel:true}; if(students[name]){students[name].nach++; if(students[name].nachD) students[name].nachD.push(pretty(dk).split(' um')[0]);} close(); render(); modal('<h2>Abgesagt ✓</h2><p>'+name+' bekommt Nachhol-Guthaben (+1), kein Minus. Mail gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 function confirmReq(dk,name){ var ov=overrides[dk]||{}, msg;
@@ -268,6 +272,18 @@ function confirmReq(dk,name){ var ov=overrides[dk]||{}, msg;
   else { overrides[dk]={book:name}; msg='Termin bestätigt.'; }
   close(); render(); modal('<h2>Bestätigt ✓</h2><p>'+msg+' Bestätigungs-Mail an '+name+' gesendet.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>'); }
 
+document.getElementById('addstu').addEventListener('click',function(){
+  modal('<h2>Neuen Schüler anlegen</h2><p>Kleana legt den Zugang an – der Schüler bekommt eine Einladung per Mail und ein eigenes Passwort.</p>'
+    +'<label>Name</label><input id="nsName" placeholder="z. B. Nora">'
+    +'<label>E-Mail</label><input id="nsMail" placeholder="nora@example.com">'
+    +'<div class="acts"><button class="btn g" onclick="close()">Abbrechen</button><button class="btn p" onclick="createStudent()">Einladung senden</button></div>');
+});
+function createStudent(){
+  var n=(document.getElementById('nsName').value||'Neuer Schüler').trim();
+  students[n]={minus:0,plus:0,nach:0,fix:'—',minusD:[],plusD:[],nachD:[]};
+  close(); render();
+  modal('<h2>Schüler angelegt ✓</h2><p><b>'+n+'</b> hat eine Einladung per Mail bekommen. Nach dem Login kann '+n+' feste Termine anfragen.</p><div class="acts"><button class="btn p" onclick="close()">OK</button></div>');
+}
 document.getElementById('viewseg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;[].forEach.call(this.children,function(x){x.classList.remove('on');});b.classList.add('on');view=b.dataset.v;render();});
 document.getElementById('weeks').addEventListener('click',function(e){var b=e.target.closest('.wk');if(!b)return;var p=b.dataset.d.split('-');weekStart=new Date(+p[0],+p[1]-1,+p[2]);render();});
 document.getElementById('pm').onclick=function(){viewMonth=new Date(viewMonth.getFullYear(),viewMonth.getMonth()-1,1);renderSidebar();};
