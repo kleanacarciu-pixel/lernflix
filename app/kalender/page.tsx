@@ -109,32 +109,39 @@ export default function KalenderPage() {
   const [busy, setBusy] = useState(false);
   const today = iso(new Date());
 
-  // Session aus localStorage laden
-  useEffect(() => {
-    try { const raw = localStorage.getItem(LS_KEY); if (raw) setSession(JSON.parse(raw)); } catch { }
-    setReady(true);
-  }, []);
-  function saveSession(s: Session | null) {
+  const saveSession = useCallback((s: Session | null) => {
     setSession(s);
     try { if (s) localStorage.setItem(LS_KEY, JSON.stringify(s)); else localStorage.removeItem(LS_KEY); } catch { }
-  }
+  }, []);
+
+  // Session aus localStorage laden (einmalig beim Mounten)
+  useEffect(() => {
+    let s: Session | null = null;
+    try { const raw = localStorage.getItem(LS_KEY); if (raw) s = JSON.parse(raw); } catch { }
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (s) setSession(s);
+    setReady(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   // API-Aufruf (mit einmaligem Refresh bei 401)
-  const api = useCallback(async (action: string, params: Record<string, unknown> = {}, retry = true): Promise<Record<string, unknown>> => {
-    const tok = session?.token;
-    const res = await fetch("/api/kalender", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, token: tok, ...params }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401 && retry && session?.refresh) {
-      const r = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: session.refresh }) });
-      const rd = await r.json().catch(() => ({}));
-      if (rd.ok && rd.token) { const ns = { ...session, token: rd.token, refresh: rd.refresh }; saveSession(ns); return api(action, params, false); }
-      saveSession(null);
+  const api = useCallback(async (action: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> => {
+    const call = async (tok?: string) => {
+      const res = await fetch("/api/kalender", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, token: tok, ...params }),
+      });
+      return { status: res.status, data: (await res.json().catch(() => ({}))) as Record<string, unknown> };
+    };
+    let r = await call(session?.token);
+    if (r.status === 401 && session?.refresh && action !== "refresh" && action !== "login") {
+      const rf = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: session.refresh }) });
+      const rd = (await rf.json().catch(() => ({}))) as Record<string, unknown>;
+      if (rd.ok && rd.token) { saveSession({ ...session, token: String(rd.token), refresh: String(rd.refresh) }); r = await call(String(rd.token)); }
+      else saveSession(null);
     }
-    return data;
-  }, [session]);
+    return r.data;
+  }, [session, saveSession]);
 
   const loadWeek = useCallback(async () => {
     const d = await api("week", { monday: iso(weekStart) });
@@ -143,7 +150,11 @@ export default function KalenderPage() {
     else setOverview(null);
   }, [api, weekStart, session]);
 
-  useEffect(() => { if (ready) loadWeek(); }, [ready, loadWeek]);
+  useEffect(() => {
+    // loadWeek ist async – setState passiert erst nach dem await (kein synchroner Kaskaden-Render)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (ready) loadWeek();
+  }, [ready, loadWeek]);
 
   // ---- Aktionen ----
   async function act(action: string, params: Record<string, unknown>, successTitle = "Erledigt ✓") {
