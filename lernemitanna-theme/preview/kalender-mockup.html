@@ -45,6 +45,11 @@ h1,h2,h3{font-family:'Playfair Display',serif;margin:0}
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);flex:none}
+.sw-free{background:#eafaf7}.sw-busy{background:#cfd6da}.sw-mine{background:var(--grad);border-color:transparent}
+.sw-req{background:#fff3d6}.sw-closed{background:#f4f4f4}
 table.grid{border-collapse:collapse;width:100%;min-width:640px}
 .grid th,.grid td{border:1px solid var(--line);text-align:center;padding:0}
 .grid thead th{background:#fafafa;padding:8px 4px;font-size:.82rem;line-height:1.2}
@@ -98,6 +103,7 @@ table.grid{border-collapse:collapse;width:100%;min-width:640px}
     </div>
     <div class="calwrap">
       <div class="wkhead"><button id="pw">‹ Woche</button><b id="wlabel"></b><button id="nw">Woche ›</button></div>
+      <div class="legend" id="legend"></div>
       <table class="grid" id="cal"></table>
     </div>
   </div>
@@ -204,7 +210,15 @@ function renderOverview(){
       +'<td><span class="tag '+(s.nach?'p':'z')+'">'+s.nach+'</span></td></tr>';});
   document.getElementById('ovbody').innerHTML=rows;
 }
-function render(){ renderSidebar(); renderGrid(); renderBalance(); renderOverview(); }
+function renderLegend(){
+  var items=[{c:'sw-free',t:'frei / buchbar'}];
+  if(view==='public'){ items.push({c:'sw-busy',t:'belegt'}); }
+  else if(view==='max'){ items.push({c:'sw-mine',t:'deine Stunde'},{c:'sw-req',t:'angefragt (wartet auf Anna)'},{c:'sw-busy',t:'belegt (andere)'}); }
+  else { items.push({c:'sw-mine',t:'ausgewählter Schüler'},{c:'sw-req',t:'Anfrage (bestätigen)'},{c:'sw-busy',t:'belegt (andere)'}); }
+  items.push({c:'sw-closed',t:'geschlossen'});
+  document.getElementById('legend').innerHTML=items.map(function(x){return '<span><i class="'+x.c+'"></i>'+x.t+'</span>';}).join('');
+}
+function render(){ renderSidebar(); renderGrid(); renderLegend(); renderBalance(); renderOverview(); }
 
 function modal(html){document.getElementById('modal').innerHTML=html;document.getElementById('ov').classList.add('show');}
 function close(){document.getElementById('ov').classList.remove('show');}
