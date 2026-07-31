@@ -89,6 +89,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
 .modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px;color:var(--ink)}
 .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
+.pwrow{display:flex;gap:8px;align-items:center}.pwrow input{flex:1}
+.eye{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:1rem}
 .warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
 .okbox{background:rgba(43,179,192,.12);border:1px solid rgba(43,179,192,.4);color:#127a5c;padding:12px 14px;border-radius:10px;font-weight:500}
 .acts{display:flex;gap:10px;margin-top:18px}
@@ -152,10 +154,14 @@ export default function KalenderPage() {
   }, [session, saveSession]);
 
   const loadWeek = useCallback(async () => {
-    const d = await api("week", { monday: iso(weekStart) });
+    const isAdmin = session?.role === "admin";
+    const [d, o] = await Promise.all([
+      api("week", { monday: iso(weekStart) }),
+      isAdmin ? api("overview") : Promise.resolve(null),
+    ]);
     if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); }
-    if (session?.role === "admin") { const o = await api("overview"); if (o.ok) setOverview((o.students as OverviewRow[]) || []); }
-    else setOverview(null);
+    if (isAdmin && o && o.ok) setOverview((o.students as OverviewRow[]) || []);
+    if (!isAdmin) setOverview(null);
   }, [api, weekStart, session]);
 
   useEffect(() => {
@@ -420,11 +426,13 @@ function Info({ title, msg, err, onClose }: { title: string; msg: string; err?: 
     <div className="acts"><button className="btn p" onClick={onClose}>OK</button></div></div>;
 }
 function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promise<string>; onClose: () => void }) {
-  const [email, setEmail] = useState(""); const [pw, setPw] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  const [email, setEmail] = useState(""); const [pw, setPw] = useState(""); const [show, setShow] = useState(false); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() { setLoad(true); setErr(await onLogin(email.trim(), pw)); setLoad(false); }
   return <div className="modal"><h2>Einloggen</h2><p>Mit deiner E-Mail und deinem Passwort.</p>
     <label>E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
-    <label>Passwort</label><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+    <label>Passwort</label>
+    <div className="pwrow"><input type={show ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+      <button type="button" className="eye" onClick={() => setShow(!show)} title={show ? "verbergen" : "anzeigen"}>{show ? "🙈" : "👁"}</button></div>
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
 }
