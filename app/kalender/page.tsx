@@ -68,20 +68,20 @@ const CSS = `
 .sw-free{background:#eafaf7}.sw-busy{background:#cfd6da}.sw-mine{background:var(--grad);border-color:transparent}
 .sw-req{background:#fff3d6}.sw-closed{background:#f4f4f4}
 .sw-block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 4px,#dee3e7 4px,#dee3e7 8px)}
-table.grid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixed}
-.grid th,.grid td{border:1px solid var(--line);text-align:center;padding:0}
-.grid thead th:first-child,.grid tbody th{width:64px}
-.grid thead th{background:#fafafa;padding:9px 4px;font-size:.86rem;line-height:1.25;font-weight:700}
-.grid thead th small{display:block;color:var(--muted);font-weight:500;font-size:.76rem;margin-top:2px}
-.grid thead th.today{color:var(--teal);background:rgba(43,179,192,.10)}
-.grid thead th .now{display:block;font-size:.62rem;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;margin:3px auto 0;padding:1px 0;max-width:46px}
-.grid tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);font-weight:600}
+table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixed}
+.kgrid th,.kgrid td{border:1px solid var(--line);text-align:center;padding:0}
+.kgrid thead th:first-child,.kgrid tbody th{width:64px}
+.kgrid thead th{background:#fafafa;padding:9px 4px;font-size:.86rem;line-height:1.25;font-weight:700}
+.kgrid thead th small{display:block;color:var(--muted);font-weight:500;font-size:.76rem;margin-top:2px}
+.kgrid thead th.today{color:var(--teal);background:rgba(43,179,192,.10)}
+.kgrid thead th .now{display:block;font-size:.62rem;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;margin:3px auto 0;padding:1px 0;max-width:46px}
+.kgrid tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);font-weight:600}
 .cell{height:52px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 4px;text-align:center;overflow:hidden;line-height:1.15}
 .cell.free{background:#eafaf7;color:#127a5c}.cell.busy{background:#cfd6da;color:#3a4145}
 .cell.mine{background:var(--grad);color:#fff;font-weight:600}.cell.req{background:#fff3d6;color:#8a6d1a}
-.cell.block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73;font-weight:600}
+.cell.blk{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73;font-weight:600}
 .cell.closed{background:#f4f4f4;cursor:default;color:#ccc}.cell.past{opacity:.45;cursor:default}
-.cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover,.cell.block:hover{outline:2px solid var(--teal);outline-offset:-2px}
+.cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover,.cell.blk:hover{outline:2px solid var(--teal);outline-offset:-2px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
 .modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
@@ -335,7 +335,7 @@ export default function KalenderPage() {
               <button onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>Woche ›</button>
             </div>
             <div className="legend">{legend.map((l, i) => (<span key={i}><i className={l.c} />{l.t}</span>))}</div>
-            <table className="grid">
+            <table className="kgrid">
               <thead><tr><th></th>{days.map((d) => {
                 const dt = parseIso(d.date); const isToday = d.date === today;
                 return <th key={d.date} className={isToday ? "today" : ""}>{DAYS[d.weekday]}<small>{dm(dt)}</small>{isToday ? <span className="now">heute</span> : null}</th>;
@@ -365,7 +365,7 @@ function cellView(s: Slot, role: string): { cls: string; label: string } {
   if (s.state === "closed") return { cls: "closed", label: "" };
   if (s.state === "past") return { cls: "past", label: "" };
   if (s.state === "free") return { cls: "free", label: "frei" };
-  if (s.state === "block") return { cls: "block", label: role === "admin" ? "Geblockt" : "Belegt" };
+  if (s.state === "block") return { cls: "blk", label: role === "admin" ? "Geblockt" : "Belegt" };
   const e = modeEmoji(s.mode);
   if (s.state === "req") {
     if (role === "admin") return { cls: "req", label: `${e ? e + " " : ""}${s.name || ""} (Anfrage)` };
