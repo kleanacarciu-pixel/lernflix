@@ -200,32 +200,24 @@ svg{stroke-width:2}
         <li><a href="tel:+4917624700519"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.72 2.34a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.74.36 1.53.59 2.34.72a2 2 0 0 1 1.72 2.03z"/></svg> 0176 247 00 519</a></li>
       </ul>
     </div>
-    <form class="trial__form" id="trialForm" novalidate>
-      <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required></div>
-      <div class="field"><label for="f-mail">E-Mail</label><input id="f-mail" type="email" name="email" required></div>
-      <div class="field"><label for="f-tel">Telefon (optional)</label><input id="f-tel" name="phone"></div>
-      <div class="field"><label for="f-msg">Nachricht</label><textarea id="f-msg" name="msg" rows="4" placeholder="Ich möchte mich für den Abi-Kurs 2025 anmelden."></textarea></div>
-      <button class="btn" type="submit">Jetzt anmelden</button>
-      <p class="trial__success" id="trialOk" hidden>Danke! Deine Anmeldung ist unterwegs. Ich melde mich zeitnah bei dir. 🌿</p>
-    </form>
+    <div class="trial__form">
+      <a class="btn" href="mailto:lernemitanna@outlook.com?subject=Anmeldung%20Abi-Kurs" style="display:block;text-align:center">Per E-Mail zum Abi-Kurs anmelden</a>
+      <p style="color:#5f574f;font-size:.92rem;margin-top:14px;line-height:1.65">Schreib mir kurz per E-Mail oder ruf an (<a href="tel:+4917624700519">+49 176 24 700 519</a>) – ich melde mich mit allen Infos zum Abi-Kurs bei dir. 🌿</p>
+    </div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer class="footer">
   <div class="wrap footer__row">
-    <span class="footer__copy">© Lerne mit Anna 2025</span>
-    <nav class="footer__links"><a href="#">Datenschutzerklärung</a><a href="#">Impressum</a><a href="#">AGB</a><a href="#anmelden">Kontakt</a></nav>
+    <span class="footer__copy">© Lerne mit Anna 2026</span>
+    <nav class="footer__links"><a href="/datenschutz">Datenschutzerklärung</a><a href="/impressum">Impressum</a><a href="/agb">AGB</a><a href="#anmelden">Kontakt</a></nav>
   </div>
 </footer>
 
 <script>
-document.getElementById('trialForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  if(!this.checkValidity()){this.reportValidity();return;}
-  this.querySelector('button[type=submit]').style.display='none';
-  document.getElementById('trialOk').hidden=false;
-});
+var _tf=document.getElementById('trialForm');
+if(_tf){_tf.addEventListener('submit',function(e){e.preventDefault();window.location.href='mailto:lernemitanna@outlook.com?subject=Anmeldung%20Abi-Kurs';});}
 </script>
 </body>
 </html>
