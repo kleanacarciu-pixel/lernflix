@@ -196,7 +196,7 @@ export default function KalenderPage() {
     if (s.state === "closed" || s.state === "past") return;
 
     if (role === "public") {
-      if (s.state === "free") return info("Einloggen", "Zum Buchen bitte einloggen. Neu hier? Melde dich bei Kleana für eine Probestunde.");
+      if (s.state === "free") openProbe(date, s.hour, when);
       return;
     }
     if (role === "student") {
@@ -259,6 +259,13 @@ export default function KalenderPage() {
     }
   }
 
+  function openProbe(date: string, hour: number, when: string) {
+    setModal(<ProbeForm when={when} onClose={() => setModal(null)} onSubmit={async (name, email, m) => {
+      const d = await api("requestProbe", { date, hour, mode: m, name, email });
+      if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
+      return String(d.error || "Fehler.");
+    }} />);
+  }
   function openPassword() {
     setModal(<ChangePassword onClose={() => setModal(null)} onSave={async (pw) => {
       const d = await api("changePassword", { password: pw });
@@ -315,7 +322,7 @@ export default function KalenderPage() {
           </div>
         </div>
 
-        {!session && <div className="hint">Öffentliche Ansicht: du siehst nur <b>frei/belegt</b> (ohne Namen). Schüler und Kleana sehen nach dem Login ihre Termine. Fahre mit der Maus über die Stunden-Anzeige, um Datumsangaben zu sehen.</div>}
+        {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung). Schüler und Kleana sehen nach dem Login ihre Termine.</div>}
 
         {balance && (
           <div className="balance">
@@ -420,6 +427,24 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
     <label>Passwort</label><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
+}
+function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name: string, email: string, mode: string) => Promise<string>; onClose: () => void }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  async function go() {
+    if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
+    if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
+    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode)); setLoad(false);
+  }
+  return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
+    <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
+    <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
+    <label>Online oder vor Ort?</label>
+    <div className="acts" style={{ marginTop: 6 }}>
+      <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
+      <button type="button" className={"btn " + (mode === "vor_ort" ? "p" : "g")} onClick={() => setMode("vor_ort")}>📍 Vor Ort</button>
+    </div>
+    {err ? <div className="err">{err}</div> : null}
+    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Anfragen"}</button></div></div>;
 }
 function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
