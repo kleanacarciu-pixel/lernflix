@@ -292,6 +292,27 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ students: rows });
     }
 
+    if (action === "adminInbox") {
+      const sb = service();
+      const [pendRes, pfixRes, cancRes, profRes] = await Promise.all([
+        sb.from("appointments").select("student_id,slot_date,hour,kind,mode,note").eq("status", "angefragt").order("slot_date"),
+        sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "angefragt"),
+        sb.from("appointments").select("student_id,slot_date,hour,credited,note").eq("kind", "absage").order("slot_date", { ascending: false }).limit(15),
+        sb.from("profiles").select("user_id,name"),
+      ]);
+      const profs = (profRes.data || []) as { user_id: string; name: string }[];
+      const nameOf = (id: string | null) => (id ? profs.find((p) => p.user_id === id)?.name : null) || "—";
+      const pend = (pendRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; mode: string | null; note: string | null }[];
+      const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
+      const canc = (cancRes.data || []) as { student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
+      const requests = [
+        ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode })),
+        ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode })),
+      ];
+      const cancellations = canc.map((c) => ({ date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL }));
+      return ok({ inbox: { requests, cancellations } });
+    }
+
     return bad("Unbekannte Aktion.");
   } catch (e) {
     console.error("[kalender] error:", e instanceof Error ? e.stack : String(e));

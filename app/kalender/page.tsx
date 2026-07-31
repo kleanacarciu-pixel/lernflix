@@ -7,6 +7,9 @@ type Day = { date: string; weekday: number; slots: Slot[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] } };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number };
+type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
+type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
+type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -60,7 +63,28 @@ const CSS = `
 .wk{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;margin-bottom:7px;cursor:pointer;font:inherit;font-size:.86rem}
 .wk small{color:var(--muted)}
 .wk.on{background:rgba(43,179,192,.12);border-color:var(--teal);color:#127a5c;font-weight:600}
-.calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow-x:auto}
+.calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.deskgrid{overflow-x:auto}
+.otblwrap{overflow-x:auto}
+.dayview{display:none;padding:12px 14px 16px}
+.daychips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.daychip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;font:inherit;font-size:.8rem;font-weight:700;min-width:54px;color:var(--ink)}
+.daychip small{display:block;color:var(--muted);font-weight:500;font-size:.72rem;margin-top:2px}
+.daychip.on{background:rgba(43,179,192,.14);border-color:var(--teal);color:#127a5c}
+.daychip.td small{color:var(--teal)}
+.daylist{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.dayrow{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;padding:14px 14px;cursor:pointer;font:inherit;text-align:left;background:#fff;font-size:.95rem}
+.dayrow .dh{font-weight:700;width:58px;flex:none}.dayrow .dl{flex:1}
+.dayrow.free{background:#eafaf7;color:#127a5c}.dayrow.busy{background:#eef1f3;color:#3a4145}
+.dayrow.mine{background:var(--grad);color:#fff}.dayrow.req{background:#fff3d6;color:#8a6d1a}
+.dayrow.blk{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73}
+.dayrow.past{opacity:.5}
+.inbxlist{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.inbxrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#fff;font:inherit;text-align:left;cursor:pointer;width:100%}
+.inbxrow.ca{cursor:default;background:#fbf7f4}
+.inbxrow .ibw{font-weight:700}.inbxrow .ibd{color:var(--muted);font-size:.86rem;flex:1}
+.inbxrow .ibgo{color:var(--teal);font-weight:600;font-size:.85rem}
+@media(max-width:700px){.deskgrid{display:none}.dayview{display:block}.wrap{padding:14px}.hdr h1{font-size:1.3rem}}
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
@@ -114,6 +138,8 @@ export default function KalenderPage() {
   const [days, setDays] = useState<Day[]>([]);
   const [balance, setBalance] = useState<Balance | null>(null);
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
+  const [inbox, setInbox] = useState<Inbox | null>(null);
+  const [selDay, setSelDay] = useState<string>("");
   const [modal, setModal] = useState<ReactNode | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -155,13 +181,15 @@ export default function KalenderPage() {
 
   const loadWeek = useCallback(async () => {
     const isAdmin = session?.role === "admin";
-    const [d, o] = await Promise.all([
+    const [d, o, ib] = await Promise.all([
       api("week", { monday: iso(weekStart) }),
       isAdmin ? api("overview") : Promise.resolve(null),
+      isAdmin ? api("adminInbox") : Promise.resolve(null),
     ]);
     if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); }
     if (isAdmin && o && o.ok) setOverview((o.students as OverviewRow[]) || []);
-    if (!isAdmin) setOverview(null);
+    if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
+    if (!isAdmin) { setOverview(null); setInbox(null); }
   }, [api, weekStart, session]);
 
   useEffect(() => {
@@ -312,6 +340,10 @@ export default function KalenderPage() {
   const role = session?.role || "public";
   const legend = buildLegend(role);
   const wEnd = addDays(weekStart, 6);
+  const effSel = days.find((d) => d.date === selDay) ? selDay : (days.find((d) => d.date === today)?.date || days[0]?.date || "");
+  const selSlots = (days.find((d) => d.date === effSel)?.slots || []).filter((s) => s.state !== "closed");
+  function jumpTo(dateStr: string) { const d = parseIso(dateStr); setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr); }
+  function nextWeekdayDate(wd: number) { const t = new Date(); t.setHours(0, 0, 0, 0); for (let i = 0; i < 14; i++) { const x = addDays(t, i); if ((x.getDay() + 6) % 7 === wd) return iso(x); } return iso(t); }
 
   return (
     <div className="kal">
@@ -342,14 +374,33 @@ export default function KalenderPage() {
         {role === "admin" && overview && (
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></div>
-            <table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
+            <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
               <tbody>{overview.map((r) => (<tr key={r.id}><td><b>{r.name}</b></td><td>{r.fix}</td>
                 <td><span className={"tag " + (r.minus ? "m" : "z")}>{r.minus}</span></td>
                 <td><span className={"tag " + (r.plus ? "p" : "z")}>{r.plus}</span></td>
                 <td><span className={"tag " + (r.nach ? "p" : "z")}>{r.nach}</span></td>
                 <td><button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button></td></tr>))}
                 {overview.length === 0 && <tr><td colSpan={6} style={{ color: "#999" }}>Noch keine Schüler. Lege oben rechts den ersten an.</td></tr>}
-              </tbody></table>
+              </tbody></table></div>
+          </div>
+        )}
+
+        {role === "admin" && inbox && (inbox.requests.length > 0 || inbox.cancellations.length > 0) && (
+          <div className="overview">
+            <h3>Offene Anfragen (alle Daten)</h3>
+            {inbox.requests.length === 0 ? <p style={{ color: "#999", margin: "6px 0 0" }}>Keine offenen Anfragen.</p> :
+              <div className="inbxlist">{inbox.requests.map((r, i) => {
+                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${pad(r.hour)}:00` : `jeden ${DAYS[r.weekday ?? 0]} ${pad(r.hour)}:00`;
+                const kindLbl = r.kind === "fix" ? "fester Termin" : r.kind === "probe" ? "Probestunde" : "Extra-Stunde";
+                return <button key={i} className="inbxrow" onClick={() => jumpTo(r.date || nextWeekdayDate(r.weekday ?? 0))}>
+                  <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">öffnen ›</span></button>;
+              })}</div>}
+            {inbox.cancellations.length > 0 && <>
+              <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
+              <div className="inbxlist">{inbox.cancellations.map((c, i) => (
+                <div key={i} className="inbxrow ca"><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {pad(c.hour)}:00 · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span></div>
+              ))}</div>
+            </>}
           </div>
         )}
 
@@ -370,7 +421,7 @@ export default function KalenderPage() {
               <button onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>Woche ›</button>
             </div>
             <div className="legend">{legend.map((l, i) => (<span key={i}><i className={l.c} />{l.t}</span>))}</div>
-            <table className="kgrid">
+            <div className="deskgrid"><table className="kgrid">
               <thead><tr><th></th>{days.map((d) => {
                 const dt = parseIso(d.date); const isToday = d.date === today;
                 return <th key={d.date} className={isToday ? "today" : ""}>{DAYS[d.weekday]}<small>{dm(dt)}</small>{isToday ? <span className="now">heute</span> : null}</th>;
@@ -382,7 +433,18 @@ export default function KalenderPage() {
                   return <td key={d.date + h}><div className={"cell " + v.cls} onClick={() => onSlot(d.date, s)}>{v.label}</div></td>;
                 })}</tr>
               ))}</tbody>
-            </table>
+            </table></div>
+            <div className="dayview">
+              <div className="daychips">{days.map((d) => (
+                <button key={d.date} className={"daychip" + (d.date === effSel ? " on" : "") + (d.date === today ? " td" : "")} onClick={() => setSelDay(d.date)}>{DAYS[d.weekday]}<small>{dm(parseIso(d.date))}</small></button>
+              ))}</div>
+              <div className="daylist">
+                {selSlots.map((s) => { const v = cellView(s, role); return (
+                  <button key={s.hour} className={"dayrow " + v.cls} onClick={() => onSlot(effSel, s)}><span className="dh">{s.hour}:00</span><span className="dl">{v.label || "frei"}</span></button>
+                ); })}
+                {selSlots.length === 0 && <div style={{ color: "#999", padding: "10px 2px" }}>Keine Termine an diesem Tag.</div>}
+              </div>
+            </div>
           </div>
         </div>
       </div>
