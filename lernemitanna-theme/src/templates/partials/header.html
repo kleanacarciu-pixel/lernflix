@@ -1,0 +1,56 @@
+<!--
+  templateType: global_partial
+  label: Website Header
+-->
+
+{#
+  Header von "Lerne mit Anna"
+  ---------------------------
+  Aufbau: Logo links, Navigation rechts (Leistungen, Kurse, Blog, Mehr).
+
+  Beide Bereiche sind globale, im HubSpot-Editor bearbeitbare Module:
+    - "site_logo"          -> Logo hochladen / verlinken (Editor: auf das Logo klicken)
+    - "navigation-primary" -> Menuepunkte pflegen
+
+  Die Menuepunkte selbst (Leistungen, Kurse, Blog, Mehr) werden in HubSpot unter
+  Einstellungen > Website > Navigationen in einem Menue namens "default" gepflegt.
+  Lege dort die vier Eintraege an, dann erscheinen sie automatisch hier.
+#}
+
+<header class="header">
+
+  {# Sprungmarke fuer Tastatur-Navigation (Barrierefreiheit) #}
+  <a href="#main-content" class="header__skip">Zum Inhalt springen</a>
+
+  <div class="header__container content-wrapper">
+
+    {# Logo-Spalte (links) #}
+    <div class="header__logo">
+      {% module "site_logo"
+        path="@hubspot/logo"
+        img={
+          "loading": "eager"
+        }
+      %}
+    </div>
+
+    {# Navigations-Spalte (rechts) #}
+    <div class="header__column">
+
+      {# Hamburger-Schalter fuer mobile Ansicht #}
+      <div class="header--toggle header__navigation--toggle"></div>
+      <div class="header__close--toggle"></div>
+
+      <nav class="header__navigation header--element" aria-label="Hauptnavigation">
+        {% module "navigation-primary"
+          path="../../modules/menu",
+          label="Hauptnavigation",
+          menu="default"
+        %}
+      </nav>
+
+    </div>
+
+  </div>
+
+</header>

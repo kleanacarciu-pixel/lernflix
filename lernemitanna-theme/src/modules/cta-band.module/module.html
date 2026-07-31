@@ -1,0 +1,13 @@
+{# Abschluss-CTA-Band: dunkles Ink-Band mit starker Headline + hellem Button #}
+{% set href = module.button_link.url.href %}
+{% if module.button_link.url.type == "EMAIL_ADDRESS" %}{% set href = "mailto:" + href %}{% endif %}
+
+<section class="section cta-band reveal" id="kontakt">
+  <div class="content-wrapper">
+    {% if module.heading %}<h2 class="cta-band__title">{{ module.heading }}</h2>{% endif %}
+    {% if module.lead %}<p class="cta-band__lead">{{ module.lead }}</p>{% endif %}
+    {% if module.button_text %}
+      <a class="button" href="{{ href|escape_url }}"{% if module.button_link.open_in_new_tab %} target="_blank" rel="noopener"{% endif %}>{{ module.button_text }}</a>
+    {% endif %}
+  </div>
+</section>

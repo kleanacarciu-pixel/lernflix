@@ -1,0 +1,30 @@
+[
+  {
+    "label": "Ueberschrift",
+    "name": "heading",
+    "type": "text",
+    "default": "Bereit fuer den ersten Schritt?"
+  },
+  {
+    "label": "Subline",
+    "name": "lead",
+    "type": "text",
+    "default": "Vereinbare jetzt deine kostenlose Probestunde – unverbindlich und ohne Druck."
+  },
+  {
+    "label": "Button – Text",
+    "name": "button_text",
+    "type": "text",
+    "default": "Kostenlose Probestunde"
+  },
+  {
+    "label": "Button – Link",
+    "name": "button_link",
+    "type": "link",
+    "default": {
+      "url": { "href": "mailto:lernemitanna@outlook.com", "type": "EMAIL_ADDRESS" },
+      "open_in_new_tab": false,
+      "no_follow": false
+    }
+  }
+]

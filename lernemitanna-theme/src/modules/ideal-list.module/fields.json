@@ -1,0 +1,51 @@
+[
+  {
+    "label": "Eyebrow",
+    "name": "eyebrow",
+    "type": "text",
+    "default": "Passt das zu dir?"
+  },
+  {
+    "label": "Ueberschrift",
+    "name": "heading",
+    "type": "text",
+    "default": "Ideal fuer dich, wenn …"
+  },
+  {
+    "label": "Punkt",
+    "name": "item",
+    "type": "group",
+    "occurrence": { "default": 7, "min": 1, "max": 10, "sorting_label_field": "item.title" },
+    "default": [
+      { "icon": "formula", "title": "Mathe oder Physik schwierig sind", "text": "Keine Angst mehr vor Formeln – wir gehen es Schritt fuer Schritt an." },
+      { "icon": "books", "title": "du Luecken schliessen willst", "text": "Altes Wissen aufarbeiten und sicher weiterlernen." },
+      { "icon": "clipboard", "title": "eine Pruefung ansteht", "text": "Gezielte Vorbereitung auf Schulaufgaben, Abitur & Co." },
+      { "icon": "person", "title": "du mehr Selbstvertrauen brauchst", "text": "Erfolgserlebnisse, die wirklich motivieren." },
+      { "icon": "laptop", "title": "du flexibel lernen moechtest", "text": "Online oder vor Ort – ganz wie es in deinen Alltag passt." },
+      { "icon": "house", "title": "Eltern Unterstuetzung suchen", "text": "Transparente Rueckmeldung zum Lernfortschritt." },
+      { "icon": "teacher", "title": "du echte Erklaerungen brauchst", "text": "Verstaendnis statt stumpfem Auswendiglernen." }
+    ],
+    "children": [
+      {
+        "label": "Icon",
+        "name": "icon",
+        "type": "choice",
+        "display": "select",
+        "default": "formula",
+        "choices": [
+          ["formula", "Formel"],
+          ["books", "Buecher"],
+          ["clipboard", "Lernplan"],
+          ["person", "Person"],
+          ["laptop", "Laptop"],
+          ["house", "Haus"],
+          ["teacher", "Lehrkraft"],
+          ["handshake", "Handschlag"],
+          ["blog", "Dokument"]
+        ]
+      },
+      { "label": "Titel", "name": "title", "type": "text", "default": "Titel" },
+      { "label": "Text", "name": "text", "type": "text", "default": "Beschreibung." }
+    ]
+  }
+]

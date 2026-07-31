@@ -1,0 +1,56 @@
+{# =========================================================================
+   Hero-Modul – "Lerne mit Anna"
+   Grosse Serifen-Headline mit handgezeichneter Unterstreichung unter dem
+   hervorgehobenen Wort, Ink-Button + Text-Link, rechts der "Mathe-Test"-Block.
+   ========================================================================= #}
+
+{# Hilfsmakro: baut href + Attribute aus einem Link-Feld #}
+{% macro link_attrs(link) %}
+  {%- set href = link.url.href -%}
+  {%- if link.url.type == "EMAIL_ADDRESS" -%}{%- set href = "mailto:" + href -%}{%- endif -%}
+  href="{{ href|escape_url }}"{% if link.open_in_new_tab %} target="_blank" rel="noopener"{% endif %}
+{% endmacro %}
+
+<section class="hero reveal">
+  <div class="content-wrapper hero__inner">
+
+    {# Textspalte #}
+    <div class="hero__text">
+      {% if module.eyebrow %}<p class="eyebrow">{{ module.eyebrow }}</p>{% endif %}
+
+      <h1 class="hero__headline">
+        {{- module.headline_before -}}
+        <span class="annotate">{{ module.headline_highlight }}<svg class="annotate__underline" viewBox="0 0 300 20" fill="none" preserveAspectRatio="none" aria-hidden="true"><path d="M4 13 C 60 4, 120 4, 178 11 S 260 18, 296 7" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg></span>
+        {{- module.headline_after -}}
+      </h1>
+
+      {% if module.subline %}<p class="hero__subline">{{ module.subline }}</p>{% endif %}
+
+      <div class="hero__actions">
+        {% if module.primary_text %}
+          <a class="button" {{ link_attrs(module.primary_link) }}>{{ module.primary_text }}</a>
+        {% endif %}
+        {% if module.secondary_text %}
+          <a class="link-arrow" {{ link_attrs(module.secondary_link) }}>{{ module.secondary_text }} <span class="arrow" aria-hidden="true">&rarr;</span></a>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Visuelle Spalte: Mathe-Test mit eingekreister Note #}
+    <div class="hero__visual">
+      <div class="mathtest" role="img" aria-label="Mathe-Test mit der Note {{ module.grade|escape_attr }}">
+        <div class="mathtest__head">
+          <span>{{ module.test_title }}</span>
+          <span class="annotate-circle mathtest__grade">
+            <svg class="annotate-circle__ring" viewBox="0 0 100 100" fill="none" aria-hidden="true"><path d="M72 17 C 32 9, 9 34, 18 61 C 26 86, 73 93, 85 63 C 93 43, 80 19, 50 15" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+            {{ module.grade }}
+          </span>
+        </div>
+        <div class="mathtest__body">
+          {{ module.equations }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

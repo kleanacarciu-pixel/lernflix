@@ -1,0 +1,32 @@
+<!--
+  templateType: page
+  isAvailableForNewContent: true
+  label: Startseite – Lerne mit Anna
+  screenshotPath: ../images/template-previews/home.png
+-->
+{% extends "./layouts/base.html" %}
+
+{#
+  Startseite "Lerne mit Anna"
+  ---------------------------
+  Jede Sektion ist ein eigenstaendiges, im Editor bearbeitbares Modul.
+  Reihenfolge (von oben nach unten):
+    1. Hero             – Headline, Unterstreichung, Ink-Button, Mathe-Test
+    2. Vertrauensleiste – 4 Kennzahlen
+    3. Lernweg-Karten   – Nachhilfe / Kurse / Blog / Ueber mich
+    4. Ideal-Liste      – "Ideal fuer dich, wenn …"
+    5. Ablauf-Schritte  – "So starten wir gemeinsam"
+    6. Referenzen       – Testimonials mit Sternen
+    7. CTA-Band         – Abschluss mit Ink-Button
+  Header und Footer kommen global aus dem base-Layout.
+#}
+
+{% block body %}
+  {% module "hero"          path="../modules/hero",         label="Hero" %}
+  {% module "trust"         path="../modules/trust-bar",    label="Vertrauens-Leiste" %}
+  {% module "lernweg"       path="../modules/lernweg",      label="Lernweg-Karten" %}
+  {% module "ideal"         path="../modules/ideal-list",   label="Ideal-Liste" %}
+  {% module "steps"         path="../modules/steps",        label="Ablauf-Schritte" %}
+  {% module "testimonials"  path="../modules/testimonials", label="Referenzen" %}
+  {% module "cta"           path="../modules/cta-band",     label="CTA-Band" %}
+{% endblock body %}

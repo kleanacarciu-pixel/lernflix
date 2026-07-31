@@ -1,0 +1,84 @@
+[
+  {
+    "label": "Eyebrow",
+    "name": "eyebrow",
+    "type": "text",
+    "default": "Mathe- & Physik-Nachhilfe"
+  },
+  {
+    "label": "Headline – Teil davor",
+    "name": "headline_before",
+    "type": "text",
+    "help_text": "Text vor dem hervorgehobenen Wort.",
+    "default": "Lernen kann "
+  },
+  {
+    "label": "Headline – hervorgehobenes Wort",
+    "name": "headline_highlight",
+    "type": "text",
+    "help_text": "Dieses Wort bekommt die handgezeichnete Tuerkis-Unterstreichung.",
+    "default": "leicht"
+  },
+  {
+    "label": "Headline – Teil danach",
+    "name": "headline_after",
+    "type": "text",
+    "default": " sein."
+  },
+  {
+    "label": "Subline",
+    "name": "subline",
+    "type": "text",
+    "default": "Mit klaren Erklaerungen, Geduld und einem Plan, der zu dir passt – Schritt fuer Schritt zu besseren Noten."
+  },
+  {
+    "label": "Primaerer Button – Text",
+    "name": "primary_text",
+    "type": "text",
+    "default": "Kostenlose Probestunde"
+  },
+  {
+    "label": "Primaerer Button – Link",
+    "name": "primary_link",
+    "type": "link",
+    "default": {
+      "url": { "href": "#kontakt", "type": "EXTERNAL" },
+      "open_in_new_tab": false,
+      "no_follow": false
+    }
+  },
+  {
+    "label": "Sekundaerer Link – Text",
+    "name": "secondary_text",
+    "type": "text",
+    "default": "So funktioniert's"
+  },
+  {
+    "label": "Sekundaerer Link – Ziel",
+    "name": "secondary_link",
+    "type": "link",
+    "default": {
+      "url": { "href": "#ablauf", "type": "EXTERNAL" },
+      "open_in_new_tab": false,
+      "no_follow": false
+    }
+  },
+  {
+    "label": "Mathe-Test – Titel",
+    "name": "test_title",
+    "type": "text",
+    "default": "Mathe-Test"
+  },
+  {
+    "label": "Mathe-Test – Note",
+    "name": "grade",
+    "type": "text",
+    "default": "1"
+  },
+  {
+    "label": "Mathe-Test – Aufgaben",
+    "name": "equations",
+    "type": "richtext",
+    "default": "<ol><li>3 + 4 &middot; 0 = 3</li><li>25 + 25 = 50</li><li>0,5 &middot; 0,5 = 0,25</li><li>&minus;0,4 &middot; &minus;0,2 = 0,08</li><li>0,2 &middot; 0,2 = 0,04</li><li>12 &middot; 13 = 156</li></ol>"
+  }
+]

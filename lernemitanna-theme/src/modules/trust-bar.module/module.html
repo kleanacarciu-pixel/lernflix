@@ -1,0 +1,11 @@
+{# Vertrauens-Leiste: 4 Kennzahlen, ruhig und editorial #}
+<section class="trust reveal">
+  <div class="content-wrapper trust__grid">
+    {% for stat in module.stat %}
+      <div class="trust__item">
+        <div class="trust__value">{{ stat.value }}</div>
+        <div class="trust__label">{{ stat.label }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>

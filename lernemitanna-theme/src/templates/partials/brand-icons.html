@@ -1,0 +1,66 @@
+<!--
+  templateType: global_partial
+  label: Brand Icons (Makro)
+-->
+{#
+  Icon-Bibliothek von "Lerne mit Anna"
+  ------------------------------------
+  Schlanke Linien-Icons (stroke = currentColor), damit sie ueber die
+  CSS-Farbe (Tuerkis) eingefaerbt werden. Verwendung in Modulen:
+
+    {% from "../../templates/partials/brand-icons.html" import brand_icon %}
+    {{ brand_icon("teacher") }}
+
+  Verfuegbare Namen: teacher, books, laptop, blog, person, formula,
+  handshake, house, clipboard.
+#}
+
+{% macro brand_icon(name) %}
+  <svg class="brand-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    {% if name == "teacher" %}
+      <rect x="6" y="6" width="26" height="18" rx="1.5"></rect>
+      <line x1="11" y1="12" x2="22" y2="12"></line>
+      <line x1="11" y1="17" x2="19" y2="17"></line>
+      <circle cx="34" cy="30" r="4"></circle>
+      <path d="M28 42c0-4 3-7 6-7s6 3 6 7"></path>
+    {% elif name == "books" %}
+      <path d="M10 14h16v22H10z"></path>
+      <line x1="10" y1="20" x2="26" y2="20"></line>
+      <line x1="10" y1="30" x2="26" y2="30"></line>
+      <path d="M33 12c-2 0-3 1.5-3 3 2 0 3-1.5 3-3z"></path>
+      <circle cx="35" cy="20" r="5"></circle>
+      <path d="M35 15v-3"></path>
+    {% elif name == "laptop" %}
+      <rect x="10" y="12" width="28" height="18" rx="1.5"></rect>
+      <path d="M6 36h36l-3-6H9z"></path>
+    {% elif name == "blog" %}
+      <rect x="11" y="8" width="22" height="30" rx="1.5"></rect>
+      <line x1="16" y1="15" x2="28" y2="15"></line>
+      <line x1="16" y1="21" x2="28" y2="21"></line>
+      <line x1="16" y1="27" x2="23" y2="27"></line>
+    {% elif name == "person" %}
+      <circle cx="24" cy="16" r="6"></circle>
+      <path d="M12 40c0-7 5-12 12-12s12 5 12 12"></path>
+    {% elif name == "formula" %}
+      <rect x="10" y="8" width="28" height="32" rx="1.5"></rect>
+      <path d="M16 30l4-12 3 8 3-5"></path>
+      <line x1="27" y1="16" x2="33" y2="22"></line>
+      <line x1="33" y1="16" x2="27" y2="22"></line>
+    {% elif name == "handshake" %}
+      <path d="M6 20l6-4 8 6 4-2 4 2 6-4 4 4-8 12-4-3"></path>
+      <path d="M20 22l4 4"></path>
+      <path d="M16 26l3 3"></path>
+    {% elif name == "house" %}
+      <path d="M8 22L24 9l16 13"></path>
+      <path d="M12 20v18h24V20"></path>
+      <rect x="20" y="28" width="8" height="10"></rect>
+    {% elif name == "clipboard" %}
+      <rect x="12" y="8" width="24" height="32" rx="1.5"></rect>
+      <rect x="18" y="5" width="12" height="6" rx="1"></rect>
+      <path d="M17 19l2 2 3-4"></path>
+      <path d="M17 29l2 2 3-4"></path>
+      <line x1="26" y1="19" x2="32" y2="19"></line>
+      <line x1="26" y1="29" x2="32" y2="29"></line>
+    {% endif %}
+  </svg>
+{% endmacro %}

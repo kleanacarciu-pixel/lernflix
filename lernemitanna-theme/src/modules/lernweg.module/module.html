@@ -1,0 +1,30 @@
+{# =========================================================================
+   "Waehle deinen Lernweg" – 4 Karten mit Icon, Kurztext, Hover-Lift, Pfeil.
+   Die ganze Karte ist verlinkt (a.path-card).
+   ========================================================================= #}
+{% from "../../templates/partials/brand-icons.html" import brand_icon %}
+
+<section class="section paths reveal">
+  <div class="content-wrapper">
+
+    <div class="section__head">
+      {% if module.eyebrow %}<p class="eyebrow">{{ module.eyebrow }}</p>{% endif %}
+      {% if module.heading %}<h2 class="section__title">{{ module.heading }}</h2>{% endif %}
+      {% if module.lead %}<p class="section__lead">{{ module.lead }}</p>{% endif %}
+    </div>
+
+    <div class="paths__grid">
+      {% for card in module.card %}
+        {% set href = card.link.url.href %}
+        {% if card.link.url.type == "EMAIL_ADDRESS" %}{% set href = "mailto:" + href %}{% endif %}
+        <a class="path-card" href="{{ href|escape_url }}"{% if card.link.open_in_new_tab %} target="_blank" rel="noopener"{% endif %}>
+          <span class="path-card__icon">{{ brand_icon(card.icon) }}</span>
+          <h3 class="path-card__title">{{ card.title }}</h3>
+          <p class="path-card__text">{{ card.text }}</p>
+          <span class="path-card__more">{{ card.link_text }} <span class="arrow" aria-hidden="true">&rarr;</span></span>
+        </a>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>

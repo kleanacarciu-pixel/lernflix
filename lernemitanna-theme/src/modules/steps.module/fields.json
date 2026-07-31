@@ -1,0 +1,30 @@
+[
+  {
+    "label": "Eyebrow",
+    "name": "eyebrow",
+    "type": "text",
+    "default": "Der Ablauf"
+  },
+  {
+    "label": "Ueberschrift",
+    "name": "heading",
+    "type": "text",
+    "default": "So starten wir gemeinsam"
+  },
+  {
+    "label": "Schritt",
+    "name": "step",
+    "type": "group",
+    "occurrence": { "default": 4, "min": 2, "max": 6, "sorting_label_field": "step.title" },
+    "default": [
+      { "title": "Kennenlernen", "text": "In der kostenlosen Probestunde schauen wir, wo du stehst." },
+      { "title": "Lernplan", "text": "Gemeinsam legen wir Ziele und ein realistisches Tempo fest." },
+      { "title": "Unterricht", "text": "Regelmaessige Stunden – klar erklaert und mit viel Geduld." },
+      { "title": "Erfolge", "text": "Bessere Noten und spuerbar mehr Sicherheit." }
+    ],
+    "children": [
+      { "label": "Titel", "name": "title", "type": "text", "default": "Schritt" },
+      { "label": "Text", "name": "text", "type": "text", "default": "Beschreibung." }
+    ]
+  }
+]

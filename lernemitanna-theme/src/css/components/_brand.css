@@ -1,0 +1,643 @@
+/* =========================================================================
+   "Lerne mit Anna" – Brand-Komponenten
+   Designkonzept: "Teacher's Annotation"
+   Editoriale Basis, viel Weissraum, grosse Serifen-Headlines, dezente
+   handgezeichnete Tuerkis-Akzente. Ruhig, modern, hochwertig – keine Verlaeufe.
+   Mobile-first, barrierearm.
+   ========================================================================= */
+
+:root {
+  --lma-ink: #14110F;        /* Text & primaere Buttons */
+  --lma-paper: #FFFFFF;      /* Hintergrund */
+  --lma-beige: #F3EDE4;      /* ruhige Flaechen */
+  --lma-accent: #1D9E75;     /* Tuerkis-Akzent (Vollton) */
+  --lma-accent-soft: rgba(29, 158, 117, 0.12);
+  --lma-muted: #6B635C;      /* gedaempfter Text */
+  --lma-hairline: rgba(20, 17, 15, 0.12);
+  --lma-radius: 16px;
+  --lma-shadow: 0 18px 40px rgba(20, 17, 15, 0.08);
+}
+
+/* -------------------------------------------------------------------------
+   Sticky-Header (Schatten erst beim Scrollen, via brand.js)
+   ------------------------------------------------------------------------- */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid transparent;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.header--scrolled {
+  border-bottom-color: var(--lma-hairline);
+  box-shadow: 0 6px 24px rgba(20, 17, 15, 0.07);
+}
+
+/* Navigation: ruhige Inter-Links mit dezenter Akzent-Unterstreichung */
+.menu__link {
+  font-weight: 500;
+}
+
+.menu .menu__item--depth-1 > .menu__link--active-link::after {
+  background-color: var(--lma-accent) !important;
+}
+
+/* -------------------------------------------------------------------------
+   Layout-Helfer
+   ------------------------------------------------------------------------- */
+
+.section {
+  padding: clamp(56px, 8vw, 104px) 0;
+}
+
+.section--beige {
+  background-color: var(--lma-beige);
+}
+
+.section__head {
+  margin: 0 auto clamp(32px, 5vw, 56px);
+  max-width: 720px;
+  text-align: center;
+}
+
+.section__head .eyebrow {
+  justify-content: center;
+}
+
+.section__title {
+  margin: 0.2em 0 0.4em;
+}
+
+.section__lead {
+  color: var(--lma-muted);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Eyebrow – kleines, ruhiges Label ueber Headlines */
+.eyebrow {
+  align-items: center;
+  color: var(--lma-accent);
+  display: inline-flex;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  background-color: var(--lma-accent);
+  content: "";
+  display: inline-block;
+  height: 2px;
+  width: 28px;
+}
+
+/* Sekundaerer Text-Link mit Pfeil */
+.link-arrow {
+  align-items: center;
+  color: var(--lma-ink);
+  display: inline-flex;
+  font-weight: 600;
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+.link-arrow svg,
+.link-arrow .arrow {
+  transition: transform 0.2s ease;
+}
+
+.link-arrow:hover .arrow,
+.link-arrow:focus .arrow {
+  transform: translateX(4px);
+}
+
+/* -------------------------------------------------------------------------
+   Handgezeichnete Annotationen (Inline-SVG, Tuerkis)
+   ------------------------------------------------------------------------- */
+
+/* Unterstreichung unter einem hervorgehobenen Wort */
+.annotate {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+}
+
+.annotate__underline {
+  bottom: -0.18em;
+  color: var(--lma-accent);
+  height: 0.32em;
+  left: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.annotate__underline path {
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+}
+
+/* Wird gezeichnet, sobald die Seite geladen ist (.is-drawn vom JS gesetzt,
+   Fallback: Animation startet ohnehin nach kurzer Verzoegerung). */
+.annotate__underline.is-drawn path,
+.no-js .annotate__underline path {
+  animation: lma-draw 1.1s ease forwards 0.3s;
+}
+
+@keyframes lma-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Eingekreiste Zahl (z. B. die Note 1) */
+.annotate-circle {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  height: 2.4em;
+  width: 2.4em;
+}
+
+.annotate-circle__ring {
+  color: var(--lma-accent);
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.annotate-circle__ring path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+}
+
+.annotate-circle.is-drawn .annotate-circle__ring path {
+  animation: lma-draw 1.1s ease forwards;
+}
+
+/* Kleiner Pfeil als Randnotiz */
+.annotate-note {
+  color: var(--lma-accent);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------------
+   1. Hero
+   ------------------------------------------------------------------------- */
+
+.hero {
+  overflow: hidden;
+  padding: clamp(48px, 7vw, 96px) 0 clamp(56px, 8vw, 104px);
+}
+
+.hero__inner {
+  align-items: center;
+  display: grid;
+  gap: clamp(32px, 5vw, 64px);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .hero__inner {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+.hero__headline {
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 1.05;
+  margin: 0.3em 0 0.35em;
+}
+
+.hero__subline {
+  color: var(--lma-muted);
+  font-size: 1.18rem;
+  margin: 0 0 1.8em;
+  max-width: 34ch;
+}
+
+.hero__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+/* "Mathe-Test"-Block rechts */
+.mathtest {
+  background-color: var(--lma-paper);
+  border: 1px solid var(--lma-hairline);
+  border-radius: var(--lma-radius);
+  box-shadow: var(--lma-shadow);
+  margin-left: auto;
+  max-width: 380px;
+  padding: 1.6rem 1.8rem;
+  transform: rotate(-1.5deg);
+  width: 100%;
+}
+
+.mathtest__head {
+  align-items: center;
+  border-bottom: 1px solid var(--lma-hairline);
+  display: flex;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  justify-content: space-between;
+  letter-spacing: 0.06em;
+  padding-bottom: 0.8rem;
+  text-transform: uppercase;
+}
+
+.mathtest__grade {
+  color: var(--lma-accent);
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.mathtest__body {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.02rem;
+}
+
+.mathtest__body ol {
+  margin: 1rem 0 0;
+  padding-left: 1.4rem;
+}
+
+.mathtest__body li {
+  margin-bottom: 0.7rem;
+  padding-left: 0.3rem;
+}
+
+.mathtest__body li::marker {
+  color: var(--lma-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------------
+   2. Vertrauens-Leiste
+   ------------------------------------------------------------------------- */
+
+.trust {
+  border-top: 1px solid var(--lma-hairline);
+  border-bottom: 1px solid var(--lma-hairline);
+  padding: clamp(32px, 4vw, 48px) 0;
+}
+
+.trust__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, 1fr);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .trust__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.trust__value {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.trust__label {
+  color: var(--lma-muted);
+  font-size: 0.95rem;
+  margin-top: 0.3rem;
+}
+
+.trust__item + .trust__item {
+  position: relative;
+}
+
+/* -------------------------------------------------------------------------
+   4. "Wähle deinen Lernweg" – Karten
+   ------------------------------------------------------------------------- */
+
+.paths__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .paths__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 980px) {
+  .paths__grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.path-card {
+  background-color: var(--lma-paper);
+  border: 1px solid var(--lma-hairline);
+  border-radius: var(--lma-radius);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  padding: 1.8rem;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.path-card:hover,
+.path-card:focus-within {
+  border-color: transparent;
+  box-shadow: var(--lma-shadow);
+  transform: translateY(-6px);
+}
+
+.path-card__icon {
+  align-items: center;
+  background-color: var(--lma-accent-soft);
+  border-radius: 12px;
+  color: var(--lma-accent);
+  display: flex;
+  height: 52px;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  width: 52px;
+}
+
+.path-card__title {
+  font-size: 1.35rem;
+  margin: 0 0 0.4em;
+}
+
+.path-card__text {
+  color: var(--lma-muted);
+  font-size: 0.98rem;
+  margin: 0 0 1.4rem;
+}
+
+.path-card__more {
+  align-items: center;
+  color: var(--lma-accent);
+  display: inline-flex;
+  font-weight: 600;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.path-card:hover .path-card__more .arrow,
+.path-card:focus-within .path-card__more .arrow {
+  transform: translateX(4px);
+}
+
+/* Icons (brand_icon) */
+.brand-icon {
+  height: 28px;
+  width: 28px;
+}
+
+/* -------------------------------------------------------------------------
+   5. "Ideal für dich, wenn …" – Liste
+   ------------------------------------------------------------------------- */
+
+.ideal__grid {
+  display: grid;
+  gap: 1.5rem 2.5rem;
+  grid-template-columns: 1fr;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 720px) {
+  .ideal__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ideal__item {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+}
+
+.ideal__icon {
+  color: var(--lma-accent);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ideal__title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.08rem;
+  font-weight: 700;
+  margin: 0 0 0.2em;
+}
+
+.ideal__text {
+  color: var(--lma-muted);
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------
+   6. "So starten wir gemeinsam" – Schritte
+   ------------------------------------------------------------------------- */
+
+.steps__grid {
+  counter-reset: step;
+  display: grid;
+  gap: 2.5rem;
+  grid-template-columns: 1fr;
+  position: relative;
+}
+
+@media (min-width: 860px) {
+  .steps__grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+  /* Verbindungslinie hinter den Nummern */
+  .steps__grid::before {
+    background-color: var(--lma-hairline);
+    content: "";
+    height: 2px;
+    left: 12.5%;
+    position: absolute;
+    right: 12.5%;
+    top: 26px;
+  }
+}
+
+.step {
+  position: relative;
+  text-align: center;
+}
+
+.step__num {
+  align-items: center;
+  background-color: var(--lma-paper);
+  border: 2px solid var(--lma-accent);
+  border-radius: 50%;
+  color: var(--lma-accent);
+  display: inline-flex;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  height: 54px;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  position: relative;
+  width: 54px;
+  z-index: 1;
+}
+
+.step__title {
+  font-size: 1.2rem;
+  margin: 0 0 0.4em;
+}
+
+.step__text {
+  color: var(--lma-muted);
+  margin: 0 auto;
+  max-width: 24ch;
+}
+
+/* -------------------------------------------------------------------------
+   7. Referenzen / Testimonials
+   ------------------------------------------------------------------------- */
+
+.refs__grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 760px) {
+  .refs__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.ref-card {
+  background-color: var(--lma-paper);
+  border: 1px solid var(--lma-hairline);
+  border-radius: var(--lma-radius);
+  display: flex;
+  flex-direction: column;
+  padding: 1.8rem;
+}
+
+.ref-card__stars {
+  color: var(--lma-accent);
+  display: flex;
+  gap: 2px;
+  margin-bottom: 1rem;
+}
+
+.ref-card__quote {
+  font-size: 1.05rem;
+  margin: 0 0 1.4rem;
+}
+
+.ref-card__author {
+  margin-top: auto;
+}
+
+.ref-card__name {
+  font-weight: 700;
+}
+
+.ref-card__role {
+  color: var(--lma-muted);
+  font-size: 0.92rem;
+}
+
+/* -------------------------------------------------------------------------
+   8. Abschluss-CTA-Band
+   ------------------------------------------------------------------------- */
+
+.cta-band {
+  background-color: var(--lma-ink);
+  color: var(--lma-paper);
+  text-align: center;
+}
+
+.cta-band__title {
+  color: var(--lma-paper);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  margin: 0 auto 0.5em;
+  max-width: 18ch;
+}
+
+.cta-band__lead {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1.1rem;
+  margin: 0 auto 2rem;
+  max-width: 46ch;
+}
+
+/* Heller Button auf dunklem Band */
+.cta-band .button {
+  background-color: var(--lma-paper);
+  color: var(--lma-ink);
+}
+
+.cta-band .button:hover,
+.cta-band .button:focus {
+  background-color: var(--lma-beige);
+}
+
+/* -------------------------------------------------------------------------
+   Reveal-Animation (IntersectionObserver setzt .is-visible)
+   ------------------------------------------------------------------------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Ohne JS sichtbar lassen */
+.no-js .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+/* -------------------------------------------------------------------------
+   Barrierefreiheit & Motion
+   ------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 3px solid var(--lma-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .annotate__underline path,
+  .annotate-circle__ring path,
+  .path-card,
+  .button,
+  .link-arrow .arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .annotate__underline path,
+  .annotate-circle__ring path {
+    stroke-dashoffset: 0;
+  }
+}
