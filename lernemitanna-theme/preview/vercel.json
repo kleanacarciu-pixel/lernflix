@@ -1,0 +1,11 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/leistungen", "destination": "/nachhilfe" },
+    { "source": "/referenzen", "destination": "/ueber-lma" },
+    { "source": "/kontakt.html", "destination": "/kontakt" },
+    { "source": "/kalender-mockup", "destination": "/" },
+    { "source": "/kalender-mockup.html", "destination": "/" }
+  ]
+}

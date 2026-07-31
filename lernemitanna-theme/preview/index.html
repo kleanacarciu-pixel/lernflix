@@ -180,7 +180,7 @@ p{margin:0}
       <span class="hero__rule"></span>
       <h1 class="hero__title">Lernen kann leicht sein.</h1>
       <p class="hero__sub">Dein Weg zu besseren Noten ohne Druck.</p>
-      <a class="btn" href="#probestunde">Vereinbare deine kostenlose Probestunde</a>
+      <a class="btn" href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener">Kostenlose Probestunde buchen</a>
     </div>
   </div>
 </section>
@@ -251,20 +251,10 @@ p{margin:0}
       </ul>
     </div>
 
-    <form class="trial__form" id="trialForm" novalidate>
-      <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required></div>
-      <div class="row2">
-        <div class="field"><label for="f-mail">E-Mail</label><input id="f-mail" type="email" name="email" required></div>
-        <div class="field"><label for="f-tel">Telefon (optional)</label><input id="f-tel" name="phone"></div>
-      </div>
-      <div class="row2">
-        <div class="field"><label for="f-fach">Fach</label><select id="f-fach" name="fach"><option>Mathe</option><option>Physik</option><option>Mathe &amp; Physik</option></select></div>
-        <div class="field"><label for="f-klasse">Klasse</label><input id="f-klasse" name="klasse" placeholder="z. B. 10. Klasse"></div>
-      </div>
-      <div class="field"><label for="f-msg">Nachricht</label><textarea id="f-msg" name="msg" rows="4" placeholder="Worum geht es? Wann passt es dir am besten?"></textarea></div>
-      <button class="btn" type="submit">Absenden</button>
-      <p class="trial__success" id="trialOk" hidden>Danke! Deine Anfrage ist unterwegs. Ich melde mich zeitnah bei dir. 🌿</p>
-    </form>
+    <div class="trial__form">
+      <a class="btn" href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener" style="display:block;text-align:center">Freien Termin im Kalender wählen →</a>
+      <p style="color:#5f574f;font-size:.92rem;margin-top:14px;line-height:1.65">Such dir im Kalender einfach einen freien Slot aus und gib deinen Namen + deine E-Mail an. Ich bestätige deine <b>kostenlose Probestunde</b> dann per E-Mail. Lieber persönlich? Schreib mir oder ruf einfach an. 🌿</p>
+    </div>
   </div>
 </section>
 
@@ -301,12 +291,13 @@ p{margin:0}
   start();
 })();
 /* Formular – Demo-Absenden (im echten HubSpot geht die Mail an dich raus) */
-document.getElementById('trialForm').addEventListener('submit',function(e){
+var _tf=document.getElementById('trialForm');
+if(_tf){_tf.addEventListener('submit',function(e){
   e.preventDefault();
   if(!this.checkValidity()){this.reportValidity();return;}
   this.querySelector('button[type=submit]').style.display='none';
   document.getElementById('trialOk').hidden=false;
-});
+});}
 </script>
 <script>/*hdrScroll*/(function(){var hd=document.querySelector(".header");function s(){hd.classList.toggle("solid",scrollY>60);}s();addEventListener("scroll",s,{passive:true});})();</script>
 </body>
