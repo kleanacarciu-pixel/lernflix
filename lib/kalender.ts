@@ -6,7 +6,7 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 
 // --- Konstanten -------------------------------------------------------------
 export const ADMIN_EMAIL = (process.env.KALENDER_ADMIN_EMAIL || "lernemitanna@outlook.com").toLowerCase();
-export const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+export const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";
 const APP_URL = process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender";
@@ -70,7 +70,7 @@ export function weekdayOf(dateStr: string): number {
   return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
 }
 export function isOpen(weekday: number, hour: number): boolean {
-  return weekday < 5 ? hour >= 13 && hour <= 19 : hour >= 9 && hour <= 18;
+  return weekday < 5 ? hour >= 8 && hour <= 19 : hour >= 8 && hour <= 18;
 }
 // UTC-Instant der Berliner Wandzeit dateStr+hour
 function berlinInstant(dateStr: string, hour: number): number {
@@ -127,22 +127,22 @@ export const mailTemplates = {
 export type ApptRow = {
   id: string; student_id: string | null; slot_date: string; hour: number;
   kind: "einzel" | "probe" | "absage" | "block"; status: "angefragt" | "bestaetigt" | "abgesagt";
-  note?: string | null;
+  mode?: string | null; note?: string | null;
 };
 export const NOTE_ANNA_CANCEL = "anna_cancel"; // absage-Zeile, die Nachhol-Guthaben erzeugt hat
 export type SlotState = "free" | "busy" | "req" | "block" | "closed" | "past";
-export type SlotOut = { hour: number; state: SlotState; name?: string; mine?: boolean; fixed?: boolean };
+export type SlotOut = { hour: number; state: SlotState; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null };
 export type DayOut = { date: string; weekday: number; slots: SlotOut[] };
 
 // Rohzustand eines Slots (ohne Rollen-Sicht)
 type Raw =
   | { t: "free" }
   | { t: "block" }
-  | { t: "busy" | "req"; sid: string; name: string; fixed: boolean };
+  | { t: "busy" | "req"; sid: string; name: string; fixed: boolean; mode: string | null };
 
 export function computeRaw(
   dateStr: string, hour: number,
-  fixedMap: Map<string, { sid: string; name: string; status: string }>,
+  fixedMap: Map<string, { sid: string; name: string; status: string; mode: string | null }>,
   apptMap: Map<string, ApptRow[]>,
 ): Raw {
   const list = apptMap.get(`${dateStr}-${hour}`) || [];
@@ -151,11 +151,11 @@ export function computeRaw(
   const absage = list.some((a) => a.kind === "absage");
   if (booking) {
     const name = booking.student_id ? nameCache.get(booking.student_id) || "Schüler" : "Neu";
-    return { t: booking.status === "angefragt" ? "req" : "busy", sid: booking.student_id || "", name, fixed: false };
+    return { t: booking.status === "angefragt" ? "req" : "busy", sid: booking.student_id || "", name, fixed: false, mode: booking.mode ?? null };
   }
   const fx = fixedMap.get(`${weekdayOf(dateStr)}-${hour}`);
   if (fx && !absage) {
-    return { t: fx.status === "angefragt" ? "req" : "busy", sid: fx.sid, name: fx.name, fixed: true };
+    return { t: fx.status === "angefragt" ? "req" : "busy", sid: fx.sid, name: fx.name, fixed: true, mode: fx.mode };
   }
   return { t: "free" };
 }
@@ -169,20 +169,20 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const from = days[0], to = days[6];
 
   // feste Slots (aktiv + angefragt) mit Namen
-  const { data: fixedRows } = await sb.from("fixed_slots").select("student_id,weekday,hour,status").in("status", ["aktiv", "angefragt"]);
+  const { data: fixedRows } = await sb.from("fixed_slots").select("student_id,weekday,hour,status,mode").in("status", ["aktiv", "angefragt"]);
   const { data: profs } = await sb.from("profiles").select("user_id,name");
   nameCache.clear();
   (profs || []).forEach((p: { user_id: string; name: string }) => nameCache.set(p.user_id, p.name));
-  const fixedMap = new Map<string, { sid: string; name: string; status: string }>();
-  (fixedRows || []).forEach((r: { student_id: string; weekday: number; hour: number; status: string }) => {
+  const fixedMap = new Map<string, { sid: string; name: string; status: string; mode: string | null }>();
+  (fixedRows || []).forEach((r: { student_id: string; weekday: number; hour: number; status: string; mode: string | null }) => {
     const key = `${r.weekday}-${r.hour}`;
     // aktiv gewinnt über angefragt
     const cur = fixedMap.get(key);
-    if (!cur || r.status === "aktiv") fixedMap.set(key, { sid: r.student_id, name: nameCache.get(r.student_id) || "Schüler", status: r.status });
+    if (!cur || r.status === "aktiv") fixedMap.set(key, { sid: r.student_id, name: nameCache.get(r.student_id) || "Schüler", status: r.status, mode: r.mode ?? null });
   });
 
   // Ereignisse der Woche
-  const { data: appts } = await sb.from("appointments").select("id,student_id,slot_date,hour,kind,status").gte("slot_date", from).lte("slot_date", to);
+  const { data: appts } = await sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode").gte("slot_date", from).lte("slot_date", to);
   const apptMap = new Map<string, ApptRow[]>();
   (appts as ApptRow[] | null)?.forEach((a) => {
     const k = `${a.slot_date}-${a.hour}`;
@@ -204,8 +204,8 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
       }
       // busy / req durch Schüler
       const mine = role === "student" && raw.sid === viewerId;
-      if (role === "admin") return { hour, state: raw.t, name: raw.name, fixed: raw.fixed };
-      if (mine) return { hour, state: raw.t, mine: true, fixed: raw.fixed };
+      if (role === "admin") return { hour, state: raw.t, name: raw.name, fixed: raw.fixed, mode: raw.mode };
+      if (mine) return { hour, state: raw.t, mine: true, fixed: raw.fixed, mode: raw.mode };
       return { hour, state: "busy" }; // andere Schüler / öffentlich: nur "belegt", KEIN Name
     });
     return { date, weekday: wd, slots };
