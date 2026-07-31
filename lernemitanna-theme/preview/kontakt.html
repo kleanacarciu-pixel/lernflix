@@ -129,38 +129,24 @@ svg{stroke-width:2}
       <div class="contact__trial"><b>Kostenlose Probestunde:</b> Lern mich unverbindlich kennen und finde heraus, ob es passt.</div>
     </div>
 
-    <form class="form" id="contactForm" novalidate>
-      <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required></div>
-      <div class="row2">
-        <div class="field"><label for="f-mail">E-Mail</label><input id="f-mail" type="email" name="email" required></div>
-        <div class="field"><label for="f-tel">Telefon (optional)</label><input id="f-tel" name="phone"></div>
-      </div>
-      <div class="row2">
-        <div class="field"><label for="f-fach">Fach</label><select id="f-fach" name="fach"><option>Mathe</option><option>Physik</option><option>Mathe &amp; Physik</option></select></div>
-        <div class="field"><label for="f-klasse">Klasse</label><input id="f-klasse" name="klasse" placeholder="z. B. 10. Klasse"></div>
-      </div>
-      <div class="field"><label for="f-msg">Nachricht</label><textarea id="f-msg" name="msg" rows="4" placeholder="Worum geht es? Wann passt es dir am besten?"></textarea></div>
-      <button class="btn" type="submit">Absenden</button>
-      <p class="form__ok" id="formOk" hidden>Danke! Deine Nachricht ist unterwegs. Ich melde mich zeitnah bei dir. 🌿</p>
-    </form>
+    <div class="form">
+      <a class="btn" href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener" style="display:block;text-align:center">Kostenlose Probestunde im Kalender buchen →</a>
+      <p style="color:#5f574f;font-size:.92rem;margin-top:14px;line-height:1.65">Wähle im Kalender einen freien Termin und gib Name + E-Mail an – ich bestätige deine Probestunde per E-Mail. Du erreichst mich auch direkt per E-Mail, Telefon oder Instagram (siehe links). 🌿</p>
+    </div>
   </div>
 </section>
 
 <!-- FOOTER -->
 <footer class="footer">
   <div class="wrap footer__row">
-    <span class="footer__copy">© Lerne mit Anna 2025</span>
-    <nav class="footer__links"><a href="#">Datenschutzerklärung</a><a href="#">Impressum</a><a href="#">AGB</a><a href="kontakt.html">Kontakt</a></nav>
+    <span class="footer__copy">© Lerne mit Anna 2026</span>
+    <nav class="footer__links"><a href="/datenschutz">Datenschutzerklärung</a><a href="/impressum">Impressum</a><a href="/agb">AGB</a><a href="kontakt.html">Kontakt</a></nav>
   </div>
 </footer>
 
 <script>
-document.getElementById('contactForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  if(!this.checkValidity()){this.reportValidity();return;}
-  this.querySelector('button[type=submit]').style.display='none';
-  document.getElementById('formOk').hidden=false;
-});
+var _cf=document.getElementById('contactForm');
+if(_cf){_cf.addEventListener('submit',function(e){e.preventDefault();window.location.href='https://lernflix.lernemitanna.de/kalender';});}
 </script>
 </body>
 </html>
