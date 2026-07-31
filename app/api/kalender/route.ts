@@ -20,8 +20,8 @@ async function inspectSlot(date: string, hour: number) {
   const sb = service();
   const wd = weekdayOf(date);
   const { data: fx } = await sb.from("fixed_slots").select("id,student_id,status").eq("weekday", wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
-  const { data: ap } = await sb.from("appointments").select("id,student_id,kind,status,counted").eq("slot_date", date).eq("hour", hour);
-  const appts = (ap || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null }[];
+  const { data: ap } = await sb.from("appointments").select("id,student_id,kind,status,counted,note").eq("slot_date", date).eq("hour", hour);
+  const appts = (ap || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null }[];
   return {
     wd,
     block: appts.find((a) => a.kind === "block" && a.status !== "abgesagt") || null,
@@ -91,6 +91,20 @@ export async function POST(req: Request): Promise<Response> {
         out.balance = { minus: prof.minus_hours, plus: prof.plus_hours, nach: prof.makeup_credits, dates };
       }
       return ok(out);
+    }
+    if (action === "requestProbe") {
+      const name = String(body.name || "").trim();
+      const email = String(body.email || "").trim().toLowerCase();
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !HOURS.includes(hour) || !isOpen(weekdayOf(date), hour)) return bad("Ungültiger Slot.");
+      if (!name || !email) return bad("Bitte Name und E-Mail angeben.");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
+      if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
+      const s = await inspectSlot(date, hour);
+      if (s.block || s.booking || (s.fixedActive && !s.absage)) return bad("Dieser Slot ist leider schon belegt.");
+      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "angefragt", mode, note: `${name}|${email}` });
+      await sendMail(ADMIN_EMAIL, "Neue Probestunden-Anfrage", `${name} (${email}) möchte eine Probestunde am ${prettyDate(date, hour)} (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
+      await sendMail(email, "Probestunde angefragt", mailTemplates.probeReceived(name, prettyDate(date, hour)));
+      return ok({ message: "Probestunde angefragt! Kleana meldet sich per E-Mail bei dir." });
     }
 
     // ----- ab hier Login nötig -----
@@ -176,6 +190,12 @@ export async function POST(req: Request): Promise<Response> {
       if (!validSlot) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
+        if (s.booking.kind === "probe") {
+          await service().from("appointments").update({ status: "bestaetigt" }).eq("id", s.booking.id);
+          const email = (s.booking.note || "").split("|")[1];
+          if (email) await sendMail(email, "Probestunde bestätigt", mailTemplates.confirmed(prettyDate(date, hour)));
+          return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
+        }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
         if (sp) counted = await applyEinzelCounting(sp);
@@ -197,8 +217,8 @@ export async function POST(req: Request): Promise<Response> {
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
         await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
-        const sp = await getProfile(s.booking.student_id || "");
-        if (sp?.email) await sendMail(sp.email, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)));
+        const email = s.booking.student_id ? (await getProfile(s.booking.student_id))?.email : (s.booking.note || "").split("|")[1];
+        if (email) await sendMail(email, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)));
         return ok({ message: "Anfrage abgesagt. Absage-Mail gesendet." });
       }
       if (s.fixedPending) {

@@ -117,6 +117,7 @@ export const mailTemplates = {
   confirmed: (when: string) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>`),
   rejected: (when: string) => wrapMail("Termin abgesagt", `<p>Leider konnte dein angefragter Termin am <b>${when}</b> nicht bestätigt werden. Der Slot ist wieder frei – du kannst gern einen anderen wählen.</p>`),
   annaCancel: (when: string) => wrapMail("Termin verschoben", `<p>Dein Termin am <b>${when}</b> muss leider ausfallen. Du bekommst dafür eine <b>Nachhol-Stunde gutgeschrieben</b> (kein Minus) – buche einfach einen freien Slot.</p>`),
+  probeReceived: (name: string, when: string) => wrapMail(`Danke, ${name}!`, `<p>Deine <b>Probestunde</b> am <b>${when}</b> ist angefragt. Kleana bestätigt sie in Kürze – du bekommst dann eine Bestätigung per E-Mail.</p>`),
   invite: (name: string, email: string, password: string) => wrapMail(`Willkommen, ${name}!`,
     `<p>Kleana hat dir einen Zugang zum Terminkalender angelegt. Damit siehst du deine Stunden und kannst Termine buchen oder absagen.</p>
      <p style="background:#f4f6f7;border-radius:10px;padding:14px"><b>E-Mail:</b> ${email}<br><b>Passwort:</b> ${password}</p>
@@ -150,7 +151,9 @@ export function computeRaw(
   const booking = list.find((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt");
   const absage = list.some((a) => a.kind === "absage");
   if (booking) {
-    const name = booking.student_id ? nameCache.get(booking.student_id) || "Schüler" : "Neu";
+    const name = booking.student_id
+      ? (nameCache.get(booking.student_id) || "Schüler")
+      : (booking.kind === "probe" && booking.note ? booking.note.split("|")[0] + " (Probe)" : "Neu");
     return { t: booking.status === "angefragt" ? "req" : "busy", sid: booking.student_id || "", name, fixed: false, mode: booking.mode ?? null };
   }
   const fx = fixedMap.get(`${weekdayOf(dateStr)}-${hour}`);
@@ -182,7 +185,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   });
 
   // Ereignisse der Woche
-  const { data: appts } = await sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode").gte("slot_date", from).lte("slot_date", to);
+  const { data: appts } = await sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note").gte("slot_date", from).lte("slot_date", to);
   const apptMap = new Map<string, ApptRow[]>();
   (appts as ApptRow[] | null)?.forEach((a) => {
     const k = `${a.slot_date}-${a.hour}`;
