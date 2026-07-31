@@ -15,6 +15,7 @@ const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
+const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed" };
 function mondayOf(d: Date) { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function dm(d: Date) { return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`; }
@@ -90,9 +91,13 @@ const CSS = `
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
-.legend{display:flex;flex-wrap:wrap;gap:8px 16px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:.82rem;color:var(--muted)}
-.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:.82rem;color:var(--muted);align-items:center}
+.legitem{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:none;cursor:pointer;font:inherit;font-size:.82rem;color:var(--muted);padding:4px 8px;border-radius:8px}
+.legitem:hover{background:#f4f6f7}
+.legitem.on{border-color:var(--teal);background:rgba(43,179,192,.12);color:#127a5c;font-weight:700}
+.legclear{border:0;background:#f7dcd4;color:#b4491f;cursor:pointer;font:inherit;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:8px}
 .legend i{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);flex:none}
+.cell.dim{opacity:.13}.dayrow.dim{opacity:.32}
 .sw-free{background:#eafaf7}.sw-busy{background:#cfd6da}.sw-mine{background:var(--grad);border-color:transparent}
 .sw-req{background:#fff3d6}.sw-closed{background:#f4f4f4}
 .sw-block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 4px,#dee3e7 4px,#dee3e7 8px)}
@@ -142,6 +147,7 @@ export default function KalenderPage() {
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
+  const [filterCls, setFilterCls] = useState<string | null>(null);
   const [modal, setModal] = useState<ReactNode | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -443,7 +449,9 @@ export default function KalenderPage() {
               <b>{dm(weekStart)} – {dm(wEnd)} {wEnd.getFullYear()}</b>
               <button onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>Woche ›</button>
             </div>
-            <div className="legend">{legend.map((l, i) => (<span key={i}><i className={l.c} />{l.t}</span>))}</div>
+            <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
+              <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
+            ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
             <div className="deskgrid"><table className="kgrid">
               <thead><tr><th></th>{days.map((d) => {
                 const dt = parseIso(d.date); const isToday = d.date === today;
@@ -453,7 +461,8 @@ export default function KalenderPage() {
                 <tr key={h}><th>{h}:00</th>{days.map((d) => {
                   const s = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
                   const v = cellView(s, role);
-                  return <td key={d.date + h}><div className={"cell " + v.cls} onClick={() => onSlot(d.date, s)}>{v.label}</div></td>;
+                  const dim = filterCls && v.cls !== filterCls ? " dim" : "";
+                  return <td key={d.date + h}><div className={"cell " + v.cls + dim} onClick={() => onSlot(d.date, s)}>{v.label}</div></td>;
                 })}</tr>
               ))}</tbody>
             </table></div>
@@ -462,8 +471,8 @@ export default function KalenderPage() {
                 <button key={d.date} className={"daychip" + (d.date === effSel ? " on" : "") + (d.date === today ? " td" : "")} onClick={() => setSelDay(d.date)}>{DAYS[d.weekday]}<small>{dm(parseIso(d.date))}</small></button>
               ))}</div>
               <div className="daylist">
-                {selSlots.map((s) => { const v = cellView(s, role); return (
-                  <button key={s.hour} className={"dayrow " + v.cls} onClick={() => onSlot(effSel, s)}><span className="dh">{s.hour}:00</span><span className="dl">{v.label || "frei"}</span></button>
+                {selSlots.map((s) => { const v = cellView(s, role); const dim = filterCls && v.cls !== filterCls ? " dim" : ""; return (
+                  <button key={s.hour} className={"dayrow " + v.cls + dim} onClick={() => onSlot(effSel, s)}><span className="dh">{s.hour}:00</span><span className="dl">{v.label || "frei"}</span></button>
                 ); })}
                 {selSlots.length === 0 && <div style={{ color: "#999", padding: "10px 2px" }}>Keine Termine an diesem Tag.</div>}
               </div>
