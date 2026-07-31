@@ -484,7 +484,7 @@ function buildLegend(role: string) {
 }
 
 function Info({ title, msg, err, onClose }: { title: string; msg: string; err?: string; onClose: () => void }) {
-  return <div className="modal"><h2>{title}</h2>{msg ? <p>{msg}</p> : null}{err ? <div className="err">{err}</div> : null}
+  return <div className="modal"><h2>{title}</h2>{msg ? <p style={{ whiteSpace: "pre-line" }}>{msg}</p> : null}{err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn p" onClick={onClose}>OK</button></div></div>;
 }
 function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promise<string>; onClose: () => void }) {

@@ -271,8 +271,11 @@ export async function POST(req: Request): Promise<Response> {
       const { data: created, error } = await service().auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
       if (error || !created.user) return bad("Konnte Zugang nicht anlegen: " + (error?.message || "unbekannt"));
       { const { error: pe } = await service().from("profiles").insert({ user_id: created.user.id, name, email, role: "student" }); if (pe) return bad("Profil konnte nicht angelegt werden: " + pe.message); }
-      const sent = await sendMail(email, "Dein Zugang zum Terminkalender", mailTemplates.invite(name, email, password));
-      return ok({ message: `Schüler „${name}" angelegt.` + (sent ? " Einladung per Mail gesendet." : " (E-Mail konnte nicht gesendet werden – Passwort: " + password + ")") });
+      const mail = await sendMail(email, "Dein Zugang zum Terminkalender", mailTemplates.invite(name, email, password));
+      const info = mail.ok
+        ? "Die Einladung mit dem Passwort wurde auch per Mail an den Schüler gesendet (ggf. Spam-Ordner prüfen)."
+        : `Mail nicht gesendet – Grund: ${mail.error}. Bitte gib dem Schüler das Passwort oben selbst weiter.`;
+      return ok({ message: `Schüler ${name} angelegt.\n\nStart-Passwort: ${password}\nE-Mail: ${email}\n\n${info}\nDer Schüler kann das Passwort nach dem ersten Login selbst ändern.`, password });
     }
     if (action === "overview") {
       const sb = service();
