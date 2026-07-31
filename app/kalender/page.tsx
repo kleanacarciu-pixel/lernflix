@@ -49,16 +49,16 @@ const CSS = `
 .otbl th{color:var(--muted);font-weight:600}
 .tag{display:inline-block;min-width:24px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;font-size:.82rem}
 .tag.m{background:#fbe3d8;color:#b4491f}.tag.p{background:#dcf3ec;color:#127a5c}.tag.z{background:#eee;color:#999}
-.layout{display:grid;grid-template-columns:230px 1fr;gap:18px}
-@media(max-width:760px){.layout{grid-template-columns:1fr}}
-.side{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:max-content}
+.layout{display:flex;gap:18px;align-items:flex-start}
+@media(max-width:760px){.layout{flex-direction:column}.side{width:100%;flex-basis:auto}}
+.side{flex:0 0 230px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:max-content}
 .mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .mnav b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .mnav button{border:1px solid var(--line);background:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:1rem}
 .wk{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;margin-bottom:7px;cursor:pointer;font:inherit;font-size:.86rem}
 .wk small{color:var(--muted)}
 .wk.on{background:rgba(43,179,192,.12);border-color:var(--teal);color:#127a5c;font-weight:600}
-.calwrap{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:auto}
+.calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow-x:auto}
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
@@ -93,6 +93,10 @@ table.grid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixe
 .col{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .acts .btn,.col .btn{flex:1}
 .err{color:#b4491f;font-weight:600;font-size:.9rem;margin-top:8px}
+.saving{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:7px 15px;border-radius:999px;font-size:.82rem;font-weight:600;z-index:40;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#127a5c;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.9rem;box-shadow:0 12px 32px rgba(0,0,0,.28);z-index:40;max-width:90vw;text-align:center}
+@keyframes kalpop{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+.toast{animation:kalpop .18s ease-out}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -107,6 +111,7 @@ export default function KalenderPage() {
   const [balance, setBalance] = useState<Balance | null>(null);
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
   const [modal, setModal] = useState<ReactNode | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const today = iso(new Date());
 
@@ -158,13 +163,16 @@ export default function KalenderPage() {
   }, [ready, loadWeek]);
 
   // ---- Aktionen ----
-  async function act(action: string, params: Record<string, unknown>, successTitle = "Erledigt ✓") {
-    if (busy) return; setBusy(true);
+  async function act(action: string, params: Record<string, unknown>) {
+    if (busy) return;
+    setBusy(true);
+    setModal(null); // Fenster sofort schließen -> fühlt sich direkt an
     const d = await api(action, params);
-    setBusy(false);
-    if (d.ok) { await loadWeek(); info(successTitle, String(d.message || "")); }
+    if (d.ok) { await loadWeek(); showToast(String(d.message || "Erledigt ✓")); }
     else info("Hinweis", "", String(d.error || "Fehler."));
+    setBusy(false);
   }
+  function showToast(msg: string) { setToast(msg); window.setTimeout(() => setToast(null), 2800); }
   function info(title: string, msg: string, err = "") {
     setModal(<Info title={title} msg={msg} err={err} onClose={() => setModal(null)} />);
   }
@@ -180,6 +188,7 @@ export default function KalenderPage() {
 
   // ---- Slot-Klick ----
   function onSlot(date: string, s: Slot) {
+    if (busy) return;
     const role = session?.role || "public";
     const when = `${DAYS[(parseIso(date).getDay() + 6) % 7]} ${dm(parseIso(date))} um ${pad(s.hour)}:00`;
     if (s.state === "closed" || s.state === "past") return;
@@ -343,6 +352,8 @@ export default function KalenderPage() {
         </div>
       </div>
       {modal && <div className="ov" onClick={(e) => { if (e.target === e.currentTarget) setModal(null); }}>{modal}</div>}
+      {busy && <div className="saving">Speichern…</div>}
+      {toast && <div className="toast">{toast}</div>}
     </div>
   );
 }
