@@ -2,14 +2,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 // ------- Typen -------
-type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean };
+type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null };
 type Day = { date: string; weekday: number; slots: Slot[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] } };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { name: string; fix: string; minus: number; plus: number; nach: number };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-const HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
 function mondayOf(d: Date) { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; }
@@ -68,14 +68,15 @@ const CSS = `
 .sw-free{background:#eafaf7}.sw-busy{background:#cfd6da}.sw-mine{background:var(--grad);border-color:transparent}
 .sw-req{background:#fff3d6}.sw-closed{background:#f4f4f4}
 .sw-block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 4px,#dee3e7 4px,#dee3e7 8px)}
-table.grid{border-collapse:collapse;width:100%;min-width:640px}
+table.grid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixed}
 .grid th,.grid td{border:1px solid var(--line);text-align:center;padding:0}
-.grid thead th{background:#fafafa;padding:8px 4px;font-size:.82rem;line-height:1.2}
-.grid thead th small{display:block;color:var(--muted);font-weight:500}
+.grid thead th:first-child,.grid tbody th{width:64px}
+.grid thead th{background:#fafafa;padding:9px 4px;font-size:.86rem;line-height:1.25;font-weight:700}
+.grid thead th small{display:block;color:var(--muted);font-weight:500;font-size:.76rem;margin-top:2px}
 .grid thead th.today{color:var(--teal);background:rgba(43,179,192,.10)}
 .grid thead th .now{display:block;font-size:.62rem;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;margin:3px auto 0;padding:1px 0;max-width:46px}
-.grid tbody th{background:#fafafa;font-size:.78rem;color:var(--muted);width:56px;font-weight:600}
-.cell{height:42px;font-size:.76rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 3px;text-align:center;overflow:hidden}
+.grid tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);font-weight:600}
+.cell{height:52px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 4px;text-align:center;overflow:hidden;line-height:1.15}
 .cell.free{background:#eafaf7;color:#127a5c}.cell.busy{background:#cfd6da;color:#3a4145}
 .cell.mine{background:var(--grad);color:#fff;font-weight:600}.cell.req{background:#fff3d6;color:#8a6d1a}
 .cell.block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73;font-weight:600}
@@ -191,8 +192,8 @@ export default function KalenderPage() {
       if (s.state === "free") {
         setModal(<div className="modal"><h2>Termin: {when}</h2><p>Wie möchtest du diesen Slot nutzen?</p>
           <div className="col">
-            <button className="btn p" onClick={() => act("requestFixed", { date, hour: s.hour })}>Fester wöchentlicher Termin</button>
-            <button className="btn p" onClick={() => act("bookExtra", { date, hour: s.hour })}>Einmalige Extra-/Nachholstunde</button>
+            <button className="btn p" onClick={() => chooseMode("requestFixed", date, s.hour, "Fester wöchentlicher Termin")}>Fester wöchentlicher Termin</button>
+            <button className="btn p" onClick={() => chooseMode("bookExtra", date, s.hour, "Einmalige Extra-/Nachholstunde")}>Einmalige Extra-/Nachholstunde</button>
             <button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
           </div></div>);
         return;
@@ -224,7 +225,7 @@ export default function KalenderPage() {
       return;
     }
     if (s.state === "req") {
-      setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{s.name}</b> · {when}</p>
+      setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
         {s.fixed ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
         <div className="col">
           <button className="btn p" onClick={() => act("adminConfirm", { date, hour: s.hour })}>Bestätigen &amp; Mail</button>
@@ -234,11 +235,20 @@ export default function KalenderPage() {
       return;
     }
     if (s.state === "busy") {
-      setModal(<div className="modal"><h2>Stunde absagen</h2><p><b>{s.name}</b> · {when}</p>
+      setModal(<div className="modal"><h2>Stunde absagen</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
         <div className="okbox">{s.name} bekommt Nachhol-Guthaben (kein Minus) und eine Mail.</div>
         <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Zurück</button>
           <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Absagen</button></div></div>);
     }
+  }
+
+  function chooseMode(action: string, date: string, hour: number, title: string) {
+    setModal(<div className="modal"><h2>{title}</h2><p>Findet die Stunde online oder vor Ort statt?</p>
+      <div className="col">
+        <button className="btn p" onClick={() => act(action, { date, hour, mode: "online" })}>💻 Online</button>
+        <button className="btn p" onClick={() => act(action, { date, hour, mode: "vor_ort" })}>📍 Vor Ort</button>
+        <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
+      </div></div>);
   }
 
   function openAddStudent() {
@@ -338,19 +348,22 @@ export default function KalenderPage() {
 }
 
 // ------- kleine Komponenten -------
+function modeEmoji(m?: string | null) { return m === "online" ? "💻" : m === "vor_ort" ? "📍" : ""; }
+function modeText(m?: string | null) { return m === "online" ? "💻 Online" : m === "vor_ort" ? "📍 Vor Ort" : ""; }
 function cellView(s: Slot, role: string): { cls: string; label: string } {
   if (s.state === "closed") return { cls: "closed", label: "" };
   if (s.state === "past") return { cls: "past", label: "" };
   if (s.state === "free") return { cls: "free", label: "frei" };
   if (s.state === "block") return { cls: "block", label: role === "admin" ? "Geblockt" : "Belegt" };
+  const e = modeEmoji(s.mode);
   if (s.state === "req") {
-    if (role === "admin") return { cls: "req", label: (s.name || "") + " (Anfrage)" };
-    if (s.mine) return { cls: "req", label: "Angefragt" };
+    if (role === "admin") return { cls: "req", label: `${e ? e + " " : ""}${s.name || ""} (Anfrage)` };
+    if (s.mine) return { cls: "req", label: `${e ? e + " " : ""}Angefragt` };
     return { cls: "busy", label: "Belegt" };
   }
   // busy / mine
-  if (s.mine) return { cls: "mine", label: "Du" };
-  if (role === "admin") return { cls: "busy", label: s.name || "Belegt" };
+  if (s.mine) return { cls: "mine", label: `${e ? e + " " : ""}Du` };
+  if (role === "admin") return { cls: "busy", label: `${e ? e + " " : ""}${s.name || "Belegt"}` };
   return { cls: "busy", label: "Belegt" };
 }
 function buildLegend(role: string) {

@@ -55,6 +55,7 @@ export async function POST(req: Request): Promise<Response> {
   const token = typeof body.token === "string" ? body.token : "";
   const date = typeof body.date === "string" ? body.date : "";
   const hour = Number(body.hour);
+  const mode = body.mode === "online" || body.mode === "vor_ort" ? body.mode : null;
 
   try {
     // ----- ohne Login -----
@@ -103,19 +104,21 @@ export async function POST(req: Request): Promise<Response> {
     // === SCHÜLER-AKTIONEN ===
     if (action === "requestFixed") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.booking || s.fixedActive) return bad("Dieser Slot ist belegt.");
       const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
       if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
-      await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt" });
+      await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode });
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
     if (action === "bookExtra") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.booking || (s.fixedActive && !s.absage)) return bad("Dieser Slot ist belegt.");
-      await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt" });
+      await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode });
       const preview = prof.makeup_credits > 0 ? "Nachhol-Guthaben wird eingelöst." : prof.minus_hours > 0 ? "Minus-Stunde wird nachgeholt." : "Zählt als Extra-Stunde (Plus).";
       return ok({ message: "Stunde angefragt. Kleana bestätigt sie. " + preview });
     }
@@ -224,11 +227,12 @@ export async function POST(req: Request): Promise<Response> {
     if (action === "overview") {
       const sb = service();
       const { data: studs } = await sb.from("profiles").select("user_id,name,minus_hours,plus_hours,makeup_credits").eq("role", "student").order("name");
-      const { data: fx } = await sb.from("fixed_slots").select("student_id,weekday,hour").eq("status", "aktiv");
+      const { data: fx } = await sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "aktiv");
       const fixByStudent = new Map<string, string[]>();
-      (fx || []).forEach((f: { student_id: string; weekday: number; hour: number }) => {
+      (fx || []).forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null }) => {
         const arr = fixByStudent.get(f.student_id) || [];
-        arr.push(`${DAY_NAMES[f.weekday]} ${String(f.hour).padStart(2, "0")}:00`);
+        const m = f.mode === "online" ? " · online" : f.mode === "vor_ort" ? " · vor Ort" : "";
+        arr.push(`${DAY_NAMES[f.weekday]} ${String(f.hour).padStart(2, "0")}:00${m}`);
         fixByStudent.set(f.student_id, arr);
       });
       const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }) => ({

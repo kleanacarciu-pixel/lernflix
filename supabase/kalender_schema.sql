@@ -41,13 +41,14 @@ create table if not exists public.fixed_slots (
   id         uuid primary key default gen_random_uuid(),
   student_id uuid not null references public.profiles(user_id) on delete cascade,
   weekday    int  not null check (weekday between 0 and 6),
-  hour       int  not null check (hour between 9 and 19),
+  hour       int  not null check (hour between 8 and 19),
   status     text not null default 'angefragt' check (status in ('angefragt','aktiv','beendet')),
+  mode       text check (mode in ('online','vor_ort')),
   created_at timestamptz not null default now(),
-  -- Öffnungszeiten erzwingen (Mo–Fr 13–19 Start, Sa/So 9–18 Start)
+  -- Öffnungszeiten erzwingen (Mo–Fr 8–19 Start, Sa/So 8–18 Start)
   constraint fixed_within_hours check (
-    (weekday between 0 and 4 and hour between 13 and 19) or
-    (weekday between 5 and 6 and hour between 9  and 18)
+    (weekday between 0 and 4 and hour between 8 and 19) or
+    (weekday between 5 and 6 and hour between 8 and 18)
   )
 );
 -- Ein aktiver Wochen-Slot kann nur an einen Schüler vergeben sein (1:1-Unterricht)
@@ -72,16 +73,17 @@ create table if not exists public.appointments (
   id           uuid primary key default gen_random_uuid(),
   student_id   uuid references public.profiles(user_id) on delete cascade, -- NULL nur bei 'block'
   slot_date    date not null,
-  hour         int  not null check (hour between 9 and 19),
+  hour         int  not null check (hour between 8 and 19),
   kind         text not null check (kind in ('einzel','probe','absage','block')),
   status       text not null default 'angefragt' check (status in ('angefragt','bestaetigt','abgesagt')),
   credited     boolean not null default false,
   counted      text check (counted in ('makeup','minus','plus')),
+  mode         text check (mode in ('online','vor_ort')),
   note         text,
   created_at   timestamptz not null default now(),
   constraint appt_within_hours check (
-    (extract(dow from slot_date) between 1 and 5 and hour between 13 and 19) or -- Mo–Fr
-    (extract(dow from slot_date) in (0,6)          and hour between 9  and 18)   -- So/Sa
+    (extract(dow from slot_date) between 1 and 5 and hour between 8 and 19) or -- Mo–Fr
+    (extract(dow from slot_date) in (0,6)          and hour between 8 and 18)   -- So/Sa
   )
 );
 -- Pro Datum+Uhrzeit nur EIN aktiver (nicht-abgesagter) Block/Buchung.
