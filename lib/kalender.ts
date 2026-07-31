@@ -113,8 +113,13 @@ function wrapMail(title: string, body: string): string {
       <p style="margin:20px 0 0"><a href="${APP_URL}" style="display:inline-block;background:#2BB3C0;color:#fff;text-decoration:none;padding:11px 18px;border-radius:9px;font-weight:600">Zum Kalender</a></p>
     </div></div>`;
 }
+const ADDRESS_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0"><b>📍 Adresse (vor Ort):</b><br>Kohlbrennerstraße 16<br>81929 München<br>bei <b>Carciu/Sadikaj</b> bitte klingeln.</div>`;
+const ONLINE_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0">💻 Der Termin findet <b>online</b> statt – du erhältst den Zugangslink rechtzeitig in einer separaten E-Mail.</div>`;
+function contactBlock(mode?: string | null): string { return mode === "vor_ort" ? ADDRESS_HTML : mode === "online" ? ONLINE_HTML : ""; }
+
 export const mailTemplates = {
-  confirmed: (when: string) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>`),
+  confirmed: (when: string, mode?: string | null) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>` + contactBlock(mode)),
+  probeConfirmed: (name: string, when: string, mode?: string | null) => wrapMail(`Danke, ${name}! 🎉`, `<p>Schön, dass du <b>Lerne mit Anna</b> kennenlernen möchtest! Deine <b>kostenlose Probestunde</b> am <b>${when}</b> ist bestätigt. Ich freue mich auf dich!</p>` + contactBlock(mode)),
   rejected: (when: string) => wrapMail("Termin abgesagt", `<p>Leider konnte dein angefragter Termin am <b>${when}</b> nicht bestätigt werden. Der Slot ist wieder frei – du kannst gern einen anderen wählen.</p>`),
   annaCancel: (when: string) => wrapMail("Termin verschoben", `<p>Dein Termin am <b>${when}</b> muss leider ausfallen. Du bekommst dafür eine <b>Nachhol-Stunde gutgeschrieben</b> (kein Minus) – buche einfach einen freien Slot.</p>`),
   probeReceived: (name: string, when: string) => wrapMail(`Danke, ${name}!`, `<p>Deine <b>Probestunde</b> am <b>${when}</b> ist angefragt. Kleana bestätigt sie in Kürze – du bekommst dann eine Bestätigung per E-Mail.</p>`),
@@ -171,9 +176,13 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const days: string[] = Array.from({ length: 7 }, (_, i) => addDaysStr(monday, i));
   const from = days[0], to = days[6];
 
-  // feste Slots (aktiv + angefragt) mit Namen
-  const { data: fixedRows } = await sb.from("fixed_slots").select("student_id,weekday,hour,status,mode").in("status", ["aktiv", "angefragt"]);
-  const { data: profs } = await sb.from("profiles").select("user_id,name");
+  // feste Slots + Profile + Ereignisse parallel laden (schneller)
+  const [fxRes, profRes, apptRes] = await Promise.all([
+    sb.from("fixed_slots").select("student_id,weekday,hour,status,mode").in("status", ["aktiv", "angefragt"]),
+    sb.from("profiles").select("user_id,name"),
+    sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note").gte("slot_date", from).lte("slot_date", to),
+  ]);
+  const fixedRows = fxRes.data; const profs = profRes.data;
   nameCache.clear();
   (profs || []).forEach((p: { user_id: string; name: string }) => nameCache.set(p.user_id, p.name));
   const fixedMap = new Map<string, { sid: string; name: string; status: string; mode: string | null }>();
@@ -185,7 +194,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   });
 
   // Ereignisse der Woche
-  const { data: appts } = await sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note").gte("slot_date", from).lte("slot_date", to);
+  const appts = apptRes.data;
   const apptMap = new Map<string, ApptRow[]>();
   (appts as ApptRow[] | null)?.forEach((a) => {
     const k = `${a.slot_date}-${a.hour}`;

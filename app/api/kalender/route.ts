@@ -19,16 +19,17 @@ function ok(data: Record<string, unknown> = {}) { return NextResponse.json({ ok:
 async function inspectSlot(date: string, hour: number) {
   const sb = service();
   const wd = weekdayOf(date);
-  const { data: fx } = await sb.from("fixed_slots").select("id,student_id,status").eq("weekday", wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
-  const { data: ap } = await sb.from("appointments").select("id,student_id,kind,status,counted,note").eq("slot_date", date).eq("hour", hour);
-  const appts = (ap || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null }[];
+  const { data: fx } = await sb.from("fixed_slots").select("id,student_id,status,mode").eq("weekday", wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
+  const { data: ap } = await sb.from("appointments").select("id,student_id,kind,status,counted,note,mode").eq("slot_date", date).eq("hour", hour);
+  const appts = (ap || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null; mode: string | null }[];
+  const fxa = (fx || []) as { id: string; student_id: string; status: string; mode: string | null }[];
   return {
     wd,
     block: appts.find((a) => a.kind === "block" && a.status !== "abgesagt") || null,
     booking: appts.find((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt") || null,
     absage: appts.find((a) => a.kind === "absage") || null,
-    fixedActive: (fx || []).find((f) => f.status === "aktiv") || null,
-    fixedPending: (fx || []).find((f) => f.status === "angefragt") || null,
+    fixedActive: fxa.find((f) => f.status === "aktiv") || null,
+    fixedPending: fxa.find((f) => f.status === "angefragt") || null,
   };
 }
 
@@ -101,7 +102,7 @@ export async function POST(req: Request): Promise<Response> {
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.booking || (s.fixedActive && !s.absage)) return bad("Dieser Slot ist leider schon belegt.");
-      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "angefragt", mode, note: `${name}|${email}` });
+      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "angefragt", mode, note: `${name}|${email}` }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       await sendMail(ADMIN_EMAIL, "Neue Probestunden-Anfrage", `${name} (${email}) möchte eine Probestunde am ${prettyDate(date, hour)} (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
       await sendMail(email, "Probestunde angefragt", mailTemplates.probeReceived(name, prettyDate(date, hour)));
       return ok({ message: "Probestunde angefragt! Kleana meldet sich per E-Mail bei dir." });
@@ -123,7 +124,7 @@ export async function POST(req: Request): Promise<Response> {
       if (s.block || s.booking || s.fixedActive) return bad("Dieser Slot ist belegt.");
       const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
       if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
-      await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode });
+      { const { error } = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       await sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
@@ -133,7 +134,7 @@ export async function POST(req: Request): Promise<Response> {
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.booking || (s.fixedActive && !s.absage)) return bad("Dieser Slot ist belegt.");
-      await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode });
+      { const { error } = await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       await sendMail(ADMIN_EMAIL, "Neue Terminanfrage", `${prof.name} möchte am ${prettyDate(date, hour)} eine Stunde (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
       const preview = prof.makeup_credits > 0 ? "Nachhol-Guthaben wird eingelöst." : prof.minus_hours > 0 ? "Minus-Stunde wird nachgeholt." : "Zählt als Extra-Stunde (Plus).";
       return ok({ message: "Stunde angefragt. Kleana bestätigt sie. " + preview });
@@ -192,22 +193,23 @@ export async function POST(req: Request): Promise<Response> {
       if (s.booking && s.booking.status === "angefragt") {
         if (s.booking.kind === "probe") {
           await service().from("appointments").update({ status: "bestaetigt" }).eq("id", s.booking.id);
+          const gname = (s.booking.note || "").split("|")[0] || "";
           const email = (s.booking.note || "").split("|")[1];
-          if (email) await sendMail(email, "Probestunde bestätigt", mailTemplates.confirmed(prettyDate(date, hour)));
+          if (email) await sendMail(email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking.mode));
           return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
         }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
         if (sp) counted = await applyEinzelCounting(sp);
         await service().from("appointments").update({ status: "bestaetigt", counted }).eq("id", s.booking.id);
-        if (sp?.email) await sendMail(sp.email, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour)));
+        if (sp?.email) await sendMail(sp.email, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), s.booking.mode));
         return ok({ message: "Bestätigt. Bestätigungs-Mail gesendet." });
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) await sendMail(sp.email, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${String(hour).padStart(2, "0")}:00 (wöchentlich)`));
+        if (sp?.email) await sendMail(sp.email, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${String(hour).padStart(2, "0")}:00 (wöchentlich)`, s.fixedPending.mode));
         return ok({ message: "Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet." });
       }
       return bad("Keine Anfrage in diesem Slot.");
@@ -268,7 +270,7 @@ export async function POST(req: Request): Promise<Response> {
       const password = "LMA-" + crypto.randomUUID().slice(0, 8) + "!7";
       const { data: created, error } = await service().auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
       if (error || !created.user) return bad("Konnte Zugang nicht anlegen: " + (error?.message || "unbekannt"));
-      await service().from("profiles").insert({ user_id: created.user.id, name, email, role: "student" });
+      { const { error: pe } = await service().from("profiles").insert({ user_id: created.user.id, name, email, role: "student" }); if (pe) return bad("Profil konnte nicht angelegt werden: " + pe.message); }
       const sent = await sendMail(email, "Dein Zugang zum Terminkalender", mailTemplates.invite(name, email, password));
       return ok({ message: `Schüler „${name}" angelegt.` + (sent ? " Einladung per Mail gesendet." : " (E-Mail konnte nicht gesendet werden – Passwort: " + password + ")") });
     }
