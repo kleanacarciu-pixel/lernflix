@@ -89,7 +89,9 @@ export async function POST(req: Request): Promise<Response> {
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
       if (role === "student" && prof) {
         const dates = await balanceDates(prof.user_id);
-        out.balance = { minus: prof.minus_hours, plus: prof.plus_hours, nach: prof.makeup_credits, dates };
+        const { data: myfix } = await service().from("fixed_slots").select("weekday,hour,mode").eq("student_id", prof.user_id).eq("status", "aktiv");
+        const fix = (myfix || []).map((f: { weekday: number; hour: number; mode: string | null }) => ({ weekday: f.weekday, hour: f.hour, mode: f.mode }));
+        out.balance = { minus: prof.minus_hours, plus: prof.plus_hours, nach: prof.makeup_credits, dates, fix };
       }
       return ok(out);
     }

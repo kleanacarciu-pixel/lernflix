@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 // ------- Typen -------
 type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null };
 type Day = { date: string; weekday: number; slots: Slot[] };
-type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] } };
+type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
@@ -43,6 +43,8 @@ const CSS = `
 .pill .tip{display:none;position:absolute;top:120%;left:0;z-index:5;background:#1f2937;color:#fff;padding:9px 12px;border-radius:10px;font-weight:500;font-size:.82rem;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.25)}
 .pill .tip b{color:#8fe3d8;font-weight:600}
 .pill:hover .tip{display:block}
+.fixpill{background:rgba(43,179,192,.14);border:1px solid rgba(43,179,192,.45);color:#0f6f79;cursor:pointer;font-weight:700}
+.fixpill:hover{background:rgba(43,179,192,.22)}
 .overview{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
 .ovh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .overview h3{font-size:1.1rem}
@@ -313,6 +315,22 @@ export default function KalenderPage() {
         <button className="btn r" onClick={() => act("deleteStudent", { studentId: r.id })}>Endgültig entfernen</button></div></div>);
   }
 
+  function openRequest(r: ReqRow) {
+    const date = r.date || nextWeekdayDate(r.weekday ?? 0);
+    const hour = r.hour;
+    const dt = parseIso(date);
+    const when = `${DAYS[(dt.getDay() + 6) % 7]} ${dm(dt)} um ${pad(hour)}:00`;
+    const kindLbl = r.kind === "fix" ? "Fester wöchentlicher Termin" : r.kind === "probe" ? "Probestunde" : "Extra-/Nachholstunde";
+    jumpTo(date);
+    setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{r.who}</b> · {when}</p><p style={{ margin: "0 0 8px" }}>{kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</p>
+      {r.kind === "fix" ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
+      <div className="col">
+        <button className="btn p" onClick={() => act("adminConfirm", { date, hour })}>Bestätigen &amp; Mail</button>
+        <button className="btn r" onClick={() => act("adminReject", { date, hour })}>Absagen &amp; Mail</button>
+        <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
+      </div></div>);
+  }
+
   function chooseMode(action: string, date: string, hour: number, title: string) {
     setModal(<div className="modal"><h2>{title}</h2><p>Findet die Stunde online oder vor Ort statt?</p>
       <div className="col">
@@ -364,10 +382,15 @@ export default function KalenderPage() {
 
         {balance && (
           <div className="balance">
+            {balance.fix && balance.fix.length > 0 && balance.fix.map((f, i) => (
+              <button key={i} className="pill fixpill" title="Zum Termin springen" onClick={() => { const d = nextWeekdayDate(f.weekday); jumpTo(d); }}>
+                Fester Termin: {DAYS[f.weekday]} {pad(f.hour)}:00{f.mode ? " " + modeEmoji(f.mode) : ""}
+              </button>
+            ))}
             <span className="lbl">Deine Stunden:</span>
             <span className="pill"><span className="m">Minus {balance.minus}/3</span><span className="tip"><b>Minus-Stunden:</b><br />{balance.dates.minus.length ? balance.dates.minus.join(", ") : "keine"}</span></span>
             <span className="pill"><span className="p">Plus {balance.plus}</span><span className="tip"><b>Plus-Stunden:</b><br />{balance.dates.plus.length ? balance.dates.plus.join(", ") : "keine"}</span></span>
-            <span className="pill"><span className="n">Nachholen (Kleana) {balance.nach}</span><span className="tip"><b>Nachhol-Guthaben:</b><br />{balance.dates.nach.length ? balance.dates.nach.join(", ") : "keine"}</span></span>
+            <span className="pill"><span className="n">Gutschrift (Kleana) {balance.nach}</span><span className="tip"><b>Gutschrift von Kleana (kostenlos nachholbar):</b><br />{balance.dates.nach.length ? balance.dates.nach.join(", ") : "keine"}</span></span>
           </div>
         )}
 
@@ -392,13 +415,13 @@ export default function KalenderPage() {
               <div className="inbxlist">{inbox.requests.map((r, i) => {
                 const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${pad(r.hour)}:00` : `jeden ${DAYS[r.weekday ?? 0]} ${pad(r.hour)}:00`;
                 const kindLbl = r.kind === "fix" ? "fester Termin" : r.kind === "probe" ? "Probestunde" : "Extra-Stunde";
-                return <button key={i} className="inbxrow" onClick={() => jumpTo(r.date || nextWeekdayDate(r.weekday ?? 0))}>
-                  <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">öffnen ›</span></button>;
+                return <button key={i} className="inbxrow" onClick={() => openRequest(r)}>
+                  <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">bestätigen ›</span></button>;
               })}</div>}
             {inbox.cancellations.length > 0 && <>
               <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
               <div className="inbxlist">{inbox.cancellations.map((c, i) => (
-                <div key={i} className="inbxrow ca"><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {pad(c.hour)}:00 · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span></div>
+                <button key={i} className="inbxrow" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {pad(c.hour)}:00 · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
               ))}</div>
             </>}
           </div>
