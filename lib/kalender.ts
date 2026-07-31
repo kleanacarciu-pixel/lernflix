@@ -140,22 +140,23 @@ export type ApptRow = {
 };
 export const NOTE_ANNA_CANCEL = "anna_cancel"; // absage-Zeile, die Nachhol-Guthaben erzeugt hat
 export type SlotState = "free" | "busy" | "req" | "block" | "closed" | "past";
-export type SlotOut = { hour: number; state: SlotState; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null };
+export type SlotOut = { hour: number; state: SlotState; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean };
 export type DayOut = { date: string; weekday: number; slots: SlotOut[] };
 
 // Rohzustand eines Slots (ohne Rollen-Sicht)
 type Raw =
   | { t: "free" }
-  | { t: "block" }
+  | { t: "block"; weekly: boolean }
   | { t: "busy" | "req"; sid: string; name: string; fixed: boolean; mode: string | null };
 
 export function computeRaw(
   dateStr: string, hour: number,
   fixedMap: Map<string, { sid: string; name: string; status: string; mode: string | null }>,
   apptMap: Map<string, ApptRow[]>,
+  weeklyBlocks?: Set<string>,
 ): Raw {
   const list = apptMap.get(`${dateStr}-${hour}`) || [];
-  if (list.some((a) => a.kind === "block" && a.status !== "abgesagt")) return { t: "block" };
+  if (list.some((a) => a.kind === "block" && a.status !== "abgesagt")) return { t: "block", weekly: false };
   const booking = list.find((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt");
   const absage = list.some((a) => a.kind === "absage");
   if (booking) {
@@ -168,6 +169,7 @@ export function computeRaw(
   if (fx && !absage) {
     return { t: fx.status === "angefragt" ? "req" : "busy", sid: fx.sid, name: fx.name, fixed: true, mode: fx.mode };
   }
+  if (weeklyBlocks && weeklyBlocks.has(`${weekdayOf(dateStr)}-${hour}`)) return { t: "block", weekly: true };
   return { t: "free" };
 }
 
@@ -179,13 +181,15 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const days: string[] = Array.from({ length: 7 }, (_, i) => addDaysStr(monday, i));
   const from = days[0], to = days[6];
 
-  // feste Slots + Profile + Ereignisse parallel laden (schneller)
-  const [fxRes, profRes, apptRes] = await Promise.all([
+  // feste Slots + Profile + Ereignisse + Dauer-Blocks parallel laden (schneller)
+  const [fxRes, profRes, apptRes, wbRes] = await Promise.all([
     sb.from("fixed_slots").select("student_id,weekday,hour,status,mode").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note").gte("slot_date", from).lte("slot_date", to),
+    sb.from("weekly_blocks").select("weekday,hour"),
   ]);
   const fixedRows = fxRes.data; const profs = profRes.data;
+  const weeklyBlocks = new Set<string>((wbRes.data || []).map((w: { weekday: number; hour: number }) => `${w.weekday}-${w.hour}`));
   nameCache.clear();
   (profs || []).forEach((p: { user_id: string; name: string }) => nameCache.set(p.user_id, p.name));
   const fixedMap = new Map<string, { sid: string; name: string; status: string; mode: string | null }>();
@@ -209,12 +213,12 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
     const wd = weekdayOf(date);
     const slots: SlotOut[] = HOURS.map((hour) => {
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
-      const raw = computeRaw(date, hour, fixedMap, apptMap);
+      const raw = computeRaw(date, hour, fixedMap, apptMap, weeklyBlocks);
       const past = hoursUntil(date, hour) <= 0;
       // Rollen-Sicht
       if (raw.t === "free") return { hour, state: past ? "past" : "free" };
       if (raw.t === "block") {
-        if (role === "admin") return { hour, state: "block" };
+        if (role === "admin") return { hour, state: "block", weekly: raw.weekly };
         return { hour, state: "busy" }; // Schüler/öffentlich sehen "belegt"
       }
       // busy / req durch Schüler
