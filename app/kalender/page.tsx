@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 // ------- Typen -------
-type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null };
+type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean };
 type Day = { date: string; weekday: number; slots: Slot[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
@@ -179,10 +179,16 @@ export default function KalenderPage() {
     };
     let r = await call(session?.token);
     if (r.status === 401 && session?.refresh && action !== "refresh" && action !== "login") {
-      const rf = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: session.refresh }) });
-      const rd = (await rf.json().catch(() => ({}))) as Record<string, unknown>;
+      let rstatus = 0;
+      let rd: Record<string, unknown> = {};
+      try {
+        const rf = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: session.refresh }) });
+        rstatus = rf.status;
+        rd = (await rf.json().catch(() => ({}))) as Record<string, unknown>;
+      } catch { /* Netzwerkfehler – Sitzung NICHT verwerfen */ }
       if (rd.ok && rd.token) { saveSession({ ...session, token: String(rd.token), refresh: String(rd.refresh) }); r = await call(String(rd.token)); }
-      else saveSession(null);
+      else if (rstatus === 401) { saveSession(null); } // nur echtes Ablaufen -> ausloggen
+      // sonst: Sitzung behalten (nur vorübergehendes Problem)
     }
     return r.data;
   }, [session, saveSession]);
@@ -212,9 +218,9 @@ export default function KalenderPage() {
     setBusy(true);
     setModal(null); // Fenster sofort schließen -> fühlt sich direkt an
     const d = await api(action, params);
-    if (d.ok) { await loadWeek(); showToast(String(d.message || "Erledigt ✓")); }
-    else info("Hinweis", "", String(d.error || "Fehler."));
     setBusy(false);
+    if (d.ok) { showToast(String(d.message || "Erledigt ✓")); void loadWeek(); }
+    else info("Hinweis", "", String(d.error || "Fehler."));
   }
   function showToast(msg: string) { setToast(msg); window.setTimeout(() => setToast(null), 2800); }
   function info(title: string, msg: string, err = "") {
@@ -268,16 +274,22 @@ export default function KalenderPage() {
     }
     // admin
     if (s.state === "free") {
+      const wd = (parseIso(date).getDay() + 6) % 7;
       setModal(<div className="modal"><h2>Slot blockieren</h2><p>{when}</p>
-        <div className="okbox">Für eigene Arbeit sperren – Schüler können diesen Slot dann nicht buchen (erscheint als „belegt“).</div>
-        <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
-          <button className="btn p" onClick={() => act("block", { date, hour: s.hour })}>Blockieren</button></div></div>);
+        <div className="okbox">Für eigene Arbeit sperren – Schüler sehen ihn dann als „belegt“ und können nicht buchen.</div>
+        <div className="col">
+          <button className="btn p" onClick={() => act("block", { date, hour: s.hour })}>Nur dieses Datum blockieren</button>
+          <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>Jeden {DAYS[wd]} dauerhaft blockieren</button>
+          <button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
+        </div></div>);
       return;
     }
     if (s.state === "block") {
-      setModal(<div className="modal"><h2>Geblockter Slot</h2><p>{when}</p><p>Von dir für eigene Arbeit gesperrt.</p>
+      const wd = (parseIso(date).getDay() + 6) % 7;
+      setModal(<div className="modal"><h2>Geblockter Slot</h2><p>{when}</p>
+        <p>{s.weekly ? `Dauerhaft geblockt – jeden ${DAYS[wd]}.` : "Nur an diesem Datum geblockt."}</p>
         <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
-          <button className="btn p" onClick={() => act("unblock", { date, hour: s.hour })}>Freigeben</button></div></div>);
+          <button className="btn p" onClick={() => act(s.weekly ? "unblockWeekly" : "unblock", { date, hour: s.hour })}>{s.weekly ? "Dauerhaft freigeben" : "Freigeben"}</button></div></div>);
       return;
     }
     if (s.state === "req") {
@@ -384,7 +396,7 @@ export default function KalenderPage() {
           </div>
         </div>
 
-        {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung). Schüler und Kleana sehen nach dem Login ihre Termine.</div>}
+        {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung).</div>}
 
         {balance && (
           <div className="balance">
@@ -480,7 +492,7 @@ export default function KalenderPage() {
           </div>
         </div>
       </div>
-      {modal && <div className="ov" onClick={(e) => { if (e.target === e.currentTarget) setModal(null); }}>{modal}</div>}
+      {modal && <div className="ov">{modal}</div>}
       {busy && <div className="saving">Speichern…</div>}
       {toast && <div className="toast">{toast}</div>}
     </div>

@@ -95,14 +95,26 @@ create index if not exists appointments_by_date    on public.appointments (slot_
 create index if not exists appointments_by_student on public.appointments (student_id);
 
 -- ---------------------------------------------------------------------------
+-- 3b) WÖCHENTLICHE BLOCKIERUNGEN  (Kleana sperrt einen Wochentag+Uhrzeit dauerhaft)
+-- ---------------------------------------------------------------------------
+create table if not exists public.weekly_blocks (
+  id         uuid primary key default gen_random_uuid(),
+  weekday    int not null check (weekday between 0 and 6),
+  hour       int not null check (hour between 8 and 19),
+  created_at timestamptz not null default now(),
+  unique (weekday, hour)
+);
+
+-- ---------------------------------------------------------------------------
 -- 4) RLS  (Row Level Security)
 --    Die App greift ausschließlich über sichere Next.js-API-Routen mit dem
 --    Service-Role-Key zu (Geschäftslogik nicht manipulierbar). RLS ist zusätzlich
 --    aktiviert, damit über anon/authenticated nichts unkontrolliert lesbar ist.
 -- ---------------------------------------------------------------------------
-alter table public.profiles     enable row level security;
-alter table public.fixed_slots  enable row level security;
-alter table public.appointments enable row level security;
+alter table public.profiles      enable row level security;
+alter table public.fixed_slots   enable row level security;
+alter table public.appointments  enable row level security;
+alter table public.weekly_blocks enable row level security;
 
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
