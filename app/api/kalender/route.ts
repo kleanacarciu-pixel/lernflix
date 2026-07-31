@@ -4,7 +4,7 @@
 // =============================================================================
 import { NextResponse, after } from "next/server";
 import {
-  service, signIn, refresh, userFromToken, getProfile, buildWeek, balanceDates,
+  service, signIn, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, isOpen, hoursUntil, prettyDate, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
@@ -149,14 +149,15 @@ export async function POST(req: Request): Promise<Response> {
       if (!validSlot) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.student_id === user.id) {
-        await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
+        await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
         await revertCounting(prof, s.booking.counted);
         return ok({ message: "Deine gebuchte Stunde wurde abgesagt." });
       }
       if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absage) {
         const hu = hoursUntil(date, hour);
         const credit = hu >= 4 && prof.minus_hours < 3;
-        await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit });
+        const cnote = credit ? null : (hu < 4 ? "late" : "overmax");
+        await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
         if (credit) await setBalance(user.id, { minus_hours: prof.minus_hours + 1 });
         after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
         return ok({ message: hu >= 4 ? (credit ? "Abgesagt. +1 Minus-Stunde gutgeschrieben." : "Abgesagt. (Minus-Konto bereits voll: 3/3.)") : "Abgesagt. Weniger als 4 Std. vorher – keine Gutschrift." });
@@ -242,7 +243,7 @@ export async function POST(req: Request): Promise<Response> {
       const s = await inspectSlot(date, hour);
       if (s.booking) {
         const sp = await getProfile(s.booking.student_id || "");
-        await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
+        await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
         if (sp) { await revertCounting(sp, s.booking.counted); await setBalance(sp.user_id, { makeup_credits: (await getProfile(sp.user_id))!.makeup_credits + 1 }); }
         if (sp?.email) { const em = sp.email; after(() => sendMail(em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben + Mail." });
@@ -300,6 +301,12 @@ export async function POST(req: Request): Promise<Response> {
       const sb = service();
       const { data: studs } = await sb.from("profiles").select("user_id,name,minus_hours,plus_hours,makeup_credits").eq("role", "student").order("name");
       const { data: fx } = await sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "aktiv");
+      const { data: allAppts } = await sb.from("appointments").select("student_id,slot_date,hour,kind,credited,counted,note,status").order("slot_date", { ascending: false }).limit(2000);
+      const apptsByStudent = new Map<string, { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]>();
+      (allAppts || []).forEach((a: { student_id: string | null; slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }) => {
+        if (!a.student_id) return;
+        const arr = apptsByStudent.get(a.student_id) || []; arr.push(a); apptsByStudent.set(a.student_id, arr);
+      });
       const fixByStudent = new Map<string, string[]>();
       (fx || []).forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null }) => {
         const arr = fixByStudent.get(f.student_id) || [];
@@ -307,13 +314,48 @@ export async function POST(req: Request): Promise<Response> {
         arr.push(`${DAY_NAMES[f.weekday]} ${String(f.hour).padStart(2, "0")}:00${m}`);
         fixByStudent.set(f.student_id, arr);
       });
-      const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }) => ({
-        id: p.user_id, name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
-        minus: p.minus_hours, plus: p.plus_hours, nach: p.makeup_credits,
-      }));
+      const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }) => {
+        const d = groupBalanceDates(apptsByStudent.get(p.user_id) || []);
+        return {
+          id: p.user_id, name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
+          minus: p.minus_hours, plus: p.plus_hours, nach: p.makeup_credits,
+          minusD: d.minus, plusD: d.plus, nachD: d.nach,
+        };
+      });
       return ok({ students: rows });
     }
 
+    if (action === "adjustBalance") {
+      const sid = String(body.studentId || "");
+      const field = String(body.field || "");
+      const delta = Number(body.delta);
+      if (!["makeup", "plus", "minus"].includes(field) || (delta !== 1 && delta !== -1)) return bad("Ungültig.");
+      const p = await getProfile(sid);
+      if (!p || p.role === "admin") return bad("Nicht gefunden.");
+      const col = field === "makeup" ? "makeup_credits" : field === "plus" ? "plus_hours" : "minus_hours";
+      const cur = field === "makeup" ? p.makeup_credits : field === "plus" ? p.plus_hours : p.minus_hours;
+      let nv = cur + delta;
+      if (nv < 0) nv = 0;
+      if (field === "minus" && nv > 3) nv = 3;
+      await service().from("profiles").update({ [col]: nv }).eq("user_id", sid);
+      return ok({ message: "Aktualisiert." });
+    }
+    if (action === "studentHistory") {
+      const sid = String(body.studentId || "");
+      const p = await getProfile(sid);
+      if (!p || p.role === "admin") return bad("Nicht gefunden.");
+      const { data } = await service().from("appointments").select("slot_date,hour,kind,credited,counted,note,status").eq("student_id", sid).order("slot_date", { ascending: false }).limit(500);
+      const plus: string[] = [], minus: string[] = [], late: string[] = [], overmax: string[] = [], gutschrift: string[] = [];
+      ((data || []) as { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]).forEach((a) => {
+        const label = prettyDate(a.slot_date, a.hour).replace(" um ", ", ");
+        if (a.counted === "plus" && a.status !== "abgesagt") plus.push(label);
+        if (a.kind === "absage" && a.credited) minus.push(label);
+        else if (a.kind === "absage" && a.note === NOTE_ANNA_CANCEL) gutschrift.push(label);
+        else if (a.kind === "absage" && a.note === "late") late.push(label);
+        else if (a.kind === "absage" && a.note === "overmax") overmax.push(label);
+      });
+      return ok({ name: p.name, history: { plus, minus, late, overmax, gutschrift } });
+    }
     if (action === "adminInbox") {
       const sb = service();
       const [pendRes, pfixRes, cancRes, profRes] = await Promise.all([
