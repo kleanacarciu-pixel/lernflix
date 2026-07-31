@@ -234,14 +234,19 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
 // Datums-Listen für die Tooltips (Minus/Plus/Nachhol) eines Schülers
 export async function balanceDates(studentId: string) {
   const sb = service();
-  const { data } = await sb.from("appointments").select("slot_date,hour,kind,credited,counted,note")
-    .eq("student_id", studentId).order("slot_date", { ascending: false }).limit(80);
+  const { data } = await sb.from("appointments").select("slot_date,hour,kind,credited,counted,note,status")
+    .eq("student_id", studentId).order("slot_date", { ascending: false }).limit(120);
+  return groupBalanceDates((data || []) as BalRow[]);
+}
+type BalRow = { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string };
+export function groupBalanceDates(rows: BalRow[]) {
   const minus: string[] = [], plus: string[] = [], nach: string[] = [];
-  (data || []).forEach((a: { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null }) => {
+  rows.forEach((a) => {
     const label = prettyDate(a.slot_date, a.hour).replace(" um ", ", ");
     if (a.kind === "absage" && a.credited) minus.push(label);
     else if (a.kind === "absage" && a.note === NOTE_ANNA_CANCEL) nach.push(label);
-    if (a.counted === "plus") plus.push(label);
+    // Plus nur für nicht-abgesagte Extra-Stunden (abgesagte wurden zurückgerechnet)
+    if (a.counted === "plus" && a.status !== "abgesagt") plus.push(label);
   });
   return { minus, plus, nach };
 }

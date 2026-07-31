@@ -6,7 +6,7 @@ type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?
 type Day = { date: string; weekday: number; slots: Slot[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
-type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number };
+type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[] };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
 type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
@@ -57,6 +57,17 @@ const CSS = `
 .tag.m{background:#fbe3d8;color:#b4491f}.tag.p{background:#dcf3ec;color:#127a5c}.tag.z{background:#eee;color:#999}
 .rmv{border:0;background:#f4f4f4;color:#b4491f;width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:700}
 .rmv:hover{background:#f7dcd4}
+.namebtn{border:0;background:none;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;padding:0}
+.namebtn:hover{color:var(--teal)}
+.stp{display:inline-flex;align-items:center;gap:5px}
+.stpb{border:1px solid var(--line);background:#fff;width:22px;height:22px;border-radius:6px;cursor:pointer;font-size:.95rem;line-height:1;color:var(--muted);padding:0}
+.stpb:hover{background:#f4f6f7;color:var(--ink)}
+.histmodal{max-width:520px;max-height:82vh;overflow-y:auto}
+.histsec{margin:12px 0;font-size:.9rem}
+.histsec>b{display:block;margin-bottom:3px}
+.histsec>div{color:var(--muted);line-height:1.6}
+.histsec>b.p{color:#127a5c}.histsec>b.m{color:#c0562b}.histsec>b.n{color:#3E7BB6}.histsec>b.w{color:#a1701a}
+.histsec.sub{font-size:.78rem;color:#b3b3b3;border-top:1px solid var(--line);padding-top:8px}
 .layout{display:flex;gap:18px;align-items:flex-start}
 @media(max-width:760px){.layout{flex-direction:column}.side{width:100%;flex-basis:auto}}
 .side{flex:0 0 230px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:max-content}
@@ -69,6 +80,11 @@ const CSS = `
 .calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .deskgrid{overflow-x:auto}
 .otblwrap{overflow-x:auto}
+@media(min-width:761px){.otblwrap{overflow:visible}}
+.htip{position:relative;cursor:default}
+.htip .tt{display:none;position:absolute;bottom:135%;left:50%;transform:translateX(-50%);z-index:10;background:#1f2937;color:#fff;padding:9px 12px;border-radius:10px;font-weight:500;font-size:.82rem;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.25);text-align:left}
+.htip .tt b{color:#8fe3d8;font-weight:600}
+.htip:hover .tt{display:block}
 .dayview{display:none;padding:12px 14px 16px}
 .daychips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
 .daychip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;font:inherit;font-size:.8rem;font-weight:700;min-width:54px;color:var(--ink)}
@@ -349,6 +365,19 @@ export default function KalenderPage() {
       </div></div>);
   }
 
+  async function openHistory(id: string, name: string) {
+    const d = await api("studentHistory", { studentId: id });
+    if (!d.ok) { info("Hinweis", "", String(d.error || "Fehler.")); return; }
+    const h = d.history as { plus: string[]; minus: string[]; late: string[]; overmax: string[]; gutschrift: string[] };
+    setModal(<div className="modal histmodal"><h2>Verlauf – {name}</h2>
+      <div className="histsec"><b className="p">✅ Plus-Stunden ({h.plus.length})</b><div>{h.plus.length ? h.plus.join(" · ") : "keine"}</div></div>
+      <div className="histsec"><b className="m">➖ Minus-Stunden ({h.minus.length})</b><div>{h.minus.length ? h.minus.join(" · ") : "keine"}</div></div>
+      <div className="histsec"><b className="n">🎁 Gutschrift von Kleana ({h.gutschrift.length})</b><div>{h.gutschrift.length ? h.gutschrift.join(" · ") : "keine"}</div></div>
+      <div className="histsec"><b className="w">⚠️ Absage unter 4 Std. – keine Gutschrift ({h.late.length})</b><div>{h.late.length ? h.late.join(" · ") : "keine"}</div></div>
+      {h.overmax.length > 0 && <div className="histsec sub">Über Minus-Maximum abgesagt (nicht gezählt): {h.overmax.join(" · ")}</div>}
+      <div className="acts"><button className="btn p" onClick={() => setModal(null)}>Schließen</button></div></div>);
+  }
+
   function chooseMode(action: string, date: string, hour: number, title: string) {
     setModal(<div className="modal"><h2>{title}</h2><p>Findet die Stunde online oder vor Ort statt?</p>
       <div className="col">
@@ -416,10 +445,10 @@ export default function KalenderPage() {
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><b>{r.name}</b></td><td>{r.fix}</td>
-                <td><span className={"tag " + (r.minus ? "m" : "z")}>{r.minus}</span></td>
-                <td><span className={"tag " + (r.plus ? "p" : "z")}>{r.plus}</span></td>
-                <td><span className={"tag " + (r.nach ? "p" : "z")}>{r.nach}</span></td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button></td><td>{r.fix}</td>
+                <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
+                <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
+                <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
                 <td><button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button></td></tr>))}
                 {overview.length === 0 && <tr><td colSpan={6} style={{ color: "#999" }}>Noch keine Schüler. Lege oben rechts den ersten an.</td></tr>}
               </tbody></table></div>
