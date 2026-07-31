@@ -110,6 +110,7 @@ export async function POST(req: Request): Promise<Response> {
       const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
       if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
       await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode });
+      await sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
     if (action === "bookExtra") {
@@ -119,6 +120,7 @@ export async function POST(req: Request): Promise<Response> {
       const s = await inspectSlot(date, hour);
       if (s.block || s.booking || (s.fixedActive && !s.absage)) return bad("Dieser Slot ist belegt.");
       await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode });
+      await sendMail(ADMIN_EMAIL, "Neue Terminanfrage", `${prof.name} möchte am ${prettyDate(date, hour)} eine Stunde (${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`);
       const preview = prof.makeup_credits > 0 ? "Nachhol-Guthaben wird eingelöst." : prof.minus_hours > 0 ? "Minus-Stunde wird nachgeholt." : "Zählt als Extra-Stunde (Plus).";
       return ok({ message: "Stunde angefragt. Kleana bestätigt sie. " + preview });
     }
@@ -141,8 +143,34 @@ export async function POST(req: Request): Promise<Response> {
       return bad("Hier ist kein eigener Termin.");
     }
 
+    if (action === "changePassword") {
+      const pw = String(body.password || "");
+      if (pw.length < 6) return bad("Passwort muss mindestens 6 Zeichen haben.");
+      const { error } = await service().auth.admin.updateUserById(user.id, { password: pw });
+      if (error) return bad("Konnte Passwort nicht ändern: " + error.message);
+      return ok({ message: "Passwort geändert." });
+    }
+    if (action === "endFixed") {
+      if (!validSlot) return bad("Ungültiger Slot.");
+      const s = await inspectSlot(date, hour);
+      if (!s.fixedActive) return bad("Hier ist kein fester Termin.");
+      if (!isAdmin && s.fixedActive.student_id !== user.id) return bad("Nur dein eigener fester Termin.");
+      await service().from("fixed_slots").update({ status: "beendet" }).eq("id", s.fixedActive.id);
+      return ok({ message: "Fester Termin beendet. Du kannst jetzt einen neuen freien Slot anfragen." });
+    }
+
     // === ADMIN-AKTIONEN (nur Kleana) ===
     if (!isAdmin) return bad("Nur Kleana darf das.", 403);
+
+    if (action === "deleteStudent") {
+      const sid = String(body.studentId || "");
+      if (!sid) return bad("Kein Schüler angegeben.");
+      const p = await getProfile(sid);
+      if (!p || p.role === "admin") return bad("Nicht erlaubt.");
+      const { error } = await service().auth.admin.deleteUser(sid);
+      if (error) await service().from("profiles").delete().eq("user_id", sid);
+      return ok({ message: `Schüler „${p.name}" entfernt.` });
+    }
 
     if (action === "adminConfirm") {
       if (!validSlot) return bad("Ungültiger Slot.");
@@ -236,7 +264,7 @@ export async function POST(req: Request): Promise<Response> {
         fixByStudent.set(f.student_id, arr);
       });
       const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }) => ({
-        name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
+        id: p.user_id, name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
         minus: p.minus_hours, plus: p.plus_hours, nach: p.makeup_credits,
       }));
       return ok({ students: rows });

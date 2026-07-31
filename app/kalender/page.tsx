@@ -6,7 +6,7 @@ type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?
 type Day = { date: string; weekday: number; slots: Slot[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] } };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
-type OverviewRow = { name: string; fix: string; minus: number; plus: number; nach: number };
+type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -49,6 +49,8 @@ const CSS = `
 .otbl th{color:var(--muted);font-weight:600}
 .tag{display:inline-block;min-width:24px;text-align:center;border-radius:8px;padding:2px 8px;font-weight:700;font-size:.82rem}
 .tag.m{background:#fbe3d8;color:#b4491f}.tag.p{background:#dcf3ec;color:#127a5c}.tag.z{background:#eee;color:#999}
+.rmv{border:0;background:#f4f4f4;color:#b4491f;width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:700}
+.rmv:hover{background:#f7dcd4}
 .layout{display:flex;gap:18px;align-items:flex-start}
 @media(max-width:760px){.layout{flex-direction:column}.side{width:100%;flex-basis:auto}}
 .side{flex:0 0 230px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:max-content}
@@ -208,13 +210,16 @@ export default function KalenderPage() {
         return;
       }
       if (s.mine && s.state === "req") return info("Angefragt", `${when} wartet auf Kleanas Bestätigung.`);
-      if (s.mine && s.state === "mine") {
+      if (s.mine && s.state === "busy") {
         const hu = hoursUntil(date, s.hour);
-        setModal(<div className="modal"><h2>Termin absagen</h2><p>{when}</p>
-          {hu >= 4 ? <div className="okbox">Mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben (max. 3).</div>
-            : <div className="warn">Weniger als 4 Std. vorher: zählt <b>nicht</b> als Minus-Stunde.</div>}
-          <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Zurück</button>
-            <button className="btn p" onClick={() => act("cancelMine", { date, hour: s.hour })}>{hu >= 4 ? "Absagen" : "Trotzdem absagen"}</button></div></div>);
+        setModal(<div className="modal"><h2>Dein Termin</h2><p>{when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
+          {hu >= 4 ? <div className="okbox">Absagen: mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben (max. 3).</div>
+            : <div className="warn">Absagen: weniger als 4 Std. vorher → zählt <b>nicht</b> als Minus-Stunde.</div>}
+          <div className="col">
+            <button className="btn p" onClick={() => act("cancelMine", { date, hour: s.hour })}>{hu >= 4 ? "Diesen Termin absagen" : "Trotzdem absagen"}</button>
+            {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
+            <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
+          </div></div>);
         return;
       }
       return;
@@ -244,11 +249,27 @@ export default function KalenderPage() {
       return;
     }
     if (s.state === "busy") {
-      setModal(<div className="modal"><h2>Stunde absagen</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
-        <div className="okbox">{s.name} bekommt Nachhol-Guthaben (kein Minus) und eine Mail.</div>
-        <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Zurück</button>
-          <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Absagen</button></div></div>);
+      setModal(<div className="modal"><h2>Termin von {s.name}</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
+        <div className="okbox">„Absagen“ gibt {s.name} Nachhol-Guthaben (kein Minus) + Mail.</div>
+        <div className="col">
+          <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Diese Stunde absagen</button>
+          {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
+          <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
+        </div></div>);
     }
+  }
+
+  function openPassword() {
+    setModal(<ChangePassword onClose={() => setModal(null)} onSave={async (pw) => {
+      const d = await api("changePassword", { password: pw });
+      if (d.ok) { setModal(null); showToast("Passwort geändert ✓"); return ""; }
+      return String(d.error || "Fehler.");
+    }} />);
+  }
+  function confirmRemove(r: OverviewRow) {
+    setModal(<div className="modal"><h2>Schüler entfernen</h2><p>Möchtest du <b>{r.name}</b> wirklich löschen? Zugang und alle Termine werden entfernt. Das kann nicht rückgängig gemacht werden.</p>
+      <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
+        <button className="btn r" onClick={() => act("deleteStudent", { studentId: r.id })}>Endgültig entfernen</button></div></div>);
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
@@ -289,7 +310,7 @@ export default function KalenderPage() {
           <div className="sp">
             <a className="back" href="https://lernemitanna.de">← lernemitanna.de</a>
             {session
-              ? <><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
+              ? <><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
           </div>
         </div>
@@ -308,12 +329,13 @@ export default function KalenderPage() {
         {role === "admin" && overview && (
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></div>
-            <table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th></tr></thead>
-              <tbody>{overview.map((r, i) => (<tr key={i}><td><b>{r.name}</b></td><td>{r.fix}</td>
+            <table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><b>{r.name}</b></td><td>{r.fix}</td>
                 <td><span className={"tag " + (r.minus ? "m" : "z")}>{r.minus}</span></td>
                 <td><span className={"tag " + (r.plus ? "p" : "z")}>{r.plus}</span></td>
-                <td><span className={"tag " + (r.nach ? "p" : "z")}>{r.nach}</span></td></tr>))}
-                {overview.length === 0 && <tr><td colSpan={5} style={{ color: "#999" }}>Noch keine Schüler. Lege oben rechts den ersten an.</td></tr>}
+                <td><span className={"tag " + (r.nach ? "p" : "z")}>{r.nach}</span></td>
+                <td><button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button></td></tr>))}
+                {overview.length === 0 && <tr><td colSpan={6} style={{ color: "#999" }}>Noch keine Schüler. Lege oben rechts den ersten an.</td></tr>}
               </tbody></table>
           </div>
         )}
@@ -398,6 +420,19 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
     <label>Passwort</label><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
+}
+function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
+  const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  async function go() {
+    if (pw.length < 6) { setErr("Mindestens 6 Zeichen."); return; }
+    if (pw !== pw2) { setErr("Die Passwörter stimmen nicht überein."); return; }
+    setLoad(true); setErr(await onSave(pw)); setLoad(false);
+  }
+  return <div className="modal"><h2>Passwort ändern</h2><p>Wähle ein neues Passwort für deinen Zugang.</p>
+    <label>Neues Passwort</label><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} />
+    <label>Nochmal wiederholen</label><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+    {err ? <div className="err">{err}</div> : null}
+    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Speichern"}</button></div></div>;
 }
 function AddStudent({ onCreate, onClose }: { onCreate: (n: string, e: string) => Promise<string>; onClose: () => void }) {
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
