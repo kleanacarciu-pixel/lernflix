@@ -331,8 +331,8 @@ if(_tf){_tf.addEventListener('submit',function(e){e.preventDefault();window.loca
   .mnav-panel{position:fixed;inset:0;background:rgba(255,253,248,.985);z-index:190;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:80px 34px 40px;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto}
   .mnav-panel.open{transform:translateX(0)}
   .mnav-panel a{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1A1A1A;text-decoration:none;padding:13px 0;border-bottom:1px solid rgba(26,26,26,.08)}
-  .mnav-cta{display:flex;flex-wrap:wrap;gap:18px 22px;margin-top:26px}
-  .mnav-cta a{font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;color:#2BB3C0;border:0;padding:0}
+  .mnav-cta{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:8px;margin-top:26px}
+  .mnav-cta a{font-family:'Inter',sans-serif;font-size:.76rem;font-weight:600;color:#2BB3C0;border:0;padding:0;white-space:nowrap}
 }
 </style>
 <button class="mnav-burger" id="mnavBurger" aria-label="Menü öffnen"><i></i></button>
@@ -348,8 +348,8 @@ if(_tf){_tf.addEventListener('submit',function(e){e.preventDefault();window.loca
     <a href="https://lernflix.lernemitanna.de/" target="_blank" rel="noopener">Shop ↗</a>
     <a href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener">Kalender</a>
     <a href="tel:+4917624700519">Anrufen</a>
-    <a href="mailto:lernemitanna@outlook.com">E-Mail</a>
-    <a href="https://www.instagram.com/lernemitanna/" target="_blank" rel="noopener">Instagram</a>
+    <a href="mailto:lernemitanna@outlook.com">Mail</a>
+    <a href="https://www.instagram.com/lernemitanna/" target="_blank" rel="noopener">Insta</a>
   </div>
 </nav>
 <script>(function(){var b=document.getElementById('mnavBurger'),p=document.getElementById('mnavPanel');if(!b||!p)return;function t(){var o=p.classList.toggle('open');b.classList.toggle('open',o);document.body.style.overflow=o?'hidden':'';}b.addEventListener('click',t);[].forEach.call(p.querySelectorAll('a'),function(a){a.addEventListener('click',function(){p.classList.remove('open');b.classList.remove('open');document.body.style.overflow='';});});})();</script>
