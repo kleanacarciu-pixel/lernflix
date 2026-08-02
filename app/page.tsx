@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const F = {
   bg: '#fffdf8',
@@ -280,9 +281,13 @@ export default function Home() {
 
           {/* Foto - mathe + physik buecher (1145x1028 hochaufloesend) */}
           <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: mobil ? 'auto' : '500px', marginTop: mobil ? '8px' : 0 }}>
-            <img
-              src="/20260613_173033176_iOS.png"
+            <Image
+              src="/20260613_173033176_iOS.webp"
               alt="Lachende Mathe- und Physik-Buecher umarmen sich"
+              width={1145}
+              height={1028}
+              sizes="(max-width: 700px) 380px, 620px"
+              preload
               style={{
                 width: '100%',
                 maxWidth: mobil ? '380px' : '620px',

@@ -27,18 +27,87 @@ import textwrap
 import requests
 
 # ---------------------------------------------------------------- Konfiguration
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+# .strip(): Secrets werden beim Einfuegen (GitHub-UI) gerne mit einem
+# Zeilenumbruch/Leerzeichen kopiert — das wuerde HTTP-Header zerstoeren.
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"].strip()
+SUPABASE_URL = os.environ["SUPABASE_URL"].strip().rstrip("/")
+SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "").strip()
 ROW_ID = os.environ.get("ROW_ID", "").strip()
+
+# Die (alte) elevenlabs-Lib liest den Key aus ELEVEN_API_KEY. Sonst fragt
+# manim-voiceover interaktiv nach -> EOFError in CI -> Fallback auf Roboter-gTTS.
+# Deshalb beide Varianten setzen, damit echt ElevenLabs benutzt wird.
+if ELEVENLABS_API_KEY:
+    os.environ["ELEVEN_API_KEY"] = ELEVENLABS_API_KEY
+    os.environ["ELEVENLABS_API_KEY"] = ELEVENLABS_API_KEY
 
 MODEL = "claude-sonnet-4-6"
 BUCKET = "shorts"            # oeffentlicher Supabase-Storage-Bucket
 MAX_REPAIRS = 4             # Versuche, von Claude generierten Code zu reparieren
 
-# ElevenLabs "Emilia" — deutsche weibliche Stimme (via manim-voiceover).
+# ElevenLabs "Emilia" — deutsche weibliche Stimme.
 ELEVEN_VOICE_ID = "Dt2jDzhoZC0pZw5bmy2S"
+
+# Eigener manim-voiceover SpeechService, der ElevenLabs DIREKT per REST anspricht.
+# Umgeht die kaputte manim_voiceover.services.elevenlabs (voices()/Init-Fehler).
+# Wird zur Laufzeit als eleven_rest.py neben scene.py geschrieben.
+ELEVEN_REST_PY = '''\
+"""Direkter ElevenLabs-SpeechService fuer manim-voiceover (REST, ohne elevenlabs-Lib)."""
+import hashlib
+import json
+import os
+from pathlib import Path
+
+import requests
+from manim_voiceover.services.base import SpeechService
+
+
+class ElevenRestService(SpeechService):
+    def __init__(self, voice_id, model_id="eleven_multilingual_v2",
+                 stability=0.4, similarity_boost=0.8, **kwargs):
+        self.voice_id = voice_id
+        self.model_id = model_id
+        self.stability = stability
+        self.similarity_boost = similarity_boost
+        SpeechService.__init__(self, **kwargs)
+
+    def generate_from_text(self, text, cache_dir=None, path=None):
+        if cache_dir is None:
+            cache_dir = self.cache_dir
+        if path is None:
+            h = hashlib.sha256(
+                json.dumps({"t": text, "v": self.voice_id, "m": self.model_id}).encode("utf-8")
+            ).hexdigest()[:20]
+            audio_path = "eleven-" + h + ".mp3"
+        else:
+            audio_path = path
+
+        target = Path(cache_dir) / audio_path
+        if not target.exists():
+            api_key = os.environ.get("ELEVENLABS_API_KEY") or os.environ.get("ELEVEN_API_KEY")
+            if not api_key:
+                raise RuntimeError("ELEVENLABS_API_KEY fehlt fuer ElevenRestService.")
+            resp = requests.post(
+                "https://api.elevenlabs.io/v1/text-to-speech/" + self.voice_id,
+                headers={"xi-api-key": api_key, "accept": "audio/mpeg",
+                         "content-type": "application/json"},
+                json={"text": text, "model_id": self.model_id,
+                      "voice_settings": {"stability": self.stability,
+                                         "similarity_boost": self.similarity_boost}},
+                timeout=180,
+            )
+            if resp.status_code != 200:
+                raise RuntimeError("ElevenLabs TTS " + str(resp.status_code) + ": " + resp.text[:200])
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with open(target, "wb") as f:
+                f.write(resp.content)
+
+        return {"input_text": text,
+                "input_data": {"input_text": text, "service": "eleven_rest",
+                               "voice_id": self.voice_id, "model_id": self.model_id},
+                "original_audio": audio_path}
+'''
 
 
 # ----------------------------------------------------------------- Supabase REST
@@ -126,40 +195,42 @@ def extract_code(text):
 def speech_service_snippet():
     """Import + Setup-Zeile fuer den TTS-Dienst (ElevenLabs, sonst gTTS)."""
     if ELEVENLABS_API_KEY:
-        imp = "from manim_voiceover.services.elevenlabs import ElevenLabsService"
-        setup = (
-            f'self.set_speech_service(ElevenLabsService(voice_id="{ELEVEN_VOICE_ID}", '
-            'voice_settings={"stability": 0.45, "similarity_boost": 0.75, "speed": 1.08}))'
-        )
+        imp = "from eleven_rest import ElevenRestService"
+        setup = f'self.set_speech_service(ElevenRestService(voice_id="{ELEVEN_VOICE_ID}"))'
     else:
         imp = "from manim_voiceover.services.gtts import GTTSService"
         setup = 'self.set_speech_service(GTTSService(lang="de"))'
     return imp, setup
 
 
-SYSTEM_PROMPT = """Du bist Experte fuer Manim Community Edition (v0.18+) und manim-voiceover.
-Du schreibst EIN vollstaendiges, lauffaehiges Python-Skript fuer ein deutsches Mathe-Erklaer-Short
-(Hochformat 9:16, ca. 30-45 Sekunden) im Stil von 3Blue1Brown — aber kurz, modern und mit
-Persoenlichkeit der Marke "Anna": witzig, klar, selbstbewusst, einzigartig. Kein Kinderkram.
+SYSTEM_PROMPT = """Du bist Profi fuer virale Mathe-Shorts UND Experte fuer Manim Community Edition
+(v0.18+) mit manim-voiceover. Du schreibst EIN lauffaehiges Python-Skript fuer ein deutsches
+9:16-Short (ca. 25-35 Sekunden) der Marke "Anna".
 
-HARTE REGELN:
-- Nur Manim-Bordmittel. KEINE externen Dateien, Bilder, Assets, Fonts oder Internet (ausser TTS).
+STIL — das Wichtigste (das letzte Video war zu kompliziert, langweilig und voll. Mach das GEGENTEIL):
+- SIMPEL: EINE einzige Kernidee. Erklaere sie so, dass es sofort "klick" macht. Keine
+  Herleitungen, keine Fachsprache, kein ueberladenes Bild.
+- GROSS & LUFTIG: meist nur EIN grosses Element gleichzeitig auf dem Schirm, viel Leerraum,
+  zentriert. Schrift riesig (font_size 60-110). Nie mehr als 2-3 Dinge gleichzeitig sichtbar.
+- SCHNELL & ENERGISCH: kurze, knackige Saetze. Tempo wie ein guter TikTok — keine langen Pausen,
+  kein monotones Vorlesen.
+- WITZIG & MENSCHLICH: Anna ist locker, schlagfertig, ein kleiner Spruch oder Aha-Vergleich gehoert
+  rein (z.B. ein Alltags-Bild). Kein Lehrer-Ton, kein Kinderkram.
+- HOOK in den ersten ~2 Sekunden, der neugierig macht ("Fast jeder macht das falsch ..." o.ae.).
+- Ende: ein befriedigender Aha-Moment + kurzer CTA "lernflix.lernemitanna.de".
+
+TECHNIK (hart einhalten, sonst crasht der Render):
+- Nur Manim-Bordmittel. KEINE externen Dateien/Bilder/Fonts/Internet (ausser TTS).
 - Genau eine Szene: `class Short(VoiceoverScene):` mit `def construct(self):`.
-- Erste Zeile in construct(): die vorgegebene set_speech_service(...)-Zeile (unveraendert uebernehmen).
-- Hintergrund hell setzen: `self.camera.background_color = "#EAF3FF"`. Textfarbe dunkel "#15233A",
-  Akzentfarbe "#C77B96". Sorge IMMER fuer hohen Kontrast (kein heller Text auf hellem Grund).
-- VOICE-VISUAL-SYNC ist Pflicht: Jede gesprochene Aussage steht in einem
-  `with self.voiceover(text="...") as tracker:`-Block, und die Animation in DIESEM Block zeigt
-  GENAU das, was gerade gesagt wird. Nutze `run_time=tracker.duration` (oder Teile davon) fuer die
-  Hauptanimation, damit Stimme und Bild zusammen enden.
-- 4 bis 7 voiceover-Bloecke. Reihenfolge: kurzer Hook -> Schritt-fuer-Schritt-Erklaerung
-  (Formeln transformieren, wichtige Teile farbig hervorheben, Geometrie/Flaechen zeigen wo sinnvoll)
-  -> knackiges Ende mit CTA "lernflix.lernemitanna.de".
-- Mathe MUSS exakt korrekt sein. Formeln mit MathTex(...), deutscher Fliesstext mit Text(...).
-- Hochformat: das Bild ist schmal und hoch. Halte ALLES mit Rand im sichtbaren Bereich, nichts darf
-  abgeschnitten werden. Lieber wenige, grosse, gut lesbare Elemente als viele kleine. Raeume alte
-  Objekte weg (FadeOut/Transform), bevor das Bild zu voll wird.
-- Echte deutsche Umlaute (ae oe ue ss NICHT verwenden).
+- ERSTE Zeile in construct(): die vorgegebene set_speech_service(...)-Zeile EXAKT uebernehmen.
+- `self.camera.background_color = "#EAF3FF"`; Text dunkel "#15233A"; Akzent "#C77B96" zum Hervorheben.
+- VOICE-VISUAL-SYNC: Jede Aussage in einem `with self.voiceover(text="...") as tracker:`-Block, und die
+  Animation darin zeigt GENAU das Gesagte. `run_time=tracker.duration` fuer die Hauptanimation.
+- NUR 3 bis 5 voiceover-Bloecke. Kurze Saetze.
+- Mathe exakt korrekt. Formeln mit MathTex(...), deutscher Text mit Text(...). Echte Umlaute (ae/oe/ue/ss
+  NICHT verwenden).
+- Hochformat schmal+hoch: ALLES mit Rand im Bild halten (nutze .scale_to_fit_width(6.5) o.ae. fuer breite
+  Objekte), nichts abschneiden. Vor jedem neuen Schritt Altes mit FadeOut entfernen, damit es nie voll wird.
 - Gib NUR den vollstaendigen Python-Code aus, in EINEM ```python ... ``` Block. Keine Erklaerung."""
 
 
@@ -201,6 +272,8 @@ def repair_code(code, error_log):
         Das folgende Manim-Skript ist beim Rendern fehlgeschlagen. Behebe den Fehler und gib den
         KORRIGIERTEN, vollstaendigen Code zurueck (nur ```python ... ```). Behalte Stil, Marke und den
         Voice-Visual-Sync. Achte auf gueltige Manim-v0.18-API und dass nichts aus dem Bild laeuft.
+        WICHTIG: Aendere NIEMALS die set_speech_service(...)-Zeile (kein Wechsel zu GTTS oder einer
+        anderen Stimme) — die Stimme MUSS ElevenLabs bleiben.
 
         FEHLER (gekuerzt):
         {error_log[-3000:]}
@@ -258,6 +331,10 @@ def main():
     print(f"== Rendere content_log #{row_id}: {paket.get('thema','?')}")
     update_row(row_id, {"animation_status": "rendering"})
 
+    # Eigenen ElevenLabs-REST-Dienst neben scene.py bereitstellen (importierbar).
+    with open("eleven_rest.py", "w", encoding="utf-8") as f:
+        f.write(ELEVEN_REST_PY)
+
     try:
         code = generate_code(paket)
         last_error = None
@@ -279,6 +356,11 @@ def main():
 
         if not mp4:
             raise RuntimeError(f"Render nach {MAX_REPAIRS} Versuchen fehlgeschlagen:\n{(last_error or '')[-800:]}")
+
+        # Schutz: wenn ElevenLabs gewollt war, aber auf Roboter-gTTS ausgewichen
+        # wurde, das Ergebnis NICHT hochladen (lieber failed als Roboter-Stimme).
+        if ELEVENLABS_API_KEY and "GTTSService" in code:
+            raise RuntimeError("ElevenLabs liess sich nicht laden (Fallback auf gTTS) — Video verworfen.")
 
         dest = f"short-{row_id}.mp4"
         url = upload_to_storage(mp4, dest)

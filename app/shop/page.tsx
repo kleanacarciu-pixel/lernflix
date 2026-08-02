@@ -194,7 +194,7 @@ export default function Shop() {
         </svg>
         <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', textAlign: 'center', zIndex: 1 }}>
           {/* Kleines buecher-foto als deko (matched mit homepage) */}
-          <img src="/20260613_173033176_iOS.png" alt="Mathe und Physik Buecher" style={{ width: mobil ? '140px' : '180px', height: 'auto', marginBottom: '18px', display: 'inline-block' }} />
+          <img src="/20260613_173033176_iOS.webp" alt="Mathe und Physik Buecher" style={{ width: mobil ? '140px' : '180px', height: 'auto', marginBottom: '18px', display: 'inline-block' }} />
           {/* Premium pill eyebrow */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '22px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: F.white, border: `1px solid ${F.border}`, padding: '8px 18px', borderRadius: '999px', boxShadow: '0 4px 14px rgba(15,23,42,0.06)' }}>
