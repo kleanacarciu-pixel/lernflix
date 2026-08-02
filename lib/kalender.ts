@@ -90,7 +90,7 @@ export function prettyDate(dateStr: string, hour: number): string {
 }
 
 // --- E-Mail (Resend, best-effort) ------------------------------------------
-export async function sendMail(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendMail(to: string, subject: string, html: string, replyTo?: string): Promise<{ ok: boolean; error?: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY fehlt in den Vercel-Umgebungsvariablen" };
   if (!to) return { ok: false, error: "keine Empfänger-Adresse" };
@@ -98,7 +98,7 @@ export async function sendMail(to: string, subject: string, html: string): Promi
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: MAIL_FROM, to, subject, html }),
+      body: JSON.stringify({ from: MAIL_FROM, to, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
     });
     if (r.ok) return { ok: true };
     const txt = await r.text().catch(() => "");

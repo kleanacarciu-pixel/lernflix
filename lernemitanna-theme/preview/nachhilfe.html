@@ -286,10 +286,22 @@ svg{stroke-width:2}
         <li><a href="https://www.instagram.com/lernemitanna/"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg> @lernemitanna</a></li>
       </ul>
     </div>
-    <div class="trial__form">
-      <a class="btn" href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener" style="display:block;text-align:center">Freien Termin im Kalender wählen →</a>
-      <p style="color:#5f574f;font-size:.92rem;margin-top:14px;line-height:1.65">Such dir im Kalender einen freien Slot aus und gib Name + E-Mail an. Ich bestätige deine <b>kostenlose Probestunde</b> per E-Mail. Lieber persönlich? Schreib mir oder ruf einfach an. 🌿</p>
-    </div>
+    <form class="trial__form" id="anfrageForm" novalidate>
+      <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" required></div>
+      <div class="row2">
+        <div class="field"><label for="f-mail">E-Mail</label><input id="f-mail" type="email" name="email" required></div>
+        <div class="field"><label for="f-tel">Telefon (optional)</label><input id="f-tel" name="phone"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="f-fach">Fach</label><select id="f-fach" name="fach"><option>Mathe</option><option>Physik</option><option>Mathe &amp; Physik</option></select></div>
+        <div class="field"><label for="f-klasse">Klasse</label><input id="f-klasse" name="klasse" placeholder="z. B. 10. Klasse"></div>
+      </div>
+      <div class="field"><label for="f-msg">Nachricht</label><textarea id="f-msg" name="msg" rows="4" placeholder="Worum geht es? Wann passt es dir am besten?"></textarea></div>
+      <button class="btn" type="submit">Kostenlose Probestunde anfragen</button>
+      <p class="trial__success" id="anfrageOk" hidden>Danke! Deine Anfrage ist angekommen – ich melde mich zeitnah bei dir und schicke dir den Termin-Link. 🌿</p>
+      <p class="trial__success" id="anfrageErr" hidden style="background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a">Das hat gerade nicht geklappt. Bitte schreib mir direkt per E-Mail oder ruf an.</p>
+    </form>
+    <script>(function(){var f=document.getElementById('anfrageForm');if(!f)return;f.addEventListener('submit',function(e){e.preventDefault();if(!f.checkValidity()){f.reportValidity();return;}var el=f.elements,btn=f.querySelector('button[type=submit]');btn.disabled=true;btn.textContent='Wird gesendet…';var data={name:el['name'].value,email:el['email'].value,phone:el['phone']?el['phone'].value:'',fach:el['fach']?el['fach'].value:'',klasse:el['klasse']?el['klasse'].value:'',msg:el['msg']?el['msg'].value:''};fetch('https://lernflix.lernemitanna.de/api/kontakt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(function(r){return r.json().catch(function(){return{ok:false};});}).then(function(res){if(res&&res.ok){[].forEach.call(f.querySelectorAll('.field,button[type=submit]'),function(x){x.style.display='none';});document.getElementById('anfrageOk').hidden=false;}else{btn.disabled=false;btn.textContent='Kostenlose Probestunde anfragen';document.getElementById('anfrageErr').hidden=false;}}).catch(function(){btn.disabled=false;btn.textContent='Kostenlose Probestunde anfragen';document.getElementById('anfrageErr').hidden=false;});});})();</script>
   </div>
 </section>
 
