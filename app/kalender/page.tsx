@@ -80,6 +80,9 @@ const CSS = `
 .calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .deskgrid{overflow-x:auto}
 .otblwrap{overflow-x:auto}
+.kloading{display:flex;align-items:center;justify-content:center;gap:12px;padding:70px 20px;color:var(--muted);font-weight:600}
+.kspin{width:22px;height:22px;border:3px solid rgba(43,179,192,.25);border-top-color:var(--teal);border-radius:50%;display:inline-block;animation:kspin .8s linear infinite}
+@keyframes kspin{to{transform:rotate(360deg)}}
 @media(min-width:761px){.otblwrap{overflow:visible}}
 .htip{position:relative;cursor:default}
 .htip .tt{display:none;position:absolute;bottom:135%;left:50%;transform:translateX(-50%);z-index:10;background:#1f2937;color:#fff;padding:9px 12px;border-radius:10px;font-weight:500;font-size:.82rem;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.25);text-align:left}
@@ -493,6 +496,7 @@ export default function KalenderPage() {
             <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
             ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
+            {days.length === 0 ? <div className="kloading"><span className="kspin" /> Kalender wird geladen…</div> : <>
             <div className="deskgrid"><table className="kgrid">
               <thead><tr><th></th>{days.map((d) => {
                 const dt = parseIso(d.date); const isToday = d.date === today;
@@ -518,6 +522,7 @@ export default function KalenderPage() {
                 {selSlots.length === 0 && <div style={{ color: "#999", padding: "10px 2px" }}>Keine Termine an diesem Tag.</div>}
               </div>
             </div>
+            </>}
           </div>
         </div>
       </div>
