@@ -68,5 +68,41 @@ p{margin:0 0 12px}
   <a href="/agb">AGB</a>
   <a href="/">Startseite</a>
 </div></footer>
+<!-- MOBILES MENÜ -->
+<style>
+.mnav-burger{display:none}
+@media(max-width:900px){
+  .mnav-burger{display:flex;position:fixed;top:12px;right:14px;z-index:200;width:46px;height:46px;border:0;border-radius:12px;background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);align-items:center;justify-content:center;cursor:pointer}
+  .mnav-burger i{display:block;width:22px;height:2.5px;background:#1A1A1A;border-radius:2px;position:relative;transition:.25s}
+  .mnav-burger i::before,.mnav-burger i::after{content:"";position:absolute;left:0;width:22px;height:2.5px;background:#1A1A1A;border-radius:2px;transition:.25s}
+  .mnav-burger i::before{top:-7px}.mnav-burger i::after{top:7px}
+  .mnav-burger.open i{background:transparent}
+  .mnav-burger.open i::before{transform:rotate(45deg);top:0}
+  .mnav-burger.open i::after{transform:rotate(-45deg);top:0}
+  .mnav-panel{position:fixed;inset:0;background:rgba(255,253,248,.985);z-index:190;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:80px 34px 40px;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto}
+  .mnav-panel.open{transform:translateX(0)}
+  .mnav-panel a{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1A1A1A;text-decoration:none;padding:13px 0;border-bottom:1px solid rgba(26,26,26,.08)}
+  .mnav-cta{display:flex;flex-wrap:wrap;gap:18px 22px;margin-top:26px}
+  .mnav-cta a{font-family:'Inter',sans-serif;font-size:1rem;font-weight:600;color:#2BB3C0;border:0;padding:0}
+}
+</style>
+<button class="mnav-burger" id="mnavBurger" aria-label="Menü öffnen"><i></i></button>
+<nav class="mnav-panel" id="mnavPanel" aria-label="Mobile Navigation">
+  <a href="/">Startseite</a>
+  <a href="/nachhilfe">Nachhilfe</a>
+  <a href="/kurse">Kurse</a>
+  <a href="/blog">Blog</a>
+  <a href="/ueber-lma">Über LMA</a>
+  <a href="/#referenzen">Referenzen</a>
+  <a href="/kontakt">Kontakt</a>
+  <div class="mnav-cta">
+    <a href="https://lernflix.lernemitanna.de/" target="_blank" rel="noopener">Shop ↗</a>
+    <a href="https://lernflix.lernemitanna.de/kalender" target="_blank" rel="noopener">Kalender</a>
+    <a href="tel:+4917624700519">Anrufen</a>
+    <a href="mailto:lernemitanna@outlook.com">E-Mail</a>
+    <a href="https://www.instagram.com/lernemitanna/" target="_blank" rel="noopener">Instagram</a>
+  </div>
+</nav>
+<script>(function(){var b=document.getElementById('mnavBurger'),p=document.getElementById('mnavPanel');if(!b||!p)return;function t(){var o=p.classList.toggle('open');b.classList.toggle('open',o);document.body.style.overflow=o?'hidden':'';}b.addEventListener('click',t);[].forEach.call(p.querySelectorAll('a'),function(a){a.addEventListener('click',function(){p.classList.remove('open');b.classList.remove('open');document.body.style.overflow='';});});})();</script>
 </body>
 </html>
