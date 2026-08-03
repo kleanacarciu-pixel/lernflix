@@ -8,6 +8,7 @@ import {
   weekdayOf, isOpen, hoursUntil, prettyDate, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
+import { nextLessonFor } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,6 +92,8 @@ export async function POST(req: Request): Promise<Response> {
       }
       const days = await buildWeek(monday, role, viewerId);
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
+      // Virtuelles Klassenzimmer: nächste anstehende Stunde für den "Zur Stunde"-Button
+      if (viewerId) out.nextLesson = await nextLessonFor(viewerId);
       if (role === "student" && prof) {
         const dates = await balanceDates(prof.user_id);
         const { data: myfix } = await service().from("fixed_slots").select("weekday,hour,mode").eq("student_id", prof.user_id).eq("status", "aktiv");
