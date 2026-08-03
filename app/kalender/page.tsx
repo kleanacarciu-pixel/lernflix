@@ -10,6 +10,7 @@ type OverviewRow = { id: string; name: string; fix: string; minus: number; plus:
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
 type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
+type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -151,6 +152,9 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#127a5c;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.9rem;box-shadow:0 12px 32px rgba(0,0,0,.28);z-index:40;max-width:90vw;text-align:center}
 @keyframes kalpop{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .toast{animation:kalpop .18s ease-out}
+.lessonbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lessonbar .btn{margin-left:auto;text-decoration:none;display:inline-block}
+.lessonbar .btn[disabled]{cursor:default;opacity:.75}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -163,6 +167,7 @@ export default function KalenderPage() {
   const [viewMonth, setViewMonth] = useState<Date>(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
   const [days, setDays] = useState<Day[]>([]);
   const [balance, setBalance] = useState<Balance | null>(null);
+  const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
@@ -219,7 +224,7 @@ export default function KalenderPage() {
       isAdmin ? api("overview") : Promise.resolve(null),
       isAdmin ? api("adminInbox") : Promise.resolve(null),
     ]);
-    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); }
+    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); }
     if (isAdmin && o && o.ok) setOverview((o.students as OverviewRow[]) || []);
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
     if (!isAdmin) { setOverview(null); setInbox(null); }
@@ -430,6 +435,8 @@ export default function KalenderPage() {
 
         {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung).</div>}
 
+        {session && nextLesson && <StundenLeiste lesson={nextLesson} istLehrerin={session.role === "admin"} />}
+
         {balance && (
           <div className="balance">
             {balance.fix && balance.fix.length > 0 && balance.fix.map((f, i) => (
@@ -559,6 +566,37 @@ function buildLegend(role: string) {
   else items.push({ c: "sw-mine", t: "gebucht" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-busy", t: "belegt" }, { c: "sw-block", t: "geblockt (du)" });
   items.push({ c: "sw-closed", t: "geschlossen" });
   return items;
+}
+
+// Virtuelles Klassenzimmer: Leiste mit "Zur Stunde"-Button für die nächste
+// anstehende Stunde. Schüler dürfen ab 15 Min vor Beginn rein (vorher zeigt
+// der Button einen Countdown), Kleana jederzeit.
+function StundenLeiste({ lesson, istLehrerin }: { lesson: NextLesson; istLehrerin: boolean }) {
+  // Aktuelle Zeit als State, jede halbe Minute aktualisiert -> Countdown bleibt frisch
+  const [jetzt, setJetzt] = useState<number | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setJetzt(Date.now());
+    const t = window.setInterval(() => setJetzt(Date.now()), 30000);
+    return () => window.clearInterval(t);
+  }, []);
+  if (jetzt === null) return null; // erster Render (vor Mount): noch nichts anzeigen
+  const start = new Date(lesson.starts_at);
+  const einlassAb = start.getTime() - 15 * 60000;
+  const offen = istLehrerin || jetzt >= einlassAb;
+  const wann = `${DAYS[(start.getDay() + 6) % 7]} ${dm(start)} um ${pad(start.getHours())}:${pad(start.getMinutes())}`;
+  const restMin = Math.max(1, Math.ceil((einlassAb - jetzt) / 60000));
+  const rest = restMin >= 60
+    ? (restMin >= 1440 ? `${Math.floor(restMin / 1440)} Tag(en)` : `${Math.floor(restMin / 60)} Std. ${restMin % 60} Min.`)
+    : `${restMin} Min.`;
+  return (
+    <div className="hint lessonbar">
+      <span>🎥 <b>Nächste Stunde:</b> {lesson.title} – {wann}</span>
+      {offen
+        ? <a className="btn p sm" href={`/stunde/${lesson.id}`}>Zur Stunde</a>
+        : <button className="btn g sm" disabled title="Der Raum öffnet 15 Minuten vor Beginn">Beitritt in {rest}</button>}
+    </div>
+  );
 }
 
 function Info({ title, msg, err, onClose }: { title: string; msg: string; err?: string; onClose: () => void }) {
