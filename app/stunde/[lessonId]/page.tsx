@@ -83,12 +83,12 @@ export default function StundePage() {
     }
     const titel = String(daten.lessonTitle || "Deine Stunde");
 
-    // Container muss im DOM sein, bevor der Frame hinein kann
-    setZustand({ art: "video", titel });
-    // Einen Render-Tick warten, bis containerRef gesetzt ist
-    await new Promise((r) => setTimeout(r, 0));
+    // Der Container ist immer im DOM (nur unsichtbar geschaltet), daher ist
+    // die Referenz hier garantiert vorhanden – kein Warten auf einen Render.
     const el = containerRef.current;
-    if (!el || frameRef.current) return;
+    if (!el) { setZustand({ art: "fehler", meldung: "Die Seite konnte nicht aufgebaut werden. Bitte lade sie neu." }); return; }
+    if (frameRef.current) return;
+    setZustand({ art: "video", titel });
 
     const frame = DailyIframe.createFrame(el, {
       showLeaveButton: true,
@@ -160,11 +160,13 @@ export default function StundePage() {
         </a>
       </header>
 
-      {/* Video-Bereich füllt den restlichen Platz */}
+      {/* Video-Bereich füllt den restlichen Platz. Der Container bleibt immer
+          im DOM (nur unsichtbar), damit der Daily-Frame jederzeit andocken kann. */}
       <main style={{ flex: "1 1 auto", display: "flex", minHeight: 0 }}>
-        {zustand.art === "video" && (
-          <div ref={containerRef} style={{ flex: "1 1 auto", minHeight: 0 }} />
-        )}
+        <div ref={containerRef} style={{
+          flex: "1 1 auto", minHeight: 0,
+          display: zustand.art === "video" ? "block" : "none",
+        }} />
 
         {zustand.art !== "video" && (
           <div style={{
