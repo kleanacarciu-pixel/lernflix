@@ -6,9 +6,10 @@
 // =============================================================================
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Markenfarben (wie auf der Stunden-Seite)
-const GELB = "#FFC53D";
-const TINTE = "#171D42";
+// Markenfarben ("Lerne mit Anna": hell mit Türkis-Blau-Verlauf)
+const TEAL = "#2BB3C0";
+const BLAU = "#3E7BB6";
+const VERLAUF = `linear-gradient(135deg,${TEAL},${BLAU})`;
 
 type ApiFn = (action: string, params?: Record<string, unknown>) => Promise<Record<string, unknown>>;
 
@@ -35,41 +36,37 @@ type PanelState = {
 };
 
 const CSS = `
-.kzp{display:flex;flex-direction:column;height:100%;min-height:0;background:#1B224D;border-left:1px solid #2E3766;color:#fff;font-size:.92rem}
+.kzp{display:flex;flex-direction:column;height:100%;min-height:0;background:#F4F6F7;color:#1A1A1A;font-size:.92rem}
 .kzp *{box-sizing:border-box}
-.kzp .tabs{display:flex;border-bottom:1px solid #2E3766;flex:0 0 auto}
-.kzp .tabs button{flex:1;background:none;border:0;color:#AEB4D8;font:inherit;font-weight:600;padding:11px 4px;cursor:pointer;border-bottom:2px solid transparent}
-.kzp .tabs button.on{color:#fff;border-bottom-color:${GELB}}
+.kzp .tabs{display:flex;border-bottom:1px solid rgba(26,26,26,.12);background:#fff;flex:0 0 auto}
+.kzp .tabs button{flex:1;background:none;border:0;color:#5F574F;font:inherit;font-weight:600;padding:11px 4px;cursor:pointer;border-bottom:3px solid transparent}
+.kzp .tabs button.on{color:#1A1A1A;border-bottom-color:${TEAL}}
 .kzp .body{flex:1 1 auto;overflow-y:auto;padding:14px;min-height:0}
 .kzp h4{margin:0 0 8px;font-size:.98rem}
-.kzp .muted{color:#AEB4D8}
-.kzp .card{background:#232B5D;border:1px solid #2E3766;border-radius:12px;padding:12px;margin-bottom:12px}
-.kzp textarea,.kzp input[type=text],.kzp select{width:100%;background:#171D42;border:1px solid #2E3766;border-radius:9px;color:#fff;font:inherit;padding:9px 10px;margin-bottom:8px}
+.kzp .muted{color:#5F574F}
+.kzp .card{background:#fff;border:1px solid rgba(26,26,26,.12);border-radius:14px;padding:13px;margin-bottom:12px}
+.kzp textarea,.kzp input[type=text],.kzp select{width:100%;background:#fff;border:1px solid rgba(26,26,26,.18);border-radius:10px;color:#1A1A1A;font:inherit;padding:9px 10px;margin-bottom:8px}
 .kzp textarea{resize:vertical;min-height:64px}
-.kzp .btn{background:${GELB};color:${TINTE};border:0;border-radius:9px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer}
-.kzp .btn.g{background:#2E3766;color:#fff;font-weight:600}
+.kzp .btn{background:${VERLAUF};color:#fff;border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer}
+.kzp .btn.g{background:#ECEFF0;color:#1A1A1A}
 .kzp .btn.sm{padding:6px 10px;font-size:.85rem}
 .kzp .btn[disabled]{opacity:.55;cursor:default}
 .kzp .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-.kzp .opt{display:block;width:100%;text-align:left;background:#171D42;border:1px solid #2E3766;border-radius:9px;color:#fff;font:inherit;padding:10px 12px;margin-bottom:7px;cursor:pointer}
-.kzp .opt.sel{border-color:${GELB};background:#26305f}
-.kzp .opt.right{border-color:#3ddc97;background:rgba(61,220,151,.12)}
-.kzp .opt.wrong{border-color:#ff7d7d;background:rgba(255,125,125,.12)}
-.kzp .pill{display:inline-block;background:#171D42;border:1px solid #2E3766;border-radius:999px;padding:4px 11px;font-size:.85rem;margin:0 6px 6px 0}
-.kzp .ok{color:#3ddc97;font-weight:700}
-.kzp .bad{color:#ff9d9d;font-weight:700}
-.kzp .hint{background:rgba(255,197,61,.12);border:1px solid rgba(255,197,61,.4);border-radius:9px;padding:8px 11px;margin-bottom:10px;font-size:.86rem}
+.kzp .opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid rgba(26,26,26,.15);border-radius:10px;color:#1A1A1A;font:inherit;padding:10px 12px;margin-bottom:7px;cursor:pointer}
+.kzp .opt.sel{border-color:${TEAL};background:rgba(43,179,192,.10);font-weight:600}
+.kzp .ok{color:#127A5C;font-weight:700}
+.kzp .bad{color:#B4491F;font-weight:700}
 .kzp .restable{width:100%;border-collapse:collapse;font-size:.87rem}
-.kzp .restable td{padding:5px 6px;border-bottom:1px solid #2E3766;vertical-align:top}
-.kzp canvas{width:100%;border-radius:10px;background:#111634;border:1px solid #2E3766;touch-action:none;display:block}
-.kzp .swatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
-.kzp .swatch.on{border-color:#fff}
-.kzp .points{font-size:1.5rem;font-weight:800;color:${GELB}}
-.kzp .stickers{font-size:1.25rem;letter-spacing:3px;line-height:1.7;word-break:break-all}
-.kzp .toast{position:sticky;bottom:0;background:#3ddc97;color:#0c3;color:${TINTE};border-radius:9px;padding:8px 12px;font-weight:700;text-align:center}
+.kzp .restable td{padding:5px 6px;border-bottom:1px solid rgba(26,26,26,.10);vertical-align:top}
+.kzp canvas{width:100%;border-radius:10px;background:#fff;border:1px solid rgba(26,26,26,.15);touch-action:none;display:block}
+.kzp .swatch{width:26px;height:26px;border-radius:50%;border:2px solid #fff;outline:1px solid rgba(26,26,26,.2);cursor:pointer;padding:0}
+.kzp .swatch.on{outline:2px solid #1A1A1A}
+.kzp .points{font-size:1.5rem;font-weight:800;background:${VERLAUF};-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center}
+.kzp .stickers{font-size:1.25rem;letter-spacing:3px;line-height:1.7;word-break:break-all;text-align:center}
+.kzp .toast{position:sticky;bottom:0;background:#DCF3EC;color:#127A5C;border:1px solid rgba(18,122,92,.3);border-radius:10px;padding:8px 12px;font-weight:700;text-align:center}
 `;
 
-const STIFT_FARBEN = ["#FFFFFF", GELB, "#7DD8FF", "#FF8FA3", "#3DDC97"];
+const STIFT_FARBEN = ["#1A1A1A", TEAL, BLAU, "#E2574C", "#F2A33C"];
 
 export default function KlassenzimmerPanel({ api, istLehrerin }: {
   api: ApiFn; istLehrerin: boolean;
@@ -106,7 +103,7 @@ export default function KlassenzimmerPanel({ api, istLehrerin }: {
     ];
     for (const s of alle) {
       if (!s || !Array.isArray(s.points) || !s.points.length) continue;
-      ctx.strokeStyle = s.color || "#fff";
+      ctx.strokeStyle = s.color || "#1A1A1A";
       ctx.lineWidth = (s.width || 3) * (c.width / 1000);
       ctx.beginPath();
       s.points.forEach(([x, y], i) => {

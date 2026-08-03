@@ -10,11 +10,17 @@ import { useParams } from "next/navigation";
 import DailyIframe, { type DailyCall } from "@daily-co/daily-js";
 import KlassenzimmerPanel from "./panel";
 
-// --- Markenfarben -----------------------------------------------------------
-const GELB = "#FFC53D";
-const TINTE = "#171D42";
-const TINTE_HELL = "#232B5D";
-const TEXT_GEDAEMPFT = "#AEB4D8";
+// --- Markenfarben ("Lerne mit Anna": hell mit Türkis-Blau-Verlauf, wie der
+// Terminkalender und die Website) --------------------------------------------
+const TEAL = "#2BB3C0";
+const BLAU = "#3E7BB6";
+const VERLAUF = `linear-gradient(135deg,${TEAL},${BLAU})`;
+const HELL = "#F4F6F7";       // Seitenhintergrund
+const INK = "#1A1A1A";        // Text
+const GEDAEMPFT = "#5F574F";  // gedämpfter Text
+const LINIE = "rgba(26,26,26,.12)";
+const VIDEO_BLAU = "#22365C"; // dunkler Hintergrund nur im Video-Bereich
+const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
 
 // Dieselbe Sitzung wie der Terminkalender (app/kalender/page.tsx)
 const LS_KEY = "lma_kal_session";
@@ -55,24 +61,26 @@ type Zustand =
   | { art: "fehler"; meldung: string };
 
 const CSS = `
-.stunde{min-height:100dvh;display:flex;flex-direction:column;background:${TINTE};color:#fff;font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif}
-.stunde .kopf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:${TINTE_HELL};border-bottom:2px solid ${GELB};flex:0 0 auto}
-.stunde .kopf .marke{font-weight:800;font-size:1.02rem}
-.stunde .kopf .titel{color:${TEXT_GEDAEMPFT};font-size:.92rem}
+.stunde{min-height:100dvh;display:flex;flex-direction:column;background:${HELL};color:${INK};font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif}
+.stunde .kopf{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 16px;background:#fff;flex:0 0 auto}
+.stunde .kopf .marke{font-family:'Playfair Display',Georgia,serif;font-weight:800;font-size:1.05rem}
+.stunde .kopf .titel{color:${GEDAEMPFT};font-size:.92rem}
 .stunde .kopf .rechts{margin-left:auto;display:flex;gap:10px;align-items:center}
-.stunde .kopf a{color:${TEXT_GEDAEMPFT};font-size:.85rem;text-decoration:none}
-.stunde .kopf .wz{background:${GELB};color:${TINTE};border:0;border-radius:9px;padding:7px 12px;font:inherit;font-weight:700;cursor:pointer;font-size:.85rem}
+.stunde .kopf a{color:${GEDAEMPFT};font-size:.85rem;text-decoration:none;font-weight:600}
+.stunde .kopf .wz{background:${VERLAUF};color:#fff;border:0;border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer;font-size:.85rem}
+.stunde .gradlinie{height:3px;background:${VERLAUF};flex:0 0 auto}
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
-.stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex}
-.stunde .panelwrap{flex:0 0 390px;min-height:0;display:flex;flex-direction:column}
+.stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU}}
+.stunde .panelwrap{flex:0 0 390px;min-height:0;display:flex;flex-direction:column;background:#fff;border-left:1px solid ${LINIE}}
 @media(max-width:900px){
   .stunde .smain{flex-direction:column}
   .stunde .videowrap{flex:1 1 55%}
-  .stunde .panelwrap{flex:1 1 45%;border-top:2px solid ${GELB}}
+  .stunde .panelwrap{flex:1 1 45%;border-left:0;border-top:1px solid ${LINIE}}
 }
-.stunde .status{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
-.stunde .status p{color:${TEXT_GEDAEMPFT};max-width:420px}
-.stunde .knopf{background:${GELB};color:${TINTE};border:0;border-radius:12px;padding:12px 22px;font-weight:700;font-size:1rem;cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit}
+.stunde .status{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:${HELL}}
+.stunde .status h2{font-family:'Playfair Display',Georgia,serif;margin:0}
+.stunde .status p{color:${GEDAEMPFT};max-width:420px;line-height:1.55}
+.stunde .knopf{background:${VERLAUF};color:#fff;border:0;border-radius:12px;padding:12px 22px;font-weight:600;font-size:1rem;cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit}
 `;
 
 export default function StundePage() {
@@ -133,19 +141,20 @@ export default function StundePage() {
       showLeaveButton: true,
       showFullscreenButton: true,
       iframeStyle: { width: "100%", height: "100%", border: "0", display: "block" },
-      // Daily-Oberfläche in den "Lerne mit Anna"-Markenfarben
+      // Daily-Oberfläche im hellen "Lerne mit Anna"-Design; nur die Video-
+      // Fläche selbst bleibt dunkelblau (Kamerabilder wirken so am besten)
       theme: {
         colors: {
-          accent: GELB,
-          accentText: TINTE,
-          background: TINTE,
-          backgroundAccent: TINTE_HELL,
-          baseText: "#FFFFFF",
-          border: TINTE_HELL,
-          mainAreaBg: TINTE,
-          mainAreaBgAccent: TINTE_HELL,
+          accent: TEAL,
+          accentText: "#FFFFFF",
+          background: "#FFFFFF",
+          backgroundAccent: HELL,
+          baseText: INK,
+          border: "#E3E6EA",
+          mainAreaBg: VIDEO_BLAU,
+          mainAreaBgAccent: BLAU,
           mainAreaText: "#FFFFFF",
-          supportiveText: TEXT_GEDAEMPFT,
+          supportiveText: GEDAEMPFT,
         },
       },
     });
@@ -184,6 +193,7 @@ export default function StundePage() {
 
   return (
     <div className="stunde">
+      <link rel="stylesheet" href={FONTS} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* Kopfzeile */}
@@ -191,7 +201,7 @@ export default function StundePage() {
         <span className="marke">🐙 Lerne mit Anna</span>
         {titel && <span className="titel">· {titel}</span>}
         <span className="rechts">
-          {videoAktiv && (
+          {(videoAktiv || zustand.art === "beendet") && (
             <button className="wz" onClick={() => setPanelOffen(!panelOffen)}>
               {panelOffen ? "🧰 Werkzeuge ausblenden" : "🧰 Werkzeuge"}
             </button>
@@ -199,6 +209,7 @@ export default function StundePage() {
           <a href="/kalender">← Zum Kalender</a>
         </span>
       </header>
+      <div className="gradlinie" />
 
       {/* Video links, Werkzeuge rechts (am Handy untereinander) */}
       <main className="smain">
@@ -232,7 +243,9 @@ export default function StundePage() {
           )}
         </div>
 
-        {videoAktiv && panelOffen && (
+        {/* Panel auch nach dem Verlassen zeigen: Stundenzettel und Punkte
+            bleiben so für Schüler lesbar */}
+        {(videoAktiv || zustand.art === "beendet") && panelOffen && (
           <aside className="panelwrap">
             <KlassenzimmerPanel api={apiKz} istLehrerin={istLehrerin} />
           </aside>
