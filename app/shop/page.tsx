@@ -214,6 +214,21 @@ export default function Shop() {
       {/* FILTER + GRID */}
       <section style={{ background: F.bg, padding: mobil ? '40px 22px 80px' : '60px 56px 130px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          {/* Featured: Masterclass-Heft (PDF-Produkt) */}
+          <a href="/heft" style={{ display: 'block', textDecoration: 'none', marginBottom: mobil ? '28px' : '40px', background: F.ink, color: '#fff', borderRadius: '20px', padding: mobil ? '24px 22px' : '30px 34px', boxShadow: '0 20px 50px rgba(15,23,42,0.12)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 300px' }}>
+                <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: '12px', fontWeight: 700, padding: '5px 11px', borderRadius: '999px', letterSpacing: '.04em' }}>NEU · PDF-Heft</span>
+                <div style={{ fontSize: mobil ? '20px' : '24px', fontWeight: 800, margin: '12px 0 6px', letterSpacing: '-0.02em' }}>Masterclass-Heft — Mathe Klasse 6</div>
+                <div style={{ fontSize: '14.5px', color: '#CBD5E1', lineHeight: 1.5 }}>12 Kapitel · 150+ Übungen mit Lösungen · Prüfungssimulation · 3-Wochen-Plan</div>
+              </div>
+              <div style={{ textAlign: mobil ? 'left' : 'right' }}>
+                <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-0.02em' }}>12,90 €</div>
+                <span style={{ display: 'inline-block', marginTop: '8px', background: F.coral, color: '#fff', fontWeight: 700, fontSize: '14px', padding: '11px 22px', borderRadius: '12px' }}>Ansehen →</span>
+              </div>
+            </div>
+          </a>
+
           {/* Filter */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: mobil ? '28px' : '40px', flexWrap: 'wrap' }}>
             {([
