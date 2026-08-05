@@ -81,6 +81,8 @@ export default function KlassenzimmerPanel({ api, istLehrerin }: {
   }, [api]);
 
   useEffect(() => {
+    // lade ist async – setState passiert erst nach dem await (kein synchroner Kaskaden-Render)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void lade();
     const t = window.setInterval(() => { void lade(); }, 2500);
     return () => window.clearInterval(t);
