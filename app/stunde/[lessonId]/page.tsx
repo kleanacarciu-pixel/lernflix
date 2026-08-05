@@ -68,6 +68,7 @@ const CSS = `
 .stunde .kopf .rechts{margin-left:auto;display:flex;gap:10px;align-items:center}
 .stunde .kopf a{color:${GEDAEMPFT};font-size:.85rem;text-decoration:none;font-weight:600}
 .stunde .kopf .wz{background:${VERLAUF};color:#fff;border:0;border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer;font-size:.85rem}
+.stunde .kopf .wz.aktiv{background:#B4491F}
 .stunde .gradlinie{height:3px;background:${VERLAUF};flex:0 0 auto}
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
 .stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU}}
@@ -88,6 +89,7 @@ export default function StundePage() {
   const [zustand, setZustand] = useState<Zustand>({ art: "laden" });
   const [istLehrerin, setIstLehrerin] = useState(false);
   const [panelOffen, setPanelOffen] = useState(true);
+  const [teiltBildschirm, setTeiltBildschirm] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<DailyCall | null>(null);
   // Verhindert doppelte Initialisierung (React Strict Mode ruft Effekte 2x auf)
@@ -162,8 +164,13 @@ export default function StundePage() {
 
     frame.on("left-meeting", () => {
       frameZerstoeren();
+      setTeiltBildschirm(false);
       setZustand({ art: "beendet", titel });
     });
+    // Eigener "Bildschirm teilen"-Knopf in der Kopfzeile spiegelt den Zustand
+    frame.on("local-screen-share-started", () => setTeiltBildschirm(true));
+    frame.on("local-screen-share-stopped", () => setTeiltBildschirm(false));
+    frame.on("local-screen-share-canceled", () => setTeiltBildschirm(false));
     frame.on("error", (ev) => {
       frameZerstoeren();
       const grund = ev?.errorMsg ? String(ev.errorMsg) : "Die Video-Verbindung wurde unterbrochen.";
@@ -181,6 +188,22 @@ export default function StundePage() {
       setZustand({ art: "fehler", meldung: "Der Beitritt zum Videoraum hat nicht geklappt. Bitte versuche es noch einmal." });
     }
   }, [lessonId, frameZerstoeren]);
+
+  // Bildschirm teilen starten/beenden – immer sichtbar in der Kopfzeile,
+  // damit der Knopf nie im "…"-Menü der Videoleiste verschwindet
+  const bildschirmTeilen = useCallback(() => {
+    const f = frameRef.current;
+    if (!f) return;
+    if (teiltBildschirm) { f.stopScreenShare(); return; }
+    const unterstuetzt = typeof navigator !== "undefined"
+      && !!navigator.mediaDevices
+      && "getDisplayMedia" in navigator.mediaDevices;
+    if (!unterstuetzt) {
+      window.alert("Dieses Gerät erlaubt das Bildschirm-Teilen im Browser leider nicht. Tipp: iPadOS/iOS aktualisieren oder vom Laptop/PC aus teilen.");
+      return;
+    }
+    f.startScreenShare();
+  }, [teiltBildschirm]);
 
   useEffect(() => {
     if (laeuftRef.current) return; // Strict-Mode-Doppellauf abfangen
@@ -205,6 +228,11 @@ export default function StundePage() {
         <span className="marke">🐙 Lerne mit Anna</span>
         {titel && <span className="titel">· {titel}</span>}
         <span className="rechts">
+          {videoAktiv && (
+            <button className={"wz" + (teiltBildschirm ? " aktiv" : "")} onClick={bildschirmTeilen}>
+              {teiltBildschirm ? "🛑 Teilen beenden" : "🖥️ Bildschirm teilen"}
+            </button>
+          )}
           {(videoAktiv || zustand.art === "beendet") && (
             <button className="wz" onClick={() => setPanelOffen(!panelOffen)}>
               {panelOffen ? "🧰 Werkzeuge ausblenden" : "🧰 Werkzeuge"}
