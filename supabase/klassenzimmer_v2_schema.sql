@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Lerne mit Anna – Klassenzimmer Version 2
--- Live-Übungen, Whiteboard (Tafel), Stundenzettel und Belohnungen
+-- Live-Übungen, Stundenzettel und Belohnungen
 --
 -- So führst du es aus:
 --   Supabase-Dashboard → SQL Editor → dieses Skript komplett einfügen → "Run"
@@ -44,21 +44,7 @@ create table if not exists public.lesson_answers (
 create index if not exists lesson_answers_by_exercise on public.lesson_answers (exercise_id);
 
 -- ---------------------------------------------------------------------------
--- 3) LESSON_STROKES  (Whiteboard: jede Zeile = ein gezeichneter Strich)
---    stroke = { color, width, points: [[x,y], ...] } mit Koordinaten 0..1
---    seq    = fortlaufende Nummer pro Stunde, damit Clients nur Neues laden
--- ---------------------------------------------------------------------------
-create table if not exists public.lesson_strokes (
-  id         bigint generated always as identity primary key,
-  lesson_id  uuid not null references public.lessons(id) on delete cascade,
-  user_id    uuid not null references public.profiles(user_id) on delete cascade,
-  stroke     jsonb not null,
-  created_at timestamptz not null default now()
-);
-create index if not exists lesson_strokes_by_lesson on public.lesson_strokes (lesson_id, id);
-
--- ---------------------------------------------------------------------------
--- 4) LESSON_NOTES  (Stundenzettel: eine Zeile pro Stunde)
+-- 3) LESSON_NOTES  (Stundenzettel: eine Zeile pro Stunde)
 -- ---------------------------------------------------------------------------
 create table if not exists public.lesson_notes (
   lesson_id  uuid primary key references public.lessons(id) on delete cascade,
@@ -68,7 +54,7 @@ create table if not exists public.lesson_notes (
 );
 
 -- ---------------------------------------------------------------------------
--- 5) STUDENT_REWARDS  (Punkte und Sticker für Schüler)
+-- 4) STUDENT_REWARDS  (Punkte und Sticker für Schüler)
 --    Punkte kommen automatisch für richtige Antworten oder von Kleana per Klick.
 -- ---------------------------------------------------------------------------
 create table if not exists public.student_rewards (
@@ -88,7 +74,6 @@ create index if not exists student_rewards_by_user on public.student_rewards (us
 -- ---------------------------------------------------------------------------
 alter table public.lesson_exercises enable row level security;
 alter table public.lesson_answers   enable row level security;
-alter table public.lesson_strokes   enable row level security;
 alter table public.lesson_notes     enable row level security;
 alter table public.student_rewards  enable row level security;
 
@@ -118,10 +103,6 @@ create policy ans_select on public.lesson_answers
                where e.id = lesson_answers.exercise_id and public.is_lesson_member(e.lesson_id))
   );
 
-drop policy if exists strokes_select on public.lesson_strokes;
-create policy strokes_select on public.lesson_strokes
-  for select using (public.is_lesson_member(lesson_id));
-
 drop policy if exists notes_select on public.lesson_notes;
 create policy notes_select on public.lesson_notes
   for select using (public.is_lesson_member(lesson_id));
@@ -133,5 +114,5 @@ create policy rewards_select on public.student_rewards
 -- Schreiben ausschließlich über die Server-API (Service Role umgeht RLS) –
 -- darum hier bewusst KEINE insert/update/delete-Policies für Browser-Rollen.
 revoke insert, update, delete on public.lesson_exercises, public.lesson_answers,
-  public.lesson_strokes, public.lesson_notes, public.student_rewards
+  public.lesson_notes, public.student_rewards
   from anon, authenticated;

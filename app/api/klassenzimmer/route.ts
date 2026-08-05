@@ -62,8 +62,6 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= ZUSTAND ABFRAGEN (Polling) =====================
     if (action === "state") {
-      const since = Number(body.since) || 0;
-
       // Neueste Übung der Stunde
       const { data: exs } = await sb.from("lesson_exercises").select("*")
         .eq("lesson_id", lessonId).order("created_at", { ascending: false }).limit(1);
@@ -77,20 +75,11 @@ export async function POST(req: Request): Promise<Response> {
       }
       const meine = uebung ? antworten.find((a) => a.user_id === user.id) || null : null;
 
-      // Whiteboard: nur Striche, die der Client noch nicht kennt
-      const { data: strichRows } = await sb.from("lesson_strokes")
-        .select("id,stroke").eq("lesson_id", lessonId).gt("id", since).order("id").limit(500);
-      const { data: maxRow } = await sb.from("lesson_strokes")
-        .select("id").eq("lesson_id", lessonId).order("id", { ascending: false }).limit(1);
-      const strokeMax = ((maxRow || []) as { id: number }[])[0]?.id || 0;
-
       // Stundenzettel
       const { data: zettel } = await sb.from("lesson_notes")
         .select("summary,homework,updated_at").eq("lesson_id", lessonId).maybeSingle();
 
       const out: Record<string, unknown> = {
-        strokes: strichRows || [],
-        strokeMax,
         notes: zettel || { summary: "", homework: "" },
       };
 
@@ -235,24 +224,6 @@ export async function POST(req: Request): Promise<Response> {
       const { data } = await q.limit(1000);
       const themen = Array.from(new Set(((data || []) as { thema: string }[]).map((r) => r.thema))).sort();
       return ok({ themes: themen });
-    }
-
-    // ======================= WHITEBOARD (TAFEL) ============================
-    if (action === "stroke") {
-      const stroke = body.stroke as Record<string, unknown> | undefined;
-      const points = stroke && Array.isArray(stroke.points) ? (stroke.points as unknown[]) : null;
-      if (!points || points.length < 1 || points.length > 800) return fehler("Ungültiger Strich.");
-      if (JSON.stringify(stroke).length > 40000) return fehler("Strich zu groß.");
-      const { data, error } = await sb.from("lesson_strokes")
-        .insert({ lesson_id: lessonId, user_id: user.id, stroke }).select("id").single();
-      if (error) return fehler("Strich konnte nicht gespeichert werden: " + error.message);
-      return ok({ id: (data as { id: number }).id });
-    }
-
-    if (action === "strokesClear") {
-      if (!istLehrerin) return fehler("Nur Kleana kann die Tafel wischen.", 403);
-      await sb.from("lesson_strokes").delete().eq("lesson_id", lessonId);
-      return ok({ message: "Tafel gewischt." });
     }
 
     // ======================= STUNDENZETTEL =================================

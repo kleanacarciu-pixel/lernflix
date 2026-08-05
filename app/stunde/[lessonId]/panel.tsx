@@ -20,8 +20,6 @@ type Exercise = {
 };
 type ResultRow = { name: string; answer: string; is_correct: boolean | null; mine?: boolean };
 type StudentRow = { id: string; name: string; points: number };
-type Stroke = { color: string; width: number; points: [number, number][] };
-type StrokeRow = { id: number; stroke: Stroke };
 
 type PanelState = {
   isTeacher: boolean;
@@ -32,7 +30,6 @@ type PanelState = {
   students?: StudentRow[];
   rewards?: { points: number; stickers: string[] };
   notes: { summary: string; homework: string };
-  strokeMax: number;
 };
 
 const CSS = `
@@ -58,20 +55,15 @@ const CSS = `
 .kzp .bad{color:#B4491F;font-weight:700}
 .kzp .restable{width:100%;border-collapse:collapse;font-size:.87rem}
 .kzp .restable td{padding:5px 6px;border-bottom:1px solid rgba(26,26,26,.10);vertical-align:top}
-.kzp canvas{width:100%;border-radius:10px;background:#fff;border:1px solid rgba(26,26,26,.15);touch-action:none;display:block}
-.kzp .swatch{width:26px;height:26px;border-radius:50%;border:2px solid #fff;outline:1px solid rgba(26,26,26,.2);cursor:pointer;padding:0}
-.kzp .swatch.on{outline:2px solid #1A1A1A}
 .kzp .points{font-size:1.5rem;font-weight:800;background:${VERLAUF};-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center}
 .kzp .stickers{font-size:1.25rem;letter-spacing:3px;line-height:1.7;word-break:break-all;text-align:center}
 .kzp .toast{position:sticky;bottom:0;background:#DCF3EC;color:#127A5C;border:1px solid rgba(18,122,92,.3);border-radius:10px;padding:8px 12px;font-weight:700;text-align:center}
 `;
 
-const STIFT_FARBEN = ["#1A1A1A", TEAL, BLAU, "#E2574C", "#F2A33C"];
-
 export default function KlassenzimmerPanel({ api, istLehrerin }: {
   api: ApiFn; istLehrerin: boolean;
 }) {
-  const [tab, setTab] = useState<"uebungen" | "tafel" | "zettel">("uebungen");
+  const [tab, setTab] = useState<"uebungen" | "zettel">("uebungen");
   const [zustand, setZustand] = useState<PanelState | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
 
@@ -81,101 +73,18 @@ export default function KlassenzimmerPanel({ api, istLehrerin }: {
     window.setTimeout(() => setHinweis(null), 2600);
   }, []);
 
-  // ---- Whiteboard-Zustand (Refs: kein Re-Render pro Strich nötig) ----------
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stricheRef = useRef<StrokeRow[]>([]);       // vom Server bestätigt
-  const wartendRef = useRef<Stroke[]>([]);          // lokal gemalt, noch nicht bestätigt
-  const aktuellRef = useRef<Stroke | null>(null);   // gerade im Entstehen
-  const sinceRef = useRef(0);
-  const [farbe, setFarbe] = useState(STIFT_FARBEN[0]);
-  const [dicke, setDicke] = useState(3);
-
-  const male = useCallback(() => {
-    const c = canvasRef.current;
-    const ctx = c?.getContext("2d");
-    if (!c || !ctx) return;
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    const alle: Stroke[] = [
-      ...stricheRef.current.map((r) => r.stroke),
-      ...wartendRef.current,
-      ...(aktuellRef.current ? [aktuellRef.current] : []),
-    ];
-    for (const s of alle) {
-      if (!s || !Array.isArray(s.points) || !s.points.length) continue;
-      ctx.strokeStyle = s.color || "#1A1A1A";
-      ctx.lineWidth = (s.width || 3) * (c.width / 1000);
-      ctx.beginPath();
-      s.points.forEach(([x, y], i) => {
-        const px = x * c.width, py = y * c.height;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      if (s.points.length === 1) ctx.lineTo(s.points[0][0] * c.width + 0.01, s.points[0][1] * c.height);
-      ctx.stroke();
-    }
-  }, []);
-
   // ---- Polling: alle 2,5 s den Zustand holen -------------------------------
   const lade = useCallback(async () => {
-    const d = await api("state", { since: sinceRef.current });
+    const d = await api("state");
     if (!d.ok) return;
-    const s = d as unknown as PanelState & { strokes: StrokeRow[]; ok: boolean };
-    // Tafel wurde gewischt? (Server kennt weniger Striche als wir)
-    if (s.strokeMax < sinceRef.current) {
-      stricheRef.current = [];
-      sinceRef.current = 0;
-      if (s.strokeMax === 0) { wartendRef.current = []; male(); }
-      return; // nächster Poll holt alles frisch
-    }
-    if (Array.isArray(s.strokes) && s.strokes.length) {
-      const bekannt = new Set(stricheRef.current.map((r) => r.id));
-      stricheRef.current.push(...s.strokes.filter((r) => !bekannt.has(r.id)));
-      sinceRef.current = Math.max(sinceRef.current, s.strokeMax);
-      male();
-    }
-    setZustand(s);
-  }, [api, male]);
+    setZustand(d as unknown as PanelState);
+  }, [api]);
 
   useEffect(() => {
     void lade();
     const t = window.setInterval(() => { void lade(); }, 2500);
     return () => window.clearInterval(t);
   }, [lade]);
-
-  // ---- Whiteboard: Zeichnen mit Maus/Finger/Stift --------------------------
-  const posAusEvent = (e: React.PointerEvent<HTMLCanvasElement>): [number, number] => {
-    const c = canvasRef.current!;
-    const r = c.getBoundingClientRect();
-    return [
-      Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
-      Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
-    ];
-  };
-  const stiftAb = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    aktuellRef.current = { color: farbe, width: dicke, points: [posAusEvent(e)] };
-    male();
-  };
-  const stiftZieht = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const s = aktuellRef.current;
-    if (!s) return;
-    if (s.points.length < 800) s.points.push(posAusEvent(e));
-    male();
-  };
-  const stiftHoch = async () => {
-    const s = aktuellRef.current;
-    aktuellRef.current = null;
-    if (!s || s.points.length === 0) return;
-    wartendRef.current.push(s);
-    male();
-    const d = await api("stroke", { stroke: s });
-    wartendRef.current = wartendRef.current.filter((w) => w !== s);
-    if (d.ok && typeof d.id === "number") {
-      stricheRef.current.push({ id: d.id, stroke: s });
-      sinceRef.current = Math.max(sinceRef.current, d.id);
-    }
-    male();
-  };
 
   // ---- Übungen: Formular (Kleana) ------------------------------------------
   const [frage, setFrage] = useState("");
@@ -278,7 +187,6 @@ export default function KlassenzimmerPanel({ api, istLehrerin }: {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="tabs">
         <button className={tab === "uebungen" ? "on" : ""} onClick={() => setTab("uebungen")}>🧮 Übungen</button>
-        <button className={tab === "tafel" ? "on" : ""} onClick={() => setTab("tafel")}>✏️ Tafel</button>
         <button className={tab === "zettel" ? "on" : ""} onClick={() => setTab("zettel")}>📝 Zettel</button>
       </div>
 
@@ -437,33 +345,6 @@ export default function KlassenzimmerPanel({ api, istLehrerin }: {
                 ))}
               </div>
             )}
-          </>
-        )}
-
-        {/* ============================ TAFEL ============================== */}
-        {tab === "tafel" && (
-          <>
-            <div className="row">
-              {STIFT_FARBEN.map((f) => (
-                <button key={f} className={"swatch" + (farbe === f ? " on" : "")}
-                  style={{ background: f }} onClick={() => setFarbe(f)} aria-label={"Stiftfarbe " + f} />
-              ))}
-              <select value={dicke} onChange={(e) => setDicke(Number(e.target.value))} style={{ width: "auto", marginBottom: 0 }}>
-                <option value={2}>fein</option><option value={3}>normal</option><option value={7}>dick</option>
-              </select>
-              {istLehrerin && (
-                <button className="btn g sm" style={{ marginLeft: "auto" }} onClick={async () => {
-                  const d = await api("strokesClear");
-                  if (d.ok) { stricheRef.current = []; wartendRef.current = []; sinceRef.current = 0; male(); zeige("Tafel gewischt."); }
-                }}>🧽 Wischen</button>
-              )}
-            </div>
-            <canvas ref={canvasRef} width={1000} height={750}
-              onPointerDown={stiftAb} onPointerMove={stiftZieht}
-              onPointerUp={() => void stiftHoch()} onPointerLeave={() => void stiftHoch()} />
-            <p className="muted" style={{ marginTop: 8 }}>
-              Ihr könnt beide gleichzeitig schreiben – Striche erscheinen beim anderen nach 2–3 Sekunden.
-            </p>
           </>
         )}
 

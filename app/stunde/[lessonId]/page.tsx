@@ -172,6 +172,10 @@ export default function StundePage() {
 
     try {
       await frame.join({ url: daten.roomUrl, token: daten.token });
+      // Bildschirm-Teilen auf SCHÄRFE optimieren (statt flüssiger Bewegung):
+      // Wichtig für geteilte Notizen/Aufgaben vom iPad – Text bleibt gestochen
+      // scharf und wird nicht körnig/verpixelt.
+      try { await frame.updateSendSettings({ screenVideo: "detail-optimized" }); } catch { }
     } catch {
       frameZerstoeren();
       setZustand({ art: "fehler", meldung: "Der Beitritt zum Videoraum hat nicht geklappt. Bitte versuche es noch einmal." });
