@@ -80,6 +80,31 @@ Direkt-Link zur Stunde: `…/stunde/<id>` (die id steht in der Tabelle
 * Einzelstunde: max. 2 Teilnehmer; Gruppe/Webinar: max. 25.
 * **Keine Aufzeichnung** (bewusst nicht eingebaut).
 
+## 3b. Version 2: Übungen, Stundenzettel, Belohnungen
+
+Für die Klassenzimmer-Werkzeuge einmalig die zweite Migration ausführen:
+Supabase → **SQL Editor** → Inhalt von `supabase/klassenzimmer_v2_schema.sql`
+einfügen → **Run**.
+
+Danach erscheint im Klassenzimmer rechts neben dem Video das Werkzeug-Panel:
+
+* **🧮 Übungen**: Du stellst eine Aufgabe (selbst getippt oder per 🎲 aus der
+  Lernflix-Quiz-Bank). Alle Schüler antworten gleichzeitig auf ihrem Gerät,
+  du siehst live, wer was geantwortet hat. „Übung beenden" zeigt allen die
+  Lösung und verteilt automatisch 10 Punkte pro richtiger Antwort.
+* **📝 Zettel**: Stundenzettel („Was haben wir gemacht?" + Hausaufgaben).
+  Du schreibst, Schüler lesen mit – auch nach der Stunde noch aufrufbar.
+* **🐙 Belohnungen**: Punkte und Sticker (🐙 ⭐ 🏆) per Klick vergeben;
+  Schüler sehen ihren Punktestand oben im Übungen-Tab.
+
+**Bildschirm teilen in bester Qualität:** Das Teilen ist auf **Schärfe**
+optimiert (`detail-optimized`) – geteilte Notizen und Aufgaben bleiben
+gestochen scharf statt körnig. Tipp fürs iPad: am besten direkt am iPad in
+Safari der Stunde beitreten und dort „Teilen" nutzen; falls dein iPadOS das
+im Browser nicht anbietet, teile vom Laptop aus (und spiegele das iPad z. B.
+per Kabel/QuickTime). Körnigkeit trotz allem? Meist ist der Internet-Upload
+zu knapp – im Video-Menü „Netzwerk" nachschauen.
+
 ## 4. Für Gruppenstunden/Webinare
 
 Stunde mit `kind = 'gruppe'` (oder `'webinar'`) und `student_id = null`

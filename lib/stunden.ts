@@ -52,6 +52,15 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
   }
 }
 
+// --- Zugehörigkeit: gehört ein Nutzer zu einer Stunde? ----------------------
+export async function istStundenMitglied(lesson: Lesson, userId: string): Promise<boolean> {
+  if (lesson.teacher_id === userId || lesson.student_id === userId) return true;
+  const { data } = await service()
+    .from("lesson_participants").select("user_id")
+    .eq("lesson_id", lesson.id).eq("user_id", userId).maybeSingle();
+  return !!data;
+}
+
 // --- Daily.co REST API ------------------------------------------------------
 const DAILY_API = "https://api.daily.co/v1";
 
