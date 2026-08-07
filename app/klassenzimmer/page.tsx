@@ -7,6 +7,7 @@
 // Login: dieselbe Sitzung wie Terminkalender und Stunde (localStorage).
 // =============================================================================
 import { useCallback, useEffect, useRef, useState } from "react";
+import LiveStunde from "../stunde/live-stunde";
 
 // --- Markenfarben (hell, Türkis-Blau-Verlauf) --------------------------------
 const TEAL = "#2BB3C0";
@@ -145,6 +146,8 @@ export default function KlassenzimmerPage() {
   const [punkte, setPunkte] = useState<{ points: number; stickers: string[]; recent: Antwort[] }>({ points: 0, stickers: [], recent: [] });
   const [entwurf, setEntwurf] = useState("");
   const [beschaeftigt, setBeschaeftigt] = useState(false);
+  // Live-Stunde direkt im Klassenzimmer (Zoom-Stil): gesetzte ID = Video läuft
+  const [liveId, setLiveId] = useState<string | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const chatEndeRef = useRef<HTMLDivElement>(null);
   const dateiInputRef = useRef<HTMLInputElement>(null);
@@ -232,16 +235,17 @@ export default function KlassenzimmerPage() {
     }
   }, [api, schuelerId, zielParam]);
 
-  // Beim Tab- oder Schülerwechsel laden; Chat zusätzlich alle 5 s auffrischen
+  // Beim Tab- oder Schülerwechsel laden; Chat zusätzlich alle 5 s auffrischen.
+  // Während der Live-Stunde pausieren (die Tabs sind dann ausgeblendet).
   useEffect(() => {
-    if (!eingeloggt || !schuelerId) return;
+    if (!eingeloggt || !schuelerId || liveId) return;
     // lade ist async – setState passiert erst nach dem await
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void lade(tab);
     if (tab !== "chat") return;
     const t = window.setInterval(() => { void lade("chat"); }, 5000);
     return () => window.clearInterval(t);
-  }, [eingeloggt, schuelerId, tab, lade]);
+  }, [eingeloggt, schuelerId, tab, lade, liveId]);
 
   // Chat: ans Ende springen, wenn neue Nachrichten da sind
   useEffect(() => {
@@ -321,7 +325,15 @@ export default function KlassenzimmerPage() {
         </span>
       </div>
 
-      <div className="haupt">
+      {/* Live-Stunde eingebettet (Zoom-Stil): füllt den Bereich unter der
+          Kopfzeile komplett; „✕ Schließen" führt zurück zu den Tabs */}
+      {liveId && (
+        <div className="haupt">
+          <LiveStunde lessonId={liveId} eingebettet onSchliessen={() => setLiveId(null)} />
+        </div>
+      )}
+
+      {!liveId && <div className="haupt">
         <nav className="nav">
           <div className="klasse">{schuelerName}</div>
           {istLehrerin && (
@@ -336,9 +348,9 @@ export default function KlassenzimmerPage() {
           <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
           {nextLesson && (
             <div className="zurstunde">
-              <a className="btnA" style={{ display: "block", textAlign: "center", textDecoration: "none" }} href={`/stunde/${nextLesson.id}`}>
+              <button className="btnA" style={{ display: "block", width: "100%", textAlign: "center" }} onClick={() => setLiveId(nextLesson.id)}>
                 📹 Zur Stunde
-              </a>
+              </button>
             </div>
           )}
         </nav>
@@ -421,7 +433,7 @@ export default function KlassenzimmerPage() {
               <div key={l.id} className="card" style={{ borderColor: TEAL }}>
                 <h4>Nächste Stunde: {wannText(l.starts_at)}</h4>
                 <p className="muted" style={{ margin: "0 0 10px" }}>{l.title}{l.subject ? ` · ${l.subject}` : ""} · Beitritt ab 15 Min. vorher</p>
-                <a className="btnA" style={{ textDecoration: "none", display: "inline-block" }} href={`/stunde/${l.id}`}>Zur Stunde</a>
+                <button className="btnA" onClick={() => setLiveId(l.id)}>Zur Stunde</button>
               </div>
             ))}
             {stunden.past.map((l) => (
@@ -440,7 +452,7 @@ export default function KlassenzimmerPage() {
 
           {hinweis && <div className="card" style={{ background: "#E8F6F0", borderColor: "#CFEADF", color: "#127A5C", fontWeight: 700, textAlign: "center" }}>{hinweis}</div>}
         </div></main>
-      </div>
+      </div>}
     </div>
   );
 }
