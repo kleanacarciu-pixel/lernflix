@@ -428,7 +428,7 @@ export default function KalenderPage() {
           <div className="sp">
             <a className="back" href="https://lernemitanna.de">← lernemitanna.de</a>
             {session
-              ? <><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
+              ? <><a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
           </div>
         </div>

@@ -105,6 +105,23 @@ im Browser nicht anbietet, teile vom Laptop aus (und spiegele das iPad z. B.
 per Kabel/QuickTime). Körnigkeit trotz allem? Meist ist der Internet-Upload
 zu knapp – im Video-Menü „Netzwerk" nachschauen.
 
+## 3c. Version 3: Klassenzimmer-Zentrale (Chat, Dateien, Historie)
+
+Einmalig die dritte Migration ausführen: Supabase → **SQL Editor** →
+Inhalt von `supabase/klassenzimmer_v3_schema.sql` einfügen → **Run**.
+(Sie legt auch den privaten Storage-Bucket „klassenzimmer" für Datei-Uploads an.)
+
+Danach gibt es unter **/klassenzimmer** das dauerhafte Zuhause jeder Klasse
+(Link auch oben im Terminkalender):
+
+* **Chat** mit bleibendem Verlauf zwischen dir und dem Schüler
+* **Dateien**: Du lädst Arbeitsblätter/PDFs hoch (bis 25 MB) – wahlweise nur
+  für einen Schüler oder „für alle"; Schüler können sie jederzeit öffnen
+* **Aufgaben**: Punktestand, Sticker und die zuletzt geübten Aufgaben
+* **Stunden**: kommende Stunden mit „Zur Stunde"-Knopf + vergangene Stunden
+  mit ihren Stundenzetteln
+* Du (Kleana) wählst links aus, wessen Klassenzimmer du gerade betreust
+
 ## 4. Für Gruppenstunden/Webinare
 
 Stunde mit `kind = 'gruppe'` (oder `'webinar'`) und `student_id = null`
