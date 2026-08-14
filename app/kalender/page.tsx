@@ -155,6 +155,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .lessonbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .lessonbar .btn{margin-left:auto;text-decoration:none;display:inline-block}
 .lessonbar .btn[disabled]{cursor:default;opacity:.75}
+/* Läuft die Seite schon als installierte App, braucht niemand die Anleitung */
+@media (display-mode: standalone){.kal .applink{display:none}}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -182,7 +184,10 @@ export default function KalenderPage() {
     try { if (s) localStorage.setItem(LS_KEY, JSON.stringify(s)); else localStorage.removeItem(LS_KEY); } catch { }
   }, []);
 
-  // Session aus localStorage laden (einmalig beim Mounten)
+  // Session aus localStorage laden (einmalig beim Mounten) und danach mit
+  // anderen Tabs/Fenstern synchron halten: Verlängert ein anderer Tab die
+  // Sitzung, übernehmen wir hier die neuen Token statt mit veralteten zu
+  // arbeiten (sonst loggt Supabase beide Seiten aus).
   useEffect(() => {
     let s: Session | null = null;
     try { const raw = localStorage.getItem(LS_KEY); if (raw) s = JSON.parse(raw); } catch { }
@@ -190,6 +195,12 @@ export default function KalenderPage() {
     if (s) setSession(s);
     setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
+    const sync = (e: StorageEvent) => {
+      if (e.key !== LS_KEY) return;
+      try { setSession(e.newValue ? (JSON.parse(e.newValue) as Session) : null); } catch { }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
 
   // API-Aufruf (mit einmaligem Refresh bei 401)
@@ -203,14 +214,23 @@ export default function KalenderPage() {
     };
     let r = await call(session?.token);
     if (r.status === 401 && session?.refresh && action !== "refresh" && action !== "login") {
+      // Immer den frischesten Stand aus dem Speicher nehmen: Ein anderer
+      // Tab (oder die installierte App) kann die Sitzung schon verlängert
+      // haben – Verlängern mit dem alten Token würde BEIDE ausloggen.
+      let aktuell = session;
+      try { const raw = localStorage.getItem(LS_KEY); if (raw) aktuell = JSON.parse(raw) as Session; } catch { }
+      if (aktuell.token !== session.token) {
+        r = await call(aktuell.token);
+        if (r.status !== 401) { setSession(aktuell); return r.data; }
+      }
       let rstatus = 0;
       let rd: Record<string, unknown> = {};
       try {
-        const rf = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: session.refresh }) });
+        const rf = await fetch("/api/kalender", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh", refresh: aktuell.refresh }) });
         rstatus = rf.status;
         rd = (await rf.json().catch(() => ({}))) as Record<string, unknown>;
       } catch { /* Netzwerkfehler – Sitzung NICHT verwerfen */ }
-      if (rd.ok && rd.token) { saveSession({ ...session, token: String(rd.token), refresh: String(rd.refresh) }); r = await call(String(rd.token)); }
+      if (rd.ok && rd.token) { saveSession({ ...aktuell, token: String(rd.token), refresh: String(rd.refresh) }); r = await call(String(rd.token)); }
       else if (rstatus === 401) { saveSession(null); } // nur echtes Ablaufen -> ausloggen
       // sonst: Sitzung behalten (nur vorübergehendes Problem)
     }
@@ -427,6 +447,7 @@ export default function KalenderPage() {
           <h1>📅 Terminkalender</h1>
           <div className="sp">
             <a className="back" href="https://lernemitanna.de">← lernemitanna.de</a>
+            <a className="btn g sm applink" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
             {session
               ? <><a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
