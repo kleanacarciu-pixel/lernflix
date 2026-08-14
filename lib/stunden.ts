@@ -76,8 +76,8 @@ export async function syncLessons(): Promise<void> {
 
     const [{ data: adminRow }, fxRes, apRes, ovRes] = await Promise.all([
       sb.from("profiles").select("user_id").eq("role", "admin").limit(1).maybeSingle(),
-      sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "aktiv"),
-      sb.from("appointments").select("student_id,slot_date,hour,kind,status,mode")
+      sb.from("fixed_slots").select("student_id,weekday,hour,mode,dauer_min").eq("status", "aktiv"),
+      sb.from("appointments").select("student_id,slot_date,hour,kind,status,mode,dauer_min")
         .gte("slot_date", von).lte("slot_date", bis),
       sb.from("slot_mode_overrides").select("student_id,slot_date,hour,mode")
         .gte("slot_date", von).lte("slot_date", bis),
@@ -87,39 +87,39 @@ export async function syncLessons(): Promise<void> {
 
     const overrides = new Map<string, string>();
     ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
-      .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${o.hour}`, o.mode));
-    const appts = (apRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; status: string; mode: string | null }[];
+      .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${Number(o.hour)}`, o.mode));
+    const appts = (apRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; status: string; mode: string | null; dauer_min: number | null }[];
     // Absagen = eigene Absage-Zeilen UND abgesagte Einzel-Buchungen; eine
     // spätere Neu-Buchung desselben Slots (bestätigt) hebt die Absage auf
     const absagen = new Set(appts
       .filter((a) => a.kind === "absage" || (a.kind === "einzel" && a.status === "abgesagt"))
-      .map((a) => `${a.student_id}|${a.slot_date}-${a.hour}`));
+      .map((a) => `${a.student_id}|${a.slot_date}-${Number(a.hour)}`));
     appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
-      .forEach((a) => absagen.delete(`${a.student_id}|${a.slot_date}-${a.hour}`));
+      .forEach((a) => absagen.delete(`${a.student_id}|${a.slot_date}-${Number(a.hour)}`));
 
     // Kandidaten einsammeln: feste Termine pro Tag + bestätigte Einzel-Buchungen
     type Kandidat = { studentId: string; startsAt: string; endsAt: string; mode: string };
     const kandidaten = new Map<string, Kandidat>();
-    const merken = (studentId: string, date: string, hour: number, grundModus: string | null) => {
-      const key = `${studentId}|${date}-${hour}`;
+    const merken = (studentId: string, date: string, hour: number, grundModus: string | null, dauerMin: number) => {
+      const key = `${studentId}|${date}-${Number(hour)}`;
       if (absagen.has(key)) return;
-      const start = berlinInstant(date, hour);
+      const start = berlinInstant(date, Number(hour));
       if (start < Date.now() - 60 * 60000) return; // Vergangenes nicht mehr anlegen
       kandidaten.set(key, {
         studentId,
         startsAt: new Date(start).toISOString(),
-        endsAt: new Date(start + 60 * 60000).toISOString(),
+        endsAt: new Date(start + dauerMin * 60000).toISOString(),
         mode: overrides.get(key) ?? grundModus ?? "online",
       });
     };
-    const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
+    const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number | null }[];
     for (let i = 0; i <= SYNC_TAGE; i++) {
       const date = addDaysStr(von, i);
       const wd = weekdayOf(date);
-      fixe.forEach((f) => { if (f.weekday === wd) merken(f.student_id, date, f.hour, f.mode); });
+      fixe.forEach((f) => { if (f.weekday === wd) merken(f.student_id, date, f.hour, f.mode, Number(f.dauer_min) || 60); });
     }
     appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
-      .forEach((a) => merken(a.student_id!, a.slot_date, a.hour, a.mode));
+      .forEach((a) => merken(a.student_id!, a.slot_date, a.hour, a.mode, Number(a.dauer_min) || 60));
 
     // Abgleichen mit dem, was schon existiert
     const vonIso = new Date(berlinInstant(von, 0)).toISOString();
