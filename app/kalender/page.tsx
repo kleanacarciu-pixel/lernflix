@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 // ------- Typen -------
 type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number };
@@ -342,6 +342,10 @@ export default function KalenderPage() {
     return r.data;
   }, [session, saveSession]);
 
+  // Erkennt Server-Updates: ändert sich die Version, lädt die App sich einmal
+  // selbst neu – so hängt die installierte App nie mehr auf altem Stand
+  const versionRef = useRef<string>("");
+
   const loadWeek = useCallback(async () => {
     const isAdmin = session?.role === "admin";
     const [d, o, ib] = await Promise.all([
@@ -349,6 +353,10 @@ export default function KalenderPage() {
       isAdmin ? api("overview") : Promise.resolve(null),
       isAdmin ? api("adminInbox") : Promise.resolve(null),
     ]);
+    if (d.ok && typeof d.version === "string") {
+      if (versionRef.current && versionRef.current !== d.version) { window.location.reload(); return; }
+      versionRef.current = d.version;
+    }
     if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); }
     if (isAdmin && o && o.ok) setOverview((o.students as OverviewRow[]) || []);
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
