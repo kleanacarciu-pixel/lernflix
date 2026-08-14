@@ -8,7 +8,7 @@ import {
   weekdayOf, isOpen, hoursUntil, prettyDate, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
-import { nextLessonFor } from "@/lib/stunden";
+import { nextLessonFor, syncLessons } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +94,9 @@ export async function POST(req: Request): Promise<Response> {
         prof = await getProfile(user.id);
         if (prof) { role = prof.role === "admin" ? "admin" : "student"; viewerId = user.id; }
       }
+      // Kalender -> Klassenzimmer synchron halten: Stunden für die nächsten
+      // 14 Tage automatisch anlegen/abräumen (leise, idempotent)
+      if (viewerId) await syncLessons();
       const days = await buildWeek(monday, role, viewerId);
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
       // Virtuelles Klassenzimmer: nächste anstehende Stunde für den "Zur Stunde"-Button
@@ -170,6 +173,48 @@ export async function POST(req: Request): Promise<Response> {
         return ok({ message: hu >= 4 ? (credit ? "Abgesagt. +1 Minus-Stunde gutgeschrieben." : "Abgesagt. (Minus-Konto bereits voll: 3/3.)") : "Abgesagt. Weniger als 4 Std. vorher – keine Gutschrift." });
       }
       return bad("Hier ist kein eigener Termin.");
+    }
+
+    if (action === "setMode") {
+      // Eine KONKRETE Stunde auf online/vor Ort umstellen (jederzeit bis
+      // Stundenbeginn). Der feste Wochentermin bleibt unverändert – nur
+      // dieses eine Datum bekommt eine Umstellung. Kleana wird per E-Mail
+      // und mit einem Hinweis im Klassenzimmer-Chat informiert.
+      if (!validSlot) return bad("Ungültiger Slot.");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
+      if (hoursUntil(date, hour) <= 0) return bad("Diese Stunde liegt in der Vergangenheit.");
+      let sid = user.id;
+      if (isAdmin && typeof body.studentId === "string" && body.studentId) sid = body.studentId;
+      const s = await inspectSlot(date, hour);
+      const eigene = (s.booking && s.booking.status !== "abgesagt" && s.booking.student_id === sid)
+        || (s.fixedActive && s.fixedActive.student_id === sid && !s.absage);
+      if (!eigene) return bad("Hier ist keine eigene Stunde.");
+      { const { error } = await service().from("slot_mode_overrides")
+          .upsert({ student_id: sid, slot_date: date, hour, mode }, { onConflict: "student_id,slot_date,hour" });
+        if (error) return bad("Umstellen fehlgeschlagen: " + error.message); }
+      if (s.booking && s.booking.student_id === sid) {
+        await service().from("appointments").update({ mode }).eq("id", s.booking.id);
+      }
+      await syncLessons(); // Stunde im Klassenzimmer sofort anlegen/nachziehen
+      const wann = prettyDate(date, hour);
+      const txt = mode === "online" ? "online" : "vor Ort";
+      if (!isAdmin) {
+        after(() => sendMail(ADMIN_EMAIL, `Stunde umgestellt: ${txt}`,
+          `${prof.name} hat die Stunde am ${wann} auf <b>${txt}</b> umgestellt.`));
+        after(async () => {
+          try {
+            await service().from("class_messages").insert({
+              student_id: sid, sender_id: sid,
+              body: mode === "online"
+                ? `📢 Ich habe unsere Stunde am ${wann} auf ONLINE umgestellt – wir sehen uns im Klassenzimmer! 💻`
+                : `📢 Ich habe unsere Stunde am ${wann} wieder auf VOR ORT umgestellt. 🏫`,
+            });
+          } catch { /* Klassenzimmer-Migration fehlt evtl. noch */ }
+        });
+      }
+      return ok({ message: mode === "online"
+        ? `Deine Stunde am ${wann} ist jetzt ONLINE 💻 – Kleana bekommt Bescheid. Du trittst über das Klassenzimmer bei.`
+        : `Deine Stunde am ${wann} ist jetzt wieder VOR ORT 🏫 – Kleana bekommt Bescheid.` });
     }
 
     if (action === "changePassword") {

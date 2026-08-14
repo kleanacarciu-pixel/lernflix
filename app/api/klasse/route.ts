@@ -12,7 +12,7 @@
 // =============================================================================
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile } from "@/lib/kalender";
-import { nextLessonFor } from "@/lib/stunden";
+import { nextLessonFor, syncLessons } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,6 +67,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= EINSTIEG =======================================
     if (action === "bootstrap") {
+      await syncLessons(); // Kalender -> Klassenzimmer synchron halten
       const out: Record<string, unknown> = { isTeacher: istLehrerin, myName: profil.name };
       if (istLehrerin) {
         const { data } = await sb.from("profiles").select("user_id,name")
@@ -172,16 +173,17 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= STUNDEN ========================================
     if (action === "lessons") {
+      await syncLessons(); // frisch aus dem Kalender nachziehen
       const grenze = new Date(Date.now() - 30 * 60000).toISOString();
       const [{ data: kommend }, { data: vergangen }] = await Promise.all([
-        sb.from("lessons").select("id,title,subject,starts_at,ends_at")
+        sb.from("lessons").select("id,title,subject,starts_at,ends_at,mode")
           .eq("student_id", zielSchueler).gt("ends_at", grenze)
           .order("starts_at", { ascending: true }).limit(5),
-        sb.from("lessons").select("id,title,subject,starts_at,ends_at")
+        sb.from("lessons").select("id,title,subject,starts_at,ends_at,mode")
           .eq("student_id", zielSchueler).lte("ends_at", grenze)
           .order("starts_at", { ascending: false }).limit(10),
       ]);
-      type L = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string };
+      type L = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; mode?: string | null };
       const alle = ([...(kommend || []), ...(vergangen || [])] as L[]);
       const notizen = new Map<string, { summary: string; homework: string }>();
       if (alle.length) {

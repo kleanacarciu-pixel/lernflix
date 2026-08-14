@@ -3,7 +3,7 @@
 // Wird von app/api/lessons/[lessonId]/join/route.ts und app/api/kalender
 // genutzt. NUR serverseitig! (DAILY_API_KEY darf nie im Browser landen.)
 // =============================================================================
-import { service } from "@/lib/kalender";
+import { service, berlinInstant, addDaysStr, weekdayOf } from "@/lib/kalender";
 
 // Zeitfenster-Regeln (Version 1)
 export const VORLAUF_MINUTEN = 15;  // Schüler dürfen 15 Min. vor Beginn rein
@@ -19,11 +19,12 @@ export type Lesson = {
   title: string;
   subject: string | null;
   kind: "einzel" | "gruppe" | "webinar";
+  mode?: "online" | "vor_ort";
   daily_room_name: string | null;
   daily_room_url: string | null;
 };
 
-export type NextLesson = Pick<Lesson, "id" | "title" | "starts_at" | "ends_at" | "kind">;
+export type NextLesson = Pick<Lesson, "id" | "title" | "starts_at" | "ends_at" | "kind"> & { mode?: string | null };
 
 // --- Nächste anstehende Stunde eines Nutzers (für den Kalender-Button) ------
 export async function nextLessonFor(userId: string): Promise<NextLesson | null> {
@@ -40,7 +41,7 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
 
     const { data } = await sb
       .from("lessons")
-      .select("id,title,starts_at,ends_at,kind")
+      .select("id,title,starts_at,ends_at,kind,mode")
       .gt("ends_at", grenze)
       .or(oder.join(","))
       .order("starts_at", { ascending: true })
@@ -49,6 +50,110 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
   } catch {
     // Tabelle existiert evtl. noch nicht (Migration nicht ausgeführt) – Kalender soll trotzdem funktionieren
     return null;
+  }
+}
+
+// --- Kalender -> Klassenzimmer: Stunden automatisch anlegen -----------------
+// Erzeugt für die nächsten SYNC_TAGE Tage aus aktiven festen Terminen und
+// bestätigten Einzel-Buchungen die passenden lessons-Zeilen – inklusive Modus
+// (online/vor Ort, Pro-Datum-Umstellungen gewinnen). Absagen räumen die
+// zugehörige Stunde wieder ab. Dank Unique-Constraint (student_id, starts_at)
+// entstehen nie Doppel; von Hand angelegte Stunden werden nicht angefasst
+// (Insert mit "do nothing", gelöscht wird nur bei vorliegender Absage).
+// Fehlt die V4-Migration, passiert still gar nichts.
+export const SYNC_TAGE = 14;
+
+function heuteBerlin(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+}
+
+export async function syncLessons(): Promise<void> {
+  try {
+    const sb = service();
+    const von = heuteBerlin();
+    const bis = addDaysStr(von, SYNC_TAGE);
+
+    const [{ data: adminRow }, fxRes, apRes, ovRes] = await Promise.all([
+      sb.from("profiles").select("user_id").eq("role", "admin").limit(1).maybeSingle(),
+      sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "aktiv"),
+      sb.from("appointments").select("student_id,slot_date,hour,kind,status,mode")
+        .gte("slot_date", von).lte("slot_date", bis),
+      sb.from("slot_mode_overrides").select("student_id,slot_date,hour,mode")
+        .gte("slot_date", von).lte("slot_date", bis),
+    ]);
+    const teacherId = (adminRow as { user_id: string } | null)?.user_id;
+    if (!teacherId) return;
+
+    const overrides = new Map<string, string>();
+    ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
+      .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${o.hour}`, o.mode));
+    const appts = (apRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; status: string; mode: string | null }[];
+    // Absagen = eigene Absage-Zeilen UND abgesagte Einzel-Buchungen; eine
+    // spätere Neu-Buchung desselben Slots (bestätigt) hebt die Absage auf
+    const absagen = new Set(appts
+      .filter((a) => a.kind === "absage" || (a.kind === "einzel" && a.status === "abgesagt"))
+      .map((a) => `${a.student_id}|${a.slot_date}-${a.hour}`));
+    appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
+      .forEach((a) => absagen.delete(`${a.student_id}|${a.slot_date}-${a.hour}`));
+
+    // Kandidaten einsammeln: feste Termine pro Tag + bestätigte Einzel-Buchungen
+    type Kandidat = { studentId: string; startsAt: string; endsAt: string; mode: string };
+    const kandidaten = new Map<string, Kandidat>();
+    const merken = (studentId: string, date: string, hour: number, grundModus: string | null) => {
+      const key = `${studentId}|${date}-${hour}`;
+      if (absagen.has(key)) return;
+      const start = berlinInstant(date, hour);
+      if (start < Date.now() - 60 * 60000) return; // Vergangenes nicht mehr anlegen
+      kandidaten.set(key, {
+        studentId,
+        startsAt: new Date(start).toISOString(),
+        endsAt: new Date(start + 60 * 60000).toISOString(),
+        mode: overrides.get(key) ?? grundModus ?? "online",
+      });
+    };
+    const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
+    for (let i = 0; i <= SYNC_TAGE; i++) {
+      const date = addDaysStr(von, i);
+      const wd = weekdayOf(date);
+      fixe.forEach((f) => { if (f.weekday === wd) merken(f.student_id, date, f.hour, f.mode); });
+    }
+    appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
+      .forEach((a) => merken(a.student_id!, a.slot_date, a.hour, a.mode));
+
+    // Abgleichen mit dem, was schon existiert
+    const vonIso = new Date(berlinInstant(von, 0)).toISOString();
+    const { data: existRows } = await sb.from("lessons")
+      .select("id,student_id,starts_at,mode")
+      .gte("starts_at", vonIso).not("student_id", "is", null);
+    const existing = new Map<string, { id: string; mode: string }>();
+    ((existRows || []) as { id: string; student_id: string; starts_at: string; mode: string }[])
+      .forEach((l) => existing.set(`${l.student_id}|${new Date(l.starts_at).toISOString()}`, { id: l.id, mode: l.mode }));
+
+    const neu: Record<string, unknown>[] = [];
+    for (const k of kandidaten.values()) {
+      const vorhanden = existing.get(`${k.studentId}|${k.startsAt}`);
+      if (!vorhanden) {
+        neu.push({ teacher_id: teacherId, student_id: k.studentId, starts_at: k.startsAt, ends_at: k.endsAt, mode: k.mode });
+      } else if (vorhanden.mode !== k.mode) {
+        await sb.from("lessons").update({ mode: k.mode }).eq("id", vorhanden.id);
+      }
+    }
+    if (neu.length) {
+      await sb.from("lessons").upsert(neu, { onConflict: "student_id,starts_at", ignoreDuplicates: true });
+    }
+
+    // Abgesagte Stunden wieder abräumen (nur exakt passende, künftige Termine)
+    for (const key of absagen) {
+      const [sid, rest] = key.split("|");
+      const dash = rest.lastIndexOf("-");
+      const date = rest.slice(0, dash); const hour = Number(rest.slice(dash + 1));
+      if (!sid || sid === "null" || !date || Number.isNaN(hour)) continue;
+      const startIso = new Date(berlinInstant(date, hour)).toISOString();
+      const vorhanden = existing.get(`${sid}|${startIso}`);
+      if (vorhanden) await sb.from("lessons").delete().eq("id", vorhanden.id);
+    }
+  } catch {
+    // V4-Migration fehlt noch oder DB kurz nicht erreichbar – nichts kaputt machen
   }
 }
 

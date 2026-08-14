@@ -26,10 +26,10 @@ function speichereSession(s: Session) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { }
 }
 
-type NextLesson = { id: string; title: string; starts_at: string; ends_at: string };
+type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null };
 type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean };
 type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean };
-type Stunde = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; notes: { summary: string; homework: string } | null };
+type Stunde = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; mode?: string | null; notes: { summary: string; homework: string } | null };
 type Antwort = { question: string; answer: string; is_correct: boolean | null; answered_at: string };
 
 const CSS = `
@@ -52,8 +52,10 @@ const CSS = `
 .kz .nav{flex:0 0 225px;background:#fff;border-right:1px solid #E2E7ED;padding:12px 8px;
   display:flex;flex-direction:column;gap:2px}
 .kz .nav .klasse{padding:8px 12px;font-weight:800;font-size:.9rem}
-.kz .nav select{margin:0 8px 8px;background:#fff;border:1.5px solid #E2E7ED;border-radius:9px;
-  padding:8px 10px;font:inherit;font-size:.86rem}
+.kz .schueler{display:flex;flex-direction:column;gap:2px;max-height:38dvh;overflow-y:auto}
+.kz .avatar{width:24px;height:24px;border-radius:50%;background:${VERLAUF};color:#fff;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800}
+.kz .trenn{height:1px;background:#E2E7ED;margin:8px 6px 6px}
 .kz .navk{display:flex;align-items:center;gap:10px;background:none;border:0;color:#454F5B;
   font:inherit;font-size:.87rem;font-weight:600;cursor:pointer;padding:9px 12px;border-radius:10px;
   text-align:left;width:100%;transition:background .12s ease}
@@ -68,6 +70,8 @@ const CSS = `
   .kz .nav{flex:0 0 auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid #E2E7ED;
     overflow-x:auto;padding:8px}
   .kz .nav .klasse{display:none}
+  .kz .schueler{flex-direction:row;max-height:none;overflow-x:auto}
+  .kz .trenn{display:none}
   .kz .navk{width:auto}
   .kz .zurstunde{margin-top:0;margin-left:auto;padding:0 4px}
 }
@@ -196,7 +200,10 @@ export default function KlassenzimmerPage() {
         if (d.isTeacher === true) {
           const liste = (d.students as { id: string; name: string }[]) || [];
           setStudenten(liste);
-          if (liste.length) setSchuelerId(liste[0].id);
+          // Direktlink aus dem Kalender: /klassenzimmer?schueler=<id>
+          const wunsch = new URLSearchParams(window.location.search).get("schueler");
+          if (wunsch && liste.some((x) => x.id === wunsch)) setSchuelerId(wunsch);
+          else if (liste.length) setSchuelerId(liste[0].id);
         } else {
           setSchuelerId("selbst"); // Schüler: eigener Raum (Server nutzt eigene ID)
           setNextLesson((d.nextLesson as NextLesson) || null);
@@ -337,20 +344,30 @@ export default function KlassenzimmerPage() {
         <nav className="nav">
           <div className="klasse">{schuelerName}</div>
           {istLehrerin && (
-            <select value={schuelerId} onChange={(e) => setSchuelerId(e.target.value)} aria-label="Schüler wählen">
-              {studenten.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              {studenten.length === 0 && <option value="">Noch keine Schüler</option>}
-            </select>
+            <div className="schueler" role="list" aria-label="Schüler wählen">
+              {studenten.map((s) => (
+                <button key={s.id} className={"navk" + (s.id === schuelerId ? " on" : "")} onClick={() => setSchuelerId(s.id)}>
+                  <span className="avatar" aria-hidden>{s.name.trim().charAt(0).toUpperCase()}</span>{s.name}
+                </button>
+              ))}
+              {studenten.length === 0 && <p className="muted" style={{ margin: "4px 12px", fontSize: ".84rem" }}>Noch keine Schüler</p>}
+              <div className="trenn" />
+            </div>
           )}
           <button className={"navk" + (tab === "chat" ? " on" : "")} onClick={() => setTab("chat")}><Icon art="chat" />Chat</button>
           <button className={"navk" + (tab === "dateien" ? " on" : "")} onClick={() => setTab("dateien")}><Icon art="datei" />Dateien</button>
           <button className={"navk" + (tab === "aufgaben" ? " on" : "")} onClick={() => setTab("aufgaben")}><Icon art="aufgabe" />Aufgaben</button>
           <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
-          {nextLesson && (
+          {nextLesson && nextLesson.mode !== "vor_ort" && (
             <div className="zurstunde">
               <button className="btnA" style={{ display: "block", width: "100%", textAlign: "center" }} onClick={() => setLiveId(nextLesson.id)}>
                 📹 Zur Stunde
               </button>
+            </div>
+          )}
+          {nextLesson && nextLesson.mode === "vor_ort" && (
+            <div className="zurstunde">
+              <span className="chip" style={{ display: "flex", justifyContent: "center" }}>🏫 Nächste Stunde: vor Ort</span>
             </div>
           )}
         </nav>
@@ -432,8 +449,13 @@ export default function KlassenzimmerPage() {
             {stunden.upcoming.map((l) => (
               <div key={l.id} className="card" style={{ borderColor: TEAL }}>
                 <h4>Nächste Stunde: {wannText(l.starts_at)}</h4>
-                <p className="muted" style={{ margin: "0 0 10px" }}>{l.title}{l.subject ? ` · ${l.subject}` : ""} · Beitritt ab 15 Min. vorher</p>
-                <button className="btnA" onClick={() => setLiveId(l.id)}>Zur Stunde</button>
+                {l.mode === "vor_ort" ? (<>
+                  <p className="muted" style={{ margin: "0 0 10px" }}>{l.title}{l.subject ? ` · ${l.subject}` : ""} · 🏫 vor Ort</p>
+                  <span className="chip">🏫 Wir sehen uns vor Ort!</span>
+                </>) : (<>
+                  <p className="muted" style={{ margin: "0 0 10px" }}>{l.title}{l.subject ? ` · ${l.subject}` : ""} · 💻 online · Beitritt ab 15 Min. vorher</p>
+                  <button className="btnA" onClick={() => setLiveId(l.id)}>Zur Stunde</button>
+                </>)}
               </div>
             ))}
             {stunden.past.map((l) => (

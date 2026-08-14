@@ -10,7 +10,7 @@ type OverviewRow = { id: string; name: string; fix: string; minus: number; plus:
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
 type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
-type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string };
+type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -157,6 +157,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .lessonbar .btn[disabled]{cursor:default;opacity:.75}
 /* Läuft die Seite schon als installierte App, braucht niemand die Anleitung */
 @media (display-mode: standalone){.kal .applink{display:none}}
+.kal .kzlink{text-decoration:none;font-size:.95rem;margin-left:2px}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -304,10 +305,14 @@ export default function KalenderPage() {
       if (s.mine && s.state === "req") return info("Angefragt", `${when} wartet auf Kleanas Bestätigung.`);
       if (s.mine && s.state === "busy") {
         const hu = hoursUntil(date, s.hour);
+        const istOnline = s.mode === "online";
         setModal(<div className="modal"><h2>Dein Termin</h2><p>{when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
           {hu >= 4 ? <div className="okbox">Absagen: mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben (max. 3).</div>
             : <div className="warn">Absagen: weniger als 4 Std. vorher → zählt <b>nicht</b> als Minus-Stunde.</div>}
           <div className="col">
+            <button className="btn p" onClick={() => act("setMode", { date, hour: s.hour, mode: istOnline ? "vor_ort" : "online" })}>
+              {istOnline ? "🏫 Diese Stunde vor Ort machen" : "💻 Diese Stunde online machen"}
+            </button>
             <button className="btn p" onClick={() => act("cancelMine", { date, hour: s.hour })}>{hu >= 4 ? "Diesen Termin absagen" : "Trotzdem absagen"}</button>
             {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
             <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
@@ -476,7 +481,7 @@ export default function KalenderPage() {
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button></td><td>{r.fix}</td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
@@ -606,6 +611,14 @@ function StundenLeiste({ lesson, istLehrerin }: { lesson: NextLesson; istLehreri
   const einlassAb = start.getTime() - 15 * 60000;
   const offen = istLehrerin || jetzt >= einlassAb;
   const wann = `${DAYS[(start.getDay() + 6) % 7]} ${dm(start)} um ${pad(start.getHours())}:${pad(start.getMinutes())}`;
+  // Vor-Ort-Stunden brauchen keinen Video-Beitritt – nur freundlich erinnern
+  if (lesson.mode === "vor_ort") {
+    return (
+      <div className="hint lessonbar">
+        <span>🏫 <b>Nächste Stunde:</b> {lesson.title} – {wann} · vor Ort</span>
+      </div>
+    );
+  }
   const restMin = Math.max(1, Math.ceil((einlassAb - jetzt) / 60000));
   const rest = restMin >= 60
     ? (restMin >= 1440 ? `${Math.floor(restMin / 1440)} Tag(en)` : `${Math.floor(restMin / 60)} Std. ${restMin % 60} Min.`)

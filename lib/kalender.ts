@@ -73,7 +73,7 @@ export function isOpen(weekday: number, hour: number): boolean {
   return weekday < 5 ? hour >= 8 && hour <= 19 : hour >= 8 && hour <= 18;
 }
 // UTC-Instant der Berliner Wandzeit dateStr+hour
-function berlinInstant(dateStr: string, hour: number): number {
+export function berlinInstant(dateStr: string, hour: number): number {
   const [y, m, d] = dateStr.split("-").map(Number);
   const guess = Date.UTC(y, m - 1, d, hour, 0, 0);
   const g = new Date(guess);
@@ -182,12 +182,19 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const from = days[0], to = days[6];
 
   // feste Slots + Profile + Ereignisse + Dauer-Blocks parallel laden (schneller)
-  const [fxRes, profRes, apptRes, wbRes] = await Promise.all([
+  const [fxRes, profRes, apptRes, wbRes, ovRes] = await Promise.all([
     sb.from("fixed_slots").select("student_id,weekday,hour,status,mode").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note").gte("slot_date", from).lte("slot_date", to),
     sb.from("weekly_blocks").select("weekday,hour"),
+    // Pro-Datum-Umstellungen (online/vor Ort) – Tabelle kommt mit der
+    // V4-Migration; ohne sie liefert die Abfrage einfach einen Fehler und
+    // wir zeigen den Grund-Modus des festen Termins
+    sb.from("slot_mode_overrides").select("student_id,slot_date,hour,mode").gte("slot_date", from).lte("slot_date", to),
   ]);
+  const overrides = new Map<string, string>();
+  ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
+    .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${o.hour}`, o.mode));
   const fixedRows = fxRes.data; const profs = profRes.data;
   const weeklyBlocks = new Set<string>((wbRes.data || []).map((w: { weekday: number; hour: number }) => `${w.weekday}-${w.hour}`));
   nameCache.clear();
@@ -221,10 +228,12 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         if (role === "admin") return { hour, state: "block", weekly: raw.weekly };
         return { hour, state: "busy" }; // Schüler/öffentlich sehen "belegt"
       }
-      // busy / req durch Schüler
+      // busy / req durch Schüler; Pro-Datum-Umstellung gewinnt über den
+      // Grund-Modus des festen Termins
       const mine = role === "student" && raw.sid === viewerId;
-      if (role === "admin") return { hour, state: raw.t, name: raw.name, fixed: raw.fixed, mode: raw.mode };
-      if (mine) return { hour, state: raw.t, mine: true, fixed: raw.fixed, mode: raw.mode };
+      const effMode = overrides.get(`${raw.sid}|${date}-${hour}`) ?? raw.mode;
+      if (role === "admin") return { hour, state: raw.t, name: raw.name, fixed: raw.fixed, mode: effMode };
+      if (mine) return { hour, state: raw.t, mine: true, fixed: raw.fixed, mode: effMode };
       return { hour, state: "busy" }; // andere Schüler / öffentlich: nur "belegt", KEIN Name
     });
     return { date, weekday: wd, slots };
