@@ -16,7 +16,6 @@ const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 // Halbstunden-Raster wie auf dem Server: 8, 8.5 (=8:30), … 19.5 (=19:30)
 const HOURS: number[] = [];
 for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
-const DAUERN = [30, 45, 60, 90];
 const fmtZeit = (hour: number) => `${String(Math.floor(hour)).padStart(2, "0")}:${hour % 1 ? "30" : "00"}`;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -375,7 +374,9 @@ export default function KalenderPage() {
   }
 
   function openProbe(date: string, hour: number, when: string) {
-    setModal(<ProbeForm when={when} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin) => {
+    const wd = (parseIso(date).getDay() + 6) % 7;
+    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
+    setModal(<ProbeForm when={when} startHour={hour} maxDauer={maxDauer} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin) => {
       const d = await api("requestProbe", { date, hour, mode: m, name, email, dauerMin });
       if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
       return String(d.error || "Fehler.");
@@ -424,7 +425,10 @@ export default function KalenderPage() {
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
-    setModal(<BuchungsWahl title={title} startZeit={fmtZeit(hour)}
+    // Endzeit-Auswahl endet spätestens am Ladenschluss (Mo–Fr 20:00, Sa/So 19:00)
+    const wd = (parseIso(date).getDay() + 6) % 7;
+    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
+    setModal(<BuchungsWahl title={title} startHour={hour} maxDauer={maxDauer}
       onClose={() => setModal(null)}
       onSubmit={(m, d) => act(action, { date, hour, mode: m, dauerMin: d })} />);
   }
@@ -666,42 +670,47 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
 }
-// Dauer frei eintippen (wie in Outlook) + Online/vor-Ort wählen.
-// Die Zeitspanne aktualisiert sich live: 14:30–15:20.
+// Start- und Endzeit wie in Outlook: Start = angeklickter Slot (fest),
+// Ende per Auswahlliste (15-Minuten-Schritte bis Ladenschluss).
 const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 15 && m <= 240 && m % 5 === 0;
-function DauerFeld({ dauer, setDauer }: { dauer: number; setDauer: (m: number) => void }) {
-  return (<>
-    <div className="acts" style={{ marginTop: 6, alignItems: "center" }}>
-      <input type="number" min={15} max={240} step={5} value={dauer} style={{ width: 90 }}
-        onChange={(e) => setDauer(Number(e.target.value))} aria-label="Dauer in Minuten" />
-      <span style={{ fontWeight: 600 }}>Minuten</span>
-      {DAUERN.map((m) => (
-        <button key={m} type="button" className={"btn sm " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m}</button>
-      ))}
+const minZuZeit = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+function EndzeitWahl({ startHour, maxDauer, dauer, setDauer }: {
+  startHour: number; maxDauer: number; dauer: number; setDauer: (m: number) => void;
+}) {
+  const startMin = Math.round(startHour * 60);
+  const opts: number[] = [];
+  for (let m = 15; m <= Math.min(240, maxDauer); m += 15) opts.push(m);
+  return (
+    <div className="acts" style={{ marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{ fontWeight: 600 }}>Startzeit</span>
+      <input value={fmtZeit(startHour)} disabled style={{ width: 74, textAlign: "center" }} aria-label="Startzeit" />
+      <span style={{ fontWeight: 600 }}>Endzeit</span>
+      <select value={dauer} onChange={(e) => setDauer(Number(e.target.value))} aria-label="Endzeit" style={{ minWidth: 140 }}>
+        {opts.map((m) => (
+          <option key={m} value={m}>{minZuZeit(startMin + m)}  ({m} Min.)</option>
+        ))}
+      </select>
     </div>
-    {!dauerGueltig(dauer) && <div className="err">Bitte 15–240 Minuten in 5er-Schritten (z. B. 45, 50, 60).</div>}
-  </>);
+  );
 }
-function BuchungsWahl({ title, startZeit, onSubmit, onClose }: {
-  title: string; startZeit: string;
+function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
+  title: string; startHour: number; maxDauer: number;
   onSubmit: (mode: string, dauerMin: number) => void; onClose: () => void;
 }) {
-  const [dauer, setDauer] = useState(60);
-  const [sh, sm] = startZeit.split(":").map(Number);
-  const endeMin = sh * 60 + sm + (dauerGueltig(dauer) ? dauer : 0);
-  const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
+  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
+  const ende = minZuZeit(Math.round(startHour * 60) + dauer);
   return <div className="modal"><h2>{title}</h2>
-    <p>Beginn <b>{startZeit}</b> – wie viele Minuten soll die Stunde dauern?</p>
-    <DauerFeld dauer={dauer} setDauer={setDauer} />
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{startZeit}–{ende}</b>. Und: online oder vor Ort?</p>
+    <p>Wann soll die Stunde enden?</p>
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <p style={{ margin: "10px 0 4px" }}>Also <b>{fmtZeit(startHour)}–{ende}</b>. Und: online oder vor Ort?</p>
     <div className="col">
       <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer)}>💻 Online</button>
       <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name: string, email: string, mode: string, dauerMin: number) => Promise<string>; onClose: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(60); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+function ProbeForm({ when, startHour, maxDauer, onSubmit, onClose }: { when: string; startHour: number; maxDauer: number; onSubmit: (name: string, email: string, mode: string, dauerMin: number) => Promise<string>; onClose: () => void }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(Math.min(60, maxDauer)); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
@@ -711,8 +720,8 @@ function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name:
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
-    <label>Wie viele Minuten?</label>
-    <DauerFeld dauer={dauer} setDauer={setDauer} />
+    <label>Von wann bis wann?</label>
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
