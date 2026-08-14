@@ -248,16 +248,16 @@ export async function POST(req: Request): Promise<Response> {
 
     if (action === "createCall") {
       // Video-Call für Probestunde/Masterclass anlegen: Stunde (kind webinar)
-      // ohne festen Schüler + Gast-Link zum Verschicken (Beitritt ohne Login)
+      // ohne festen Schüler. Bewusst OHNE Zeitfenster: der Gast-Link
+      // funktioniert sofort und dauerhaft (bis der Call gelöscht wird) –
+      // egal ob die Stunde 10 Minuten länger dauert. Die Zeiten unten sind
+      // nur nominell (Pflichtfelder der Tabelle).
       const titel = String(body.title || "").trim().slice(0, 80) || "Video-Call";
-      const startsAt = new Date(String(body.startsAt || ""));
-      const dauerMin = [30, 60, 90, 120].includes(Number(body.dauerMin)) ? Number(body.dauerMin) : 60;
-      if (Number.isNaN(startsAt.getTime())) return bad("Bitte Datum und Uhrzeit wählen.");
-      if (startsAt.getTime() < Date.now() - 10 * 60000) return bad("Der Zeitpunkt liegt in der Vergangenheit.");
+      const jetzt = Date.now();
       const { data: neu, error } = await service().from("lessons").insert({
         teacher_id: user.id, student_id: null, kind: "webinar", mode: "online",
-        title: titel, starts_at: startsAt.toISOString(),
-        ends_at: new Date(startsAt.getTime() + dauerMin * 60000).toISOString(),
+        title: titel, starts_at: new Date(jetzt).toISOString(),
+        ends_at: new Date(jetzt + 2 * 3600000).toISOString(),
       }).select("id").single();
       if (error || !neu) return bad("Konnte den Call nicht anlegen: " + (error?.message || "unbekannt"));
       const base = new URL(process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender").origin;
@@ -267,15 +267,14 @@ export async function POST(req: Request): Promise<Response> {
       });
     }
     if (action === "callList") {
-      // Kommende Calls samt Gast-Links (falls ein Link verloren ging)
-      const grenze = new Date(Date.now() - 2 * 3600000).toISOString();
+      // Alle Calls samt Gast-Links (bleiben gelistet, bis sie gelöscht werden)
       const { data } = await service().from("lessons")
-        .select("id,title,starts_at,ends_at")
-        .eq("kind", "webinar").gt("ends_at", grenze)
-        .order("starts_at", { ascending: true }).limit(20);
+        .select("id,title,created_at")
+        .eq("kind", "webinar")
+        .order("created_at", { ascending: false }).limit(20);
       const base = new URL(process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender").origin;
       return ok({
-        calls: ((data || []) as { id: string; title: string; starts_at: string; ends_at: string }[])
+        calls: ((data || []) as { id: string; title: string; created_at: string }[])
           .map((c) => ({ ...c, link: gastLink(c.id, base) })),
       });
     }

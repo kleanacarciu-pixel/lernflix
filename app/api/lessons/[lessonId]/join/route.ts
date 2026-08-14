@@ -87,19 +87,27 @@ export async function POST(
 
     // Ablaufzeit für Raum + Token: Ende + 30 Min. Falls Kleana nach Ablauf
     // beitritt (sie darf immer), bekommt der Raum mindestens 1 Std. ab jetzt.
-    const expUnix = Math.floor(Math.max(gueltigBis, jetzt + 60 * 60000) / 1000);
+    // Zeitlose Webinare (Video-Calls mit Gast-Link) laufen großzügig 12 Std.
+    const expUnix = lesson.kind === "webinar"
+      ? Math.floor((jetzt + 12 * 3600000) / 1000)
+      : Math.floor(Math.max(gueltigBis, jetzt + 60 * 60000) / 1000);
 
     // ---- 4) Raum holen oder beim ersten Beitritt erstellen -----------------
+    // Webinare (Kleanas Video-Calls mit Gast-Link) sind zeitlos – dort bei
+    // JEDEM Beitritt sicherstellen, dass der Raum wirklich existiert (Daily
+    // räumt abgelaufene Räume auf; dann wird er einfach neu erstellt).
     let roomName = lesson.daily_room_name;
     let roomUrl = lesson.daily_room_url;
-    if (!roomName || !roomUrl) {
+    if (lesson.kind === "webinar" || !roomName || !roomUrl) {
       const raum = await ensureDailyRoom(lesson, expUnix);
       // Nur speichern, wenn noch kein Raum eingetragen ist (Schutz gegen
       // gleichzeitige Beitritte). Der Raumname ist pro Stunde eindeutig,
       // daher bekommen trotzdem alle denselben Raum.
-      await sb.from("lessons")
-        .update({ daily_room_name: raum.name, daily_room_url: raum.url })
-        .eq("id", lesson.id).is("daily_room_name", null);
+      if (!roomName || !roomUrl) {
+        await sb.from("lessons")
+          .update({ daily_room_name: raum.name, daily_room_url: raum.url })
+          .eq("id", lesson.id).is("daily_room_name", null);
+      }
       roomName = raum.name;
       roomUrl = raum.url;
     }

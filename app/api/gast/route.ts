@@ -46,37 +46,48 @@ export async function POST(req: Request): Promise<Response> {
     const ende = new Date(lesson.ends_at).getTime();
     const einlassAb = beginn - VORLAUF_MINUTEN * 60000;
     const gueltigBis = ende + NACHLAUF_MINUTEN * 60000;
+    // Von Kleana erstellte Calls (Probestunde/Masterclass, kind webinar)
+    // haben KEIN Zeitfenster: der Link funktioniert immer, bis der Call
+    // gelöscht wird – auch wenn die Stunde länger dauert als geplant.
+    const zeitlos = lesson.kind === "webinar";
 
     if (action === "info") {
       return ok({
         titel: lesson.title, startsAt: lesson.starts_at, endsAt: lesson.ends_at,
-        offen: jetzt >= einlassAb && jetzt <= gueltigBis,
-        vorbei: jetzt > gueltigBis,
+        zeitlos,
+        offen: zeitlos || (jetzt >= einlassAb && jetzt <= gueltigBis),
+        vorbei: !zeitlos && jetzt > gueltigBis,
       });
     }
 
     if (action === "join") {
       const name = String(body.name || "").trim().slice(0, 40);
       if (name.length < 2) return fehler("Bitte sag uns kurz deinen Namen.");
-      if (jetzt < einlassAb) {
+      if (!zeitlos && jetzt < einlassAb) {
         const min = Math.ceil((einlassAb - jetzt) / 60000);
         const wann = min >= 60 ? `in ${Math.floor(min / 60)} Std. ${min % 60} Min.` : `in ${min} Min.`;
         return fehler(`Noch etwas Geduld! Der Call öffnet ${VORLAUF_MINUTEN} Minuten vor Beginn (${wann}).`, 403);
       }
-      if (jetzt > gueltigBis) return fehler("Dieser Call ist schon vorbei.", 410);
+      if (!zeitlos && jetzt > gueltigBis) return fehler("Dieser Call ist schon vorbei.", 410);
 
-      const expUnix = Math.floor(gueltigBis / 1000);
+      // Raum-Ablauf: zeitlose Calls bekommen einen langlebigen Raum (60 Tage)
+      // und wir prüfen bei JEDEM Beitritt, dass er wirklich existiert (falls
+      // Daily einen abgelaufenen Raum aufgeräumt hat, wird er neu erstellt).
+      const roomExpUnix = Math.floor((zeitlos ? jetzt + 60 * 86400000 : gueltigBis) / 1000);
+      const tokenExpUnix = Math.floor((zeitlos ? jetzt + 12 * 3600000 : gueltigBis) / 1000);
       let roomName = lesson.daily_room_name;
       let roomUrl = lesson.daily_room_url;
-      if (!roomName || !roomUrl) {
-        const raum = await ensureDailyRoom(lesson, expUnix);
-        await sb.from("lessons")
-          .update({ daily_room_name: raum.name, daily_room_url: raum.url })
-          .eq("id", lesson.id).is("daily_room_name", null);
+      if (zeitlos || !roomName || !roomUrl) {
+        const raum = await ensureDailyRoom(lesson, roomExpUnix);
+        if (!roomName || !roomUrl) {
+          await sb.from("lessons")
+            .update({ daily_room_name: raum.name, daily_room_url: raum.url })
+            .eq("id", lesson.id).is("daily_room_name", null);
+        }
         roomName = raum.name;
         roomUrl = raum.url;
       }
-      const meetingToken = await createMeetingToken(roomName, name, false, expUnix);
+      const meetingToken = await createMeetingToken(roomName, name, false, tokenExpUnix);
       return ok({ roomUrl, token: meetingToken, titel: lesson.title });
     }
 
