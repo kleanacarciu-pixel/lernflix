@@ -173,6 +173,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .lessonbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .lessonbar .btn{margin-left:auto;text-decoration:none;display:inline-block}
 .lessonbar .btn[disabled]{cursor:default;opacity:.75}
+.lessonbar .lbweg{background:none;border:0;color:#8b959d;font:inherit;font-size:.95rem;cursor:pointer;padding:3px 6px;border-radius:7px;flex:0 0 auto}
+.lessonbar .lbweg:hover{background:rgba(0,0,0,.06);color:#4a545c}
 /* Läuft die Seite schon als installierte App, braucht niemand die Anleitung */
 @media (display-mode: standalone){.kal .applink{display:none}}
 .kal .kzlink{text-decoration:none;font-size:.95rem;margin-left:2px}
@@ -265,6 +267,11 @@ export default function KalenderPage() {
   const [viewMonth, setViewMonth] = useState<Date>(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
   // Monatskalender als Aufklapper (v. a. am Handy: auf den Titel oben tippen)
   const [mkOffen, setMkOffen] = useState(false);
+  // Weggeklickte "Nächste Stunde"-Leiste (✕): gemerkte Stunden-ID; taucht
+  // erst wieder auf, wenn eine ANDERE Stunde die nächste ist
+  const [stundeWeg, setStundeWeg] = useState<string>(() => {
+    try { return typeof window !== "undefined" ? localStorage.getItem("lma_stunde_weg") || "" : ""; } catch { return ""; }
+  });
   const [days, setDays] = useState<Day[]>([]);
   const [balance, setBalance] = useState<Balance | null>(null);
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
@@ -675,7 +682,10 @@ export default function KalenderPage() {
 
         {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung).</div>}
 
-        {session && nextLesson && <StundenLeiste lesson={nextLesson} istLehrerin={session.role === "admin"} />}
+        {session && nextLesson && nextLesson.id !== stundeWeg && (
+          <StundenLeiste lesson={nextLesson} istLehrerin={session.role === "admin"}
+            onWeg={() => { setStundeWeg(nextLesson.id); try { localStorage.setItem("lma_stunde_weg", nextLesson.id); } catch { } }} />
+        )}
 
         {balance && (
           <div className="balance">
@@ -822,7 +832,7 @@ function buildLegend(role: string) {
 // Virtuelles Klassenzimmer: Leiste mit "Zur Stunde"-Button für die nächste
 // anstehende Stunde. Schüler dürfen ab 15 Min vor Beginn rein (vorher zeigt
 // der Button einen Countdown), Kleana jederzeit.
-function StundenLeiste({ lesson, istLehrerin }: { lesson: NextLesson; istLehrerin: boolean }) {
+function StundenLeiste({ lesson, istLehrerin, onWeg }: { lesson: NextLesson; istLehrerin: boolean; onWeg: () => void }) {
   // Aktuelle Zeit als State, jede halbe Minute aktualisiert -> Countdown bleibt frisch
   const [jetzt, setJetzt] = useState<number | null>(null);
   useEffect(() => {
@@ -841,6 +851,7 @@ function StundenLeiste({ lesson, istLehrerin }: { lesson: NextLesson; istLehreri
     return (
       <div className="hint lessonbar">
         <span>🏫 <b>Nächste Stunde:</b> {lesson.title} – {wann} · vor Ort</span>
+        <button className="lbweg" style={{ marginLeft: "auto" }} title="Hinweis ausblenden" onClick={onWeg}>✕</button>
       </div>
     );
   }
@@ -854,6 +865,7 @@ function StundenLeiste({ lesson, istLehrerin }: { lesson: NextLesson; istLehreri
       {offen
         ? <a className="btn p sm" href={`/stunde/${lesson.id}`}>Zur Stunde</a>
         : <button className="btn g sm" disabled title="Der Raum öffnet 15 Minuten vor Beginn">Beitritt in {rest}</button>}
+      <button className="lbweg" title="Hinweis ausblenden" onClick={onWeg}>✕</button>
     </div>
   );
 }
