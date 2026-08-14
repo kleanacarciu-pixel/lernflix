@@ -2,9 +2,9 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 // ------- Typen -------
-type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean };
+type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number };
 type Day = { date: string; weekday: number; slots: Slot[] };
-type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null }[] };
+type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[] };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
@@ -13,7 +13,11 @@ type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+// Halbstunden-Raster wie auf dem Server: 8, 8.5 (=8:30), … 19.5 (=19:30)
+const HOURS: number[] = [];
+for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
+const DAUERN = [30, 45, 60, 90];
+const fmtZeit = (hour: number) => `${String(Math.floor(hour)).padStart(2, "0")}:${hour % 1 ? "30" : "00"}`;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed" };
@@ -129,7 +133,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .kgrid thead th.today{color:var(--teal);background:rgba(43,179,192,.10)}
 .kgrid thead th .now{display:block;font-size:.62rem;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;margin:3px auto 0;padding:1px 0;max-width:46px}
 .kgrid tbody th{background:#fafafa;font-size:.82rem;color:var(--muted);font-weight:600}
-.cell{height:52px;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 4px;text-align:center;overflow:hidden;line-height:1.15}
+.cell{height:34px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0 4px;text-align:center;overflow:hidden;line-height:1.15}
 .cell.free{background:#eafaf7;color:#127a5c}.cell.busy{background:#cfd6da;color:#3a4145}
 .cell.mine{background:var(--grad);color:#fff;font-weight:600}.cell.req{background:#fff3d6;color:#8a6d1a}
 .cell.blk{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73;font-weight:600}
@@ -284,8 +288,16 @@ export default function KalenderPage() {
   // ---- Slot-Klick ----
   function onSlot(date: string, s: Slot) {
     if (busy) return;
+    // Fortsetzungs-Zelle eines längeren Termins? Zum Start-Slot umleiten,
+    // damit alle Aktionen (Absagen, Bestätigen, …) am Anker landen.
+    if (s.cont && s.anchor != null) {
+      const tag = days.find((d) => d.date === date);
+      const anker = tag?.slots.find((x) => x.hour === s.anchor);
+      if (anker) { onSlot(date, anker); return; }
+    }
     const role = session?.role || "public";
-    const when = `${DAYS[(parseIso(date).getDay() + 6) % 7]} ${dm(parseIso(date))} um ${pad(s.hour)}:00`;
+    const zeit = s.dauer ? `${fmtZeit(s.hour)}–${fmtZeit(s.hour + s.dauer / 60)}` : `${fmtZeit(s.hour)}`;
+    const when = `${DAYS[(parseIso(date).getDay() + 6) % 7]} ${dm(parseIso(date))} um ${zeit}`;
     if (s.state === "closed" || s.state === "past") return;
 
     if (role === "public") {
@@ -363,8 +375,8 @@ export default function KalenderPage() {
   }
 
   function openProbe(date: string, hour: number, when: string) {
-    setModal(<ProbeForm when={when} onClose={() => setModal(null)} onSubmit={async (name, email, m) => {
-      const d = await api("requestProbe", { date, hour, mode: m, name, email });
+    setModal(<ProbeForm when={when} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin) => {
+      const d = await api("requestProbe", { date, hour, mode: m, name, email, dauerMin });
       if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
@@ -386,7 +398,7 @@ export default function KalenderPage() {
     const date = r.date || nextWeekdayDate(r.weekday ?? 0);
     const hour = r.hour;
     const dt = parseIso(date);
-    const when = `${DAYS[(dt.getDay() + 6) % 7]} ${dm(dt)} um ${pad(hour)}:00`;
+    const when = `${DAYS[(dt.getDay() + 6) % 7]} ${dm(dt)} um ${fmtZeit(hour)}`;
     const kindLbl = r.kind === "fix" ? "Fester wöchentlicher Termin" : r.kind === "probe" ? "Probestunde" : "Extra-/Nachholstunde";
     jumpTo(date);
     setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{r.who}</b> · {when}</p><p style={{ margin: "0 0 8px" }}>{kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</p>
@@ -412,12 +424,9 @@ export default function KalenderPage() {
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
-    setModal(<div className="modal"><h2>{title}</h2><p>Findet die Stunde online oder vor Ort statt?</p>
-      <div className="col">
-        <button className="btn p" onClick={() => act(action, { date, hour, mode: "online" })}>💻 Online</button>
-        <button className="btn p" onClick={() => act(action, { date, hour, mode: "vor_ort" })}>📍 Vor Ort</button>
-        <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
-      </div></div>);
+    setModal(<BuchungsWahl title={title} startZeit={fmtZeit(hour)}
+      onClose={() => setModal(null)}
+      onSubmit={(m, d) => act(action, { date, hour, mode: m, dauerMin: d })} />);
   }
 
   function openAddStudent() {
@@ -471,7 +480,7 @@ export default function KalenderPage() {
           <div className="balance">
             {balance.fix && balance.fix.length > 0 && balance.fix.map((f, i) => (
               <button key={i} className="pill fixpill" title="Zum Termin springen" onClick={() => { const d = nextWeekdayDate(f.weekday); jumpTo(d); }}>
-                Fester Termin: {DAYS[f.weekday]} {pad(f.hour)}:00{f.mode ? " " + modeEmoji(f.mode) : ""}
+                Fester Termin: {DAYS[f.weekday]} {fmtZeit(f.hour)}{f.dauer && f.dauer !== 60 ? ` (${f.dauer} Min.)` : ""}{f.mode ? " " + modeEmoji(f.mode) : ""}
               </button>
             ))}
             <span className="lbl">Deine Stunden:</span>
@@ -500,7 +509,7 @@ export default function KalenderPage() {
             <h3>Offene Anfragen (alle Daten)</h3>
             {inbox.requests.length === 0 ? <p style={{ color: "#999", margin: "6px 0 0" }}>Keine offenen Anfragen.</p> :
               <div className="inbxlist">{inbox.requests.map((r, i) => {
-                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${pad(r.hour)}:00` : `jeden ${DAYS[r.weekday ?? 0]} ${pad(r.hour)}:00`;
+                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${fmtZeit(r.hour)}` : `jeden ${DAYS[r.weekday ?? 0]} ${fmtZeit(r.hour)}`;
                 const kindLbl = r.kind === "fix" ? "fester Termin" : r.kind === "probe" ? "Probestunde" : "Extra-Stunde";
                 return <button key={i} className="inbxrow" onClick={() => openRequest(r)}>
                   <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">bestätigen ›</span></button>;
@@ -508,7 +517,7 @@ export default function KalenderPage() {
             {inbox.cancellations.length > 0 && <>
               <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
               <div className="inbxlist">{inbox.cancellations.map((c, i) => (
-                <button key={i} className="inbxrow" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {pad(c.hour)}:00 · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
+                <button key={i} className="inbxrow" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
               ))}</div>
             </>}
           </div>
@@ -540,7 +549,7 @@ export default function KalenderPage() {
                 return <th key={d.date} className={isToday ? "today" : ""}>{DAYS[d.weekday]}<small>{dm(dt)}</small>{isToday ? <span className="now">heute</span> : null}</th>;
               })}</tr></thead>
               <tbody>{HOURS.map((h) => (
-                <tr key={h}><th>{h}:00</th>{days.map((d) => {
+                <tr key={h}><th>{fmtZeit(h)}</th>{days.map((d) => {
                   const s = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
                   const v = cellView(s, role);
                   const dim = filterCls && v.cls !== filterCls ? " dim" : "";
@@ -554,7 +563,7 @@ export default function KalenderPage() {
               ))}</div>
               <div className="daylist">
                 {selSlots.map((s) => { const v = cellView(s, role); const dim = filterCls && v.cls !== filterCls ? " dim" : ""; return (
-                  <button key={s.hour} className={"dayrow " + v.cls + dim} onClick={() => onSlot(effSel, s)}><span className="dh">{s.hour}:00</span><span className="dl">{v.label || "frei"}</span></button>
+                  <button key={s.hour} className={"dayrow " + v.cls + dim} onClick={() => onSlot(effSel, s)}><span className="dh">{fmtZeit(s.hour)}</span><span className="dl">{v.label || "frei"}</span></button>
                 ); })}
                 {selSlots.length === 0 && <div style={{ color: "#999", padding: "10px 2px" }}>Keine Termine an diesem Tag.</div>}
               </div>
@@ -575,8 +584,13 @@ function modeEmoji(m?: string | null) { return m === "online" ? "💻" : m === "
 function modeText(m?: string | null) { return m === "online" ? "💻 Online" : m === "vor_ort" ? "📍 Vor Ort" : ""; }
 function cellView(s: Slot, role: string): { cls: string; label: string } {
   if (s.state === "closed") return { cls: "closed", label: "" };
-  if (s.state === "past") return { cls: "past", label: "" };
+  if (s.state === "past" && !s.cont) return { cls: "past", label: "" };
   if (s.state === "free") return { cls: "free", label: "frei" };
+  // Fortsetzungs-Zelle eines längeren Termins: gleiche Farbe, dezentes Zeichen
+  if (s.cont) {
+    const cls = s.state === "block" ? "blk" : s.mine ? "mine" : s.state === "req" ? (role === "admin" || s.mine ? "req" : "busy") : "busy";
+    return { cls, label: "⋯" };
+  }
   if (s.state === "block") return { cls: "blk", label: role === "admin" ? "Geblockt" : "Belegt" };
   const e = modeEmoji(s.mode);
   if (s.state === "req") {
@@ -652,16 +666,46 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
 }
-function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name: string, email: string, mode: string) => Promise<string>; onClose: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+// Dauer + Online/vor-Ort wählen (für feste Termine und Extra-Stunden).
+// Die Zeitspanne aktualisiert sich live, wie in Outlook: 14:30–15:15.
+function BuchungsWahl({ title, startZeit, onSubmit, onClose }: {
+  title: string; startZeit: string;
+  onSubmit: (mode: string, dauerMin: number) => void; onClose: () => void;
+}) {
+  const [dauer, setDauer] = useState(60);
+  const [sh, sm] = startZeit.split(":").map(Number);
+  const endeMin = sh * 60 + sm + dauer;
+  const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
+  return <div className="modal"><h2>{title}</h2>
+    <p>Beginn <b>{startZeit}</b> – wie lange soll die Stunde dauern?</p>
+    <div className="acts" style={{ marginTop: 6 }}>
+      {DAUERN.map((m) => (
+        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
+      ))}
+    </div>
+    <p style={{ margin: "10px 0 4px" }}>Also <b>{startZeit}–{ende}</b>. Und: online oder vor Ort?</p>
+    <div className="col">
+      <button className="btn p" onClick={() => onSubmit("online", dauer)}>💻 Online</button>
+      <button className="btn p" onClick={() => onSubmit("vor_ort", dauer)}>📍 Vor Ort</button>
+      <button className="btn g" onClick={onClose}>Zurück</button>
+    </div></div>;
+}
+function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name: string, email: string, mode: string, dauerMin: number) => Promise<string>; onClose: () => void }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(60); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
-    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode)); setLoad(false);
+    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer)); setLoad(false);
   }
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
+    <label>Wie lange?</label>
+    <div className="acts" style={{ marginTop: 6 }}>
+      {DAUERN.map((m) => (
+        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
+      ))}
+    </div>
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
