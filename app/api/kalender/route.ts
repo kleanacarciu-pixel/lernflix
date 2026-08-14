@@ -245,6 +245,35 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: `Schüler „${p.name}" entfernt.` });
     }
 
+    if (action === "adminBook") {
+      // Kleana trägt selbst einen Termin für einen Schüler ein – mit Start-
+      // und Endzeit wie beim Schüler-Buchen, sofort bestätigt (keine Anfrage).
+      if (!validSlot || !isOpen(weekdayOf(date), hour, dauerMin)) return bad("Ungültiger Slot.");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
+      const sid = String(body.studentId || "");
+      const sp = await getProfile(sid);
+      if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
+      if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
+      if (body.fest === true) {
+        const { error } = await service().from("fixed_slots").insert({
+          student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
+        });
+        if (error) return bad("Eintragen fehlgeschlagen: " + error.message);
+        if (sp.email) { const em = sp.email; after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode))); }
+        await syncLessons();
+        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
+      }
+      if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
+      const counted = await applyEinzelCounting(sp);
+      { const { error } = await service().from("appointments").insert({
+          student_id: sid, slot_date: date, hour, kind: "einzel", status: "bestaetigt", mode, dauer_min: dauerMin, counted,
+        });
+        if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
+      if (sp.email) { const em = sp.email; after(() => sendMail(em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode))); }
+      await syncLessons();
+      return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
+    }
+
     if (action === "createCall") {
       // Video-Call für Probestunde/Masterclass anlegen: Stunde (kind webinar)
       // ohne festen Schüler. Bewusst OHNE Zeitfenster: der Gast-Link
@@ -348,12 +377,14 @@ export async function POST(req: Request): Promise<Response> {
       return bad("Hier ist kein Termin zum Absagen.");
     }
     if (action === "block") {
-      if (!validSlot) return bad("Ungültiger Slot.");
+      if (!validSlot || !isOpen(weekdayOf(date), hour, dauerMin)) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
-      if (s.booking || (s.fixedActive && !s.absage)) return bad("Slot ist belegt – kann nicht geblockt werden.");
-      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt" });
-      return ok({ message: "Slot geblockt (nur dieses Datum)." });
+      if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
+      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+      const endeMin = Math.round(hour * 60 + dauerMin);
+      const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
+      return ok({ message: `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
       if (!validSlot) return bad("Ungültiger Slot.");
