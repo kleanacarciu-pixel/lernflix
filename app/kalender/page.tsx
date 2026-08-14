@@ -415,8 +415,8 @@ export default function KalenderPage() {
   function openProbe(date: string, hour: number, when: string) {
     const wd = (parseIso(date).getDay() + 6) % 7;
     const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
-    setModal(<ProbeForm when={when} startHour={hour} maxDauer={maxDauer} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin) => {
-      const d = await api("requestProbe", { date, hour, mode: m, name, email, dauerMin });
+    setModal(<ProbeForm when={when} startHour={hour} maxDauer={maxDauer} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin, off) => {
+      const d = await api("requestProbe", { date, hour: hour + off / 60, mode: m, name, email, dauerMin });
       if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
@@ -469,7 +469,7 @@ export default function KalenderPage() {
     const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
     setModal(<BuchungsWahl title={title} startHour={hour} maxDauer={maxDauer}
       onClose={() => setModal(null)}
-      onSubmit={(m, d) => act(action, { date, hour, mode: m, dauerMin: d })} />);
+      onSubmit={(m, d, off) => act(action, { date, hour: hour + off / 60, mode: m, dauerMin: d })} />);
   }
 
   function openAddStudent() {
@@ -841,33 +841,37 @@ function BlockWahl({ when, startHour, maxDauer, onSubmit, onClose }: {
 }
 function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
   title: string; startHour: number; maxDauer: number;
-  onSubmit: (mode: string, dauerMin: number) => void; onClose: () => void;
+  onSubmit: (mode: string, dauerMin: number, startOff: number) => void; onClose: () => void;
 }) {
   const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const ende = minZuZeit(Math.round(startHour * 60) + dauer);
+  const [off, setOff] = useState(0);
+  const startMin = Math.round(startHour * 60) + off;
+  const ende = minZuZeit(startMin + dauer);
   return <div className="modal"><h2>{title}</h2>
-    <p>Wann soll die Stunde enden?</p>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{fmtZeit(startHour)}–{ende}</b>. Und: online oder vor Ort?</p>
+    <p>Von wann bis wann soll die Stunde gehen?</p>
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
+      step={5} startOff={off} setStartOff={setOff} />
+    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>. Und: online oder vor Ort?</p>
     <div className="col">
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer)}>💻 Online</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer, off)}>💻 Online</button>
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer, off)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-function ProbeForm({ when, startHour, maxDauer, onSubmit, onClose }: { when: string; startHour: number; maxDauer: number; onSubmit: (name: string, email: string, mode: string, dauerMin: number) => Promise<string>; onClose: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(Math.min(60, maxDauer)); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+function ProbeForm({ when, startHour, maxDauer, onSubmit, onClose }: { when: string; startHour: number; maxDauer: number; onSubmit: (name: string, email: string, mode: string, dauerMin: number, startOff: number) => Promise<string>; onClose: () => void }) {
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(Math.min(60, maxDauer)); const [off, setOff] = useState(0); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
-    if (!dauerGueltig(dauer)) { setErr("Bitte 15–240 Minuten in 5er-Schritten wählen."); return; }
-    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer)); setLoad(false);
+    if (!dauerGueltig(dauer)) { setErr("Bitte 5–240 Minuten in 5er-Schritten wählen."); return; }
+    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer, off)); setLoad(false);
   }
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
     <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
+      step={5} startOff={off} setStartOff={setOff} />
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
