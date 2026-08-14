@@ -421,16 +421,16 @@ export default function KalenderPage() {
     // admin
     if (s.state === "free") {
       const wd = (parseIso(date).getDay() + 6) % 7;
-      const maxDauer = ((wd < 5 ? 20 : 19) - s.hour) * 60;
+      const schlussMin = (wd < 5 ? 20 : 19) * 60;
       setModal(<div className="modal"><h2>Freier Slot: {when}</h2>
         <div className="col">
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
-            startHour={startZelle} maxDauer={maxDauer} api={api} onClose={() => setModal(null)}
-            onSubmit={(sid, m, d, off, fest) => act("adminBook", { date, hour: startZelle + off / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
+            startHour={startZelle} schlussMin={schlussMin} api={api} onClose={() => setModal(null)}
+            onSubmit={(sid, m, vonMin, d, fest) => act("adminBook", { date, hour: vonMin / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
             📅 Termin für Schüler eintragen
           </button>
-          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} maxDauer={maxDauer}
-            onClose={() => setModal(null)} onSubmit={(d, off) => act("block", { date, hour: startZelle + off / 60, dauerMin: d })} />); }}>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
+            onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("block", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
             ⛔ Blockieren (nur dieses Datum)
           </button>
           <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>⛔ Jeden {DAYS[wd]} dauerhaft blockieren (1 Std.)</button>
@@ -469,9 +469,9 @@ export default function KalenderPage() {
 
   function openProbe(date: string, hour: number, when: string) {
     const wd = (parseIso(date).getDay() + 6) % 7;
-    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
-    setModal(<ProbeForm when={when} startHour={hour} maxDauer={maxDauer} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin, off) => {
-      const d = await api("requestProbe", { date, hour: hour + off / 60, mode: m, name, email, dauerMin });
+    const schlussMin = (wd < 5 ? 20 : 19) * 60;
+    setModal(<ProbeForm when={when} startHour={hour} schlussMin={schlussMin} onClose={() => setModal(null)} onSubmit={async (name, email, m, vonMin, dauerMin) => {
+      const d = await api("requestProbe", { date, hour: vonMin / 60, mode: m, name, email, dauerMin });
       if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
@@ -519,12 +519,12 @@ export default function KalenderPage() {
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
-    // Endzeit-Auswahl endet spätestens am Ladenschluss (Mo–Fr 20:00, Sa/So 19:00)
+    // Spätestes Ende: Ladenschluss (Mo–Fr 20:00, Sa/So 19:00)
     const wd = (parseIso(date).getDay() + 6) % 7;
-    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
-    setModal(<BuchungsWahl title={title} startHour={hour} maxDauer={maxDauer}
+    const schlussMin = (wd < 5 ? 20 : 19) * 60;
+    setModal(<BuchungsWahl title={title} startHour={hour} schlussMin={schlussMin}
       onClose={() => setModal(null)}
-      onSubmit={(m, d, off) => act(action, { date, hour: hour + off / 60, mode: m, dauerMin: d })} />);
+      onSubmit={(m, vonMin, d) => act(action, { date, hour: vonMin / 60, mode: m, dauerMin: d })} />);
   }
 
   function openAddStudent() {
@@ -836,51 +836,45 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
 }
 // Start- und Endzeit wie in Outlook: Start = angeklickter Slot (fest),
 // Ende per Auswahlliste (15-Minuten-Schritte bis Ladenschluss).
-const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 5 && m <= 240 && m % 5 === 0;
 const minZuZeit = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-// Start-/Endzeit wie in Outlook. Mit setStartOff wird auch die Startzeit
-// wählbar (5-Minuten-Schritte innerhalb der angeklickten halben Stunde).
-function EndzeitWahl({ startHour, maxDauer, dauer, setDauer, step = 15, startOff = 0, setStartOff }: {
-  startHour: number; maxDauer: number; dauer: number; setDauer: (m: number) => void;
-  step?: number; startOff?: number; setStartOff?: (off: number) => void;
+const zeitZuMin = (z: string) => { const [h, m] = z.split(":").map(Number); return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : NaN; };
+// Von–Bis frei eintippbar, JEDE Minute möglich (auch 16:33) – einfach wie in
+// Outlook: zwei Uhrzeit-Felder, tippen oder über die Uhr wählen.
+function ZeitVonBis({ von, bis, setVon, setBis }: {
+  von: string; bis: string; setVon: (z: string) => void; setBis: (z: string) => void;
 }) {
-  const startMin = Math.round(startHour * 60) + startOff;
-  const maxD = maxDauer - startOff;
-  const opts: number[] = [];
-  for (let m = step; m <= Math.min(240, maxD); m += step) opts.push(m);
   return (
     <div className="acts" style={{ marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
-      <span style={{ fontWeight: 600 }}>Startzeit</span>
-      {setStartOff ? (
-        <select value={startOff} onChange={(e) => setStartOff(Number(e.target.value))} aria-label="Startzeit">
-          {[0, 5, 10, 15, 20, 25].map((o) => (
-            <option key={o} value={o}>{minZuZeit(Math.round(startHour * 60) + o)}</option>
-          ))}
-        </select>
-      ) : (
-        <input value={fmtZeit(startHour)} disabled style={{ width: 74, textAlign: "center" }} aria-label="Startzeit" />
-      )}
-      <span style={{ fontWeight: 600 }}>Endzeit</span>
-      <select value={dauer} onChange={(e) => setDauer(Number(e.target.value))} aria-label="Endzeit" style={{ minWidth: 140 }}>
-        {opts.map((m) => (
-          <option key={m} value={m}>{minZuZeit(startMin + m)}  ({m} Min.)</option>
-        ))}
-      </select>
+      <span style={{ fontWeight: 600 }}>Von</span>
+      <input type="time" value={von} onChange={(e) => setVon(e.target.value)} aria-label="Startzeit" style={{ width: 110 }} />
+      <span style={{ fontWeight: 600 }}>bis</span>
+      <input type="time" value={bis} onChange={(e) => setBis(e.target.value)} aria-label="Endzeit" style={{ width: 110 }} />
     </div>
   );
+}
+// Prüfung der Von–Bis-Zeiten; leerer Text = alles gut
+function zeitFehler(von: string, bis: string, schlussMin: number): string {
+  const v = zeitZuMin(von), b = zeitZuMin(bis);
+  if (!Number.isFinite(v) || !Number.isFinite(b)) return "Bitte Von- und Bis-Zeit angeben.";
+  if (v < 480) return "Frühester Beginn: 08:00 Uhr.";
+  if (b > schlussMin) return `Spätestes Ende: ${minZuZeit(schlussMin)} Uhr.`;
+  if (b - v < 5) return "Die Stunde muss mindestens 5 Minuten dauern.";
+  if (b - v > 300) return "Maximal 5 Stunden am Stück.";
+  return "";
 }
 // Kleana trägt selbst einen Termin für einen Schüler ein – Startzeit
 // minutengenau wählbar (z. B. 8:05), sofort bestätigt. Die Schülerliste
 // lädt sich zur Sicherheit selbst nach, falls sie noch nicht da ist.
-function AdminBuchen({ students, startHour, maxDauer, api, onSubmit, onClose }: {
-  students: { id: string; name: string }[]; startHour: number; maxDauer: number;
+function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }: {
+  students: { id: string; name: string }[]; startHour: number; schlussMin: number;
   api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>;
-  onSubmit: (studentId: string, mode: string, dauerMin: number, startOff: number, fest: boolean) => void; onClose: () => void;
+  onSubmit: (studentId: string, mode: string, vonMin: number, dauerMin: number, fest: boolean) => void; onClose: () => void;
 }) {
+  const startMin = Math.round(startHour * 60);
   const [liste, setListe] = useState(students);
   const [sid, setSid] = useState(students[0]?.id || "");
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const [fest, setFest] = useState(false);
   useEffect(() => {
     if (liste.length > 0) return;
@@ -892,76 +886,80 @@ function AdminBuchen({ students, startHour, maxDauer, api, onSubmit, onClose }: 
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const startMin = Math.round(startHour * 60) + off;
-  const ende = minZuZeit(startMin + dauer);
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>📅 Termin eintragen</h2>
     <label>Für welchen Schüler?</label>
     <select value={sid} onChange={(e) => setSid(e.target.value)} style={{ width: "100%" }}>
       {liste.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
       {liste.length === 0 && <option value="">Lade Schüler …</option>}
     </select>
-    <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <label>Von wann bis wann? (frei eintippbar, z. B. 16:33)</label>
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     <label>Einmalig oder jede Woche?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (!fest ? "p" : "g")} onClick={() => setFest(false)}>Nur dieses Datum</button>
       <button type="button" className={"btn " + (fest ? "p" : "g")} onClick={() => setFest(true)}>Jede Woche fest</button>
     </div>
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>
+    {fehler ? <div className="err">{fehler}</div>
+      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>}
     <div className="col">
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "online", dauer, off, fest)}>💻 Online</button>
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "vor_ort", dauer, off, fest)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>💻 Online</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
 // Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren)
-function BlockWahl({ when, startHour, maxDauer, onSubmit, onClose }: {
-  when: string; startHour: number; maxDauer: number;
-  onSubmit: (dauerMin: number, startOff: number) => void; onClose: () => void;
+function BlockWahl({ when, startHour, schlussMin, onSubmit, onClose }: {
+  when: string; startHour: number; schlussMin: number;
+  onSubmit: (vonMin: number, dauerMin: number) => void; onClose: () => void;
 }) {
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
+  const startMin = Math.round(startHour * 60);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>⛔ Blockieren</h2><p>{when}</p>
     <div className="okbox">Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.</div>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    {fehler && <div className="err">{fehler}</div>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit(dauer, off)}>Blockieren</button></div></div>;
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>Blockieren</button></div></div>;
 }
-function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
-  title: string; startHour: number; maxDauer: number;
-  onSubmit: (mode: string, dauerMin: number, startOff: number) => void; onClose: () => void;
+function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
+  title: string; startHour: number; schlussMin: number;
+  onSubmit: (mode: string, vonMin: number, dauerMin: number) => void; onClose: () => void;
 }) {
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
-  const startMin = Math.round(startHour * 60) + off;
-  const ende = minZuZeit(startMin + dauer);
+  const startMin = Math.round(startHour * 60);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>{title}</h2>
-    <p>Von wann bis wann soll die Stunde gehen?</p>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>. Und: online oder vor Ort?</p>
+    <p>Von wann bis wann soll die Stunde gehen? (frei eintippbar, z. B. 16:33)</p>
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    {fehler ? <div className="err">{fehler}</div>
+      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>. Und: online oder vor Ort?</p>}
     <div className="col">
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer, off)}>💻 Online</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer, off)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit("online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>💻 Online</button>
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit("vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-function ProbeForm({ when, startHour, maxDauer, onSubmit, onClose }: { when: string; startHour: number; maxDauer: number; onSubmit: (name: string, email: string, mode: string, dauerMin: number, startOff: number) => Promise<string>; onClose: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(Math.min(60, maxDauer)); const [off, setOff] = useState(0); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose }: { when: string; startHour: number; schlussMin: number; onSubmit: (name: string, email: string, mode: string, vonMin: number, dauerMin: number) => Promise<string>; onClose: () => void }) {
+  const startMin = Math.round(startHour * 60);
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState("");
+  const [von, setVon] = useState(minZuZeit(startMin)); const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
-    if (!dauerGueltig(dauer)) { setErr("Bitte 5–240 Minuten in 5er-Schritten wählen."); return; }
-    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer, off)); setLoad(false);
+    const zf = zeitFehler(von, bis, schlussMin);
+    if (zf) { setErr(zf); return; }
+    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))); setLoad(false);
   }
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
     <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
