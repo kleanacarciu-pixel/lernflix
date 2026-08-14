@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 // ------- Typen -------
 type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number };
-type Day = { date: string; weekday: number; slots: Slot[] };
+type Absage = { start: number; dauer: number; name: string };
+type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[] };
@@ -22,7 +23,7 @@ const fmtZeit = (hour: number) => { const m = Math.round(hour * 60); return `${S
 const STUNDE_PX = 56;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
-const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed" };
+const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed", "sw-abges": "abges" };
 function mondayOf(d: Date) { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function dm(d: Date) { return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`; }
@@ -124,9 +125,10 @@ const CSS = `
 .legclear{border:0;background:#f7dcd4;color:#b4491f;cursor:pointer;font:inherit;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:8px}
 .legend i{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);flex:none}
 .cell.dim{opacity:.13}.dayrow.dim{opacity:.32}
-.sw-free{background:#eafaf7}.sw-busy{background:#cfd6da}.sw-mine{background:var(--grad);border-color:transparent}
-.sw-req{background:#fff3d6}.sw-closed{background:#f4f4f4}
-.sw-block{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 4px,#dee3e7 4px,#dee3e7 8px)}
+.sw-free{background:#eafaf7}.sw-busy{background:#d9eafb;border-color:#5b9bd5}.sw-mine{background:var(--grad);border-color:transparent}
+.sw-req{background:#fff3d6;border-color:#e3b84d}.sw-closed{background:#f4f4f4}
+.sw-block{background:#e7ebee;border-color:#aeb8c0}
+.sw-abges{background:#fde6e4;border-color:#d9655a}
 table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixed}
 .kgrid th,.kgrid td{border:1px solid var(--line);text-align:center;padding:0}
 .kgrid thead th:first-child,.kgrid tbody th{width:64px}
@@ -174,22 +176,28 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .okoerper{display:grid;grid-template-columns:56px repeat(7,1fr)}
 .ostunde{height:56px;font-size:.76rem;color:var(--muted);font-weight:600;text-align:right;padding:2px 6px 0 0;border-top:1px solid var(--line);background:#fafafa}
 .otag{position:relative;border-left:1px solid var(--line)}
-.ozelle{height:28px;border-top:1px solid #f0f2f4}
-.ozelle:nth-child(odd){border-top:1px solid var(--line)}
+.ozelle{height:28px;border-top:1px solid #f3f5f7}
+.ozelle:nth-child(odd){border-top:1px solid #e6eaee}
 .ozelle.frei{cursor:pointer}
-.ozelle.frei:hover{background:#eafaf7}
-.ozelle.zu{background:#f4f4f4}
-.ozelle.vorbei{background:#fbfbfb}
-.oblock{position:absolute;left:3px;right:3px;border-radius:8px;border:0;font:inherit;cursor:pointer;text-align:left;
-  padding:2px 7px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.14);display:flex;flex-direction:column;z-index:2}
+.ozelle.frei:hover{background:#f0fbf8}
+.ozelle.zu{background:#f6f7f8}
+.ozelle.vorbei{background:#fbfbfc}
+/* Termin-Blöcke im Outlook-Stil: zarte Fläche + kräftige Kante links */
+.oblock{position:absolute;left:3px;right:4px;border-radius:6px;border:0;border-left:4px solid transparent;font:inherit;cursor:pointer;text-align:left;
+  padding:2px 7px;overflow:hidden;box-shadow:0 1px 2px rgba(16,35,60,.14);display:flex;flex-direction:column;z-index:2}
 .oblock .obtitel{font-size:.78rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oblock .obzeit{font-size:.68rem;opacity:.8;line-height:1.15}
-.oblock.busy{background:#cfd6da;color:#3a4145}
-.oblock.mine{background:var(--grad);color:#fff}
-.oblock.req{background:#fff3d6;color:#8a6d1a}
-.oblock.blk{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73}
+.oblock.busy{background:#d9eafb;color:#174e85;border-left-color:#5b9bd5}       /* gebucht: blau + Name */
+.oblock.mine{background:var(--grad);color:#fff;border-left-color:rgba(255,255,255,.65)} /* deine eigene Stunde (Schüler) */
+.oblock.req{background:#fff3d6;color:#8a6d1a;border-left-color:#e3b84d}        /* Anfrage: gelb */
+.oblock.blk{background:#e7ebee;color:#5f6b73;border-left-color:#aeb8c0}        /* geblockt: grau */
+.oblock.abges{background:#fde6e4;color:#a33228;border-left-color:#d9655a;z-index:1} /* abgesagt: rot (nur Kleana) */
 .oblock.dim{opacity:.13}
 .oblock:hover{outline:2px solid var(--teal);outline-offset:-1px}
+/* Handy: Outlook-Tagesansicht (Zeitleiste + eine Tagesspalte) */
+.otagwrap{display:grid;grid-template-columns:46px 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:8px}
+.otagwrap .ostunde{height:56px}
+.otagwrap .otag{border-left:1px solid var(--line)}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -484,6 +492,55 @@ export default function KalenderPage() {
     setModal(<CallsModal api={api} onClose={() => setModal(null)} />);
   }
 
+  // Eine Tagesspalte der Outlook-Ansicht (Woche am PC, Einzeltag am Handy):
+  // Hintergrund-Zellen (frei klickbar) + schwebende Termin-Blöcke; Absagen
+  // erscheinen für Kleana als rote Info-Blöcke, der Zeitraum bleibt buchbar.
+  function tagSpalte(d: Day) {
+    const events: { start: number; dauer: number; s: Slot }[] = [];
+    const seen = new Set<number>();
+    d.slots.forEach((sl) => {
+      if (sl.state !== "busy" && sl.state !== "req" && sl.state !== "block") return;
+      const start = sl.cont && sl.anchor != null ? sl.anchor : sl.hour;
+      if (seen.has(start)) return;
+      seen.add(start);
+      events.push({ start, dauer: sl.dauer || 30, s: { ...sl, hour: start, cont: false, anchor: undefined } });
+    });
+    return (
+      <div key={d.date} className="otag">
+        {HOURS.map((h) => {
+          const sl = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
+          const frei = sl.state === "free";
+          const cls = sl.state === "closed" ? " zu" : sl.state === "past" ? " vorbei" : frei ? " frei" : "";
+          return <div key={h} className={"ozelle" + cls} onClick={frei ? () => onSlot(d.date, sl) : undefined} />;
+        })}
+        {(d.absagen || []).map((ab, i) => {
+          const dim = filterCls && filterCls !== "abges" ? " dim" : "";
+          return (
+            <button key={"ab" + i} className={"oblock abges" + dim}
+              style={{ top: (ab.start - 8) * STUNDE_PX, height: Math.max(18, (ab.dauer / 60) * STUNDE_PX - 2) }}
+              title="Abgesagt – der Zeitraum ist wieder frei"
+              onClick={() => { const zelle = d.slots.find((x) => x.hour === Math.floor(ab.start * 2) / 2); if (zelle) onSlot(d.date, zelle); }}>
+              <span className="obtitel">✗ {ab.name}</span>
+              {ab.dauer >= 30 && <span className="obzeit">{fmtZeit(ab.start)}–{minZuZeit(Math.round(ab.start * 60) + ab.dauer)} · abgesagt</span>}
+            </button>
+          );
+        })}
+        {events.map((ev) => {
+          const v = cellView(ev.s, role);
+          const dim = filterCls && v.cls !== filterCls ? " dim" : "";
+          return (
+            <button key={ev.start} className={"oblock " + v.cls + dim}
+              style={{ top: (ev.start - 8) * STUNDE_PX, height: Math.max(18, (ev.dauer / 60) * STUNDE_PX - 2) }}
+              onClick={() => onSlot(d.date, ev.s)}>
+              <span className="obtitel">{v.label || "Belegt"}</span>
+              {ev.dauer >= 30 && <span className="obzeit">{fmtZeit(ev.start)}–{minZuZeit(Math.round(ev.start * 60) + ev.dauer)}</span>}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   // ---- Sidebar-Wochenliste des Monats ----
   const monthWeeks: { key: string; label: string; on: boolean }[] = [];
   {
@@ -495,7 +552,6 @@ export default function KalenderPage() {
   const legend = buildLegend(role);
   const wEnd = addDays(weekStart, 6);
   const effSel = days.find((d) => d.date === selDay) ? selDay : (days.find((d) => d.date === today)?.date || days[0]?.date || "");
-  const selSlots = (days.find((d) => d.date === effSel)?.slots || []).filter((s) => s.state !== "closed");
   function jumpTo(dateStr: string) { const d = parseIso(dateStr); setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr); }
   function nextWeekdayDate(wd: number) { const t = new Date(); t.setHours(0, 0, 0, 0); for (let i = 0; i < 14; i++) { const x = addDays(t, i); if ((x.getDay() + 6) % 7 === wd) return iso(x); } return iso(t); }
 
@@ -598,52 +654,19 @@ export default function KalenderPage() {
                 <div>
                   {HOURS.filter((h) => h % 1 === 0).map((h) => <div key={h} className="ostunde">{fmtZeit(h)}</div>)}
                 </div>
-                {days.map((d) => {
-                  // Termin-Blöcke wie in Outlook: pro Anker genau ein Block,
-                  // Position und Höhe minutengenau aus Start + Dauer
-                  const events: { start: number; dauer: number; s: Slot }[] = [];
-                  const seen = new Set<number>();
-                  d.slots.forEach((sl) => {
-                    if (sl.state !== "busy" && sl.state !== "req" && sl.state !== "block") return;
-                    const start = sl.cont && sl.anchor != null ? sl.anchor : sl.hour;
-                    if (seen.has(start)) return;
-                    seen.add(start);
-                    events.push({ start, dauer: sl.dauer || 30, s: { ...sl, hour: start, cont: false, anchor: undefined } });
-                  });
-                  return (
-                    <div key={d.date} className="otag">
-                      {HOURS.map((h) => {
-                        const sl = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
-                        const frei = sl.state === "free";
-                        const cls = sl.state === "closed" ? " zu" : sl.state === "past" ? " vorbei" : frei ? " frei" : "";
-                        return <div key={h} className={"ozelle" + cls} onClick={frei ? () => onSlot(d.date, sl) : undefined} />;
-                      })}
-                      {events.map((ev) => {
-                        const v = cellView(ev.s, role);
-                        const dim = filterCls && v.cls !== filterCls ? " dim" : "";
-                        return (
-                          <button key={ev.start} className={"oblock " + v.cls + dim}
-                            style={{ top: (ev.start - 8) * STUNDE_PX, height: Math.max(18, (ev.dauer / 60) * STUNDE_PX - 2) }}
-                            onClick={() => onSlot(d.date, ev.s)}>
-                            <span className="obtitel">{v.label || "Belegt"}</span>
-                            {ev.dauer >= 30 && <span className="obzeit">{fmtZeit(ev.start)}–{minZuZeit(Math.round(ev.start * 60) + ev.dauer)}</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                {days.map((d) => tagSpalte(d))}
               </div>
             </div></div>
             <div className="dayview">
               <div className="daychips">{days.map((d) => (
                 <button key={d.date} className={"daychip" + (d.date === effSel ? " on" : "") + (d.date === today ? " td" : "")} onClick={() => setSelDay(d.date)}>{DAYS[d.weekday]}<small>{dm(parseIso(d.date))}</small></button>
               ))}</div>
-              <div className="daylist">
-                {selSlots.map((s) => { const v = cellView(s, role); const dim = filterCls && v.cls !== filterCls ? " dim" : ""; return (
-                  <button key={s.hour} className={"dayrow " + v.cls + dim} onClick={() => onSlot(effSel, s)}><span className="dh">{fmtZeit(s.hour)}</span><span className="dl">{v.label || "frei"}</span></button>
-                ); })}
-                {selSlots.length === 0 && <div style={{ color: "#999", padding: "10px 2px" }}>Keine Termine an diesem Tag.</div>}
+              {/* Handy: gleiche Outlook-Ansicht, nur ein Tag */}
+              <div className="otagwrap">
+                <div>
+                  {HOURS.filter((h) => h % 1 === 0).map((h) => <div key={h} className="ostunde">{fmtZeit(h)}</div>)}
+                </div>
+                {(() => { const d = days.find((x) => x.date === effSel); return d ? tagSpalte(d) : null; })()}
               </div>
             </div>
             </>}
@@ -685,7 +708,7 @@ function buildLegend(role: string) {
   const items = [{ c: "sw-free", t: "frei / buchbar" }];
   if (role === "public") items.push({ c: "sw-busy", t: "belegt" });
   else if (role === "student") items.push({ c: "sw-mine", t: "deine Stunde" }, { c: "sw-req", t: "angefragt" }, { c: "sw-busy", t: "belegt (andere)" });
-  else items.push({ c: "sw-mine", t: "gebucht" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-busy", t: "belegt" }, { c: "sw-block", t: "geblockt (du)" });
+  else items.push({ c: "sw-busy", t: "gebucht" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-abges", t: "abgesagt" }, { c: "sw-block", t: "geblockt (du)" });
   items.push({ c: "sw-closed", t: "geschlossen" });
   return items;
 }
