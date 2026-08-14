@@ -88,7 +88,11 @@ export async function POST(req: Request): Promise<Response> {
       let prof: Profile | null = null;
       if (token) {
         const user = await userFromToken(token);
-        if (user) { prof = await getProfile(user.id); if (prof) { role = prof.role === "admin" ? "admin" : "student"; viewerId = user.id; } }
+        // Abgelaufener Token darf NICHT still zur öffentlichen Sicht führen –
+        // 401 lässt den Client die Sitzung automatisch verlängern und erneut laden
+        if (!user) return bad("Bitte einloggen.", 401);
+        prof = await getProfile(user.id);
+        if (prof) { role = prof.role === "admin" ? "admin" : "student"; viewerId = user.id; }
       }
       const days = await buildWeek(monday, role, viewerId);
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
