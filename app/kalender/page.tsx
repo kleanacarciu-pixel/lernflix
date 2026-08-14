@@ -208,6 +208,26 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .otagwrap{display:grid;grid-template-columns:46px 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:8px}
 .otagwrap .ostunde{height:56px}
 .otagwrap .otag{border-left:1px solid var(--line)}
+/* Mini-Monatskalender (Outlook-Stil) */
+.minikal{margin-top:4px}
+.mk-wd{display:grid;grid-template-columns:repeat(7,1fr);font-size:.68rem;color:var(--muted);text-align:center;margin:8px 0 3px;font-weight:700}
+.mk-woche{display:grid;grid-template-columns:repeat(7,1fr);border-radius:9px;cursor:pointer}
+.mk-woche.on{background:rgba(43,179,192,.16);outline:1.5px solid rgba(43,179,192,.55)}
+.mk-tag{background:none;border:0;font:inherit;font-size:.8rem;padding:6px 0;cursor:pointer;border-radius:8px;color:#333}
+.mk-tag:hover{background:#e8f2f4}
+.mk-tag.aus{color:#bdc4ca}
+.mk-tag.heute{color:#fff;background:var(--teal);font-weight:700}
+/* Kopfleiste wie Outlook: Heute + Pfeile + Zeitraum */
+.wkhead{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.wkhead .heutebtn{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.wkhead .heutebtn:hover{background:#f2f6f7}
+.wkhead .pfeil{background:none;border:0;font:inherit;font-size:1.15rem;font-weight:700;cursor:pointer;color:#444;padding:4px 9px;border-radius:8px}
+.wkhead .pfeil:hover{background:#eef2f4}
+.wkhead b{font-size:1.02rem;margin-left:4px}
+@media(max-width:700px){
+  .side{display:none} /* am Handy navigieren Heute/Pfeile + Tages-Chips */
+  .wkhead b{font-size:.92rem}
+}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -305,6 +325,23 @@ export default function KalenderPage() {
     // loadWeek ist async – setState passiert erst nach dem await (kein synchroner Kaskaden-Render)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready) loadWeek();
+  }, [ready, loadWeek]);
+
+  // Immer aktuell, ohne manuelles Neuladen (wichtig im App-Betrieb):
+  // alle 30 s leise auffrischen + sofort beim Zurückkehren in die App/den Tab
+  useEffect(() => {
+    if (!ready) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadWeek();
+    }, 30000);
+    const sicht = () => { if (document.visibilityState === "visible") void loadWeek(); };
+    document.addEventListener("visibilitychange", sicht);
+    window.addEventListener("focus", sicht);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", sicht);
+      window.removeEventListener("focus", sicht);
+    };
   }, [ready, loadWeek]);
 
   // ---- Aktionen ----
@@ -552,11 +589,18 @@ export default function KalenderPage() {
   }
 
   // ---- Sidebar-Wochenliste des Monats ----
-  const monthWeeks: { key: string; label: string; on: boolean }[] = [];
+  const monthWeeks: { key: string; on: boolean; tage: { iso: string; nr: number; aussen: boolean }[] }[] = [];
   {
     const last = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0);
     let m = mondayOf(viewMonth);
-    while (m <= last) { const end = addDays(m, 6); monthWeeks.push({ key: iso(m), label: `${dm(m)}–${dm(end)}`, on: iso(m) === iso(weekStart) }); m = addDays(m, 7); }
+    while (m <= last) {
+      const tage = Array.from({ length: 7 }, (_, i) => {
+        const t = addDays(m, i);
+        return { iso: iso(t), nr: t.getDate(), aussen: t.getMonth() !== viewMonth.getMonth() };
+      });
+      monthWeeks.push({ key: iso(m), on: iso(m) === iso(weekStart), tage });
+      m = addDays(m, 7);
+    }
   }
   const role = session?.role || "public";
   const legend = buildLegend(role);
@@ -637,16 +681,29 @@ export default function KalenderPage() {
             <div className="mnav"><button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}>‹</button>
               <b>{MONTHS[viewMonth.getMonth()]} {viewMonth.getFullYear()}</b>
               <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}>›</button></div>
-            <div>{monthWeeks.map((w) => (
-              <button key={w.key} className={"wk" + (w.on ? " on" : "")} onClick={() => setWeekStart(parseIso(w.key))}>Woche <small>{w.label}</small></button>
-            ))}</div>
+            {/* Mini-Monatskalender wie in Outlook: Woche anklicken = hinspringen */}
+            <div className="minikal">
+              <div className="mk-wd">{["M", "D", "M", "D", "F", "S", "S"].map((w, i) => <span key={i}>{w}</span>)}</div>
+              {monthWeeks.map((w) => (
+                <div key={w.key} className={"mk-woche" + (w.on ? " on" : "")}>
+                  {w.tage.map((t) => (
+                    <button key={t.iso} className={"mk-tag" + (t.aussen ? " aus" : "") + (t.iso === today ? " heute" : "")}
+                      onClick={() => jumpTo(t.iso)}>{t.nr}</button>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="calwrap">
+            {/* Kopfleiste wie in Outlook: Heute + Pfeile + Zeitraum */}
             <div className="wkhead">
-              <button onClick={() => { const n = addDays(weekStart, -7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>‹ Woche</button>
-              <b>{dm(weekStart)} – {dm(wEnd)} {wEnd.getFullYear()}</b>
-              <button onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>Woche ›</button>
+              <button className="heutebtn" onClick={() => { const jetzt = new Date(); const n = mondayOf(jetzt); setWeekStart(n); setViewMonth(new Date(jetzt.getFullYear(), jetzt.getMonth(), 1)); setSelDay(iso(jetzt)); }}>→ Heute</button>
+              <button className="pfeil" aria-label="Vorherige Woche" onClick={() => { const n = addDays(weekStart, -7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>‹</button>
+              <button className="pfeil" aria-label="Nächste Woche" onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>›</button>
+              <b>{weekStart.getMonth() === wEnd.getMonth()
+                ? `${weekStart.getDate()}. – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`
+                : `${weekStart.getDate()}. ${MONTHS[weekStart.getMonth()]} – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`}</b>
             </div>
             <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
