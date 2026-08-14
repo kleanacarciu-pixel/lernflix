@@ -108,6 +108,10 @@ export async function POST(req: Request): Promise<Response> {
       ]);
       if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
+      // Versions-Kennung der laufenden Server-Version: der Client erkennt
+      // daran ein Update und laedt sich einmal selbst neu (wichtig fuer die
+      // installierte App, die sonst lange auf altem Stand bleiben kann)
+      out.version = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
       if (nextLesson) out.nextLesson = nextLesson;
       if (istSchueler && dates) {
         const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])

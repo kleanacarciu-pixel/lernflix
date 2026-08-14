@@ -35,8 +35,10 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
     const { data: lp } = await sb.from("lesson_participants").select("lesson_id").eq("user_id", userId);
     const teilnahmen = ((lp || []) as { lesson_id: string }[]).map((r) => r.lesson_id);
 
-    // "anstehend" = Ende + Nachlauf liegt noch in der Zukunft
-    const grenze = new Date(Date.now() - NACHLAUF_MINUTEN * 60000).toISOString();
+    // "anstehend" = Ende liegt noch in der Zukunft. (Der Videoraum bleibt
+    // trotzdem 30 Min. nach Ende offen – nur die Anzeige verschwindet pünktlich,
+    // damit keine vergangene Stunde als "Nächste Stunde" hängen bleibt.)
+    const grenze = new Date().toISOString();
     const oder = [`student_id.eq.${userId}`, `teacher_id.eq.${userId}`];
     if (teilnahmen.length) oder.push(`id.in.(${teilnahmen.join(",")})`);
 
