@@ -38,7 +38,7 @@ const CSS = `
 
 type Zustand =
   | { art: "laden" }
-  | { art: "name"; titel: string; wann: string; offen: boolean; vorbei: boolean }
+  | { art: "name"; titel: string; wann: string; offen: boolean; vorbei: boolean; zeitlos: boolean }
   | { art: "video"; titel: string }
   | { art: "beendet"; titel: string }
   | { art: "fehler"; meldung: string };
@@ -87,6 +87,7 @@ function GastInhalt() {
         setZustand({
           art: "name", titel: String(d.titel || "Video-Call"),
           wann: wannText(String(d.startsAt)), offen: d.offen === true, vorbei: d.vorbei === true,
+          zeitlos: d.zeitlos === true,
         });
       } else {
         setZustand({ art: "fehler", meldung: String(d.error || "Dieser Link ist ungültig.") });
@@ -155,7 +156,7 @@ function GastInhalt() {
             {zustand.art === "name" && (<>
               <div style={{ fontSize: "2rem" }}>🎥</div>
               <h2>{zustand.titel}</h2>
-              <p>{zustand.wann}</p>
+              {!zustand.zeitlos && <p>{zustand.wann}</p>}
               {zustand.vorbei ? <p><b>Dieser Call ist schon vorbei.</b></p> : (<>
                 <p>Sag uns kurz deinen Namen, dann kann es losgehen:</p>
                 <input className="feld" placeholder="Dein Name" value={name} maxLength={40}

@@ -211,7 +211,9 @@ export async function ensureDailyRoom(lesson: Lesson, expUnix: number): Promise<
         enable_network_ui: true,            // Netzwerk-Qualität anzeigen
         enable_noise_cancellation_ui: true, // Hintergrundgeräusche filtern
         lang: "de",
-        max_participants: lesson.kind === "einzel" ? 2 : 25,
+        // Einzel: 2 Plätze. Gruppe/Webinar (Masterclass): keine eigene
+        // Grenze setzen – es gilt das Maximum des Daily-Tarifs
+        ...(lesson.kind === "einzel" ? { max_participants: 2 } : {}),
         geo: "eu-central-1",                // Medienserver: Frankfurt
       },
     }),

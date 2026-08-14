@@ -670,16 +670,13 @@ function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name:
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Anfragen"}</button></div></div>;
 }
-// Video-Calls für Probestunde/Masterclass: erstellen + Gast-Links verwalten.
-// Kleana verschickt den Link selbst (WhatsApp/E-Mail); Gäste brauchen kein Konto.
+// Video-Calls für Probestunde/Masterclass: Titel eintippen -> Link bekommen.
+// Kein Zeitfenster, keine Dauer: der Link funktioniert sofort und dauerhaft
+// (bis der Call gelöscht wird) und kann an beliebig viele Leute gehen.
+// Kleana kann aus der Liste auch selbst direkt beitreten.
 function CallsModal({ api, onClose }: { api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>; onClose: () => void }) {
-  type Call = { id: string; title: string; starts_at: string; link: string };
-  const [titel, setTitel] = useState("Probestunde");
-  const [wann, setWann] = useState<string>(() => {
-    const d = new Date(Date.now() + 3600000); d.setMinutes(0, 0, 0);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  });
-  const [dauer, setDauer] = useState(60);
+  type Call = { id: string; title: string; link: string };
+  const [titel, setTitel] = useState("");
   const [calls, setCalls] = useState<Call[]>([]);
   const [load, setLoad] = useState(false);
   const [meld, setMeld] = useState("");
@@ -694,15 +691,15 @@ function CallsModal({ api, onClose }: { api: (a: string, p?: Record<string, unkn
   useEffect(() => { void lade(); }, [lade]);
 
   async function kopieren(link: string) {
-    try { await navigator.clipboard.writeText(link); setMeld("Link kopiert ✓ – jetzt per WhatsApp oder E-Mail verschicken."); }
+    try { await navigator.clipboard.writeText(link); setMeld("Link kopiert ✓ – jetzt einfach verschicken (WhatsApp, E-Mail, überall)."); }
     catch { setMeld("Kopieren nicht möglich – markiere den Link bitte von Hand: " + link); }
   }
   async function erstellen() {
     if (load) return;
     setErr(""); setLoad(true);
-    const d = await api("createCall", { title: titel.trim() || "Video-Call", startsAt: new Date(wann).toISOString(), dauerMin: dauer });
+    const d = await api("createCall", { title: titel.trim() || "Video-Call" });
     setLoad(false);
-    if (d.ok && typeof d.link === "string") { await kopieren(d.link); void lade(); }
+    if (d.ok && typeof d.link === "string") { setTitel(""); await kopieren(d.link); void lade(); }
     else setErr(String(d.error || "Fehler."));
   }
   async function loeschen(c: Call) {
@@ -710,28 +707,23 @@ function CallsModal({ api, onClose }: { api: (a: string, p?: Record<string, unkn
     await api("deleteCall", { callId: c.id });
     void lade();
   }
-  const wannLabel = (iso: string) => new Date(iso).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
   return <div className="modal"><h2>🎥 Video-Call erstellen</h2>
-    <p>Für Probestunden oder Masterclasses: Du bekommst einen Gast-Link zum Verschicken – wer ihn hat, tritt <b>ohne Login</b> bei (ab 15 Min. vor Beginn).</p>
-    <label>Titel</label><input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Probestunde mit Emma / Masterclass Physik" maxLength={80} />
-    <label>Datum &amp; Uhrzeit</label><input type="datetime-local" value={wann} onChange={(e) => setWann(e.target.value)} />
-    <label>Dauer</label>
-    <div className="acts" style={{ marginTop: 6 }}>
-      {[30, 60, 90, 120].map((m) => (
-        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
-      ))}
-    </div>
+    <p>Titel eintippen, Link bekommen, verschicken – fertig. Wer den Link hat, tritt <b>ohne Login</b> bei, jederzeit. Der Link bleibt gültig, bis du den Call löschst.</p>
+    <label>Wofür ist der Call?</label>
+    <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Probestunde Emma / Masterclass Physik"
+      maxLength={80} onKeyDown={(e) => { if (e.key === "Enter") void erstellen(); }} />
     {err ? <div className="err">{err}</div> : null}
     {meld ? <div className="okbox" style={{ marginTop: 8 }}>{meld}</div> : null}
-    <div className="acts"><button className="btn g" onClick={onClose}>Schließen</button><button className="btn p" onClick={() => void erstellen()} disabled={load}>{load ? "…" : "Erstellen & Link kopieren"}</button></div>
+    <div className="acts"><button className="btn g" onClick={onClose}>Schließen</button><button className="btn p" onClick={() => void erstellen()} disabled={load}>{load ? "…" : "Link erstellen & kopieren"}</button></div>
     {calls.length > 0 && (<>
-      <h2 style={{ marginTop: 18, fontSize: "1rem" }}>Geplante Calls</h2>
+      <h2 style={{ marginTop: 18, fontSize: "1rem" }}>Deine Calls</h2>
       {calls.map((c) => (
-        <div key={c.id} className="acts" style={{ alignItems: "center", marginTop: 6 }}>
-          <span style={{ flex: 1, minWidth: 0 }}><b>{c.title}</b><br /><span style={{ color: "#777", fontSize: ".84rem" }}>{wannLabel(c.starts_at)}</span></span>
-          <button className="btn g" onClick={() => void kopieren(c.link)}>Link kopieren</button>
-          <button className="btn r" onClick={() => void loeschen(c)} aria-label="Löschen">🗑️</button>
+        <div key={c.id} className="acts" style={{ alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+          <span style={{ flex: 1, minWidth: 120 }}><b>{c.title}</b></span>
+          <a className="btn p sm" style={{ textDecoration: "none" }} href={`/stunde/${c.id}`} target="_blank" rel="noreferrer">▶ Beitreten</a>
+          <button className="btn g sm" onClick={() => void kopieren(c.link)}>Link kopieren</button>
+          <button className="btn r sm" onClick={() => void loeschen(c)} aria-label="Löschen">🗑️</button>
         </div>
       ))}
     </>)}
