@@ -16,7 +16,10 @@ const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 // Halbstunden-Raster wie auf dem Server: 8, 8.5 (=8:30), … 19.5 (=19:30)
 const HOURS: number[] = [];
 for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
-const fmtZeit = (hour: number) => `${String(Math.floor(hour)).padStart(2, "0")}:${hour % 1 ? "30" : "00"}`;
+// minutengenau: 14:00 / 14:30 / 16:15 …
+const fmtZeit = (hour: number) => { const m = Math.round(hour * 60); return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+// Höhe einer Stunde in der Outlook-Wochenansicht (Pixel)
+const STUNDE_PX = 56;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
 const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed" };
@@ -161,6 +164,32 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 /* Läuft die Seite schon als installierte App, braucht niemand die Anleitung */
 @media (display-mode: standalone){.kal .applink{display:none}}
 .kal .kzlink{text-decoration:none;font-size:.95rem;margin-left:2px}
+/* ---- Outlook-Wochenansicht: Zeitraster + schwebende Termin-Blöcke ---- */
+.owoche{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.okopf{display:grid;grid-template-columns:56px repeat(7,1fr);background:#fafafa;border-bottom:1px solid var(--line)}
+.otagkopf{padding:9px 4px;text-align:center;font-size:.86rem;font-weight:700;line-height:1.25;border-left:1px solid var(--line)}
+.otagkopf small{display:block;color:var(--muted);font-weight:500;font-size:.76rem;margin-top:2px}
+.otagkopf.today{color:var(--teal);background:rgba(43,179,192,.10)}
+.otagkopf .now{display:block;font-size:.62rem;font-weight:700;color:#fff;background:var(--teal);border-radius:6px;margin:3px auto 0;padding:1px 0;max-width:46px}
+.okoerper{display:grid;grid-template-columns:56px repeat(7,1fr)}
+.ostunde{height:56px;font-size:.76rem;color:var(--muted);font-weight:600;text-align:right;padding:2px 6px 0 0;border-top:1px solid var(--line);background:#fafafa}
+.otag{position:relative;border-left:1px solid var(--line)}
+.ozelle{height:28px;border-top:1px solid #f0f2f4}
+.ozelle:nth-child(odd){border-top:1px solid var(--line)}
+.ozelle.frei{cursor:pointer}
+.ozelle.frei:hover{background:#eafaf7}
+.ozelle.zu{background:#f4f4f4}
+.ozelle.vorbei{background:#fbfbfb}
+.oblock{position:absolute;left:3px;right:3px;border-radius:8px;border:0;font:inherit;cursor:pointer;text-align:left;
+  padding:2px 7px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.14);display:flex;flex-direction:column;z-index:2}
+.oblock .obtitel{font-size:.78rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oblock .obzeit{font-size:.68rem;opacity:.8;line-height:1.15}
+.oblock.busy{background:#cfd6da;color:#3a4145}
+.oblock.mine{background:var(--grad);color:#fff}
+.oblock.req{background:#fff3d6;color:#8a6d1a}
+.oblock.blk{background:repeating-linear-gradient(45deg,#e7ebee,#e7ebee 6px,#dee3e7 6px,#dee3e7 12px);color:#5f6b73}
+.oblock.dim{opacity:.13}
+.oblock:hover{outline:2px solid var(--teal);outline-offset:-1px}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -293,6 +322,8 @@ export default function KalenderPage() {
       const tag = days.find((d) => d.date === date);
       const anker = tag?.slots.find((x) => x.hour === s.anchor);
       if (anker) { onSlot(date, anker); return; }
+      // Feiner Anker (z. B. 16:15) ohne eigene Rasterzelle: Anker-Zeit übernehmen
+      s = { ...s, hour: s.anchor, cont: false };
     }
     const role = session?.role || "public";
     const zeit = s.dauer ? `${fmtZeit(s.hour)}–${fmtZeit(s.hour + s.dauer / 60)}` : `${fmtZeit(s.hour)}`;
@@ -338,13 +369,13 @@ export default function KalenderPage() {
       const maxDauer = ((wd < 5 ? 20 : 19) - s.hour) * 60;
       setModal(<div className="modal"><h2>Freier Slot: {when}</h2>
         <div className="col">
-          <button className="btn p" onClick={() => setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
-            startHour={s.hour} maxDauer={maxDauer} onClose={() => setModal(null)}
-            onSubmit={(sid, m, d, fest) => act("adminBook", { date, hour: s.hour, studentId: sid, mode: m, dauerMin: d, fest })} />)}>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
+            startHour={startZelle} maxDauer={maxDauer} api={api} onClose={() => setModal(null)}
+            onSubmit={(sid, m, d, off, fest) => act("adminBook", { date, hour: startZelle + off / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
             📅 Termin für Schüler eintragen
           </button>
-          <button className="btn p" onClick={() => setModal(<BlockWahl when={when} startHour={s.hour} maxDauer={maxDauer}
-            onClose={() => setModal(null)} onSubmit={(d) => act("block", { date, hour: s.hour, dauerMin: d })} />)}>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} maxDauer={maxDauer}
+            onClose={() => setModal(null)} onSubmit={(d, off) => act("block", { date, hour: startZelle + off / 60, dauerMin: d })} />); }}>
             ⛔ Blockieren (nur dieses Datum)
           </button>
           <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>⛔ Jeden {DAYS[wd]} dauerhaft blockieren (1 Std.)</button>
@@ -555,20 +586,55 @@ export default function KalenderPage() {
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
             ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
             {days.length === 0 ? <div className="kloading"><span className="kspin" /> Kalender wird geladen…</div> : <>
-            <div className="deskgrid"><table className="kgrid">
-              <thead><tr><th></th>{days.map((d) => {
-                const dt = parseIso(d.date); const isToday = d.date === today;
-                return <th key={d.date} className={isToday ? "today" : ""}>{DAYS[d.weekday]}<small>{dm(dt)}</small>{isToday ? <span className="now">heute</span> : null}</th>;
-              })}</tr></thead>
-              <tbody>{HOURS.map((h) => (
-                <tr key={h}><th>{fmtZeit(h)}</th>{days.map((d) => {
-                  const s = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
-                  const v = cellView(s, role);
-                  const dim = filterCls && v.cls !== filterCls ? " dim" : "";
-                  return <td key={d.date + h}><div className={"cell " + v.cls + dim} onClick={() => onSlot(d.date, s)}>{v.label}</div></td>;
-                })}</tr>
-              ))}</tbody>
-            </table></div>
+            <div className="deskgrid"><div className="owoche">
+              <div className="okopf">
+                <div />
+                {days.map((d) => {
+                  const dt = parseIso(d.date); const isToday = d.date === today;
+                  return <div key={d.date} className={"otagkopf" + (isToday ? " today" : "")}>{DAYS[d.weekday]}<small>{dm(dt)}</small>{isToday ? <span className="now">heute</span> : null}</div>;
+                })}
+              </div>
+              <div className="okoerper">
+                <div>
+                  {HOURS.filter((h) => h % 1 === 0).map((h) => <div key={h} className="ostunde">{fmtZeit(h)}</div>)}
+                </div>
+                {days.map((d) => {
+                  // Termin-Blöcke wie in Outlook: pro Anker genau ein Block,
+                  // Position und Höhe minutengenau aus Start + Dauer
+                  const events: { start: number; dauer: number; s: Slot }[] = [];
+                  const seen = new Set<number>();
+                  d.slots.forEach((sl) => {
+                    if (sl.state !== "busy" && sl.state !== "req" && sl.state !== "block") return;
+                    const start = sl.cont && sl.anchor != null ? sl.anchor : sl.hour;
+                    if (seen.has(start)) return;
+                    seen.add(start);
+                    events.push({ start, dauer: sl.dauer || 30, s: { ...sl, hour: start, cont: false, anchor: undefined } });
+                  });
+                  return (
+                    <div key={d.date} className="otag">
+                      {HOURS.map((h) => {
+                        const sl = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
+                        const frei = sl.state === "free";
+                        const cls = sl.state === "closed" ? " zu" : sl.state === "past" ? " vorbei" : frei ? " frei" : "";
+                        return <div key={h} className={"ozelle" + cls} onClick={frei ? () => onSlot(d.date, sl) : undefined} />;
+                      })}
+                      {events.map((ev) => {
+                        const v = cellView(ev.s, role);
+                        const dim = filterCls && v.cls !== filterCls ? " dim" : "";
+                        return (
+                          <button key={ev.start} className={"oblock " + v.cls + dim}
+                            style={{ top: (ev.start - 8) * STUNDE_PX, height: Math.max(18, (ev.dauer / 60) * STUNDE_PX - 2) }}
+                            onClick={() => onSlot(d.date, ev.s)}>
+                            <span className="obtitel">{v.label || "Belegt"}</span>
+                            {ev.dauer >= 30 && <span className="obzeit">{fmtZeit(ev.start)}–{minZuZeit(Math.round(ev.start * 60) + ev.dauer)}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div></div>
             <div className="dayview">
               <div className="daychips">{days.map((d) => (
                 <button key={d.date} className={"daychip" + (d.date === effSel ? " on" : "") + (d.date === today ? " td" : "")} onClick={() => setSelDay(d.date)}>{DAYS[d.weekday]}<small>{dm(parseIso(d.date))}</small></button>
@@ -680,18 +746,30 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
 }
 // Start- und Endzeit wie in Outlook: Start = angeklickter Slot (fest),
 // Ende per Auswahlliste (15-Minuten-Schritte bis Ladenschluss).
-const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 15 && m <= 240 && m % 5 === 0;
+const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 5 && m <= 240 && m % 5 === 0;
 const minZuZeit = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-function EndzeitWahl({ startHour, maxDauer, dauer, setDauer }: {
+// Start-/Endzeit wie in Outlook. Mit setStartOff wird auch die Startzeit
+// wählbar (5-Minuten-Schritte innerhalb der angeklickten halben Stunde).
+function EndzeitWahl({ startHour, maxDauer, dauer, setDauer, step = 15, startOff = 0, setStartOff }: {
   startHour: number; maxDauer: number; dauer: number; setDauer: (m: number) => void;
+  step?: number; startOff?: number; setStartOff?: (off: number) => void;
 }) {
-  const startMin = Math.round(startHour * 60);
+  const startMin = Math.round(startHour * 60) + startOff;
+  const maxD = maxDauer - startOff;
   const opts: number[] = [];
-  for (let m = 15; m <= Math.min(240, maxDauer); m += 15) opts.push(m);
+  for (let m = step; m <= Math.min(240, maxD); m += step) opts.push(m);
   return (
     <div className="acts" style={{ marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
       <span style={{ fontWeight: 600 }}>Startzeit</span>
-      <input value={fmtZeit(startHour)} disabled style={{ width: 74, textAlign: "center" }} aria-label="Startzeit" />
+      {setStartOff ? (
+        <select value={startOff} onChange={(e) => setStartOff(Number(e.target.value))} aria-label="Startzeit">
+          {[0, 5, 10, 15, 20, 25].map((o) => (
+            <option key={o} value={o}>{minZuZeit(Math.round(startHour * 60) + o)}</option>
+          ))}
+        </select>
+      ) : (
+        <input value={fmtZeit(startHour)} disabled style={{ width: 74, textAlign: "center" }} aria-label="Startzeit" />
+      )}
       <span style={{ fontWeight: 600 }}>Endzeit</span>
       <select value={dauer} onChange={(e) => setDauer(Number(e.target.value))} aria-label="Endzeit" style={{ minWidth: 140 }}>
         {opts.map((m) => (
@@ -701,47 +779,65 @@ function EndzeitWahl({ startHour, maxDauer, dauer, setDauer }: {
     </div>
   );
 }
-// Kleana trägt selbst einen Termin für einen Schüler ein – gleiche
-// Start-/Endzeit-Auswahl wie beim Schüler-Buchen, sofort bestätigt.
-function AdminBuchen({ students, startHour, maxDauer, onSubmit, onClose }: {
+// Kleana trägt selbst einen Termin für einen Schüler ein – Startzeit
+// minutengenau wählbar (z. B. 8:05), sofort bestätigt. Die Schülerliste
+// lädt sich zur Sicherheit selbst nach, falls sie noch nicht da ist.
+function AdminBuchen({ students, startHour, maxDauer, api, onSubmit, onClose }: {
   students: { id: string; name: string }[]; startHour: number; maxDauer: number;
-  onSubmit: (studentId: string, mode: string, dauerMin: number, fest: boolean) => void; onClose: () => void;
+  api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>;
+  onSubmit: (studentId: string, mode: string, dauerMin: number, startOff: number, fest: boolean) => void; onClose: () => void;
 }) {
+  const [liste, setListe] = useState(students);
   const [sid, setSid] = useState(students[0]?.id || "");
   const [dauer, setDauer] = useState(Math.min(60, maxDauer));
+  const [off, setOff] = useState(0);
   const [fest, setFest] = useState(false);
-  const ende = minZuZeit(Math.round(startHour * 60) + dauer);
+  useEffect(() => {
+    if (liste.length > 0) return;
+    (async () => {
+      const d = await api("overview");
+      const rows = ((d.students as { id: string; name: string }[]) || []).map((r) => ({ id: r.id, name: r.name }));
+      setListe(rows);
+      if (rows.length && !sid) setSid(rows[0].id);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const startMin = Math.round(startHour * 60) + off;
+  const ende = minZuZeit(startMin + dauer);
   return <div className="modal"><h2>📅 Termin eintragen</h2>
     <label>Für welchen Schüler?</label>
     <select value={sid} onChange={(e) => setSid(e.target.value)} style={{ width: "100%" }}>
-      {students.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
-      {students.length === 0 && <option value="">Noch keine Schüler</option>}
+      {liste.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+      {liste.length === 0 && <option value="">Lade Schüler …</option>}
     </select>
     <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
+      step={5} startOff={off} setStartOff={setOff} />
     <label>Einmalig oder jede Woche?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (!fest ? "p" : "g")} onClick={() => setFest(false)}>Nur dieses Datum</button>
       <button type="button" className={"btn " + (fest ? "p" : "g")} onClick={() => setFest(true)}>Jede Woche fest</button>
     </div>
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{fmtZeit(startHour)}–{ende}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>
+    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>
     <div className="col">
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "online", dauer, fest)}>💻 Online</button>
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "vor_ort", dauer, fest)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "online", dauer, off, fest)}>💻 Online</button>
+      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "vor_ort", dauer, off, fest)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-// Blockieren mit Endzeit (z. B. 14:00–15:30 für eigene Arbeit sperren)
+// Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren)
 function BlockWahl({ when, startHour, maxDauer, onSubmit, onClose }: {
   when: string; startHour: number; maxDauer: number;
-  onSubmit: (dauerMin: number) => void; onClose: () => void;
+  onSubmit: (dauerMin: number, startOff: number) => void; onClose: () => void;
 }) {
   const [dauer, setDauer] = useState(Math.min(60, maxDauer));
+  const [off, setOff] = useState(0);
   return <div className="modal"><h2>⛔ Blockieren</h2><p>{when}</p>
     <div className="okbox">Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.</div>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
+      step={5} startOff={off} setStartOff={setOff} />
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit(dauer)}>Blockieren</button></div></div>;
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit(dauer, off)}>Blockieren</button></div></div>;
 }
 function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
   title: string; startHour: number; maxDauer: number;

@@ -5,7 +5,7 @@
 import { NextResponse, after } from "next/server";
 import {
   service, signIn, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
-  weekdayOf, isOpen, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, HOURS, DAY_NAMES,
+  weekdayOf, isOpen, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink } from "@/lib/stunden";
@@ -246,9 +246,10 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     if (action === "adminBook") {
-      // Kleana trägt selbst einen Termin für einen Schüler ein – mit Start-
-      // und Endzeit wie beim Schüler-Buchen, sofort bestätigt (keine Anfrage).
-      if (!validSlot || !isOpen(weekdayOf(date), hour, dauerMin)) return bad("Ungültiger Slot.");
+      // Kleana trägt selbst einen Termin für einen Schüler ein – Start im
+      // 5-Minuten-Raster (z. B. 8:05), sofort bestätigt (keine Anfrage).
+      const schluss = weekdayOf(date) < 5 ? 20 : 19;
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !feinRasterOk(hour) || hour < 8 || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const sid = String(body.studentId || "");
       const sp = await getProfile(sid);
@@ -377,7 +378,9 @@ export async function POST(req: Request): Promise<Response> {
       return bad("Hier ist kein Termin zum Absagen.");
     }
     if (action === "block") {
-      if (!validSlot || !isOpen(weekdayOf(date), hour, dauerMin)) return bad("Ungültiger Slot.");
+      // Blockieren minutengenau: Start im 5-Minuten-Raster, Dauer ab 5 Min.
+      const schluss = weekdayOf(date) < 5 ? 20 : 19;
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !feinRasterOk(hour) || hour < 8 || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
@@ -387,7 +390,7 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
-      if (!validSlot) return bad("Ungültiger Slot.");
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !feinRasterOk(hour)) return bad("Ungültiger Slot.");
       await service().from("appointments").delete().eq("slot_date", date).eq("hour", hour).eq("kind", "block");
       return ok({ message: "Slot wieder frei." });
     }
