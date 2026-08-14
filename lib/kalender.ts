@@ -166,7 +166,10 @@ export type SlotOut = {
   hour: number; state: SlotState; name?: string; mine?: boolean; fixed?: boolean;
   mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number;
 };
-export type DayOut = { date: string; weekday: number; slots: SlotOut[] };
+// absagen (nur Admin-Sicht): abgesagte Stunden des Tages als rote Info-Blöcke –
+// der Zeitraum bleibt trotzdem frei buchbar
+export type AbsageOut = { start: number; dauer: number; name: string };
+export type DayOut = { date: string; weekday: number; slots: SlotOut[]; absagen?: AbsageOut[] };
 
 // Belegungs-Intervall eines Tages (Outlook-Stil: Termine sind Zeitblöcke)
 type Intervall = {
@@ -243,7 +246,8 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
 
   return days.map((date) => {
     const wd = weekdayOf(date);
-    const ivs = tagIntervalle(date, wd, fixe, appts.filter((a) => a.slot_date === date), wblocks, nameOf);
+    const dayAppts = appts.filter((a) => a.slot_date === date);
+    const ivs = tagIntervalle(date, wd, fixe, dayAppts, wblocks, nameOf);
     const slots: SlotOut[] = HOURS.map((hour) => {
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
       const past = hoursUntil(date, hour) <= 0;
@@ -265,7 +269,24 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
       if (mine) return { ...basis, state: iv.t, mine: true, fixed: iv.fixed, mode: effMode };
       return basis; // andere Schüler / öffentlich: nur "belegt", KEIN Name
     });
-    return { date, weekday: wd, slots };
+    // Absagen als rote Info-Blöcke – nur für Kleana; Dauer aus dem festen
+    // Termin bzw. der abgesagten Buchung (sonst 60 Min.)
+    let absagen: AbsageOut[] | undefined;
+    if (role === "admin") {
+      absagen = dayAppts
+        .filter((a) => a.kind === "absage" || ((a.kind === "einzel" || a.kind === "probe") && a.status === "abgesagt"))
+        .map((a) => {
+          const start = Number(a.hour);
+          const fx = a.kind === "absage"
+            ? fixe.find((f) => f.weekday === wd && Number(f.hour) === start && f.student_id === a.student_id)
+            : undefined;
+          const dauer = (a.kind !== "absage" && Number(a.dauer_min)) || (fx && Number(fx.dauer_min)) || 60;
+          const name = a.student_id ? nameOf(a.student_id) : (a.note ? a.note.split("|")[0] : "Gast");
+          return { start, dauer, name };
+        });
+      if (!absagen.length) absagen = undefined;
+    }
+    return { date, weekday: wd, slots, ...(absagen ? { absagen } : {}) };
   });
 }
 
