@@ -9,8 +9,12 @@ export const ADMIN_EMAIL = (process.env.KALENDER_ADMIN_EMAIL || "lernemitanna@ou
 // Halbstunden-Raster: 8, 8.5 (=8:30), 9, … 19.5 (=19:30). Kommazahl = :30.
 export const HOURS: number[] = [];
 for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
-// Wählbare Stundenlängen in Minuten
+// Schnellwahl-Vorschläge für die Stundenlänge; frei eintippbar ist alles
+// von 15 bis 240 Minuten in 5-Minuten-Schritten (wie in Outlook)
 export const DAUERN = [30, 45, 60, 90];
+export function dauerOk(min: number): boolean {
+  return Number.isInteger(min) && min >= 15 && min <= 240 && min % 5 === 0;
+}
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";
 const APP_URL = process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender";

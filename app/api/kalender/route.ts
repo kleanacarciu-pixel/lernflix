@@ -5,7 +5,7 @@
 import { NextResponse, after } from "next/server";
 import {
   service, signIn, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
-  weekdayOf, isOpen, hoursUntil, prettyDate, fmtZeit, slotKonflikt, HOURS, DAUERN, DAY_NAMES,
+  weekdayOf, isOpen, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink } from "@/lib/stunden";
@@ -62,7 +62,7 @@ export async function POST(req: Request): Promise<Response> {
   const date = typeof body.date === "string" ? body.date : "";
   const hour = Number(body.hour); // Kommazahl möglich: 14.5 = 14:30
   const mode = body.mode === "online" || body.mode === "vor_ort" ? body.mode : null;
-  const dauerMin = DAUERN.includes(Number(body.dauerMin)) ? Number(body.dauerMin) : 60;
+  const dauerMin = dauerOk(Number(body.dauerMin)) ? Number(body.dauerMin) : 60;
 
   try {
     // ----- ohne Login -----

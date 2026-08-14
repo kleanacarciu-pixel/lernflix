@@ -666,27 +666,37 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Einloggen"}</button></div></div>;
 }
-// Dauer + Online/vor-Ort wählen (für feste Termine und Extra-Stunden).
-// Die Zeitspanne aktualisiert sich live, wie in Outlook: 14:30–15:15.
+// Dauer frei eintippen (wie in Outlook) + Online/vor-Ort wählen.
+// Die Zeitspanne aktualisiert sich live: 14:30–15:20.
+const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 15 && m <= 240 && m % 5 === 0;
+function DauerFeld({ dauer, setDauer }: { dauer: number; setDauer: (m: number) => void }) {
+  return (<>
+    <div className="acts" style={{ marginTop: 6, alignItems: "center" }}>
+      <input type="number" min={15} max={240} step={5} value={dauer} style={{ width: 90 }}
+        onChange={(e) => setDauer(Number(e.target.value))} aria-label="Dauer in Minuten" />
+      <span style={{ fontWeight: 600 }}>Minuten</span>
+      {DAUERN.map((m) => (
+        <button key={m} type="button" className={"btn sm " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m}</button>
+      ))}
+    </div>
+    {!dauerGueltig(dauer) && <div className="err">Bitte 15–240 Minuten in 5er-Schritten (z. B. 45, 50, 60).</div>}
+  </>);
+}
 function BuchungsWahl({ title, startZeit, onSubmit, onClose }: {
   title: string; startZeit: string;
   onSubmit: (mode: string, dauerMin: number) => void; onClose: () => void;
 }) {
   const [dauer, setDauer] = useState(60);
   const [sh, sm] = startZeit.split(":").map(Number);
-  const endeMin = sh * 60 + sm + dauer;
+  const endeMin = sh * 60 + sm + (dauerGueltig(dauer) ? dauer : 0);
   const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
   return <div className="modal"><h2>{title}</h2>
-    <p>Beginn <b>{startZeit}</b> – wie lange soll die Stunde dauern?</p>
-    <div className="acts" style={{ marginTop: 6 }}>
-      {DAUERN.map((m) => (
-        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
-      ))}
-    </div>
+    <p>Beginn <b>{startZeit}</b> – wie viele Minuten soll die Stunde dauern?</p>
+    <DauerFeld dauer={dauer} setDauer={setDauer} />
     <p style={{ margin: "10px 0 4px" }}>Also <b>{startZeit}–{ende}</b>. Und: online oder vor Ort?</p>
     <div className="col">
-      <button className="btn p" onClick={() => onSubmit("online", dauer)}>💻 Online</button>
-      <button className="btn p" onClick={() => onSubmit("vor_ort", dauer)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer)}>💻 Online</button>
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
@@ -695,17 +705,14 @@ function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name:
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
+    if (!dauerGueltig(dauer)) { setErr("Bitte 15–240 Minuten in 5er-Schritten wählen."); return; }
     setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer)); setLoad(false);
   }
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
-    <label>Wie lange?</label>
-    <div className="acts" style={{ marginTop: 6 }}>
-      {DAUERN.map((m) => (
-        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
-      ))}
-    </div>
+    <label>Wie viele Minuten?</label>
+    <DauerFeld dauer={dauer} setDauer={setDauer} />
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>
