@@ -13,7 +13,11 @@ for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
 // von 15 bis 240 Minuten in 5-Minuten-Schritten (wie in Outlook)
 export const DAUERN = [30, 45, 60, 90];
 export function dauerOk(min: number): boolean {
-  return Number.isInteger(min) && min >= 15 && min <= 240 && min % 5 === 0;
+  return Number.isInteger(min) && min >= 5 && min <= 240 && min % 5 === 0;
+}
+// Liegt eine (Komma-)Stunde auf dem 5-Minuten-Raster? (8.0833… = 8:05)
+export function feinRasterOk(hour: number): boolean {
+  return Number.isFinite(hour) && Math.abs(hour * 12 - Math.round(hour * 12)) < 0.001;
 }
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";
@@ -83,9 +87,10 @@ export function isOpen(weekday: number, hour: number, dauerMin = 30): boolean {
   const schluss = weekday < 5 ? 20 : 19;
   return hour >= 8 && hour * 2 === Math.floor(hour * 2) && hour + dauerMin / 60 <= schluss;
 }
-// "14:00" / "14:30" aus der Kommazahl-Stunde
+// "14:00" / "14:30" / "16:15" – minutengenau aus der Kommazahl-Stunde
 export function fmtZeit(hour: number): string {
-  return `${pad(Math.floor(hour))}:${hour % 1 ? "30" : "00"}`;
+  const m = Math.round(hour * 60);
+  return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
 }
 // UTC-Instant der Berliner Wandzeit dateStr+hour (hour darf 14.5 = 14:30 sein)
 export function berlinInstant(dateStr: string, hour: number): number {
