@@ -428,6 +428,10 @@ export default function KalenderPage() {
     }} />);
   }
 
+  function openCalls() {
+    setModal(<CallsModal api={api} onClose={() => setModal(null)} />);
+  }
+
   // ---- Sidebar-Wochenliste des Monats ----
   const monthWeeks: { key: string; label: string; on: boolean }[] = [];
   {
@@ -479,7 +483,7 @@ export default function KalenderPage() {
 
         {role === "admin" && overview && (
           <div className="overview">
-            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></div>
+            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8 }}><button className="minibtn" onClick={openCalls}>🎥 Video-Call erstellen</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
               <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
@@ -665,6 +669,73 @@ function ProbeForm({ when, onSubmit, onClose }: { when: string; onSubmit: (name:
     </div>
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Anfragen"}</button></div></div>;
+}
+// Video-Calls für Probestunde/Masterclass: erstellen + Gast-Links verwalten.
+// Kleana verschickt den Link selbst (WhatsApp/E-Mail); Gäste brauchen kein Konto.
+function CallsModal({ api, onClose }: { api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>; onClose: () => void }) {
+  type Call = { id: string; title: string; starts_at: string; link: string };
+  const [titel, setTitel] = useState("Probestunde");
+  const [wann, setWann] = useState<string>(() => {
+    const d = new Date(Date.now() + 3600000); d.setMinutes(0, 0, 0);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
+  const [dauer, setDauer] = useState(60);
+  const [calls, setCalls] = useState<Call[]>([]);
+  const [load, setLoad] = useState(false);
+  const [meld, setMeld] = useState("");
+  const [err, setErr] = useState("");
+
+  const lade = useCallback(async () => {
+    const d = await api("callList");
+    if (d.ok) setCalls((d.calls as Call[]) || []);
+  }, [api]);
+  // lade ist async – setState passiert erst nach dem await
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void lade(); }, [lade]);
+
+  async function kopieren(link: string) {
+    try { await navigator.clipboard.writeText(link); setMeld("Link kopiert ✓ – jetzt per WhatsApp oder E-Mail verschicken."); }
+    catch { setMeld("Kopieren nicht möglich – markiere den Link bitte von Hand: " + link); }
+  }
+  async function erstellen() {
+    if (load) return;
+    setErr(""); setLoad(true);
+    const d = await api("createCall", { title: titel.trim() || "Video-Call", startsAt: new Date(wann).toISOString(), dauerMin: dauer });
+    setLoad(false);
+    if (d.ok && typeof d.link === "string") { await kopieren(d.link); void lade(); }
+    else setErr(String(d.error || "Fehler."));
+  }
+  async function loeschen(c: Call) {
+    if (!window.confirm(`„${c.title}" wirklich löschen? Der Link funktioniert dann nicht mehr.`)) return;
+    await api("deleteCall", { callId: c.id });
+    void lade();
+  }
+  const wannLabel = (iso: string) => new Date(iso).toLocaleString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+  return <div className="modal"><h2>🎥 Video-Call erstellen</h2>
+    <p>Für Probestunden oder Masterclasses: Du bekommst einen Gast-Link zum Verschicken – wer ihn hat, tritt <b>ohne Login</b> bei (ab 15 Min. vor Beginn).</p>
+    <label>Titel</label><input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Probestunde mit Emma / Masterclass Physik" maxLength={80} />
+    <label>Datum &amp; Uhrzeit</label><input type="datetime-local" value={wann} onChange={(e) => setWann(e.target.value)} />
+    <label>Dauer</label>
+    <div className="acts" style={{ marginTop: 6 }}>
+      {[30, 60, 90, 120].map((m) => (
+        <button key={m} type="button" className={"btn " + (dauer === m ? "p" : "g")} onClick={() => setDauer(m)}>{m} Min.</button>
+      ))}
+    </div>
+    {err ? <div className="err">{err}</div> : null}
+    {meld ? <div className="okbox" style={{ marginTop: 8 }}>{meld}</div> : null}
+    <div className="acts"><button className="btn g" onClick={onClose}>Schließen</button><button className="btn p" onClick={() => void erstellen()} disabled={load}>{load ? "…" : "Erstellen & Link kopieren"}</button></div>
+    {calls.length > 0 && (<>
+      <h2 style={{ marginTop: 18, fontSize: "1rem" }}>Geplante Calls</h2>
+      {calls.map((c) => (
+        <div key={c.id} className="acts" style={{ alignItems: "center", marginTop: 6 }}>
+          <span style={{ flex: 1, minWidth: 0 }}><b>{c.title}</b><br /><span style={{ color: "#777", fontSize: ".84rem" }}>{wannLabel(c.starts_at)}</span></span>
+          <button className="btn g" onClick={() => void kopieren(c.link)}>Link kopieren</button>
+          <button className="btn r" onClick={() => void loeschen(c)} aria-label="Löschen">🗑️</button>
+        </div>
+      ))}
+    </>)}
+  </div>;
 }
 function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);

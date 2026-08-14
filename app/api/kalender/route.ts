@@ -8,7 +8,7 @@ import {
   weekdayOf, isOpen, hoursUntil, prettyDate, HOURS, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
-import { nextLessonFor, syncLessons } from "@/lib/stunden";
+import { nextLessonFor, syncLessons, gastLink } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -244,6 +244,46 @@ export async function POST(req: Request): Promise<Response> {
       const { error } = await service().auth.admin.deleteUser(sid);
       if (error) await service().from("profiles").delete().eq("user_id", sid);
       return ok({ message: `Schüler „${p.name}" entfernt.` });
+    }
+
+    if (action === "createCall") {
+      // Video-Call für Probestunde/Masterclass anlegen: Stunde (kind webinar)
+      // ohne festen Schüler + Gast-Link zum Verschicken (Beitritt ohne Login)
+      const titel = String(body.title || "").trim().slice(0, 80) || "Video-Call";
+      const startsAt = new Date(String(body.startsAt || ""));
+      const dauerMin = [30, 60, 90, 120].includes(Number(body.dauerMin)) ? Number(body.dauerMin) : 60;
+      if (Number.isNaN(startsAt.getTime())) return bad("Bitte Datum und Uhrzeit wählen.");
+      if (startsAt.getTime() < Date.now() - 10 * 60000) return bad("Der Zeitpunkt liegt in der Vergangenheit.");
+      const { data: neu, error } = await service().from("lessons").insert({
+        teacher_id: user.id, student_id: null, kind: "webinar", mode: "online",
+        title: titel, starts_at: startsAt.toISOString(),
+        ends_at: new Date(startsAt.getTime() + dauerMin * 60000).toISOString(),
+      }).select("id").single();
+      if (error || !neu) return bad("Konnte den Call nicht anlegen: " + (error?.message || "unbekannt"));
+      const base = new URL(process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender").origin;
+      return ok({
+        message: "Video-Call angelegt. Verschicke jetzt den Gast-Link.",
+        link: gastLink(neu.id, base), id: neu.id,
+      });
+    }
+    if (action === "callList") {
+      // Kommende Calls samt Gast-Links (falls ein Link verloren ging)
+      const grenze = new Date(Date.now() - 2 * 3600000).toISOString();
+      const { data } = await service().from("lessons")
+        .select("id,title,starts_at,ends_at")
+        .eq("kind", "webinar").gt("ends_at", grenze)
+        .order("starts_at", { ascending: true }).limit(20);
+      const base = new URL(process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender").origin;
+      return ok({
+        calls: ((data || []) as { id: string; title: string; starts_at: string; ends_at: string }[])
+          .map((c) => ({ ...c, link: gastLink(c.id, base) })),
+      });
+    }
+    if (action === "deleteCall") {
+      const cid = String(body.callId || "");
+      if (!/^[0-9a-f-]{36}$/i.test(cid)) return bad("Call nicht gefunden.");
+      await service().from("lessons").delete().eq("id", cid).eq("kind", "webinar");
+      return ok({ message: "Video-Call gelöscht – der Link funktioniert nicht mehr." });
     }
 
     if (action === "adminConfirm") {
