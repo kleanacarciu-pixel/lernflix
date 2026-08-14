@@ -217,16 +217,41 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .mk-tag:hover{background:#e8f2f4}
 .mk-tag.aus{color:#bdc4ca}
 .mk-tag.heute{color:#fff;background:var(--teal);font-weight:700}
-/* Kopfleiste wie Outlook: Heute + Pfeile + Zeitraum */
+/* Kopfleiste wie Outlook: Heute + Pfeile + Zeitraum (Titel = Aufklapper) */
 .wkhead{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.wkhead .titelbtn{background:none;border:0;font:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 7px;border-radius:8px}
+.wkhead .titelbtn:hover{background:#eef2f4}
+.wkhead .titelbtn .caret{font-size:.72rem;color:var(--muted)}
+.mkdrop{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px 10px;margin:8px 0;max-width:340px;box-shadow:0 10px 30px rgba(0,0,0,.10)}
 .wkhead .heutebtn{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
 .wkhead .heutebtn:hover{background:#f2f6f7}
 .wkhead .pfeil{background:none;border:0;font:inherit;font-size:1.15rem;font-weight:700;cursor:pointer;color:#444;padding:4px 9px;border-radius:8px}
 .wkhead .pfeil:hover{background:#eef2f4}
 .wkhead b{font-size:1.02rem;margin-left:4px}
 @media(max-width:700px){
-  .side{display:none} /* am Handy navigieren Heute/Pfeile + Tages-Chips */
+  /* Handy: aufgeräumt wie eine App – Monatskalender per Tipp auf den Titel */
+  .side{display:none}
+  .wkhead{flex-wrap:wrap;gap:4px}
   .wkhead b{font-size:.92rem}
+  .wkhead .heutebtn{padding:6px 10px;font-size:.8rem}
+  .mkdrop{max-width:none}
+  .hdr{gap:6px}
+  .hdr h1{width:100%}
+  .hdr .sp{width:100%;overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start;padding-bottom:3px}
+  .hdr .sp .btn,.hdr .sp a{white-space:nowrap;flex:0 0 auto}
+  .hdr .sp .who{display:none}
+  .who{display:none}
+  .hint{font-size:.82rem;padding:9px 11px}
+  .balance{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}
+  .balance .pill{white-space:nowrap;flex:0 0 auto}
+  .legend{flex-wrap:nowrap;overflow-x:auto;padding:8px 10px}
+  .legitem{white-space:nowrap;flex:0 0 auto}
+  .daychips{gap:4px}
+  .daychip{flex:1 1 0;min-width:0;padding:6px 2px;font-size:.82rem;text-align:center}
+  .daychip small{font-size:.66rem}
+  .otagwrap{grid-template-columns:40px 1fr;border-radius:10px}
+  .ostunde{font-size:.7rem;padding-right:4px}
+  .oblock{left:2px;right:2px;padding:2px 5px}
 }
 `;
 
@@ -238,6 +263,8 @@ export default function KalenderPage() {
   const [ready, setReady] = useState(false);
   const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(new Date()));
   const [viewMonth, setViewMonth] = useState<Date>(() => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); });
+  // Monatskalender als Aufklapper (v. a. am Handy: auf den Titel oben tippen)
+  const [mkOffen, setMkOffen] = useState(false);
   const [days, setDays] = useState<Day[]>([]);
   const [balance, setBalance] = useState<Balance | null>(null);
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
@@ -539,6 +566,27 @@ export default function KalenderPage() {
     setModal(<CallsModal api={api} onClose={() => setModal(null)} />);
   }
 
+  // Mini-Monatskalender wie in Outlook (Seitenleiste am PC, Aufklapper am
+  // Handy). Tag anklicken springt zur Woche; onPick schließt den Aufklapper.
+  function miniKalender(onPick?: () => void) {
+    return (<>
+      <div className="mnav"><button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}>‹</button>
+        <b>{MONTHS[viewMonth.getMonth()]} {viewMonth.getFullYear()}</b>
+        <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}>›</button></div>
+      <div className="minikal">
+        <div className="mk-wd">{["M", "D", "M", "D", "F", "S", "S"].map((w, i) => <span key={i}>{w}</span>)}</div>
+        {monthWeeks.map((w) => (
+          <div key={w.key} className={"mk-woche" + (w.on ? " on" : "")}>
+            {w.tage.map((t) => (
+              <button key={t.iso} className={"mk-tag" + (t.aussen ? " aus" : "") + (t.iso === today ? " heute" : "")}
+                onClick={() => { jumpTo(t.iso); onPick?.(); }}>{t.nr}</button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </>);
+  }
+
   // Eine Tagesspalte der Outlook-Ansicht (Woche am PC, Einzeltag am Handy):
   // Hintergrund-Zellen (frei klickbar) + schwebende Termin-Blöcke; Absagen
   // erscheinen für Kleana als rote Info-Blöcke, der Zeitraum bleibt buchbar.
@@ -678,21 +726,7 @@ export default function KalenderPage() {
 
         <div className="layout">
           <div className="side">
-            <div className="mnav"><button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}>‹</button>
-              <b>{MONTHS[viewMonth.getMonth()]} {viewMonth.getFullYear()}</b>
-              <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}>›</button></div>
-            {/* Mini-Monatskalender wie in Outlook: Woche anklicken = hinspringen */}
-            <div className="minikal">
-              <div className="mk-wd">{["M", "D", "M", "D", "F", "S", "S"].map((w, i) => <span key={i}>{w}</span>)}</div>
-              {monthWeeks.map((w) => (
-                <div key={w.key} className={"mk-woche" + (w.on ? " on" : "")}>
-                  {w.tage.map((t) => (
-                    <button key={t.iso} className={"mk-tag" + (t.aussen ? " aus" : "") + (t.iso === today ? " heute" : "")}
-                      onClick={() => jumpTo(t.iso)}>{t.nr}</button>
-                  ))}
-                </div>
-              ))}
-            </div>
+            {miniKalender()}
           </div>
 
           <div className="calwrap">
@@ -701,10 +735,15 @@ export default function KalenderPage() {
               <button className="heutebtn" onClick={() => { const jetzt = new Date(); const n = mondayOf(jetzt); setWeekStart(n); setViewMonth(new Date(jetzt.getFullYear(), jetzt.getMonth(), 1)); setSelDay(iso(jetzt)); }}>→ Heute</button>
               <button className="pfeil" aria-label="Vorherige Woche" onClick={() => { const n = addDays(weekStart, -7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>‹</button>
               <button className="pfeil" aria-label="Nächste Woche" onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>›</button>
-              <b>{weekStart.getMonth() === wEnd.getMonth()
-                ? `${weekStart.getDate()}. – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`
-                : `${weekStart.getDate()}. ${MONTHS[weekStart.getMonth()]} – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`}</b>
+              {/* Titel antippen = Monatskalender aufklappen (wie in Outlook) */}
+              <button className="titelbtn" onClick={() => setMkOffen(!mkOffen)}>
+                <b>{weekStart.getMonth() === wEnd.getMonth()
+                  ? `${weekStart.getDate()}. – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`
+                  : `${weekStart.getDate()}. ${MONTHS[weekStart.getMonth()]} – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`}</b>
+                <span className="caret">{mkOffen ? "▴" : "▾"}</span>
+              </button>
             </div>
+            {mkOffen && <div className="mkdrop">{miniKalender(() => setMkOffen(false))}</div>}
             <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
             ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
