@@ -114,7 +114,17 @@ const CSS = `
 .inbxrow.ca{cursor:default;background:#fbf7f4}
 .inbxrow .ibw{font-weight:700}.inbxrow .ibd{color:var(--muted);font-size:.86rem;flex:1}
 .inbxrow .ibgo{color:var(--teal);font-weight:600;font-size:.85rem}
-@media(max-width:700px){.deskgrid{display:none}.dayview{display:block}.wrap{padding:14px}.hdr h1{font-size:1.3rem}}
+@media(max-width:700px){
+  .deskgrid{display:none}.dayview{display:block}
+  .wrap{padding:8px}.hdr h1{font-size:1.25rem}
+  .hdr .sp{gap:6px}.hdr .sp .btn{padding:7px 10px;font-size:.8rem}
+  .modal{padding:18px;border-radius:14px}
+  .legend{padding:8px 10px;font-size:.76rem;gap:4px 6px}
+  .daychip{padding:7px 10px;font-size:.84rem}
+  .oblock .obtitel{font-size:.82rem}
+  .oblock .obzeit{font-size:.72rem}
+  .otagwrap{margin-top:6px}
+}
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
@@ -144,7 +154,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .cell.closed{background:#f4f4f4;cursor:default;color:#ccc}.cell.past{opacity:.45;cursor:default}
 .cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover,.cell.blk:hover{outline:2px solid var(--teal);outline-offset:-2px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
-.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:88dvh;overflow-y:auto}
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
 .modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px;color:var(--ink)}
 .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
