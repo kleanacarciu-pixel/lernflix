@@ -335,11 +335,19 @@ export default function KalenderPage() {
     // admin
     if (s.state === "free") {
       const wd = (parseIso(date).getDay() + 6) % 7;
-      setModal(<div className="modal"><h2>Slot blockieren</h2><p>{when}</p>
-        <div className="okbox">Für eigene Arbeit sperren – Schüler sehen ihn dann als „belegt“ und können nicht buchen.</div>
+      const maxDauer = ((wd < 5 ? 20 : 19) - s.hour) * 60;
+      setModal(<div className="modal"><h2>Freier Slot: {when}</h2>
         <div className="col">
-          <button className="btn p" onClick={() => act("block", { date, hour: s.hour })}>Nur dieses Datum blockieren</button>
-          <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>Jeden {DAYS[wd]} dauerhaft blockieren</button>
+          <button className="btn p" onClick={() => setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
+            startHour={s.hour} maxDauer={maxDauer} onClose={() => setModal(null)}
+            onSubmit={(sid, m, d, fest) => act("adminBook", { date, hour: s.hour, studentId: sid, mode: m, dauerMin: d, fest })} />)}>
+            📅 Termin für Schüler eintragen
+          </button>
+          <button className="btn p" onClick={() => setModal(<BlockWahl when={when} startHour={s.hour} maxDauer={maxDauer}
+            onClose={() => setModal(null)} onSubmit={(d) => act("block", { date, hour: s.hour, dauerMin: d })} />)}>
+            ⛔ Blockieren (nur dieses Datum)
+          </button>
+          <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>⛔ Jeden {DAYS[wd]} dauerhaft blockieren (1 Std.)</button>
           <button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
         </div></div>);
       return;
@@ -692,6 +700,48 @@ function EndzeitWahl({ startHour, maxDauer, dauer, setDauer }: {
       </select>
     </div>
   );
+}
+// Kleana trägt selbst einen Termin für einen Schüler ein – gleiche
+// Start-/Endzeit-Auswahl wie beim Schüler-Buchen, sofort bestätigt.
+function AdminBuchen({ students, startHour, maxDauer, onSubmit, onClose }: {
+  students: { id: string; name: string }[]; startHour: number; maxDauer: number;
+  onSubmit: (studentId: string, mode: string, dauerMin: number, fest: boolean) => void; onClose: () => void;
+}) {
+  const [sid, setSid] = useState(students[0]?.id || "");
+  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
+  const [fest, setFest] = useState(false);
+  const ende = minZuZeit(Math.round(startHour * 60) + dauer);
+  return <div className="modal"><h2>📅 Termin eintragen</h2>
+    <label>Für welchen Schüler?</label>
+    <select value={sid} onChange={(e) => setSid(e.target.value)} style={{ width: "100%" }}>
+      {students.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
+      {students.length === 0 && <option value="">Noch keine Schüler</option>}
+    </select>
+    <label>Von wann bis wann?</label>
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <label>Einmalig oder jede Woche?</label>
+    <div className="acts" style={{ marginTop: 6 }}>
+      <button type="button" className={"btn " + (!fest ? "p" : "g")} onClick={() => setFest(false)}>Nur dieses Datum</button>
+      <button type="button" className={"btn " + (fest ? "p" : "g")} onClick={() => setFest(true)}>Jede Woche fest</button>
+    </div>
+    <p style={{ margin: "10px 0 4px" }}>Also <b>{fmtZeit(startHour)}–{ende}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>
+    <div className="col">
+      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "online", dauer, fest)}>💻 Online</button>
+      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "vor_ort", dauer, fest)}>📍 Vor Ort</button>
+      <button className="btn g" onClick={onClose}>Zurück</button>
+    </div></div>;
+}
+// Blockieren mit Endzeit (z. B. 14:00–15:30 für eigene Arbeit sperren)
+function BlockWahl({ when, startHour, maxDauer, onSubmit, onClose }: {
+  when: string; startHour: number; maxDauer: number;
+  onSubmit: (dauerMin: number) => void; onClose: () => void;
+}) {
+  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
+  return <div className="modal"><h2>⛔ Blockieren</h2><p>{when}</p>
+    <div className="okbox">Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.</div>
+    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer} />
+    <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
+      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit(dauer)}>Blockieren</button></div></div>;
 }
 function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
   title: string; startHour: number; maxDauer: number;

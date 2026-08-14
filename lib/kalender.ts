@@ -181,9 +181,12 @@ export function tagIntervalle(
   const ivs: Intervall[] = [];
   const absage = (sid: string, hour: number) =>
     dayAppts.some((a) => a.kind === "absage" && Number(a.hour) === hour && a.student_id === sid);
-  // Blöcke (einzelnes Datum + Dauer-Blöcke): belegen eine volle Stunde
+  // Blöcke: einzelnes Datum mit eigener Dauer; Dauer-Blöcke eine volle Stunde
   dayAppts.filter((a) => a.kind === "block" && a.status !== "abgesagt")
-    .forEach((a) => ivs.push({ start: Number(a.hour), ende: Number(a.hour) + 1, t: "block", sid: "", name: "", fixed: false, mode: null, dauer: 60 }));
+    .forEach((a) => {
+      const dauer = Number(a.dauer_min) || 60;
+      ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: "", fixed: false, mode: null, dauer });
+    });
   wblocks.filter((w) => w.weekday === wd)
     .forEach((w) => ivs.push({ start: Number(w.hour), ende: Number(w.hour) + 1, t: "block", sid: "", name: "", fixed: false, mode: null, dauer: 60, weekly: true }));
   // Einzel-Buchungen und Probestunden
