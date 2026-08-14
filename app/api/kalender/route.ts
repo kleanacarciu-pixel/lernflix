@@ -95,18 +95,24 @@ export async function POST(req: Request): Promise<Response> {
         prof = await getProfile(user.id);
         if (prof) { role = prof.role === "admin" ? "admin" : "student"; viewerId = user.id; }
       }
-      // Kalender -> Klassenzimmer synchron halten: Stunden für die nächsten
-      // 14 Tage automatisch anlegen/abräumen (leise, idempotent)
-      if (viewerId) await syncLessons();
-      const days = await buildWeek(monday, role, viewerId);
+      // TEMPO: alles parallel laden; die Stunden-Synchronisation läuft NACH
+      // der Antwort (after) und gedrosselt – sie darf das Laden nie bremsen
+      const istSchueler = role === "student" && !!prof;
+      const [days, nextLesson, dates, myfixRes] = await Promise.all([
+        buildWeek(monday, role, viewerId),
+        viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
+        istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
+        istSchueler
+          ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv")
+          : Promise.resolve({ data: null }),
+      ]);
+      if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
-      // Virtuelles Klassenzimmer: nächste anstehende Stunde für den "Zur Stunde"-Button
-      if (viewerId) out.nextLesson = await nextLessonFor(viewerId);
-      if (role === "student" && prof) {
-        const dates = await balanceDates(prof.user_id);
-        const { data: myfix } = await service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof.user_id).eq("status", "aktiv");
-        const fix = (myfix || []).map((f: { weekday: number; hour: number; mode: string | null; dauer_min: number }) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));
-        out.balance = { minus: prof.minus_hours, plus: prof.plus_hours, nach: prof.makeup_credits, dates, fix };
+      if (nextLesson) out.nextLesson = nextLesson;
+      if (istSchueler && dates) {
+        const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])
+          .map((f) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));
+        out.balance = { minus: prof!.minus_hours, plus: prof!.plus_hours, nach: prof!.makeup_credits, dates, fix };
       }
       return ok(out);
     }
@@ -199,7 +205,7 @@ export async function POST(req: Request): Promise<Response> {
       if (s.booking && s.booking.student_id === sid) {
         await service().from("appointments").update({ mode }).eq("id", s.booking.id);
       }
-      await syncLessons(); // Stunde im Klassenzimmer sofort anlegen/nachziehen
+      await syncLessons(true); // Stunde im Klassenzimmer sofort anlegen/nachziehen
       const wann = prettyDate(date, hour);
       const txt = mode === "online" ? "online" : "vor Ort";
       if (!isAdmin) {
@@ -265,7 +271,7 @@ export async function POST(req: Request): Promise<Response> {
         });
         if (error) return bad("Eintragen fehlgeschlagen: " + error.message);
         if (sp.email) { const em = sp.email; after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode))); }
-        await syncLessons();
+        await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
       }
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
@@ -275,7 +281,7 @@ export async function POST(req: Request): Promise<Response> {
         });
         if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
       if (sp.email) { const em = sp.email; after(() => sendMail(em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode))); }
-      await syncLessons();
+      await syncLessons(true);
       return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
     }
 

@@ -13,11 +13,11 @@ for (let h = 8; h <= 19.5; h += 0.5) HOURS.push(h);
 // von 15 bis 240 Minuten in 5-Minuten-Schritten (wie in Outlook)
 export const DAUERN = [30, 45, 60, 90];
 export function dauerOk(min: number): boolean {
-  return Number.isInteger(min) && min >= 5 && min <= 240 && min % 5 === 0;
+  return Number.isInteger(min) && min >= 5 && min <= 300;
 }
-// Liegt eine (Komma-)Stunde auf dem 5-Minuten-Raster? (8.0833… = 8:05)
+// Liegt eine (Komma-)Stunde auf einer vollen Minute? (16.55 = 16:33)
 export function feinRasterOk(hour: number): boolean {
-  return Number.isFinite(hour) && Math.abs(hour * 12 - Math.round(hour * 12)) < 0.001;
+  return Number.isFinite(hour) && Math.abs(hour * 60 - Math.round(hour * 60)) < 0.01;
 }
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";

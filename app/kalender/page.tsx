@@ -114,7 +114,17 @@ const CSS = `
 .inbxrow.ca{cursor:default;background:#fbf7f4}
 .inbxrow .ibw{font-weight:700}.inbxrow .ibd{color:var(--muted);font-size:.86rem;flex:1}
 .inbxrow .ibgo{color:var(--teal);font-weight:600;font-size:.85rem}
-@media(max-width:700px){.deskgrid{display:none}.dayview{display:block}.wrap{padding:14px}.hdr h1{font-size:1.3rem}}
+@media(max-width:700px){
+  .deskgrid{display:none}.dayview{display:block}
+  .wrap{padding:8px}.hdr h1{font-size:1.25rem}
+  .hdr .sp{gap:6px}.hdr .sp .btn{padding:7px 10px;font-size:.8rem}
+  .modal{padding:18px;border-radius:14px}
+  .legend{padding:8px 10px;font-size:.76rem;gap:4px 6px}
+  .daychip{padding:7px 10px;font-size:.84rem}
+  .oblock .obtitel{font-size:.82rem}
+  .oblock .obzeit{font-size:.72rem}
+  .otagwrap{margin-top:6px}
+}
 .wkhead{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
 .wkhead b{font-family:'Playfair Display',Georgia,serif;font-size:1.05rem}
 .wkhead button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
@@ -144,7 +154,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .cell.closed{background:#f4f4f4;cursor:default;color:#ccc}.cell.past{opacity:.45;cursor:default}
 .cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover,.cell.blk:hover{outline:2px solid var(--teal);outline-offset:-2px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
-.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:88dvh;overflow-y:auto}
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
 .modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px;color:var(--ink)}
 .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
@@ -198,6 +208,26 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .otagwrap{display:grid;grid-template-columns:46px 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin-top:8px}
 .otagwrap .ostunde{height:56px}
 .otagwrap .otag{border-left:1px solid var(--line)}
+/* Mini-Monatskalender (Outlook-Stil) */
+.minikal{margin-top:4px}
+.mk-wd{display:grid;grid-template-columns:repeat(7,1fr);font-size:.68rem;color:var(--muted);text-align:center;margin:8px 0 3px;font-weight:700}
+.mk-woche{display:grid;grid-template-columns:repeat(7,1fr);border-radius:9px;cursor:pointer}
+.mk-woche.on{background:rgba(43,179,192,.16);outline:1.5px solid rgba(43,179,192,.55)}
+.mk-tag{background:none;border:0;font:inherit;font-size:.8rem;padding:6px 0;cursor:pointer;border-radius:8px;color:#333}
+.mk-tag:hover{background:#e8f2f4}
+.mk-tag.aus{color:#bdc4ca}
+.mk-tag.heute{color:#fff;background:var(--teal);font-weight:700}
+/* Kopfleiste wie Outlook: Heute + Pfeile + Zeitraum */
+.wkhead{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.wkhead .heutebtn{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.wkhead .heutebtn:hover{background:#f2f6f7}
+.wkhead .pfeil{background:none;border:0;font:inherit;font-size:1.15rem;font-weight:700;cursor:pointer;color:#444;padding:4px 9px;border-radius:8px}
+.wkhead .pfeil:hover{background:#eef2f4}
+.wkhead b{font-size:1.02rem;margin-left:4px}
+@media(max-width:700px){
+  .side{display:none} /* am Handy navigieren Heute/Pfeile + Tages-Chips */
+  .wkhead b{font-size:.92rem}
+}
 `;
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
@@ -297,6 +327,23 @@ export default function KalenderPage() {
     if (ready) loadWeek();
   }, [ready, loadWeek]);
 
+  // Immer aktuell, ohne manuelles Neuladen (wichtig im App-Betrieb):
+  // alle 30 s leise auffrischen + sofort beim Zurückkehren in die App/den Tab
+  useEffect(() => {
+    if (!ready) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadWeek();
+    }, 30000);
+    const sicht = () => { if (document.visibilityState === "visible") void loadWeek(); };
+    document.addEventListener("visibilitychange", sicht);
+    window.addEventListener("focus", sicht);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", sicht);
+      window.removeEventListener("focus", sicht);
+    };
+  }, [ready, loadWeek]);
+
   // ---- Aktionen ----
   async function act(action: string, params: Record<string, unknown>) {
     if (busy) return;
@@ -374,16 +421,16 @@ export default function KalenderPage() {
     // admin
     if (s.state === "free") {
       const wd = (parseIso(date).getDay() + 6) % 7;
-      const maxDauer = ((wd < 5 ? 20 : 19) - s.hour) * 60;
+      const schlussMin = (wd < 5 ? 20 : 19) * 60;
       setModal(<div className="modal"><h2>Freier Slot: {when}</h2>
         <div className="col">
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
-            startHour={startZelle} maxDauer={maxDauer} api={api} onClose={() => setModal(null)}
-            onSubmit={(sid, m, d, off, fest) => act("adminBook", { date, hour: startZelle + off / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
+            startHour={startZelle} schlussMin={schlussMin} api={api} onClose={() => setModal(null)}
+            onSubmit={(sid, m, vonMin, d, fest) => act("adminBook", { date, hour: vonMin / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
             📅 Termin für Schüler eintragen
           </button>
-          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} maxDauer={maxDauer}
-            onClose={() => setModal(null)} onSubmit={(d, off) => act("block", { date, hour: startZelle + off / 60, dauerMin: d })} />); }}>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
+            onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("block", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
             ⛔ Blockieren (nur dieses Datum)
           </button>
           <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>⛔ Jeden {DAYS[wd]} dauerhaft blockieren (1 Std.)</button>
@@ -422,9 +469,9 @@ export default function KalenderPage() {
 
   function openProbe(date: string, hour: number, when: string) {
     const wd = (parseIso(date).getDay() + 6) % 7;
-    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
-    setModal(<ProbeForm when={when} startHour={hour} maxDauer={maxDauer} onClose={() => setModal(null)} onSubmit={async (name, email, m, dauerMin, off) => {
-      const d = await api("requestProbe", { date, hour: hour + off / 60, mode: m, name, email, dauerMin });
+    const schlussMin = (wd < 5 ? 20 : 19) * 60;
+    setModal(<ProbeForm when={when} startHour={hour} schlussMin={schlussMin} onClose={() => setModal(null)} onSubmit={async (name, email, m, vonMin, dauerMin) => {
+      const d = await api("requestProbe", { date, hour: vonMin / 60, mode: m, name, email, dauerMin });
       if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde angefragt ✓")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
@@ -472,12 +519,12 @@ export default function KalenderPage() {
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
-    // Endzeit-Auswahl endet spätestens am Ladenschluss (Mo–Fr 20:00, Sa/So 19:00)
+    // Spätestes Ende: Ladenschluss (Mo–Fr 20:00, Sa/So 19:00)
     const wd = (parseIso(date).getDay() + 6) % 7;
-    const maxDauer = ((wd < 5 ? 20 : 19) - hour) * 60;
-    setModal(<BuchungsWahl title={title} startHour={hour} maxDauer={maxDauer}
+    const schlussMin = (wd < 5 ? 20 : 19) * 60;
+    setModal(<BuchungsWahl title={title} startHour={hour} schlussMin={schlussMin}
       onClose={() => setModal(null)}
-      onSubmit={(m, d, off) => act(action, { date, hour: hour + off / 60, mode: m, dauerMin: d })} />);
+      onSubmit={(m, vonMin, d) => act(action, { date, hour: vonMin / 60, mode: m, dauerMin: d })} />);
   }
 
   function openAddStudent() {
@@ -542,11 +589,18 @@ export default function KalenderPage() {
   }
 
   // ---- Sidebar-Wochenliste des Monats ----
-  const monthWeeks: { key: string; label: string; on: boolean }[] = [];
+  const monthWeeks: { key: string; on: boolean; tage: { iso: string; nr: number; aussen: boolean }[] }[] = [];
   {
     const last = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0);
     let m = mondayOf(viewMonth);
-    while (m <= last) { const end = addDays(m, 6); monthWeeks.push({ key: iso(m), label: `${dm(m)}–${dm(end)}`, on: iso(m) === iso(weekStart) }); m = addDays(m, 7); }
+    while (m <= last) {
+      const tage = Array.from({ length: 7 }, (_, i) => {
+        const t = addDays(m, i);
+        return { iso: iso(t), nr: t.getDate(), aussen: t.getMonth() !== viewMonth.getMonth() };
+      });
+      monthWeeks.push({ key: iso(m), on: iso(m) === iso(weekStart), tage });
+      m = addDays(m, 7);
+    }
   }
   const role = session?.role || "public";
   const legend = buildLegend(role);
@@ -627,16 +681,29 @@ export default function KalenderPage() {
             <div className="mnav"><button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}>‹</button>
               <b>{MONTHS[viewMonth.getMonth()]} {viewMonth.getFullYear()}</b>
               <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}>›</button></div>
-            <div>{monthWeeks.map((w) => (
-              <button key={w.key} className={"wk" + (w.on ? " on" : "")} onClick={() => setWeekStart(parseIso(w.key))}>Woche <small>{w.label}</small></button>
-            ))}</div>
+            {/* Mini-Monatskalender wie in Outlook: Woche anklicken = hinspringen */}
+            <div className="minikal">
+              <div className="mk-wd">{["M", "D", "M", "D", "F", "S", "S"].map((w, i) => <span key={i}>{w}</span>)}</div>
+              {monthWeeks.map((w) => (
+                <div key={w.key} className={"mk-woche" + (w.on ? " on" : "")}>
+                  {w.tage.map((t) => (
+                    <button key={t.iso} className={"mk-tag" + (t.aussen ? " aus" : "") + (t.iso === today ? " heute" : "")}
+                      onClick={() => jumpTo(t.iso)}>{t.nr}</button>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="calwrap">
+            {/* Kopfleiste wie in Outlook: Heute + Pfeile + Zeitraum */}
             <div className="wkhead">
-              <button onClick={() => { const n = addDays(weekStart, -7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>‹ Woche</button>
-              <b>{dm(weekStart)} – {dm(wEnd)} {wEnd.getFullYear()}</b>
-              <button onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>Woche ›</button>
+              <button className="heutebtn" onClick={() => { const jetzt = new Date(); const n = mondayOf(jetzt); setWeekStart(n); setViewMonth(new Date(jetzt.getFullYear(), jetzt.getMonth(), 1)); setSelDay(iso(jetzt)); }}>→ Heute</button>
+              <button className="pfeil" aria-label="Vorherige Woche" onClick={() => { const n = addDays(weekStart, -7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>‹</button>
+              <button className="pfeil" aria-label="Nächste Woche" onClick={() => { const n = addDays(weekStart, 7); setWeekStart(n); setViewMonth(new Date(n.getFullYear(), n.getMonth(), 1)); }}>›</button>
+              <b>{weekStart.getMonth() === wEnd.getMonth()
+                ? `${weekStart.getDate()}. – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`
+                : `${weekStart.getDate()}. ${MONTHS[weekStart.getMonth()]} – ${wEnd.getDate()}. ${MONTHS[wEnd.getMonth()]} ${wEnd.getFullYear()}`}</b>
             </div>
             <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
@@ -769,51 +836,45 @@ function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promis
 }
 // Start- und Endzeit wie in Outlook: Start = angeklickter Slot (fest),
 // Ende per Auswahlliste (15-Minuten-Schritte bis Ladenschluss).
-const dauerGueltig = (m: number) => Number.isInteger(m) && m >= 5 && m <= 240 && m % 5 === 0;
 const minZuZeit = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-// Start-/Endzeit wie in Outlook. Mit setStartOff wird auch die Startzeit
-// wählbar (5-Minuten-Schritte innerhalb der angeklickten halben Stunde).
-function EndzeitWahl({ startHour, maxDauer, dauer, setDauer, step = 15, startOff = 0, setStartOff }: {
-  startHour: number; maxDauer: number; dauer: number; setDauer: (m: number) => void;
-  step?: number; startOff?: number; setStartOff?: (off: number) => void;
+const zeitZuMin = (z: string) => { const [h, m] = z.split(":").map(Number); return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : NaN; };
+// Von–Bis frei eintippbar, JEDE Minute möglich (auch 16:33) – einfach wie in
+// Outlook: zwei Uhrzeit-Felder, tippen oder über die Uhr wählen.
+function ZeitVonBis({ von, bis, setVon, setBis }: {
+  von: string; bis: string; setVon: (z: string) => void; setBis: (z: string) => void;
 }) {
-  const startMin = Math.round(startHour * 60) + startOff;
-  const maxD = maxDauer - startOff;
-  const opts: number[] = [];
-  for (let m = step; m <= Math.min(240, maxD); m += step) opts.push(m);
   return (
     <div className="acts" style={{ marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
-      <span style={{ fontWeight: 600 }}>Startzeit</span>
-      {setStartOff ? (
-        <select value={startOff} onChange={(e) => setStartOff(Number(e.target.value))} aria-label="Startzeit">
-          {[0, 5, 10, 15, 20, 25].map((o) => (
-            <option key={o} value={o}>{minZuZeit(Math.round(startHour * 60) + o)}</option>
-          ))}
-        </select>
-      ) : (
-        <input value={fmtZeit(startHour)} disabled style={{ width: 74, textAlign: "center" }} aria-label="Startzeit" />
-      )}
-      <span style={{ fontWeight: 600 }}>Endzeit</span>
-      <select value={dauer} onChange={(e) => setDauer(Number(e.target.value))} aria-label="Endzeit" style={{ minWidth: 140 }}>
-        {opts.map((m) => (
-          <option key={m} value={m}>{minZuZeit(startMin + m)}  ({m} Min.)</option>
-        ))}
-      </select>
+      <span style={{ fontWeight: 600 }}>Von</span>
+      <input type="time" value={von} onChange={(e) => setVon(e.target.value)} aria-label="Startzeit" style={{ width: 110 }} />
+      <span style={{ fontWeight: 600 }}>bis</span>
+      <input type="time" value={bis} onChange={(e) => setBis(e.target.value)} aria-label="Endzeit" style={{ width: 110 }} />
     </div>
   );
+}
+// Prüfung der Von–Bis-Zeiten; leerer Text = alles gut
+function zeitFehler(von: string, bis: string, schlussMin: number): string {
+  const v = zeitZuMin(von), b = zeitZuMin(bis);
+  if (!Number.isFinite(v) || !Number.isFinite(b)) return "Bitte Von- und Bis-Zeit angeben.";
+  if (v < 480) return "Frühester Beginn: 08:00 Uhr.";
+  if (b > schlussMin) return `Spätestes Ende: ${minZuZeit(schlussMin)} Uhr.`;
+  if (b - v < 5) return "Die Stunde muss mindestens 5 Minuten dauern.";
+  if (b - v > 300) return "Maximal 5 Stunden am Stück.";
+  return "";
 }
 // Kleana trägt selbst einen Termin für einen Schüler ein – Startzeit
 // minutengenau wählbar (z. B. 8:05), sofort bestätigt. Die Schülerliste
 // lädt sich zur Sicherheit selbst nach, falls sie noch nicht da ist.
-function AdminBuchen({ students, startHour, maxDauer, api, onSubmit, onClose }: {
-  students: { id: string; name: string }[]; startHour: number; maxDauer: number;
+function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }: {
+  students: { id: string; name: string }[]; startHour: number; schlussMin: number;
   api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>;
-  onSubmit: (studentId: string, mode: string, dauerMin: number, startOff: number, fest: boolean) => void; onClose: () => void;
+  onSubmit: (studentId: string, mode: string, vonMin: number, dauerMin: number, fest: boolean) => void; onClose: () => void;
 }) {
+  const startMin = Math.round(startHour * 60);
   const [liste, setListe] = useState(students);
   const [sid, setSid] = useState(students[0]?.id || "");
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const [fest, setFest] = useState(false);
   useEffect(() => {
     if (liste.length > 0) return;
@@ -825,76 +886,80 @@ function AdminBuchen({ students, startHour, maxDauer, api, onSubmit, onClose }: 
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const startMin = Math.round(startHour * 60) + off;
-  const ende = minZuZeit(startMin + dauer);
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>📅 Termin eintragen</h2>
     <label>Für welchen Schüler?</label>
     <select value={sid} onChange={(e) => setSid(e.target.value)} style={{ width: "100%" }}>
       {liste.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
       {liste.length === 0 && <option value="">Lade Schüler …</option>}
     </select>
-    <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <label>Von wann bis wann? (frei eintippbar, z. B. 16:33)</label>
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     <label>Einmalig oder jede Woche?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (!fest ? "p" : "g")} onClick={() => setFest(false)}>Nur dieses Datum</button>
       <button type="button" className={"btn " + (fest ? "p" : "g")} onClick={() => setFest(true)}>Jede Woche fest</button>
     </div>
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>
+    {fehler ? <div className="err">{fehler}</div>
+      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>}
     <div className="col">
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "online", dauer, off, fest)}>💻 Online</button>
-      <button className="btn p" disabled={!sid || !dauerGueltig(dauer)} onClick={() => onSubmit(sid, "vor_ort", dauer, off, fest)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>💻 Online</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
 // Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren)
-function BlockWahl({ when, startHour, maxDauer, onSubmit, onClose }: {
-  when: string; startHour: number; maxDauer: number;
-  onSubmit: (dauerMin: number, startOff: number) => void; onClose: () => void;
+function BlockWahl({ when, startHour, schlussMin, onSubmit, onClose }: {
+  when: string; startHour: number; schlussMin: number;
+  onSubmit: (vonMin: number, dauerMin: number) => void; onClose: () => void;
 }) {
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
+  const startMin = Math.round(startHour * 60);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>⛔ Blockieren</h2><p>{when}</p>
     <div className="okbox">Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.</div>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    {fehler && <div className="err">{fehler}</div>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit(dauer, off)}>Blockieren</button></div></div>;
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>Blockieren</button></div></div>;
 }
-function BuchungsWahl({ title, startHour, maxDauer, onSubmit, onClose }: {
-  title: string; startHour: number; maxDauer: number;
-  onSubmit: (mode: string, dauerMin: number, startOff: number) => void; onClose: () => void;
+function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
+  title: string; startHour: number; schlussMin: number;
+  onSubmit: (mode: string, vonMin: number, dauerMin: number) => void; onClose: () => void;
 }) {
-  const [dauer, setDauer] = useState(Math.min(60, maxDauer));
-  const [off, setOff] = useState(0);
-  const startMin = Math.round(startHour * 60) + off;
-  const ende = minZuZeit(startMin + dauer);
+  const startMin = Math.round(startHour * 60);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>{title}</h2>
-    <p>Von wann bis wann soll die Stunde gehen?</p>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
-    <p style={{ margin: "10px 0 4px" }}>Also <b>{minZuZeit(startMin)}–{ende}</b>. Und: online oder vor Ort?</p>
+    <p>Von wann bis wann soll die Stunde gehen? (frei eintippbar, z. B. 16:33)</p>
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    {fehler ? <div className="err">{fehler}</div>
+      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>. Und: online oder vor Ort?</p>}
     <div className="col">
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("online", dauer, off)}>💻 Online</button>
-      <button className="btn p" disabled={!dauerGueltig(dauer)} onClick={() => onSubmit("vor_ort", dauer, off)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit("online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>💻 Online</button>
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit("vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-function ProbeForm({ when, startHour, maxDauer, onSubmit, onClose }: { when: string; startHour: number; maxDauer: number; onSubmit: (name: string, email: string, mode: string, dauerMin: number, startOff: number) => Promise<string>; onClose: () => void }) {
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState(""); const [dauer, setDauer] = useState(Math.min(60, maxDauer)); const [off, setOff] = useState(0); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose }: { when: string; startHour: number; schlussMin: number; onSubmit: (name: string, email: string, mode: string, vonMin: number, dauerMin: number) => Promise<string>; onClose: () => void }) {
+  const startMin = Math.round(startHour * 60);
+  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState("");
+  const [von, setVon] = useState(minZuZeit(startMin)); const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
-    if (!dauerGueltig(dauer)) { setErr("Bitte 5–240 Minuten in 5er-Schritten wählen."); return; }
-    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, dauer, off)); setLoad(false);
+    const zf = zeitFehler(von, bis, schlussMin);
+    if (zf) { setErr(zf); return; }
+    setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))); setLoad(false);
   }
   return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
     <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
     <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
     <label>Von wann bis wann?</label>
-    <EndzeitWahl startHour={startHour} maxDauer={maxDauer} dauer={dauer} setDauer={setDauer}
-      step={5} startOff={off} setStartOff={setOff} />
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     <label>Online oder vor Ort?</label>
     <div className="acts" style={{ marginTop: 6 }}>
       <button type="button" className={"btn " + (mode === "online" ? "p" : "g")} onClick={() => setMode("online")}>💻 Online</button>

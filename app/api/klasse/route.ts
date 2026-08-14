@@ -67,7 +67,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= EINSTIEG =======================================
     if (action === "bootstrap") {
-      await syncLessons(); // Kalender -> Klassenzimmer synchron halten
+      await syncLessons(); // Kalender -> Klassenzimmer synchron halten (gedrosselt, meist sofort fertig)
       const out: Record<string, unknown> = { isTeacher: istLehrerin, myName: profil.name };
       if (istLehrerin) {
         const { data } = await sb.from("profiles").select("user_id,name")
@@ -173,7 +173,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= STUNDEN ========================================
     if (action === "lessons") {
-      await syncLessons(); // frisch aus dem Kalender nachziehen
+      await syncLessons(); // gedrosselt - bremst das Laden nicht mehr
       const grenze = new Date(Date.now() - 30 * 60000).toISOString();
       const [{ data: kommend }, { data: vergangen }] = await Promise.all([
         sb.from("lessons").select("id,title,subject,starts_at,ends_at,mode")

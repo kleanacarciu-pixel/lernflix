@@ -68,7 +68,14 @@ function heuteBerlin(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
 }
 
-export async function syncLessons(): Promise<void> {
+// Drossel: der Sync kostet mehrere Datenbank-Runden – innerhalb einer
+// Minute reicht ein Lauf pro Server-Instanz. force=true (z. B. direkt nach
+// einer Buchung/Umstellung) überspringt die Drossel.
+let letzterSyncMs = 0;
+
+export async function syncLessons(force = false): Promise<void> {
+  if (!force && Date.now() - letzterSyncMs < 60_000) return;
+  letzterSyncMs = Date.now();
   try {
     const sb = service();
     const von = heuteBerlin();
