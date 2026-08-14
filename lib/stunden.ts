@@ -3,6 +3,7 @@
 // Wird von app/api/lessons/[lessonId]/join/route.ts und app/api/kalender
 // genutzt. NUR serverseitig! (DAILY_API_KEY darf nie im Browser landen.)
 // =============================================================================
+import { createHmac } from "node:crypto";
 import { service, berlinInstant, addDaysStr, weekdayOf } from "@/lib/kalender";
 
 // Zeitfenster-Regeln (Version 1)
@@ -164,6 +165,18 @@ export async function istStundenMitglied(lesson: Lesson, userId: string): Promis
     .from("lesson_participants").select("user_id")
     .eq("lesson_id", lesson.id).eq("user_id", userId).maybeSingle();
   return !!data;
+}
+
+// --- Gast-Links (Probestunde / Masterclass) ---------------------------------
+// Gäste ohne Konto treten über /gast/<lessonId>?k=<schluessel> bei. Der
+// Schlüssel ist ein HMAC über die Stunden-ID mit dem Service-Role-Key als
+// Geheimnis – nicht erratbar, ohne neue Umgebungsvariable und ohne Migration.
+export function gastSchluessel(lessonId: string): string {
+  const geheim = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  return createHmac("sha256", geheim).update(`gast:${lessonId}`).digest("hex").slice(0, 32);
+}
+export function gastLink(lessonId: string, baseUrl: string): string {
+  return `${baseUrl.replace(/\/$/, "")}/gast/${lessonId}?k=${gastSchluessel(lessonId)}`;
 }
 
 // --- Daily.co REST API ------------------------------------------------------
