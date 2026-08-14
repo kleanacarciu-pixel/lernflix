@@ -9,7 +9,7 @@
 // =============================================================================
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile } from "@/lib/kalender";
-import { istStundenMitglied, type Lesson } from "@/lib/stunden";
+import { istStundenMitglied, deleteDailyRoom, type Lesson } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +58,20 @@ export async function POST(req: Request): Promise<Response> {
     const istLehrerin = lesson.teacher_id === user.id || profil.role === "admin";
     if (!istLehrerin && !(await istStundenMitglied(lesson, user.id))) {
       return fehler("Du gehörst nicht zu dieser Stunde.", 403);
+    }
+
+    // ======================= CALL FÜR ALLE BEENDEN ==========================
+    // Nur Kleana: löscht den Daily-Raum – alle Teilnehmer werden getrennt.
+    // Die Stunde/der Call selbst bleibt bestehen; beim nächsten Beitritt
+    // wird bei Bedarf ein frischer Raum erstellt.
+    if (action === "endCall") {
+      if (!istLehrerin) return fehler("Nur Kleana kann den Call für alle beenden.", 403);
+      if (lesson.daily_room_name) {
+        try { await deleteDailyRoom(lesson.daily_room_name); }
+        catch { return fehler("Der Call konnte nicht beendet werden. Bitte versuche es gleich noch einmal."); }
+      }
+      await sb.from("lessons").update({ daily_room_name: null, daily_room_url: null }).eq("id", lessonId);
+      return ok({ message: "Call für alle beendet." });
     }
 
     // ======================= ZUSTAND ABFRAGEN (Polling) =====================

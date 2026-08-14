@@ -229,6 +229,16 @@ export async function ensureDailyRoom(lesson: Lesson, expUnix: number): Promise<
   throw new Error(`Daily-Raum konnte nicht erstellt werden (HTTP ${erstellt.status}): ${JSON.stringify(erstellt.data).slice(0, 200)}`);
 }
 
+// Raum löschen = Call für ALLE beenden (alle Teilnehmer fliegen raus).
+// Beim nächsten Beitritt wird bei Bedarf einfach ein neuer Raum erstellt.
+export async function deleteDailyRoom(roomName: string): Promise<void> {
+  const res = await dailyFetch(`/rooms/${roomName}`, { method: "DELETE" });
+  // 404 = Raum existiert nicht mehr – das ist für uns genauso "beendet"
+  if (res.status !== 200 && res.status !== 404) {
+    throw new Error(`Daily-Raum konnte nicht beendet werden (HTTP ${res.status})`);
+  }
+}
+
 // Persönliches Meeting-Token für einen Teilnehmer ausstellen
 export async function createMeetingToken(roomName: string, userName: string, isOwner: boolean, expUnix: number): Promise<string> {
   const res = await dailyFetch("/meeting-tokens", {

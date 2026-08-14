@@ -72,6 +72,7 @@ const CSS = `
 .stunde .kopf a{color:${GEDAEMPFT};font-size:.85rem;text-decoration:none;font-weight:600}
 .stunde .kopf .wz{background:${VERLAUF};color:#fff;border:0;border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer;font-size:.85rem}
 .stunde .kopf .wz.aktiv{background:#B4491F}
+.stunde .kopf .wz.rot{background:#B4491F}
 .stunde .kopf .zurueck{background:none;border:0;color:${GEDAEMPFT};font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;padding:0}
 .stunde .gradlinie{height:3px;background:${VERLAUF};flex:0 0 auto}
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
@@ -197,6 +198,17 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
     }
   }, [lessonId, frameZerstoeren]);
 
+  // Call für ALLE beenden (nur Kleana): Server löscht den Daily-Raum,
+  // alle Teilnehmer werden getrennt – nicht nur das eigene Fenster
+  const fuerAlleBeenden = useCallback(async () => {
+    if (!window.confirm("Den Call wirklich für ALLE beenden? Alle Teilnehmer werden getrennt.")) return;
+    const d = await apiKz("endCall");
+    if (!d.ok) { window.alert(String(d.error || "Beenden fehlgeschlagen. Bitte noch einmal versuchen.")); return; }
+    frameZerstoeren();
+    setTeiltBildschirm(false);
+    setZustand((z) => ({ art: "beendet", titel: z.art === "video" || z.art === "beendet" ? z.titel : "Deine Stunde" }));
+  }, [apiKz, frameZerstoeren]);
+
   // Bildschirm teilen starten/beenden – immer sichtbar in der Kopfzeile,
   // damit der Knopf nie im "…"-Menü der Videoleiste verschwindet
   const bildschirmTeilen = useCallback(() => {
@@ -246,6 +258,9 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
             <button className="wz" onClick={() => setPanelOffen(!panelOffen)}>
               {panelOffen ? "🧰 Werkzeuge ausblenden" : "🧰 Werkzeuge"}
             </button>
+          )}
+          {videoAktiv && istLehrerin && (
+            <button className="wz rot" onClick={() => void fuerAlleBeenden()}>☎️ Für alle beenden</button>
           )}
           {eingebettet
             ? <button className="zurueck" onClick={onSchliessen}>✕ Schließen</button>
