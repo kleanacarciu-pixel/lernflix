@@ -346,13 +346,20 @@ export default function KalenderPage() {
   // selbst neu – so hängt die installierte App nie mehr auf altem Stand
   const versionRef = useRef<string>("");
 
+  // Schutz vor überholten Antworten: Läuft eine ältere Hintergrund-
+  // Auffrischung noch, während z. B. gerade ein Block freigegeben wurde,
+  // darf ihre (veraltete) Antwort die frischen Daten nicht überschreiben.
+  const ladeNr = useRef(0);
+
   const loadWeek = useCallback(async () => {
+    const nr = ++ladeNr.current;
     const isAdmin = session?.role === "admin";
     const [d, o, ib] = await Promise.all([
       api("week", { monday: iso(weekStart) }),
       isAdmin ? api("overview") : Promise.resolve(null),
       isAdmin ? api("adminInbox") : Promise.resolve(null),
     ]);
+    if (nr !== ladeNr.current) return; // inzwischen gibt es eine neuere Anfrage
     if (d.ok && typeof d.version === "string") {
       if (versionRef.current && versionRef.current !== d.version) { window.location.reload(); return; }
       versionRef.current = d.version;
