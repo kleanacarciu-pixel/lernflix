@@ -79,6 +79,9 @@ const CSS = `
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
 .stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU};position:relative}
 .stunde .tafelwrap{position:absolute;inset:0;z-index:5;flex-direction:column;background:${HELL}}
+.stunde .tafelwrap.voll{position:fixed;z-index:60}
+.stunde .ttrenn{width:1px;height:22px;background:${LINIE};margin:0 2px;flex:0 0 auto}
+.stunde .tpapier{font:inherit;font-size:.84rem;font-weight:600;border:1px solid ${LINIE};border-radius:9px;padding:6px 8px;background:#fff;color:${INK}}
 .stunde .tafelbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#fff;border-bottom:1px solid ${LINIE}}
 .stunde .twz{background:#ECEFF0;color:${INK};border:0;border-radius:9px;padding:7px 10px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
 .stunde .twz.on{background:${VERLAUF};color:#fff}
