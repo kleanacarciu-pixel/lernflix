@@ -251,27 +251,6 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: "Stundenzettel gespeichert ✓" });
     }
 
-    // ======================= TAFEL-HEFT ====================================
-    // Jeder Schüler hat ein dauerhaftes Tafel-Heft (wie ein Notizblock):
-    // als JSON im privaten Storage-Bucket gespeichert, bleibt es über alle
-    // Stunden hinweg erhalten – nächste Stunde einfach weitermachen.
-    if (action === "tafelLaden") {
-      const ziel = lesson.student_id || lessonId; // Webinare: Heft pro Stunde
-      const { data } = await sb.storage.from("klassenzimmer").download(`tafel/${ziel}.json`);
-      return ok({ daten: data ? await data.text() : null });
-    }
-    if (action === "tafelSpeichern") {
-      if (!istLehrerin) return fehler("Nur Kleana kann die Tafel speichern.", 403);
-      const daten = typeof body.daten === "string" ? body.daten : "";
-      if (!daten) return fehler("Nichts zu speichern.");
-      if (daten.length > 4_000_000) return fehler("Die Tafel ist zu groß zum Speichern – bitte eine neue Seite beginnen.");
-      const ziel = lesson.student_id || lessonId;
-      const { error } = await sb.storage.from("klassenzimmer")
-        .upload(`tafel/${ziel}.json`, Buffer.from(daten), { upsert: true, contentType: "application/json" });
-      if (error) return fehler("Tafel-Speichern fehlgeschlagen: " + error.message);
-      return ok({});
-    }
-
     // ======================= BELOHNUNG =====================================
     if (action === "award") {
       if (!istLehrerin) return fehler("Nur Kleana kann Belohnungen vergeben.", 403);
