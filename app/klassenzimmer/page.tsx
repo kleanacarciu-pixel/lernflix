@@ -342,7 +342,7 @@ export default function KlassenzimmerPage() {
 
       {!liveId && <div className="haupt">
         <nav className="nav">
-          <div className="klasse">{schuelerName}</div>
+          <div className="klasse">{istLehrerin ? "Schüler" : schuelerName}</div>
           {istLehrerin && (
             <div className="schueler" role="list" aria-label="Schüler wählen">
               {studenten.map((s) => (
