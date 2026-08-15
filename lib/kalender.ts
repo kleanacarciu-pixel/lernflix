@@ -183,7 +183,7 @@ export function tagIntervalle(
   date: string, wd: number,
   fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[],
   dayAppts: ApptRow[],
-  wblocks: { weekday: number; hour: number }[],
+  wblocks: { weekday: number; hour: number; dauer_min?: number }[],
   nameOf: (id: string) => string,
 ): Intervall[] {
   const ivs: Intervall[] = [];
@@ -196,7 +196,10 @@ export function tagIntervalle(
       ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: "", fixed: false, mode: null, dauer });
     });
   wblocks.filter((w) => w.weekday === wd)
-    .forEach((w) => ivs.push({ start: Number(w.hour), ende: Number(w.hour) + 1, t: "block", sid: "", name: "", fixed: false, mode: null, dauer: 60, weekly: true }));
+    .forEach((w) => {
+      const dauer = Number(w.dauer_min) || 60; // ohne V6-Migration: 60 Min.
+      ivs.push({ start: Number(w.hour), ende: Number(w.hour) + dauer / 60, t: "block", sid: "", name: "", fixed: false, mode: null, dauer, weekly: true });
+    });
   // Einzel-Buchungen und Probestunden
   dayAppts.filter((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt")
     .forEach((a) => {
@@ -228,7 +231,9 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
     sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").gte("slot_date", from).lte("slot_date", to),
-    sb.from("weekly_blocks").select("weekday,hour"),
+    // "*" statt fester Spalten: dauer_min kommt erst mit der V6-Migration,
+    // vorher darf die Abfrage deswegen nicht fehlschlagen
+    sb.from("weekly_blocks").select("*"),
     // Pro-Datum-Umstellungen (online/vor Ort) – Tabelle kommt mit der
     // V4-Migration; ohne sie liefert die Abfrage einfach einen Fehler und
     // wir zeigen den Grund-Modus des festen Termins
@@ -241,7 +246,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   ((profRes.data || []) as { user_id: string; name: string }[]).forEach((p) => namen.set(p.user_id, p.name));
   const nameOf = (id: string) => namen.get(id) || "Schüler";
   const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[];
-  const wblocks = (wbRes.data || []) as { weekday: number; hour: number }[];
+  const wblocks = (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[];
   const appts = (apptRes.data || []) as ApptRow[];
 
   return days.map((date) => {
@@ -298,13 +303,13 @@ export async function slotKonflikt(date: string, hour: number, dauerMin: number)
   const [fxRes, apRes, wbRes] = await Promise.all([
     sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", date),
-    sb.from("weekly_blocks").select("weekday,hour").eq("weekday", wd),
+    sb.from("weekly_blocks").select("*").eq("weekday", wd),
   ]);
   const ivs = tagIntervalle(
     date, wd,
     (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[],
     (apRes.data || []) as ApptRow[],
-    (wbRes.data || []) as { weekday: number; hour: number }[],
+    (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[],
     () => "Schüler",
   );
   const ende = hour + dauerMin / 60;
