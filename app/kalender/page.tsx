@@ -376,20 +376,35 @@ export default function KalenderPage() {
     if (ready) loadWeek();
   }, [ready, loadWeek]);
 
-  // Immer aktuell, ohne manuelles Neuladen (wichtig im App-Betrieb):
-  // alle 30 s leise auffrischen + sofort beim Zurückkehren in die App/den Tab
+  // Immer aktuell, ohne manuelles Neuladen – auch als installierte App:
+  // Das System friert die App im Hintergrund ein, und beim Aufwachen kommt
+  // teils KEIN visibility-Ereignis ("steht wie ein Foto"). Deshalb ein
+  // kurzer Takt mit Wachhund: erkennt er einen Zeitsprung (App war
+  // eingefroren), lädt er sofort neu – zusätzlich zu visibility/focus/
+  // pageshow/online.
   useEffect(() => {
     if (!ready) return;
+    let letzterLauf = Date.now();
+    let letzterTick = Date.now();
+    const lauf = () => { letzterLauf = Date.now(); void loadWeek().catch(() => { }); };
     const t = window.setInterval(() => {
-      if (document.visibilityState === "visible") void loadWeek();
-    }, 30000);
-    const sicht = () => { if (document.visibilityState === "visible") void loadWeek(); };
+      const nun = Date.now();
+      const warEingefroren = nun - letzterTick > 20000; // Takt stand still
+      letzterTick = nun;
+      if (document.visibilityState !== "visible") return;
+      if (warEingefroren || nun - letzterLauf >= 30000) lauf();
+    }, 5000);
+    const sicht = () => { if (document.visibilityState === "visible") lauf(); };
     document.addEventListener("visibilitychange", sicht);
     window.addEventListener("focus", sicht);
+    window.addEventListener("pageshow", sicht);
+    window.addEventListener("online", sicht);
     return () => {
       window.clearInterval(t);
       document.removeEventListener("visibilitychange", sicht);
       window.removeEventListener("focus", sicht);
+      window.removeEventListener("pageshow", sicht);
+      window.removeEventListener("online", sicht);
     };
   }, [ready, loadWeek]);
 
