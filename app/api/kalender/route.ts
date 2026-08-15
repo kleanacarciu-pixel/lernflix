@@ -4,7 +4,7 @@
 // =============================================================================
 import { NextResponse, after } from "next/server";
 import {
-  service, signInFamilie, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
+  service, signInFlexibel, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
@@ -67,11 +67,11 @@ export async function POST(req: Request): Promise<Response> {
   try {
     // ----- ohne Login -----
     if (action === "login") {
-      const email = String(body.email || "").trim().toLowerCase();
+      const eingabe = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
-      if (!email || !password) return bad("E-Mail und Passwort erforderlich.");
-      const session = await signInFamilie(email, password);
-      if (!session) return bad("E-Mail oder Passwort falsch.", 401);
+      if (!eingabe || !password) return bad("Name (oder E-Mail) und Passwort erforderlich.");
+      const session = await signInFlexibel(eingabe, password);
+      if (!session) return bad("Name/E-Mail oder Passwort falsch.", 401);
       const prof = await getProfile(session.user.id);
       if (!prof) return bad("Kein Zugang – bitte Kleana kontaktieren.", 403);
       return ok({ token: session.access_token, refresh: session.refresh_token, role: prof.role, name: prof.name });
@@ -454,7 +454,7 @@ export async function POST(req: Request): Promise<Response> {
       const info = mail.ok
         ? "Die Einladung mit dem Passwort wurde auch per Mail an den Schüler gesendet (ggf. Spam-Ordner prüfen)."
         : `Mail nicht gesendet – Grund: ${mail.error}. Bitte gib dem Schüler das Passwort oben selbst weiter.`;
-      return ok({ message: `Schüler ${name} angelegt.\n\nStart-Passwort: ${password}\nE-Mail: ${email}\n\n${info}\nDer Schüler kann das Passwort nach dem ersten Login selbst ändern.`, password });
+      return ok({ message: `Schüler ${name} angelegt.\n\nAnmeldename: ${name}\nStart-Passwort: ${password}\nE-Mail (für Benachrichtigungen): ${email}\n\n${info}\nEingeloggt wird mit dem Namen und dem Passwort. Der Schüler kann das Passwort nach dem ersten Login selbst ändern.`, password });
     }
     if (action === "overview") {
       const sb = service();

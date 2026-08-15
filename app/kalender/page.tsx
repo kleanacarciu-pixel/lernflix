@@ -895,8 +895,8 @@ function Info({ title, msg, err, onClose }: { title: string; msg: string; err?: 
 function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promise<string>; onClose: () => void }) {
   const [email, setEmail] = useState(""); const [pw, setPw] = useState(""); const [show, setShow] = useState(false); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() { setLoad(true); setErr(await onLogin(email.trim(), pw)); setLoad(false); }
-  return <div className="modal"><h2>Einloggen</h2><p>Mit deiner E-Mail und deinem Passwort.</p>
-    <label>E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
+  return <div className="modal"><h2>Einloggen</h2><p>Mit deinem Namen und deinem Passwort. (E-Mail geht auch.)</p>
+    <label>Name</label><input type="text" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="z. B. Nora" autoComplete="username" />
     <label>Passwort</label>
     <div className="pwrow"><input type={show ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} />
       <button type="button" className="eye" onClick={() => setShow(!show)} title={show ? "verbergen" : "anzeigen"}>{show ? "🙈" : "👁"}</button></div>

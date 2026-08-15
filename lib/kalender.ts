@@ -58,6 +58,24 @@ export async function signIn(email: string, password: string) {
 // sein eigenes Passwort. Das zweite Konto läuft intern über eine
 // Ersatz-Adresse – hier probieren wir alle Konten zu dieser E-Mail durch,
 // das Passwort entscheidet, welches Kind sich einloggt.
+// Login mit Name ODER E-Mail: Kinder loggen sich einfach mit ihrem Namen
+// ein (Vorname reicht, Groß/Klein egal); die E-Mail bleibt für Einladung
+// und Benachrichtigungen. Bei gleichen Namen entscheidet das Passwort.
+export async function signInFlexibel(eingabe: string, password: string) {
+  if (eingabe.includes("@")) return signInFamilie(eingabe, password);
+  const gesucht = eingabe.trim().toLowerCase();
+  if (!gesucht) return null;
+  const { data } = await service().from("profiles").select("user_id,name");
+  for (const p of (data || []) as { user_id: string; name: string }[]) {
+    const voll = (p.name || "").trim().toLowerCase();
+    if (voll !== gesucht && voll.split(/\s+/)[0] !== gesucht) continue;
+    const { data: u } = await service().auth.admin.getUserById(p.user_id);
+    if (!u?.user?.email) continue;
+    const s = await signIn(u.user.email, password);
+    if (s) return s;
+  }
+  return null;
+}
 export async function signInFamilie(email: string, password: string) {
   const direkt = await signIn(email, password);
   if (direkt) return direkt;
@@ -165,8 +183,8 @@ export const mailTemplates = {
   probeReceived: (name: string, when: string) => wrapMail(`Danke, ${name}!`, `<p>Deine <b>Probestunde</b> am <b>${when}</b> ist angefragt. Kleana bestätigt sie in Kürze – du bekommst dann eine Bestätigung per E-Mail.</p>`),
   invite: (name: string, email: string, password: string) => wrapMail(`Willkommen, ${name}!`,
     `<p>Kleana hat dir einen Zugang zum Terminkalender angelegt. Damit siehst du deine Stunden und kannst Termine buchen oder absagen.</p>
-     <p style="background:#f4f6f7;border-radius:10px;padding:14px"><b>E-Mail:</b> ${email}<br><b>Passwort:</b> ${password}</p>
-     <p style="font-size:13px;color:#666">Bitte ändere dein Passwort nach dem ersten Login.</p>`),
+     <p style="background:#f4f6f7;border-radius:10px;padding:14px"><b>Anmeldename:</b> ${name}<br><b>Passwort:</b> ${password}</p>
+     <p style="font-size:13px;color:#666">Einloggen geht mit dem Namen (oder der E-Mail ${email}) und dem Passwort. Bitte ändere dein Passwort nach dem ersten Login.</p>`),
 };
 
 // --- Wochen-Daten berechnen -------------------------------------------------
