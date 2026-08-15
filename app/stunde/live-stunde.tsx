@@ -78,25 +78,32 @@ const CSS = `
 .stunde .gradlinie{height:3px;background:${VERLAUF};flex:0 0 auto}
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
 .stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU};position:relative}
-.stunde .tafelwrap{position:absolute;inset:0;z-index:5;flex-direction:column;background:${HELL}}
+.stunde .tafelwrap{position:absolute;inset:0;z-index:5;flex-direction:column;background:#EDEFF2}
 .stunde .tafelwrap.voll{position:fixed;z-index:60}
-.stunde .ttrenn{width:1px;height:22px;background:${LINIE};margin:0 2px;flex:0 0 auto}
-.stunde .tpapier{font:inherit;font-size:.84rem;font-weight:600;border:1px solid ${LINIE};border-radius:9px;padding:6px 8px;background:#fff;color:${INK}}
-.stunde .tafelbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#fff;border-bottom:1px solid ${LINIE}}
-.stunde .twz{background:#ECEFF0;color:${INK};border:0;border-radius:9px;padding:7px 10px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
-.stunde .twz.on{background:${VERLAUF};color:#fff}
-.stunde .twz:disabled{opacity:.35;cursor:default}
-.stunde .tfarbe{width:26px;height:26px;border-radius:50%;border:2px solid rgba(26,26,26,.15);cursor:pointer;padding:0}
-.stunde .tfarbe.on{border-color:${INK};transform:scale(1.15)}
-.stunde .tdicke{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:1px solid ${LINIE};background:#fff;cursor:pointer;padding:0}
+.stunde .tafelflaeche{position:relative;flex:1 1 auto;min-height:0;overflow:hidden}
+.stunde .tpille{position:absolute;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.96);border:1px solid rgba(26,26,26,.08);border-radius:16px;box-shadow:0 4px 16px rgba(26,26,26,.14);padding:5px 8px;z-index:3;max-width:min(92%,860px)}
+.stunde .t-obenlinks{top:10px;left:10px}
+.stunde .t-mitte{top:10px;left:50%;transform:translateX(-50%);flex-wrap:wrap;justify-content:center}
+.stunde .t-obenrechts{top:10px;right:10px}
+.stunde .t-untenlinks{bottom:12px;left:10px}
+.stunde .t-untenrechts{bottom:12px;right:10px}
+@media(max-width:900px){
+  .stunde .t-mitte{top:56px;left:8px;right:8px;transform:none;max-width:none}
+  .stunde .t-obenlinks{top:10px}
+}
+.stunde .tkn{background:transparent;color:${INK};border:0;border-radius:11px;padding:6px 9px;font:inherit;font-size:.95rem;font-weight:600;cursor:pointer;white-space:nowrap;line-height:1}
+.stunde .tkn:hover{background:#F0F2F4}
+.stunde .tkn.on{background:#DFF3F5;box-shadow:inset 0 0 0 1.5px ${TEAL}}
+.stunde .tkn:disabled{opacity:.35;cursor:default}
+.stunde .ttrenn{width:1px;height:22px;background:${LINIE};margin:0 3px;flex:0 0 auto}
+.stunde .tfarbe{width:24px;height:24px;border-radius:50%;border:2px solid rgba(26,26,26,.12);cursor:pointer;padding:0;flex:0 0 auto}
+.stunde .tfarbe.on{border-color:${INK};transform:scale(1.18)}
+.stunde .tdicke{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9px;border:1px solid transparent;background:transparent;cursor:pointer;padding:0}
 .stunde .tdicke span{background:${INK};border-radius:50%;display:block}
 .stunde .tdicke.on{border-color:${TEAL};background:#E9F7F8}
-.stunde .tseiten{margin-left:auto;display:flex;align-items:center;gap:6px}
-.stunde .tinfo{font-size:.88rem;font-weight:600;color:${GEDAEMPFT}}
-.stunde .tzu{background:#fff;border:1px solid ${LINIE}}
-.stunde .thinweis{font-size:.76rem;color:${GEDAEMPFT};padding:5px 12px;background:#fff;border-bottom:1px solid ${LINIE}}
-.stunde .tafelflaeche{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;background:#E6EAEC;overflow:hidden;padding:8px}
-.stunde .tafelflaeche canvas{background:#fff;max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 4px 18px rgba(26,26,26,.12)}
+.stunde .tpapier{font:inherit;font-size:.82rem;font-weight:600;border:0;border-radius:9px;padding:6px 4px;background:transparent;color:${INK};cursor:pointer}
+.stunde .tinfo{font-size:.86rem;font-weight:600;color:${GEDAEMPFT};padding:2px 6px}
+.stunde .tseite{font-size:.86rem;padding:0 2px}
 .stunde .panelwrap{flex:0 0 390px;min-height:0;display:flex;flex-direction:column;background:#fff;border-left:1px solid ${LINIE}}
 @media(max-width:900px){
   .stunde .smain{flex-direction:column}

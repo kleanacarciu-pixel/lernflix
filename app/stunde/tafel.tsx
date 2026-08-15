@@ -14,10 +14,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DailyCall } from "@daily-co/daily-js";
 
-// Logische Zeichenfläche (4:3) – Punkte immer in diesem Raster, jedes Gerät
-// skaliert selbst passend
+// Logische Zeichenfläche: hochkant wie ein GoodNotes/A4-Blatt – die Seite
+// füllt die volle Breite und wird nach unten gescrollt. Punkte immer in
+// diesem Raster, jedes Gerät skaliert selbst passend.
 const W = 1600;
-const H = 1200;
+const H = 2263;
 
 type Strich = { id: string; farbe: string; dicke: number; punkte: number[]; m?: number };
 type Papier = "kariert" | "punkte" | "liniert" | "blanko";
@@ -106,11 +107,11 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     if (!c) return;
     const a = ansicht.current;
     const bw = W * a.k, bh = H * a.k;
-    // Kleiner als der Platz? Dann mittig. Größer? Ränder nie weiter als 60px weg.
+    // Blatt bündig wie in GoodNotes: nie über den Rand hinaus verschieben
     if (bw <= c.width) a.px = (c.width - bw) / 2;
-    else a.px = Math.min(60, Math.max(c.width - bw - 60, a.px));
+    else a.px = Math.min(0, Math.max(c.width - bw, a.px));
     if (bh <= c.height) a.py = (c.height - bh) / 2;
-    else a.py = Math.min(60, Math.max(c.height - bh - 60, a.py));
+    else a.py = Math.min(0, Math.max(c.height - bh, a.py));
   }
 
   const passeAn = useCallback(() => {
@@ -120,7 +121,7 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     const cw = Math.max(50, el.clientWidth) * dpr, ch = Math.max(50, el.clientHeight) * dpr;
     if (c.width !== Math.round(cw) || c.height !== Math.round(ch)) { c.width = Math.round(cw); c.height = Math.round(ch); }
     const a = ansicht.current;
-    const basis = Math.min(cw / W, ch / H);
+    const basis = cw / W; // Blatt füllt die volle Breite (wie GoodNotes)
     a.k = basis * a.zoom;
     klemmAnsicht();
      
@@ -147,19 +148,31 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
 
   const zeichneStrich = useCallback((ctx: CanvasRenderingContext2D, s: Strich, ab = 0) => {
     const p = s.punkte;
+    const n = p.length / 2;
     ctx.save();
     mitSeite(ctx);
     if (s.m) { ctx.globalAlpha = 0.4; ctx.globalCompositeOperation = "multiply"; }
-    if (p.length < 4) {
-      if (p.length >= 2) { ctx.fillStyle = s.farbe; ctx.beginPath(); ctx.arc(p[0], p[1], s.dicke / 2, 0, Math.PI * 2); ctx.fill(); }
+    if (n < 2) {
+      if (n === 1) { ctx.fillStyle = s.farbe; ctx.beginPath(); ctx.arc(p[0], p[1], s.dicke / 2, 0, Math.PI * 2); ctx.fill(); }
       ctx.restore();
       return;
     }
     ctx.strokeStyle = s.farbe; ctx.lineWidth = s.dicke; ctx.lineCap = "round"; ctx.lineJoin = "round";
     ctx.beginPath();
-    const start = Math.max(0, ab - 2);
-    ctx.moveTo(p[start * 2], p[start * 2 + 1]);
-    for (let i = start + 1; i * 2 + 1 < p.length; i++) ctx.lineTo(p[i * 2], p[i * 2 + 1]);
+    if (ab > 0) {
+      // Nachzeichnen eines neuen Teilstücks (Empfänger-Livebild)
+      const start = Math.max(0, ab - 2);
+      ctx.moveTo(p[start * 2], p[start * 2 + 1]);
+      for (let i = start + 1; i < n; i++) ctx.lineTo(p[i * 2], p[i * 2 + 1]);
+    } else {
+      // Ganzer Strich: weiche Kurven durch die Mittelpunkte – Handschrift
+      // sieht damit rund und sauber aus statt eckig
+      ctx.moveTo(p[0], p[1]);
+      for (let i = 1; i < n - 1; i++) {
+        ctx.quadraticCurveTo(p[i * 2], p[i * 2 + 1], (p[i * 2] + p[i * 2 + 2]) / 2, (p[i * 2 + 1] + p[i * 2 + 3]) / 2);
+      }
+      ctx.lineTo(p[n * 2 - 2], p[n * 2 - 1]);
+    }
     ctx.stroke();
     ctx.restore();
   }, []);
@@ -173,20 +186,20 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     const c = canvasRef.current; const ctx = c?.getContext("2d");
     if (!c || !ctx) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#E6EAEC"; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#EDEFF2"; ctx.fillRect(0, 0, c.width, c.height);
     ctx.save();
     mitSeite(ctx);
-    // Papier
+    // Papier: feines, dezentes Raster wie in GoodNotes
     ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
     const art = papierRef.current;
-    ctx.strokeStyle = "rgba(43,179,192,.14)"; ctx.fillStyle = "rgba(43,179,192,.28)"; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(100,116,139,.16)"; ctx.fillStyle = "rgba(100,116,139,.35)"; ctx.lineWidth = 1;
     if (art === "kariert") {
-      for (let x = 80; x < W; x += 80) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-      for (let y = 80; y < H; y += 80) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      for (let x = 40; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     } else if (art === "liniert") {
-      for (let y = 80; y < H; y += 80) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      for (let y = 56; y < H; y += 56) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
     } else if (art === "punkte") {
-      for (let x = 80; x < W; x += 80) for (let y = 80; y < H; y += 80) { ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill(); }
+      for (let x = 40; x < W; x += 40) for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.restore();
     for (const s of seitenRef.current[seiteRef.current] || []) zeichneStrich(ctx, s);
@@ -225,7 +238,7 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     const px = mx ?? c.width / 2, py = my ?? c.height / 2;
     const lx = (px - a.px) / a.k, ly = (py - a.py) / a.k;
     a.zoom = neu;
-    const basis = Math.min(c.width / W, c.height / H);
+    const basis = c.width / W;
     a.k = basis * a.zoom;
     a.px = px - lx * a.k;
     a.py = py - ly * a.k;
@@ -233,6 +246,26 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     setZoomAnzeige(Math.round(neu * 100));
     allesZeichnen();
      
+  }, [allesZeichnen]);
+
+  // Flüssiges Zeichnen: Änderungen sammeln und einmal pro Bildschirm-Takt
+  // rendern (requestAnimationFrame) statt bei jedem einzelnen Ereignis
+  const dreckig = useRef(false);
+  const malLoop = useRef(false);
+  const starteMalLoop = useCallback(() => {
+    if (malLoop.current) return;
+    malLoop.current = true;
+    const tick = () => {
+      if (!malLoop.current) return;
+      if (dreckig.current) { dreckig.current = false; allesZeichnen(); }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [allesZeichnen]);
+  const stoppeMalLoop = useCallback(() => {
+    malLoop.current = false;
+    dreckig.current = false;
+    allesZeichnen();
   }, [allesZeichnen]);
 
   // Laser verblasst animiert
@@ -382,6 +415,7 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
   // ---- Zeigerlogik ----------------------------------------------------------
   const aktiv = useRef<Strich | null>(null);
   const puffer = useRef<number[]>([]);
+  const wiederStapel = useRef<Strich[]>([]); // Rückgängig-gemachte Striche (für ↪️)
   const flushTimer = useRef<number | null>(null);
   const formStart = useRef<[number, number] | null>(null);
   const moveSumme = useRef<[number, number]>([0, 0]);
@@ -389,7 +423,7 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
   const laserLetzte = useRef(0);
   // Finger: verschieben/zoomen (Handballen-Schutz)
   const beruehrungen = useRef(new Map<number, { x: number; y: number }>());
-  const kneifStart = useRef<{ d: number; zoom: number } | null>(null);
+  const kneifStart = useRef<{ d: number; zoom: number; lx: number; ly: number } | null>(null);
   const stiftAktivBis = useRef(0); // solange der Stift schreibt, Finger ignorieren
 
   const flush = useCallback(() => {
@@ -399,21 +433,44 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     puffer.current = [];
   }, [senden]);
 
+  // Radiergummi wie in GoodNotes: radiert Punkt für Punkt DURCH die Striche
+  // (teilt sie sauber in Reststücke) statt ganze Striche zu schlucken
   const radiereBei = useCallback((x: number, y: number) => {
-    const radius = Math.max(14, 26 / ansicht.current.zoom);
+    const radius = Math.max(12, 22 / ansicht.current.zoom);
+    const r2 = radius * radius;
     const striche = seitenRef.current[seiteRef.current] || [];
-    const weg = new Set<string>();
+    let geaendert = false;
+    const neuListe: Strich[] = [];
     for (const s of striche) {
+      let getroffen = false;
+      const teile: number[][] = [];
+      let akt: number[] = [];
       for (let i = 0; i * 2 + 1 < s.punkte.length; i++) {
         const dx = s.punkte[i * 2] - x, dy = s.punkte[i * 2 + 1] - y;
-        if (dx * dx + dy * dy < radius * radius) { weg.add(s.id); break; }
+        if (dx * dx + dy * dy < r2) {
+          getroffen = true;
+          if (akt.length >= 4) teile.push(akt);
+          akt = [];
+        } else akt.push(s.punkte[i * 2], s.punkte[i * 2 + 1]);
+      }
+      if (!getroffen) { neuListe.push(s); continue; }
+      geaendert = true;
+      if (akt.length >= 4) teile.push(akt);
+      senden({ lma: "tafel", typ: "undo", seite: seiteRef.current, id: s.id });
+      for (const t of teile) {
+        const ns: Strich = { id: Math.random().toString(36).slice(2, 10), farbe: s.farbe, dicke: s.dicke, ...(s.m ? { m: 1 } : {}), punkte: t };
+        neuListe.push(ns);
+        for (let i = 0; i < t.length; i += 240) {
+          senden({ lma: "tafel", typ: "seg", seite: seiteRef.current, id: ns.id, farbe: ns.farbe, dicke: ns.dicke, ...(ns.m ? { m: 1 } : {}), pts: t.slice(i, i + 240) });
+        }
       }
     }
-    if (!weg.size) return;
-    seitenRef.current[seiteRef.current] = striche.filter((q) => !weg.has(q.id));
-    weg.forEach((id) => senden({ lma: "tafel", typ: "undo", seite: seiteRef.current, id }));
-    allesZeichnen(); speichern();
-  }, [senden, allesZeichnen, speichern]);
+    if (!geaendert) return;
+    wiederStapel.current = []; // neue Aktion -> Wiederholen-Verlauf verfällt
+    seitenRef.current[seiteRef.current] = neuListe;
+    dreckig.current = true;
+    speichern();
+  }, [senden, speichern]);
 
   const zeichnet = (typ: string) => typ === "pen" || typ === "mouse" || (typ === "touch" && (fingerZeichnen || !istLehrerin));
 
@@ -428,13 +485,25 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     if (!darfZeichnen) {
       if (e.pointerType === "touch" && Date.now() < stiftAktivBis.current) return; // Handballen
       beruehrungen.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      starteMalLoop();
       if (beruehrungen.current.size === 2) {
-        const [a, b] = Array.from(beruehrungen.current.values());
-        kneifStart.current = { d: Math.max(20, dist(a.x, a.y, b.x, b.y)), zoom: ansicht.current.zoom };
+        const [p1, p2] = Array.from(beruehrungen.current.values());
+        const c = canvasRef.current;
+        if (!c) return;
+        const r = c.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const a = ansicht.current;
+        // Anker: der logische Punkt unter der Finger-Mitte bleibt unter ihr
+        const mx = ((p1.x + p2.x) / 2 - r.left) * dpr, my = ((p1.y + p2.y) / 2 - r.top) * dpr;
+        kneifStart.current = {
+          d: Math.max(20, dist(p1.x, p1.y, p2.x, p2.y)), zoom: a.zoom,
+          lx: (mx - a.px) / a.k, ly: (my - a.py) / a.k,
+        };
       }
       return;
     }
     stiftAktivBis.current = Date.now() + 800;
+    starteMalLoop();
 
     if (werkzeug === "radierer") { radiereBei(p[0], p[1]); return; }
     if (werkzeug === "laser") {
@@ -458,16 +527,18 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
         auswahl.current = null;
         gummiband.current = [p[0], p[1], p[0], p[1]];
         formStart.current = [p[0], p[1]];
-        allesZeichnen();
+        dreckig.current = true;
       }
       return;
     }
     if (werkzeug === "linie" || werkzeug === "kreis" || werkzeug === "rechteck" || werkzeug === "dreieck") {
+      wiederStapel.current = [];
       formStart.current = [p[0], p[1]];
       vorschau.current = { id: Math.random().toString(36).slice(2, 10), farbe, dicke, punkte: [p[0], p[1]] };
       return;
     }
     // Stift / Marker
+    wiederStapel.current = [];
     const marker = werkzeug === "marker";
     const s: Strich = {
       id: Math.random().toString(36).slice(2, 10),
@@ -478,8 +549,7 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     (seitenRef.current[seiteRef.current] ||= []).push(s);
     puffer.current = [p[0], p[1]];
     flushTimer.current = window.setInterval(flush, 90);
-    const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) zeichneStrich(ctx, s);
+    dreckig.current = true;
   };
 
   const bewegt = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -491,15 +561,25 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
       const a = ansicht.current;
       const dpr = window.devicePixelRatio || 1;
       if (beruehrungen.current.size >= 2 && kneifStart.current) {
+        // Kneifen: zoomt genau dorthin, wo die Finger sind
         const [p1, p2] = Array.from(beruehrungen.current.values());
+        const c = canvasRef.current;
+        if (!c) return;
+        const r = c.getBoundingClientRect();
         const d = Math.max(20, dist(p1.x, p1.y, p2.x, p2.y));
-        const ziel = kneifStart.current.zoom * (d / kneifStart.current.d);
-        zoomen(ziel / a.zoom);
+        a.zoom = Math.min(8, Math.max(1, kneifStart.current.zoom * (d / kneifStart.current.d)));
+        a.k = (c.width / W) * a.zoom;
+        const mx = ((p1.x + p2.x) / 2 - r.left) * dpr, my = ((p1.y + p2.y) / 2 - r.top) * dpr;
+        a.px = mx - kneifStart.current.lx * a.k;
+        a.py = my - kneifStart.current.ly * a.k;
+        klemmAnsicht();
+        setZoomAnzeige(Math.round(a.zoom * 100));
+        dreckig.current = true;
       } else if (beruehrungen.current.size === 1) {
         a.px += (e.clientX - alt.x) * dpr;
         a.py += (e.clientY - alt.y) * dpr;
         klemmAnsicht();
-        allesZeichnen();
+        dreckig.current = true;
       }
       return;
     }
@@ -531,35 +611,43 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
         });
         const b = auswahl.current.box;
         auswahl.current.box = [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy];
-        allesZeichnen();
+        dreckig.current = true;
       } else if (gummiband.current) {
         gummiband.current = [
           Math.min(formStart.current[0], p[0]), Math.min(formStart.current[1], p[1]),
           Math.max(formStart.current[0], p[0]), Math.max(formStart.current[1], p[1]),
         ];
-        allesZeichnen();
+        dreckig.current = true;
       }
       return;
     }
     if (formStart.current && vorschau.current) {
       vorschau.current.punkte = formPunkte(werkzeug, formStart.current[0], formStart.current[1], p[0], p[1]);
-      allesZeichnen();
+      dreckig.current = true;
       return;
     }
     const s = aktiv.current;
     if (!s) return;
-    const n = s.punkte.length;
-    const dx = p[0] - s.punkte[n - 2], dy = p[1] - s.punkte[n - 1];
-    if (dx * dx + dy * dy < 4) return;
-    s.punkte.push(p[0], p[1]);
-    puffer.current.push(p[0], p[1]);
-    const ctx = canvasRef.current?.getContext("2d");
-    if (ctx) zeichneStrich(ctx, s, n / 2);
+    // ALLE Stift-Punkte auslesen (der Apple Pencil liefert bis zu 240/s,
+    // normale Move-Events nur ~60/s) – Handschrift wird dadurch fein und rund
+    const roh = e.nativeEvent as PointerEvent;
+    const feine = typeof roh.getCoalescedEvents === "function" ? roh.getCoalescedEvents() : [];
+    for (const ev of (feine.length ? feine : [roh])) {
+      const q = punktAus(ev);
+      if (!q) continue;
+      const n = s.punkte.length;
+      const dx = q[0] - s.punkte[n - 2], dy = q[1] - s.punkte[n - 1];
+      if (dx * dx + dy * dy < 1) continue;
+      s.punkte.push(q[0], q[1]);
+      puffer.current.push(q[0], q[1]);
+    }
+    dreckig.current = true;
   };
 
   const hoch = (e: React.PointerEvent<HTMLCanvasElement>) => {
     beruehrungen.current.delete(e.pointerId);
     if (beruehrungen.current.size < 2) kneifStart.current = null;
+    if (!beruehrungen.current.size) stoppeMalLoop(); // letzter Zeiger weg -> sauber fertig rendern
     if (!istLehrerin) return;
     if (flushTimer.current) { window.clearInterval(flushTimer.current); flushTimer.current = null; }
 
@@ -624,7 +712,15 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
     const letzter = striche[striche.length - 1];
     if (!letzter) return;
     seitenRef.current[seiteRef.current] = striche.slice(0, -1);
+    wiederStapel.current.push(letzter);
     senden({ lma: "tafel", typ: "undo", seite: seiteRef.current, id: letzter.id });
+    allesZeichnen(); speichern();
+  };
+  const wiederholen = () => {
+    const s = wiederStapel.current.pop();
+    if (!s) return;
+    (seitenRef.current[seiteRef.current] ||= []).push(s);
+    senden({ lma: "tafel", typ: "form", seite: seiteRef.current, id: s.id, farbe: s.farbe, dicke: s.dicke, ...(s.m ? { m: 1 } : {}), pts: s.punkte });
     allesZeichnen(); speichern();
   };
   const seiteLeeren = () => {
@@ -652,59 +748,77 @@ export default function Tafel({ frameRef, istLehrerin, api, offen, setOffen }: {
 
   return (
     <div ref={wrapRef} className={"tafelwrap" + (vollbild ? " voll" : "")} style={{ display: offen ? "flex" : "none" }}>
-      <div className="tafelbar">
-        {istLehrerin ? (<>
-          <button className={"twz" + (werkzeug === "stift" ? " on" : "")} title="Stift"
-            onClick={() => { wähle("stift"); if (!FARBEN.includes(farbe)) setFarbe(FARBEN[0]); }}>✏️</button>
-          <button className={"twz" + (werkzeug === "marker" ? " on" : "")} title="Textmarker"
-            onClick={() => { wähle("marker"); if (!MARKER_FARBEN.includes(farbe)) setFarbe(MARKER_FARBEN[0]); }}>🖍️</button>
-          <button className={"twz" + (werkzeug === "linie" ? " on" : "")} title="Gerade Linie (Lineal)" onClick={() => wähle("linie")}>📏</button>
-          <button className={"twz" + (werkzeug === "kreis" ? " on" : "")} title="Kreis aufziehen" onClick={() => wähle("kreis")}>⭕</button>
-          <button className={"twz" + (werkzeug === "rechteck" ? " on" : "")} title="Rechteck aufziehen" onClick={() => wähle("rechteck")}>⬜</button>
-          <button className={"twz" + (werkzeug === "dreieck" ? " on" : "")} title="Dreieck aufziehen" onClick={() => wähle("dreieck")}>🔺</button>
-          <button className={"twz" + (werkzeug === "auswahl" ? " on" : "")} title="Einrahmen und verschieben" onClick={() => wähle("auswahl")}>✂️</button>
-          <button className={"twz" + (werkzeug === "laser" ? " on" : "")} title="Laserpointer" onClick={() => wähle("laser")}>🔴</button>
-          <button className={"twz" + (werkzeug === "radierer" ? " on" : "")} title="Radierer" onClick={() => wähle("radierer")}>🧽</button>
-          <span className="ttrenn" />
-          {palette.map((f) => (
-            <button key={f} className={"tfarbe" + (werkzeug !== "radierer" && werkzeug !== "laser" && f === farbe ? " on" : "")}
-              style={{ background: f }} aria-label="Farbe" onClick={() => setFarbe(f)} />
-          ))}
-          {(werkzeug === "stift" || werkzeug === "linie" || werkzeug === "kreis" || werkzeug === "rechteck" || werkzeug === "dreieck") && DICKEN.map((d) => (
-            <button key={d} className={"tdicke" + (d === dicke ? " on" : "")} aria-label="Stiftdicke" onClick={() => setDicke(d)}>
-              <span style={{ width: d + 3, height: d + 3 }} />
-            </button>
-          ))}
-          <span className="ttrenn" />
-          <button className="twz" title="Rückgängig" onClick={rueckgaengig}>↩️</button>
-          <button className="twz" title="Seite leeren" onClick={seiteLeeren}>🗑️</button>
-          <select className="tpapier" value={papier} onChange={(e) => papierWechseln(e.target.value as Papier)} title="Papier">
-            <option value="kariert">Kariert</option>
-            <option value="punkte">Gepunktet</option>
-            <option value="liniert">Liniert</option>
-            <option value="blanko">Blanko</option>
-          </select>
-          <button className={"twz" + (fingerZeichnen ? " on" : "")} title="Auch mit dem Finger zeichnen (sonst verschiebt der Finger nur)"
-            onClick={() => setFingerZeichnen(!fingerZeichnen)}>☝️</button>
-        </>) : <span className="tinfo">🖊️ Kleanas Tafel – live</span>}
-        <span className="tseiten">
-          <button className="twz" title="Kleiner" onClick={() => zoomen(0.8)}>−</button>
-          <button className="twz" title="Zoom zurücksetzen" onClick={() => { const a = ansicht.current; a.zoom = 1; passeAn(); setZoomAnzeige(100); allesZeichnen(); }}>{zoomAnzeige}%</button>
-          <button className="twz" title="Größer" onClick={() => zoomen(1.25)}>＋</button>
-          <button className="twz" title="Vollbild" onClick={() => setVollbild(!vollbild)}>{vollbild ? "🡼" : "⛶"}</button>
-          <span className="ttrenn" />
-          <button className="twz" disabled={seite === 0} onClick={() => seiteWechseln(seite - 1)}>‹</button>
-          <b>{seite + 1}/{anzahl}</b>
-          {istLehrerin
-            ? <button className="twz" onClick={() => seiteWechseln(seite + 1)}>{seite + 1 >= anzahl ? "＋ Seite" : "›"}</button>
-            : <button className="twz" disabled={seite + 1 >= anzahl} onClick={() => seiteWechseln(seite + 1)}>›</button>}
-          <button className="twz tzu" onClick={() => { setVollbild(false); setOffen(false); }}>✕</button>
-        </span>
-      </div>
       <div ref={flaecheRef} className="tafelflaeche">
         <canvas ref={canvasRef}
           style={{ touchAction: "none", cursor: istLehrerin ? "crosshair" : "grab", width: "100%", height: "100%", display: "block" }}
           onPointerDown={runter} onPointerMove={bewegt} onPointerUp={hoch} onPointerCancel={hoch} onWheel={rad} />
+
+        {/* Schwebende Leisten im GoodNotes-Stil */}
+        <div className="tpille t-obenlinks">
+          {istLehrerin ? (<>
+            <button className="tkn" title="Rückgängig" onClick={rueckgaengig}>↩️</button>
+            <button className="tkn" title="Wiederholen" onClick={wiederholen}>↪️</button>
+          </>) : <span className="tinfo">🖊️ Kleanas Tafel</span>}
+        </div>
+
+        {istLehrerin && (
+          <div className="tpille t-mitte">
+            <button className={"tkn" + (werkzeug === "stift" ? " on" : "")} title="Stift"
+              onClick={() => { wähle("stift"); if (!FARBEN.includes(farbe)) setFarbe(FARBEN[0]); }}>✏️</button>
+            <button className={"tkn" + (werkzeug === "marker" ? " on" : "")} title="Textmarker"
+              onClick={() => { wähle("marker"); if (!MARKER_FARBEN.includes(farbe)) setFarbe(MARKER_FARBEN[0]); }}>🖍️</button>
+            <button className={"tkn" + (werkzeug === "radierer" ? " on" : "")} title="Radierer" onClick={() => wähle("radierer")}>🧽</button>
+            <button className={"tkn" + (werkzeug === "auswahl" ? " on" : "")} title="Einrahmen und verschieben" onClick={() => wähle("auswahl")}>✂️</button>
+            <button className={"tkn" + (werkzeug === "linie" ? " on" : "")} title="Gerade Linie (Lineal)" onClick={() => wähle("linie")}>📏</button>
+            <button className={"tkn" + (werkzeug === "kreis" ? " on" : "")} title="Kreis aufziehen" onClick={() => wähle("kreis")}>⭕</button>
+            <button className={"tkn" + (werkzeug === "rechteck" ? " on" : "")} title="Rechteck aufziehen" onClick={() => wähle("rechteck")}>⬜</button>
+            <button className={"tkn" + (werkzeug === "dreieck" ? " on" : "")} title="Dreieck aufziehen" onClick={() => wähle("dreieck")}>🔺</button>
+            <button className={"tkn" + (werkzeug === "laser" ? " on" : "")} title="Laserpointer" onClick={() => wähle("laser")}>🔴</button>
+            <span className="ttrenn" />
+            {palette.map((f) => (
+              <button key={f} className={"tfarbe" + (werkzeug !== "radierer" && werkzeug !== "laser" && f === farbe ? " on" : "")}
+                style={{ background: f }} aria-label="Farbe" onClick={() => setFarbe(f)} />
+            ))}
+            {(werkzeug === "stift" || werkzeug === "linie" || werkzeug === "kreis" || werkzeug === "rechteck" || werkzeug === "dreieck") && (<>
+              <span className="ttrenn" />
+              {DICKEN.map((d) => (
+                <button key={d} className={"tdicke" + (d === dicke ? " on" : "")} aria-label="Stiftdicke" onClick={() => setDicke(d)}>
+                  <span style={{ width: d + 3, height: d + 3 }} />
+                </button>
+              ))}
+            </>)}
+          </div>
+        )}
+
+        <div className="tpille t-obenrechts">
+          {istLehrerin && (<>
+            <select className="tpapier" value={papier} onChange={(e) => papierWechseln(e.target.value as Papier)} title="Papier">
+              <option value="kariert">Kariert</option>
+              <option value="punkte">Gepunktet</option>
+              <option value="liniert">Liniert</option>
+              <option value="blanko">Blanko</option>
+            </select>
+            <button className={"tkn" + (fingerZeichnen ? " on" : "")} title="Auch mit dem Finger zeichnen (sonst verschiebt der Finger nur)"
+              onClick={() => setFingerZeichnen(!fingerZeichnen)}>☝️</button>
+            <button className="tkn" title="Seite leeren" onClick={seiteLeeren}>🗑️</button>
+          </>)}
+          <button className="tkn" title="Vollbild" onClick={() => setVollbild(!vollbild)}>{vollbild ? "🡼" : "⛶"}</button>
+          <button className="tkn" title="Tafel schließen" onClick={() => { setVollbild(false); setOffen(false); }}>✕</button>
+        </div>
+
+        <div className="tpille t-untenlinks">
+          <button className="tkn" title="Kleiner" onClick={() => zoomen(0.8)}>−</button>
+          <button className="tkn" title="Zoom zurücksetzen" onClick={() => { const a = ansicht.current; a.zoom = 1; a.py = 0; passeAn(); setZoomAnzeige(100); allesZeichnen(); }}>{zoomAnzeige}%</button>
+          <button className="tkn" title="Größer" onClick={() => zoomen(1.25)}>＋</button>
+        </div>
+
+        <div className="tpille t-untenrechts">
+          <button className="tkn" disabled={seite === 0} onClick={() => seiteWechseln(seite - 1)}>‹</button>
+          <b className="tseite">{seite + 1}/{anzahl}</b>
+          {istLehrerin
+            ? <button className="tkn" onClick={() => seiteWechseln(seite + 1)}>{seite + 1 >= anzahl ? "＋" : "›"}</button>
+            : <button className="tkn" disabled={seite + 1 >= anzahl} onClick={() => seiteWechseln(seite + 1)}>›</button>}
+        </div>
       </div>
     </div>
   );
