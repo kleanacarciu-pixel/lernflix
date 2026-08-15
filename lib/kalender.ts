@@ -54,6 +54,23 @@ export async function signIn(email: string, password: string) {
   if (error || !data.session) return null;
   return data.session; // access_token, refresh_token, expires_at
 }
+// Familien-Login: Geschwister teilen sich die Eltern-E-Mail, jedes Kind hat
+// sein eigenes Passwort. Das zweite Konto läuft intern über eine
+// Ersatz-Adresse – hier probieren wir alle Konten zu dieser E-Mail durch,
+// das Passwort entscheidet, welches Kind sich einloggt.
+export async function signInFamilie(email: string, password: string) {
+  const direkt = await signIn(email, password);
+  if (direkt) return direkt;
+  const { data } = await service().from("profiles").select("user_id").eq("email", email);
+  for (const p of (data || []) as { user_id: string }[]) {
+    const { data: u } = await service().auth.admin.getUserById(p.user_id);
+    const authMail = u?.user?.email;
+    if (!authMail || authMail === email) continue; // schon probiert
+    const s = await signIn(authMail, password);
+    if (s) return s;
+  }
+  return null;
+}
 export async function refresh(refresh_token: string) {
   const { data, error } = await authClient().auth.refreshSession({ refresh_token });
   if (error || !data.session) return null;

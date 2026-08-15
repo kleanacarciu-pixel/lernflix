@@ -4,7 +4,7 @@
 // =============================================================================
 import { NextResponse, after } from "next/server";
 import {
-  service, signIn, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
+  service, signInFamilie, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
@@ -70,7 +70,7 @@ export async function POST(req: Request): Promise<Response> {
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
       if (!email || !password) return bad("E-Mail und Passwort erforderlich.");
-      const session = await signIn(email, password);
+      const session = await signInFamilie(email, password);
       if (!session) return bad("E-Mail oder Passwort falsch.", 401);
       const prof = await getProfile(session.user.id);
       if (!prof) return bad("Kein Zugang – bitte Kleana kontaktieren.", 403);
@@ -438,8 +438,18 @@ export async function POST(req: Request): Promise<Response> {
       if (!name || !email) return bad("Name und E-Mail erforderlich.");
       const password = "LMA-" + crypto.randomUUID().slice(0, 8) + "!7";
       const { data: created, error } = await service().auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name } });
-      if (error || !created.user) return bad("Konnte Zugang nicht anlegen: " + (error?.message || "unbekannt"));
-      { const { error: pe } = await service().from("profiles").insert({ user_id: created.user.id, name, email, role: "student" }); if (pe) return bad("Profil konnte nicht angelegt werden: " + pe.message); }
+      let userId = created?.user?.id || "";
+      if (error && /already|registered|exists|taken/i.test(error.message)) {
+        // Geschwister-Kind: gleiche Eltern-E-Mail wie ein bestehendes Konto.
+        // Der Login läuft intern über eine Ersatz-Adresse; eingeloggt wird
+        // weiter mit der echten E-Mail – das Passwort entscheidet, welches
+        // Kind gemeint ist. Alle Mails gehen an die echte Adresse.
+        const ersatz = `kind-${crypto.randomUUID().slice(0, 12)}@login.lernemitanna.de`;
+        const r2 = await service().auth.admin.createUser({ email: ersatz, password, email_confirm: true, user_metadata: { name, familien_email: email } });
+        if (r2.error || !r2.data.user) return bad("Konnte Zugang nicht anlegen: " + (r2.error?.message || "unbekannt"));
+        userId = r2.data.user.id;
+      } else if (error || !userId) return bad("Konnte Zugang nicht anlegen: " + (error?.message || "unbekannt"));
+      { const { error: pe } = await service().from("profiles").insert({ user_id: userId, name, email, role: "student" }); if (pe) return bad("Profil konnte nicht angelegt werden: " + pe.message); }
       const mail = await sendMail(email, "Dein Zugang zum Terminkalender", mailTemplates.invite(name, email, password));
       const info = mail.ok
         ? "Die Einladung mit dem Passwort wurde auch per Mail an den Schüler gesendet (ggf. Spam-Ordner prüfen)."
