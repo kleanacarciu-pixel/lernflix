@@ -408,12 +408,24 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: "Slot wieder frei." });
     }
     if (action === "blockWeekly") {
-      if (!validSlot) return bad("Ungültiger Slot.");
-      const s = await inspectSlot(date, hour);
-      if (s.booking || (s.fixedActive && !s.absage)) return bad("Slot ist belegt – kann nicht dauerhaft geblockt werden.");
-      const { error } = await service().from("weekly_blocks").insert({ weekday: weekdayOf(date), hour });
+      // Dauerhaft blockieren – minutengenau wie der Einmal-Block (z. B. 15 Min.)
+      if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
+      if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht dauerhaft geblockt werden.");
+      const wtag = weekdayOf(date);
+      let { error } = await service().from("weekly_blocks").insert({ weekday: wtag, hour, dauer_min: dauerMin });
+      if (error && /dauer_min|hour_check/i.test(error.message)) {
+        // Die V6-Migration fehlt noch: ohne sie kennt die Tabelle keine Dauer
+        // und nur volle/halbe Start-Stunden
+        if (dauerMin === 60 && Number.isInteger(hour * 2)) {
+          ({ error } = await service().from("weekly_blocks").insert({ weekday: wtag, hour }));
+        } else {
+          return bad("Dafür bitte zuerst das neue SQL „kalender_v6“ in Supabase ausführen (steht im Chat) – danach klappen freie Minuten auch bei Dauer-Blockierungen.");
+        }
+      }
       if (error && !/duplicate|unique/i.test(error.message)) return bad("Fehler: " + error.message);
-      return ok({ message: `Dauerhaft geblockt – jeden ${DAY_NAMES[weekdayOf(date)]} um ${fmtZeit(hour)}.` });
+      const endeMin = Math.round(hour * 60 + dauerMin);
+      const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
+      return ok({ message: `Dauerhaft geblockt – jeden ${DAY_NAMES[wtag]} ${fmtZeit(hour)}–${ende}.` });
     }
     if (action === "unblockWeekly") {
       if (!validSlot) return bad("Ungültiger Slot.");

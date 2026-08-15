@@ -482,7 +482,10 @@ export default function KalenderPage() {
             onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("block", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
             ⛔ Blockieren (nur dieses Datum)
           </button>
-          <button className="btn p" onClick={() => act("blockWeekly", { date, hour: s.hour })}>⛔ Jeden {DAYS[wd]} dauerhaft blockieren (1 Std.)</button>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin} wochentag={DAYS[wd]}
+            onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("blockWeekly", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
+            ⛔ Jeden {DAYS[wd]} dauerhaft blockieren
+          </button>
           <button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
         </div></div>);
       return;
@@ -974,21 +977,24 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-// Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren)
-function BlockWahl({ when, startHour, schlussMin, onSubmit, onClose }: {
-  when: string; startHour: number; schlussMin: number;
+// Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren);
+// mit wochentag = dauerhaft jede Woche, sonst nur dieses Datum
+function BlockWahl({ when, startHour, schlussMin, wochentag, onSubmit, onClose }: {
+  when: string; startHour: number; schlussMin: number; wochentag?: string;
   onSubmit: (vonMin: number, dauerMin: number) => void; onClose: () => void;
 }) {
   const startMin = Math.round(startHour * 60);
   const [von, setVon] = useState(minZuZeit(startMin));
   const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const fehler = zeitFehler(von, bis, schlussMin);
-  return <div className="modal"><h2>⛔ Blockieren</h2><p>{when}</p>
-    <div className="okbox">Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.</div>
+  return <div className="modal"><h2>{wochentag ? `⛔ Jeden ${wochentag} blockieren` : "⛔ Blockieren"}</h2><p>{when}</p>
+    <div className="okbox">{wochentag
+      ? `Gilt ab jetzt jede Woche am ${wochentag} – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.`
+      : "Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen."}</div>
     <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     {fehler && <div className="err">{fehler}</div>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>Blockieren</button></div></div>;
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>{wochentag ? "Dauerhaft blockieren" : "Blockieren"}</button></div></div>;
 }
 function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
   title: string; startHour: number; schlussMin: number;
