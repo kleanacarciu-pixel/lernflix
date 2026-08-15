@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import DailyIframe, { type DailyCall } from "@daily-co/daily-js";
 import KlassenzimmerPanel from "./[lessonId]/panel";
+import Tafel from "./tafel";
 
 // --- Markenfarben ("Lerne mit Anna": hell mit Türkis-Blau-Verlauf, wie der
 // Terminkalender und die Website) --------------------------------------------
@@ -76,7 +77,23 @@ const CSS = `
 .stunde .kopf .zurueck{background:none;border:0;color:${GEDAEMPFT};font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;padding:0}
 .stunde .gradlinie{height:3px;background:${VERLAUF};flex:0 0 auto}
 .stunde .smain{flex:1 1 auto;display:flex;min-height:0}
-.stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU}}
+.stunde .videowrap{flex:1 1 auto;min-height:0;min-width:0;display:flex;background:${VIDEO_BLAU};position:relative}
+.stunde .tafelwrap{position:absolute;inset:0;z-index:5;flex-direction:column;background:${HELL}}
+.stunde .tafelbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#fff;border-bottom:1px solid ${LINIE}}
+.stunde .twz{background:#ECEFF0;color:${INK};border:0;border-radius:9px;padding:7px 10px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.stunde .twz.on{background:${VERLAUF};color:#fff}
+.stunde .twz:disabled{opacity:.35;cursor:default}
+.stunde .tfarbe{width:26px;height:26px;border-radius:50%;border:2px solid rgba(26,26,26,.15);cursor:pointer;padding:0}
+.stunde .tfarbe.on{border-color:${INK};transform:scale(1.15)}
+.stunde .tdicke{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:1px solid ${LINIE};background:#fff;cursor:pointer;padding:0}
+.stunde .tdicke span{background:${INK};border-radius:50%;display:block}
+.stunde .tdicke.on{border-color:${TEAL};background:#E9F7F8}
+.stunde .tseiten{margin-left:auto;display:flex;align-items:center;gap:6px}
+.stunde .tinfo{font-size:.88rem;font-weight:600;color:${GEDAEMPFT}}
+.stunde .tzu{background:#fff;border:1px solid ${LINIE}}
+.stunde .thinweis{font-size:.76rem;color:${GEDAEMPFT};padding:5px 12px;background:#fff;border-bottom:1px solid ${LINIE}}
+.stunde .tafelflaeche{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;background:#E6EAEC;overflow:hidden;padding:8px}
+.stunde .tafelflaeche canvas{background:#fff;max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 4px 18px rgba(26,26,26,.12)}
 .stunde .panelwrap{flex:0 0 390px;min-height:0;display:flex;flex-direction:column;background:#fff;border-left:1px solid ${LINIE}}
 @media(max-width:900px){
   .stunde .smain{flex-direction:column}
@@ -99,6 +116,7 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
   const [istLehrerin, setIstLehrerin] = useState(false);
   const [panelOffen, setPanelOffen] = useState(true);
   const [teiltBildschirm, setTeiltBildschirm] = useState(false);
+  const [tafelOffen, setTafelOffen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<DailyCall | null>(null);
   // Verhindert doppelte Initialisierung (React Strict Mode ruft Effekte 2x auf)
@@ -250,6 +268,11 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
         {titel && <span className="titel">{eingebettet ? titel : `· ${titel}`}</span>}
         <span className="rechts">
           {videoAktiv && (
+            <button className={"wz" + (tafelOffen ? " aktiv" : "")} onClick={() => setTafelOffen(!tafelOffen)}>
+              {tafelOffen ? "🖊️ Tafel schließen" : "🖊️ Tafel"}
+            </button>
+          )}
+          {videoAktiv && (
             <button className={"wz" + (teiltBildschirm ? " aktiv" : "")} onClick={bildschirmTeilen}>
               {teiltBildschirm ? "🛑 Teilen beenden" : "🖥️ Bildschirm teilen"}
             </button>
@@ -275,6 +298,13 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
           {/* Der Video-Container bleibt immer im DOM (nur unsichtbar), damit
               der Daily-Frame jederzeit andocken kann. */}
           <div ref={containerRef} style={{ flex: "1 1 auto", minHeight: 0, display: videoAktiv ? "block" : "none" }} />
+
+          {/* Live-Tafel: bleibt eingehängt (auch geschlossen), damit kein
+              Strich verloren geht; Video/Audio laufen dahinter weiter */}
+          {videoAktiv && (
+            <Tafel frameRef={frameRef} istLehrerin={istLehrerin} api={apiKz}
+              offen={tafelOffen} setOffen={setTafelOffen} />
+          )}
 
           {!videoAktiv && (
             <div className="status">
