@@ -26,7 +26,7 @@ function speichereSession(s: Session) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch { }
 }
 
-type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null };
+type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null; teamsLink?: string | null };
 type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean };
 type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean };
 type Stunde = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; mode?: string | null; notes: { summary: string; homework: string } | null };
@@ -360,9 +360,12 @@ export default function KlassenzimmerPage() {
           <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
           {nextLesson && nextLesson.mode !== "vor_ort" && (
             <div className="zurstunde">
-              <button className="btnA" style={{ display: "block", width: "100%", textAlign: "center" }} onClick={() => setLiveId(nextLesson.id)}>
-                📹 Zur Stunde
-              </button>
+              {nextLesson.teamsLink
+                ? <a className="btnA" style={{ display: "block", width: "100%", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}
+                  href={nextLesson.teamsLink} target="_blank" rel="noreferrer">📹 Zur Stunde (Teams)</a>
+                : <button className="btnA" style={{ display: "block", width: "100%", textAlign: "center" }} onClick={() => setLiveId(nextLesson.id)}>
+                  📹 Zur Stunde
+                </button>}
             </div>
           )}
           {nextLesson && nextLesson.mode === "vor_ort" && (

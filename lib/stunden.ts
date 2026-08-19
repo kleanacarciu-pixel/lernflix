@@ -25,7 +25,24 @@ export type Lesson = {
   daily_room_url: string | null;
 };
 
-export type NextLesson = Pick<Lesson, "id" | "title" | "starts_at" | "ends_at" | "kind"> & { mode?: string | null };
+export type NextLesson = Pick<Lesson, "id" | "title" | "starts_at" | "ends_at" | "kind"> & { mode?: string | null; teamsLink?: string | null };
+
+// Teams statt eingebautem Video: Ist beim Schüler (oder als Standard bei
+// Kleana) ein Teams-Link hinterlegt, öffnen alle "Zur Stunde"-Knöpfe ihn.
+// Fehlt die V7-Migration (Spalte teams_link), liefert das still null.
+export async function teamsLinkFuer(studentId: string | null): Promise<string | null> {
+  try {
+    const sb = service();
+    if (studentId) {
+      const { data } = await sb.from("profiles").select("teams_link").eq("user_id", studentId).maybeSingle();
+      const link = (data as { teams_link?: string | null } | null)?.teams_link;
+      if (link) return link;
+    }
+    const { data: admins } = await sb.from("profiles").select("teams_link").eq("role", "admin").limit(5);
+    for (const a of (admins || []) as { teams_link?: string | null }[]) if (a.teams_link) return a.teams_link;
+    return null;
+  } catch { return null; }
+}
 
 // --- Nächste anstehende Stunde eines Nutzers (für den Kalender-Button) ------
 export async function nextLessonFor(userId: string): Promise<NextLesson | null> {
@@ -44,12 +61,17 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
 
     const { data } = await sb
       .from("lessons")
-      .select("id,title,starts_at,ends_at,kind,mode")
+      .select("id,title,starts_at,ends_at,kind,mode,student_id")
       .gt("ends_at", grenze)
       .or(oder.join(","))
       .order("starts_at", { ascending: true })
       .limit(1);
-    return ((data || []) as NextLesson[])[0] || null;
+    const l = ((data || []) as (NextLesson & { student_id?: string | null })[])[0] || null;
+    if (l && l.mode !== "vor_ort") {
+      const tl = await teamsLinkFuer(l.student_id ?? null);
+      if (tl) l.teamsLink = tl;
+    }
+    return l;
   } catch {
     // Tabelle existiert evtl. noch nicht (Migration nicht ausgeführt) – Kalender soll trotzdem funktionieren
     return null;

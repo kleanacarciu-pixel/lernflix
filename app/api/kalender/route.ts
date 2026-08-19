@@ -8,7 +8,7 @@ import {
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
-import { nextLessonFor, syncLessons, gastLink } from "@/lib/stunden";
+import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -250,6 +250,20 @@ export async function POST(req: Request): Promise<Response> {
     // === ADMIN-AKTIONEN (nur Kleana) ===
     if (!isAdmin) return bad("Nur Kleana darf das.", 403);
 
+    if (action === "setTeamsLink") {
+      // Teams statt eingebautem Video: Link pro Schüler – oder ohne
+      // studentId als Kleanas Standard-Link für alle
+      const link = String(body.link || "").trim();
+      if (link && !/^https:\/\//i.test(link)) return bad("Bitte den vollständigen Teams-Link einfügen (beginnt mit https://).");
+      const sid = String(body.studentId || "");
+      const ziel = /^[0-9a-f-]{36}$/i.test(sid) ? sid : user.id;
+      const { error } = await service().from("profiles").update({ teams_link: link || null }).eq("user_id", ziel);
+      if (error) return bad(/teams_link/.test(error.message)
+        ? "Bitte zuerst das SQL „kalender_v7“ in Supabase ausführen (steht im Chat)."
+        : "Speichern fehlgeschlagen: " + error.message);
+      return ok({ message: link ? "Teams-Link gespeichert ✓" : "Teams-Link entfernt." });
+    }
+
     if (action === "deleteStudent") {
       const sid = String(body.studentId || "");
       if (!sid) return bad("Kein Schüler angegeben.");
@@ -274,7 +288,7 @@ export async function POST(req: Request): Promise<Response> {
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
         if (error) return bad("Eintragen fehlgeschlagen: " + error.message);
-        if (sp.email) { const em = sp.email; after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode))); }
+        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
         await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
       }
@@ -284,7 +298,7 @@ export async function POST(req: Request): Promise<Response> {
           student_id: sid, slot_date: date, hour, kind: "einzel", status: "bestaetigt", mode, dauer_min: dauerMin, counted,
         });
         if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
-      if (sp.email) { const em = sp.email; after(() => sendMail(em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode))); }
+      if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => sendMail(em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
       await syncLessons(true);
       return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
     }
@@ -336,21 +350,21 @@ export async function POST(req: Request): Promise<Response> {
           await service().from("appointments").update({ status: "bestaetigt" }).eq("id", s.booking.id);
           const gname = (s.booking.note || "").split("|")[0] || "";
           const email = (s.booking.note || "").split("|")[1];
-          if (email) after(() => sendMail(email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode)));
+          if (email) { const tl = await teamsLinkFuer(null); after(() => sendMail(email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
           return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
         }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
         if (sp) counted = await applyEinzelCounting(sp);
         await service().from("appointments").update({ status: "bestaetigt", counted }).eq("id", s.booking.id);
-        if (sp?.email) { const em = sp.email, md = s.booking.mode; after(() => sendMail(em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md))); }
+        if (sp?.email) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
         return ok({ message: "Bestätigt. Bestätigungs-Mail gesendet." });
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode; after(() => sendMail(em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md))); }
+        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
         return ok({ message: "Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet." });
       }
       return bad("Keine Anfrage in diesem Slot.");
@@ -458,7 +472,8 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "overview") {
       const sb = service();
-      const { data: studs } = await sb.from("profiles").select("user_id,name,minus_hours,plus_hours,makeup_credits").eq("role", "student").order("name");
+      // "*" statt fester Spalten: teams_link kommt erst mit der V7-Migration
+      const { data: studs } = await sb.from("profiles").select("*").eq("role", "student").order("name");
       const { data: fx } = await sb.from("fixed_slots").select("student_id,weekday,hour,mode,dauer_min").eq("status", "aktiv");
       const { data: allAppts } = await sb.from("appointments").select("student_id,slot_date,hour,kind,credited,counted,note,status").order("slot_date", { ascending: false }).limit(2000);
       const apptsByStudent = new Map<string, { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]>();
@@ -474,15 +489,18 @@ export async function POST(req: Request): Promise<Response> {
         arr.push(`${DAY_NAMES[f.weekday]} ${fmtZeit(Number(f.hour))}${d !== 60 ? ` (${d} Min.)` : ""}${m}`);
         fixByStudent.set(f.student_id, arr);
       });
-      const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }) => {
+      const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number; teams_link?: string | null }) => {
         const d = groupBalanceDates(apptsByStudent.get(p.user_id) || []);
         return {
           id: p.user_id, name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
           minus: p.minus_hours, plus: p.plus_hours, nach: p.makeup_credits,
           minusD: d.minus, plusD: d.plus, nachD: d.nach,
+          teams: p.teams_link || null,
         };
       });
-      return ok({ students: rows });
+      // Kleanas eigener Link = Standard für alle ohne eigenen Link
+      const teamsDefault = (prof as Profile & { teams_link?: string | null }).teams_link || null;
+      return ok({ students: rows, teamsDefault });
     }
 
     if (action === "adjustBalance") {

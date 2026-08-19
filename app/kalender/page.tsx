@@ -7,11 +7,11 @@ type Absage = { start: number; dauer: number; name: string };
 type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[] };
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
-type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[] };
+type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
 type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
-type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null };
+type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
 
 const DAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 // Halbstunden-Raster wie auf dem Server: 8, 8.5 (=8:30), … 19.5 (=19:30)
@@ -276,6 +276,7 @@ export default function KalenderPage() {
   const [balance, setBalance] = useState<Balance | null>(null);
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
+  const [teamsDefault, setTeamsDefault] = useState<string | null>(null);
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
@@ -365,7 +366,7 @@ export default function KalenderPage() {
       versionRef.current = d.version;
     }
     if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); }
-    if (isAdmin && o && o.ok) setOverview((o.students as OverviewRow[]) || []);
+    if (isAdmin && o && o.ok) { setOverview((o.students as OverviewRow[]) || []); setTeamsDefault((o.teamsDefault as string) || null); }
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
     if (!isAdmin) { setOverview(null); setInbox(null); }
   }, [api, weekStart, session]);
@@ -549,6 +550,16 @@ export default function KalenderPage() {
       if (d.ok) { setModal(null); showToast("Passwort geändert ✓"); return ""; }
       return String(d.error || "Fehler.");
     }} />);
+  }
+  // Teams-Link setzen: pro Schüler oder (ohne studentId) als Standard für alle
+  function teamsBearbeiten(studentId: string | null, name: string, aktuell?: string | null) {
+    const eingabe = window.prompt(
+      studentId
+        ? `Teams-Link für ${name}\n(leer lassen = Standard-Link verwenden):`
+        : "Dein Standard-Teams-Link (gilt für alle Schüler ohne eigenen Link).\nIn Teams: Besprechung erstellen → Link kopieren → hier einfügen.\nLeer lassen = entfernen:",
+      aktuell || "");
+    if (eingabe === null) return;
+    void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
   function confirmRemove(r: OverviewRow) {
     setModal(<div className="modal"><h2>Schüler entfernen</h2><p>Möchtest du <b>{r.name}</b> wirklich löschen? Zugang und alle Termine werden entfernt. Das kann nicht rückgängig gemacht werden.</p>
@@ -736,9 +747,9 @@ export default function KalenderPage() {
 
         {role === "admin" && overview && (
           <div className="overview">
-            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8 }}><button className="minibtn" onClick={openCalls}>🎥 Video-Call erstellen</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
+            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" onClick={openCalls}>🎥 Video-Call erstellen</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a></td><td>{r.fix}</td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
@@ -896,7 +907,9 @@ function StundenLeiste({ lesson, istLehrerin, onWeg }: { lesson: NextLesson; ist
     <div className="hint lessonbar">
       <span>🎥 <b>Nächste Stunde:</b> {lesson.title} – {wann}</span>
       {offen
-        ? <a className="btn p sm" href={`/stunde/${lesson.id}`}>Zur Stunde</a>
+        ? (lesson.teamsLink
+          ? <a className="btn p sm" href={lesson.teamsLink} target="_blank" rel="noreferrer">Zur Stunde (Teams)</a>
+          : <a className="btn p sm" href={`/stunde/${lesson.id}`}>Zur Stunde</a>)
         : <button className="btn g sm" disabled title="Der Raum öffnet 15 Minuten vor Beginn">Beitritt in {rest}</button>}
       <button className="lbweg" title="Hinweis ausblenden" onClick={onWeg}>✕</button>
     </div>
