@@ -613,10 +613,6 @@ export default function KalenderPage() {
     }} />);
   }
 
-  function openCalls() {
-    setModal(<CallsModal api={api} onClose={() => setModal(null)} />);
-  }
-
   // Mini-Monatskalender wie in Outlook (Seitenleiste am PC, Aufklapper am
   // Handy). Tag anklicken springt zur Woche; onPick schließt den Aufklapper.
   function miniKalender(onPick?: () => void) {
@@ -747,7 +743,7 @@ export default function KalenderPage() {
 
         {role === "admin" && overview && (
           <div className="overview">
-            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" onClick={openCalls}>🎥 Video-Call erstellen</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
+            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
               <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
@@ -1067,65 +1063,6 @@ function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose }: { when: s
     </div>
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Anfragen"}</button></div></div>;
-}
-// Video-Calls für Probestunde/Masterclass: Titel eintippen -> Link bekommen.
-// Kein Zeitfenster, keine Dauer: der Link funktioniert sofort und dauerhaft
-// (bis der Call gelöscht wird) und kann an beliebig viele Leute gehen.
-// Kleana kann aus der Liste auch selbst direkt beitreten.
-function CallsModal({ api, onClose }: { api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>; onClose: () => void }) {
-  type Call = { id: string; title: string; link: string };
-  const [titel, setTitel] = useState("");
-  const [calls, setCalls] = useState<Call[]>([]);
-  const [load, setLoad] = useState(false);
-  const [meld, setMeld] = useState("");
-  const [err, setErr] = useState("");
-
-  const lade = useCallback(async () => {
-    const d = await api("callList");
-    if (d.ok) setCalls((d.calls as Call[]) || []);
-  }, [api]);
-  // lade ist async – setState passiert erst nach dem await
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void lade(); }, [lade]);
-
-  async function kopieren(link: string) {
-    try { await navigator.clipboard.writeText(link); setMeld("Link kopiert ✓ – jetzt einfach verschicken (WhatsApp, E-Mail, überall)."); }
-    catch { setMeld("Kopieren nicht möglich – markiere den Link bitte von Hand: " + link); }
-  }
-  async function erstellen() {
-    if (load) return;
-    setErr(""); setLoad(true);
-    const d = await api("createCall", { title: titel.trim() || "Video-Call" });
-    setLoad(false);
-    if (d.ok && typeof d.link === "string") { setTitel(""); await kopieren(d.link); void lade(); }
-    else setErr(String(d.error || "Fehler."));
-  }
-  async function loeschen(c: Call) {
-    if (!window.confirm(`„${c.title}" wirklich löschen? Der Link funktioniert dann nicht mehr.`)) return;
-    await api("deleteCall", { callId: c.id });
-    void lade();
-  }
-
-  return <div className="modal"><h2>🎥 Video-Call erstellen</h2>
-    <p>Titel eintippen, Link bekommen, verschicken – fertig. Wer den Link hat, tritt <b>ohne Login</b> bei, jederzeit. Der Link bleibt gültig, bis du den Call löschst.</p>
-    <label>Wofür ist der Call?</label>
-    <input value={titel} onChange={(e) => setTitel(e.target.value)} placeholder="z. B. Probestunde Emma / Masterclass Physik"
-      maxLength={80} onKeyDown={(e) => { if (e.key === "Enter") void erstellen(); }} />
-    {err ? <div className="err">{err}</div> : null}
-    {meld ? <div className="okbox" style={{ marginTop: 8 }}>{meld}</div> : null}
-    <div className="acts"><button className="btn g" onClick={onClose}>Schließen</button><button className="btn p" onClick={() => void erstellen()} disabled={load}>{load ? "…" : "Link erstellen & kopieren"}</button></div>
-    {calls.length > 0 && (<>
-      <h2 style={{ marginTop: 18, fontSize: "1rem" }}>Deine Calls</h2>
-      {calls.map((c) => (
-        <div key={c.id} className="acts" style={{ alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
-          <span style={{ flex: 1, minWidth: 120 }}><b>{c.title}</b></span>
-          <a className="btn p sm" style={{ textDecoration: "none" }} href={`/stunde/${c.id}`} target="_blank" rel="noreferrer">▶ Beitreten</a>
-          <button className="btn g sm" onClick={() => void kopieren(c.link)}>Link kopieren</button>
-          <button className="btn r sm" onClick={() => void loeschen(c)} aria-label="Löschen">🗑️</button>
-        </div>
-      ))}
-    </>)}
-  </div>;
 }
 function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
