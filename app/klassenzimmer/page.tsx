@@ -27,7 +27,7 @@ function speichereSession(s: Session) {
 }
 
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null; teamsLink?: string | null };
-type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean };
+type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean; datei?: string | null };
 type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean; category?: string; beschreibung?: string | null };
 type Bericht = { id: string; titel: string; art: "bericht" | "quiz"; inhalt: string; created_at: string; eingabe?: string };
 type DateiKat = "alle" | "arbeitsblatt" | "hausaufgabe" | "sonstiges";
@@ -100,6 +100,9 @@ const CSS = `
 .kz .msg.mein .blase{background:#E6F5F7;border-color:#C7E8EC;border-radius:13px 3px 13px 13px}
 .kz .msg.mein .wer{text-align:right}
 .kz .sendezeile{display:flex;gap:8px}
+.kz .anhang{display:block;margin-top:6px;background:#F0F3F6;border:1px solid #E2E7ED;border-radius:9px;
+  padding:7px 11px;font:inherit;font-size:.84rem;font-weight:600;color:#0F6F79;cursor:pointer;text-align:left;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kz .dateizeile{display:flex;align-items:center;gap:11px}
 .kz .dateizeile .info{flex:1;min-width:0}
 .kz .dateizeile .info b{word-break:break-word}
@@ -195,6 +198,7 @@ export default function KlassenzimmerPage() {
   const [material, setMaterial] = useState<Datei[]>([]);
   const [materialText, setMaterialText] = useState("");
   const materialInputRef = useRef<HTMLInputElement>(null);
+  const chatDateiRef = useRef<HTMLInputElement>(null);
   const [entwurf, setEntwurf] = useState("");
   const [beschaeftigt, setBeschaeftigt] = useState(false);
   // Live-Stunde direkt im Klassenzimmer (Zoom-Stil): gesetzte ID = Video läuft
@@ -392,6 +396,29 @@ export default function KlassenzimmerPage() {
     else zeige(String(d.error || "Löschen fehlgeschlagen."));
   }
 
+  // Foto/Datei im Chat verschicken (dürfen auch Schüler)
+  async function chatHochladen(datei: File) {
+    const session = ladeSession();
+    if (!session?.token) return;
+    setBeschaeftigt(true);
+    const form = new FormData();
+    form.append("action", "chatUpload");
+    form.append("token", session.token);
+    const zp = zielParam();
+    if (typeof zp.studentId === "string") form.append("studentId", zp.studentId);
+    form.append("file", datei);
+    const res = await fetch("/api/klasse", { method: "POST", body: form }).catch(() => null);
+    const d = (await res?.json().catch(() => ({}))) as Record<string, unknown> | undefined;
+    setBeschaeftigt(false);
+    if (d?.ok) void lade("chat");
+    else zeige(String(d?.error || "Hochladen fehlgeschlagen."));
+  }
+  async function chatAnhangOeffnen(messageId: string) {
+    const d = await api("chatFileUrl", { ...zielParam(), messageId });
+    if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
+    else zeige(String(d.error || "Datei konnte nicht geöffnet werden."));
+  }
+
   async function dateiOeffnen(id: string) {
     const d = await api("fileUrl", { ...zielParam(), fileId: id });
     if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
@@ -509,12 +536,19 @@ export default function KlassenzimmerPage() {
               {nachrichten.map((m) => (
                 <div key={m.id} className={"msg" + (m.mine ? " mein" : "")}>
                   <div className="wer">{m.mine ? "Du" : m.sender} <span className="wann">· {wannText(m.created_at)}</span></div>
-                  <div className="blase">{m.body}</div>
+                  <div className="blase">
+                    {m.body}
+                    {m.datei && <button className="anhang" onClick={() => void chatAnhangOeffnen(m.id)}>📎 {m.datei}</button>}
+                  </div>
                 </div>
               ))}
               <div ref={chatEndeRef} />
             </div>
             <div className="sendezeile">
+              <button className="btnG" title="Foto oder Datei senden" disabled={beschaeftigt}
+                onClick={() => chatDateiRef.current?.click()} style={{ flex: "0 0 auto" }}>📎</button>
+              <input ref={chatDateiRef} type="file" style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void chatHochladen(f); e.target.value = ""; }} />
               <input className="feld" placeholder="Nachricht schreiben …" value={entwurf}
                 onChange={(e) => setEntwurf(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void senden(); }} />
