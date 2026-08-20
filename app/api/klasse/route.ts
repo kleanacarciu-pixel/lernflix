@@ -13,9 +13,11 @@
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile } from "@/lib/kalender";
 import { nextLessonFor, syncLessons } from "@/lib/stunden";
+import { kiBereit, kiText, BERICHT_SYSTEM, QUIZ_SYSTEM } from "@/lib/ki";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // KI-Berichte dürfen bis zu einer Minute schreiben
 
 const BUCKET = "klassenzimmer";
 const MAX_DATEI_BYTES = 25 * 1024 * 1024; // 25 MB pro Datei
@@ -41,7 +43,7 @@ export async function POST(req: Request): Promise<Response> {
       const form = await req.formData();
       action = String(form.get("action") || "");
       token = String(form.get("token") || "");
-      body = { studentId: form.get("studentId") };
+      body = { studentId: form.get("studentId"), category: form.get("category") };
       const f = form.get("file");
       if (f instanceof File) uploadDatei = f;
     } else {
@@ -114,13 +116,14 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= DATEIEN ========================================
     if (action === "files") {
+      // "*" statt fester Spalten: category kommt erst mit der V5-Migration
       const { data } = await sb.from("class_files")
-        .select("id,student_id,uploader_id,name,size_bytes,created_at")
+        .select("*")
         .or(`student_id.eq.${zielSchueler},student_id.is.null`)
         .order("created_at", { ascending: false }).limit(200);
       return ok({
-        files: ((data || []) as { id: string; student_id: string | null; name: string; size_bytes: number; created_at: string }[])
-          .map((f) => ({ id: f.id, name: f.name, size: f.size_bytes, created_at: f.created_at, fuerAlle: f.student_id === null })),
+        files: ((data || []) as { id: string; student_id: string | null; name: string; size_bytes: number; created_at: string; category?: string | null }[])
+          .map((f) => ({ id: f.id, name: f.name, size: f.size_bytes, created_at: f.created_at, fuerAlle: f.student_id === null, category: f.category || "sonstiges" })),
       });
     }
 
@@ -137,10 +140,18 @@ export async function POST(req: Request): Promise<Response> {
       const { error: upErr } = await sb.storage.from(BUCKET)
         .upload(pfad, bytes, { contentType: uploadDatei.type || "application/octet-stream" });
       if (upErr) return fehler("Hochladen fehlgeschlagen: " + upErr.message);
-      const { error } = await sb.from("class_files").insert({
+      const kategorie = ["arbeitsblatt", "hausaufgabe", "sonstiges"].includes(String(body.category)) ? String(body.category) : "sonstiges";
+      let { error } = await sb.from("class_files").insert({
         student_id: fuerAlle ? null : body.studentId, uploader_id: user.id,
-        name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size,
+        name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size, category: kategorie,
       });
+      // Ohne V5-Migration gibt es die Spalte category noch nicht
+      if (error && /category/.test(error.message)) {
+        ({ error } = await sb.from("class_files").insert({
+          student_id: fuerAlle ? null : body.studentId, uploader_id: user.id,
+          name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size,
+        }));
+      }
       if (error) return fehler("Speichern fehlgeschlagen: " + error.message);
       return ok({ message: "Datei hochgeladen ✓" });
     }
@@ -169,6 +180,65 @@ export async function POST(req: Request): Promise<Response> {
       await sb.storage.from(BUCKET).remove([(f as { storage_path: string }).storage_path]);
       await sb.from("class_files").delete().eq("id", body.fileId);
       return ok({ message: "Datei gelöscht." });
+    }
+
+    // ======================= KI-STUNDENBERICHTE =============================
+    // Kleana tippt kurz, was in der Stunde gemacht wurde – die KI schreibt
+    // daraus einen Bericht (Erklärung, Beispiele, Hausaufgaben) und legt ihn
+    // im Klassenzimmer des Schülers ab. Dazu: Wiederholungs-Quiz aus den
+    // letzten Berichten.
+    if (action === "berichte") {
+      const { data } = await sb.from("lesson_reports")
+        .select("id,titel,art,inhalt,created_at" + (istLehrerin ? ",eingabe" : ""))
+        .eq("student_id", zielSchueler)
+        .order("created_at", { ascending: false }).limit(100);
+      return ok({ reports: data || [] });
+    }
+
+    if (action === "berichtErstellen") {
+      if (!istLehrerin) return fehler("Nur Kleana kann Berichte erstellen.", 403);
+      if (!kiBereit()) return fehler("Der KI-Schlüssel fehlt noch: Bitte ANTHROPIC_API_KEY in Vercel eintragen (Anleitung im Chat mit Claude).");
+      const eingabe = String(body.eingabe || "").trim().slice(0, 4000);
+      if (eingabe.length < 10) return fehler("Bitte kurz beschreiben, was ihr in der Stunde gemacht habt (ein paar Stichpunkte reichen).");
+      const profSchueler = await getProfile(zielSchueler);
+      const inhalt = await kiText(BERICHT_SYSTEM,
+        `Schüler/in: ${profSchueler?.name || "unbekannt"}\nDatum der Stunde: ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}\n\nKleanas Stichpunkte zur Stunde:\n${eingabe}`);
+      if (!inhalt) return fehler("Die KI hat keinen Bericht geliefert – bitte noch einmal versuchen.");
+      const titel = (inhalt.match(/^#\s+(.+)$/m)?.[1] || "Stundenbericht").slice(0, 160);
+      const { data, error } = await sb.from("lesson_reports")
+        .insert({ student_id: zielSchueler, titel, art: "bericht", eingabe, inhalt })
+        .select("id,titel,art,inhalt,created_at,eingabe").single();
+      if (error) return fehler(/lesson_reports/.test(error.message)
+        ? "Bitte zuerst das SQL „klassenzimmer_v5_berichte“ in Supabase ausführen (steht im Chat)."
+        : "Speichern fehlgeschlagen: " + error.message);
+      return ok({ message: "Bericht erstellt und hochgeladen ✓", report: data });
+    }
+
+    if (action === "quizErstellen") {
+      if (!istLehrerin) return fehler("Nur Kleana kann Quizze erstellen.", 403);
+      if (!kiBereit()) return fehler("Der KI-Schlüssel fehlt noch: Bitte ANTHROPIC_API_KEY in Vercel eintragen (Anleitung im Chat mit Claude).");
+      const { data: alte } = await sb.from("lesson_reports")
+        .select("titel,inhalt,created_at").eq("student_id", zielSchueler).eq("art", "bericht")
+        .order("created_at", { ascending: false }).limit(6);
+      const berichte = (alte || []) as { titel: string; inhalt: string; created_at: string }[];
+      if (!berichte.length) return fehler("Noch keine Stundenberichte vorhanden – erstelle zuerst einen Bericht.");
+      const stoff = berichte.map((b) => `--- Bericht vom ${new Date(b.created_at).toLocaleDateString("de-DE")} ---\n${b.inhalt}`).join("\n\n").slice(0, 60000);
+      const profSchueler = await getProfile(zielSchueler);
+      const inhalt = await kiText(QUIZ_SYSTEM, `Schüler/in: ${profSchueler?.name || "unbekannt"}\n\nDie letzten Stundenberichte:\n\n${stoff}`);
+      if (!inhalt) return fehler("Die KI hat kein Quiz geliefert – bitte noch einmal versuchen.");
+      const titel = (inhalt.match(/^#\s+(.+)$/m)?.[1] || "Wiederholungs-Quiz").slice(0, 160);
+      const { data, error } = await sb.from("lesson_reports")
+        .insert({ student_id: zielSchueler, titel, art: "quiz", inhalt })
+        .select("id,titel,art,inhalt,created_at").single();
+      if (error) return fehler("Speichern fehlgeschlagen: " + error.message);
+      return ok({ message: "Quiz erstellt ✓", report: data });
+    }
+
+    if (action === "berichtLoeschen") {
+      if (!istLehrerin) return fehler("Nur Kleana kann Berichte löschen.", 403);
+      if (!istUuid(body.reportId)) return fehler("Bericht nicht gefunden.", 404);
+      await sb.from("lesson_reports").delete().eq("id", body.reportId).eq("student_id", zielSchueler);
+      return ok({ message: "Gelöscht." });
     }
 
     // ======================= STUNDEN ========================================

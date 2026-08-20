@@ -28,7 +28,10 @@ function speichereSession(s: Session) {
 
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null; teamsLink?: string | null };
 type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean };
-type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean };
+type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean; category?: string };
+type Bericht = { id: string; titel: string; art: "bericht" | "quiz"; inhalt: string; created_at: string; eingabe?: string };
+type DateiKat = "alle" | "arbeitsblatt" | "hausaufgabe" | "sonstiges";
+const KAT_NAMEN: Record<string, string> = { arbeitsblatt: "Arbeitsblätter", hausaufgabe: "Hausaufgaben", sonstiges: "Sonstiges" };
 type Stunde = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; mode?: string | null; notes: { summary: string; homework: string } | null };
 type Antwort = { question: string; answer: string; is_correct: boolean | null; answered_at: string };
 
@@ -107,15 +110,30 @@ const CSS = `
   background:${VERLAUF};-webkit-background-clip:text;background-clip:text;color:transparent}
 .kz .stickers{font-size:1.2rem;letter-spacing:4px;text-align:center;margin-top:3px}
 .kz .leer{text-align:center;color:#68737F;padding:30px 10px}
+.kz .berichtkopf{display:flex;align-items:center;gap:11px;width:100%;background:none;border:0;
+  font:inherit;color:inherit;cursor:pointer;text-align:left;padding:0}
+.kz .berichtkopf .info{flex:1;min-width:0}
+.kz .bericht{margin-top:12px;border-top:1px solid #E2E7ED;padding-top:4px;font-size:.92rem;line-height:1.6}
+.kz .bericht h3{font-size:1.08rem;margin:12px 0 6px}
+.kz .bericht h4{font-size:.98rem;margin:14px 0 5px}
+.kz .bericht h5{font-size:.92rem;margin:12px 0 4px}
+.kz .bericht p{margin:0 0 8px}
+.kz .bericht ul,.kz .bericht ol{margin:0 0 10px;padding-left:22px}
+.kz .bericht li{margin:0 0 5px}
+.kz .bericht code{background:#F0F3F6;border-radius:5px;padding:1px 5px}
+.kz .katchip{background:#F2F5F8;border:1px solid #E2E7ED;border-radius:999px;padding:5px 13px;
+  font:inherit;font-size:.8rem;font-weight:700;color:#68737F;cursor:pointer}
+.kz .katchip.on{background:#E6F5F7;border-color:#9AD6DC;color:#0F6F79}
 .kz .status{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center}
 `;
 
 // --- Feine Linien-Icons (wie im Mockup) --------------------------------------
-function Icon({ art }: { art: "chat" | "datei" | "aufgabe" | "kamera" }) {
+function Icon({ art }: { art: "chat" | "datei" | "aufgabe" | "kamera" | "bericht" }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <svg viewBox="0 0 24 24" aria-hidden>
       {art === "chat" && (<><path {...s} d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9.6L5 19.6V16A3 3 0 0 1 4 13z" /><path {...s} d="M8.5 8.7h7M8.5 11.7h4.6" /></>)}
+      {art === "bericht" && (<><path {...s} d="M12 6.2C10.6 4.9 8.6 4.2 6 4.2v13.6c2.6 0 4.6.7 6 2 1.4-1.3 3.4-2 6-2V4.2c-2.6 0-4.6.7-6 2z" /><path {...s} d="M12 6.2v13.6" /></>)}
       {art === "datei" && (<><path {...s} d="M6.2 3.4h8.2l3.4 3.4v13.8H6.2z" /><path {...s} d="M9 10h6M9 13.2h6M9 16.4h3.6" /></>)}
       {art === "aufgabe" && (<><rect {...s} x="4" y="3.6" width="16" height="16.8" rx="2.6" /><path {...s} d="m8 12.4 2.7 2.7 5.3-5.6" /></>)}
       {art === "kamera" && (<><rect {...s} x="2.6" y="6" width="12.6" height="12" rx="2.6" /><path {...s} d="M15.2 10.6 21 7.4v9.2l-5.8-3.2" /></>)}
@@ -134,7 +152,34 @@ function groesseText(bytes: number): string {
   return Math.max(1, Math.round(bytes / 1024)) + " KB";
 }
 
-type Tab = "chat" | "dateien" | "aufgaben" | "stunden";
+type Tab = "chat" | "berichte" | "dateien" | "aufgaben" | "stunden";
+
+// Kleiner Markdown-Renderer für die KI-Berichte (Überschriften, Listen,
+// fett/kursiv) – Eingabe wird zuerst entschärft, dann formatiert
+function mdZuHtml(md: string): string {
+  const esc = md.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const fett = (s: string) => s
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>")
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  let html = "", inUl = false, inOl = false;
+  const listenZu = () => {
+    if (inUl) { html += "</ul>"; inUl = false; }
+    if (inOl) { html += "</ol>"; inOl = false; }
+  };
+  for (const roh of esc.split("\n")) {
+    const z = roh.trimEnd();
+    if (/^###\s+/.test(z)) { listenZu(); html += `<h5>${fett(z.replace(/^###\s+/, ""))}</h5>`; }
+    else if (/^##\s+/.test(z)) { listenZu(); html += `<h4>${fett(z.replace(/^##\s+/, ""))}</h4>`; }
+    else if (/^#\s+/.test(z)) { listenZu(); html += `<h3>${fett(z.replace(/^#\s+/, ""))}</h3>`; }
+    else if (/^[-*]\s+/.test(z)) { if (!inUl) { listenZu(); html += "<ul>"; inUl = true; } html += `<li>${fett(z.replace(/^[-*]\s+/, ""))}</li>`; }
+    else if (/^\d+[.)]\s+/.test(z)) { if (!inOl) { listenZu(); html += "<ol>"; inOl = true; } html += `<li>${fett(z.replace(/^\d+[.)]\s+/, ""))}</li>`; }
+    else if (z === "" || z === "---") { listenZu(); }
+    else { listenZu(); html += `<p>${fett(z)}</p>`; }
+  }
+  listenZu();
+  return html;
+}
 
 export default function KlassenzimmerPage() {
   const [bereit, setBereit] = useState(false);
@@ -156,6 +201,12 @@ export default function KlassenzimmerPage() {
   const chatEndeRef = useRef<HTMLDivElement>(null);
   const dateiInputRef = useRef<HTMLInputElement>(null);
   const [uploadZiel, setUploadZiel] = useState<"schueler" | "alle">("schueler");
+  const [uploadKat, setUploadKat] = useState<"arbeitsblatt" | "hausaufgabe" | "sonstiges">("arbeitsblatt");
+  const [dateiKat, setDateiKat] = useState<DateiKat>("alle");
+  const [berichte, setBerichte] = useState<Bericht[]>([]);
+  const [berichtEntwurf, setBerichtEntwurf] = useState("");
+  const [kiLaeuft, setKiLaeuft] = useState<string | null>(null); // Text des Lade-Hinweises
+  const [offenerBericht, setOffenerBericht] = useState<string | null>(null);
 
   const zeige = useCallback((msg: string) => {
     setHinweis(msg);
@@ -232,6 +283,10 @@ export default function KlassenzimmerPage() {
       const d = await api("files", zielParam());
       if (d.ok) setDateien((d.files as Datei[]) || []);
     }
+    if (welcherTab === "berichte") {
+      const d = await api("berichte", zielParam());
+      if (d.ok) setBerichte((d.reports as Bericht[]) || []);
+    }
     if (welcherTab === "stunden") {
       const d = await api("lessons", zielParam());
       if (d.ok) setStunden({ upcoming: (d.upcoming as Stunde[]) || [], past: (d.past as Stunde[]) || [] });
@@ -270,6 +325,38 @@ export default function KlassenzimmerPage() {
     else zeige(String(d.error || "Senden fehlgeschlagen."));
   }
 
+  // KI-Bericht/Quiz erstellen: dauert 10–40 Sekunden, deshalb mit Hinweis
+  async function berichtErstellen() {
+    const eingabe = berichtEntwurf.trim();
+    if (!eingabe || kiLaeuft) return;
+    setKiLaeuft("✨ Die KI schreibt den Bericht … das dauert etwa eine halbe Minute.");
+    const d = await api("berichtErstellen", { ...zielParam(), eingabe });
+    setKiLaeuft(null);
+    if (d.ok) {
+      setBerichtEntwurf("");
+      const neu = d.report as Bericht;
+      if (neu) { setBerichte((alt) => [neu, ...alt]); setOffenerBericht(neu.id); }
+      zeige("Bericht erstellt und hochgeladen ✓");
+    } else zeige(String(d.error || "Bericht konnte nicht erstellt werden."));
+  }
+  async function quizErstellen() {
+    if (kiLaeuft) return;
+    setKiLaeuft("🎲 Die KI stellt das Wiederholungs-Quiz zusammen … einen Moment.");
+    const d = await api("quizErstellen", zielParam());
+    setKiLaeuft(null);
+    if (d.ok) {
+      const neu = d.report as Bericht;
+      if (neu) { setBerichte((alt) => [neu, ...alt]); setOffenerBericht(neu.id); }
+      zeige("Quiz erstellt ✓");
+    } else zeige(String(d.error || "Quiz konnte nicht erstellt werden."));
+  }
+  async function berichtLoeschen(b: Bericht) {
+    if (!window.confirm(`„${b.titel}“ wirklich löschen?`)) return;
+    const d = await api("berichtLoeschen", { ...zielParam(), reportId: b.id });
+    if (d.ok) setBerichte((alt) => alt.filter((x) => x.id !== b.id));
+    else zeige(String(d.error || "Löschen fehlgeschlagen."));
+  }
+
   async function dateiOeffnen(id: string) {
     const d = await api("fileUrl", { ...zielParam(), fileId: id });
     if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
@@ -291,6 +378,7 @@ export default function KlassenzimmerPage() {
     form.append("action", "upload");
     form.append("token", session.token);
     form.append("studentId", uploadZiel === "alle" ? "alle" : schuelerId);
+    form.append("category", uploadKat);
     form.append("file", datei);
     const res = await fetch("/api/klasse", { method: "POST", body: form }).catch(() => null);
     const d = (await res?.json().catch(() => ({}))) as Record<string, unknown> | undefined;
@@ -355,6 +443,7 @@ export default function KlassenzimmerPage() {
             </div>
           )}
           <button className={"navk" + (tab === "chat" ? " on" : "")} onClick={() => setTab("chat")}><Icon art="chat" />Chat</button>
+          <button className={"navk" + (tab === "berichte" ? " on" : "")} onClick={() => setTab("berichte")}><Icon art="bericht" />Berichte</button>
           <button className={"navk" + (tab === "dateien" ? " on" : "")} onClick={() => setTab("dateien")}><Icon art="datei" />Dateien</button>
           <button className={"navk" + (tab === "aufgaben" ? " on" : "")} onClick={() => setTab("aufgaben")}><Icon art="aufgabe" />Aufgaben</button>
           <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
@@ -397,11 +486,59 @@ export default function KlassenzimmerPage() {
             <p className="muted" style={{ fontSize: ".8rem", marginTop: 8 }}>Der Verlauf bleibt erhalten – auch nach der Stunde.</p>
           </>)}
 
+          {/* ============================ BERICHTE ======================== */}
+          {tab === "berichte" && (<>
+            {istLehrerin && (
+              <div className="card">
+                <h4>✨ Neuer Stundenbericht</h4>
+                <p className="muted" style={{ margin: "0 0 8px", fontSize: ".84rem" }}>
+                  Schreib in ein paar Stichpunkten, was ihr in der Stunde gemacht habt — die KI macht daraus
+                  einen schönen Bericht mit Erklärung, Beispielen und Hausaufgaben für {schuelerName}.
+                </p>
+                <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen: Kürzen und Erweitern geübt, klappt schon gut. Bei Textaufgaben noch unsicher. Klasse 6.“`}
+                  value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft} />
+                <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>✨ Bericht erstellen</button>
+                  <button className="btnG" disabled={!!kiLaeuft || berichte.filter((b) => b.art === "bericht").length === 0}
+                    title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>🎲 Wiederholungs-Quiz</button>
+                </div>
+                {kiLaeuft && <p style={{ margin: "10px 0 0", fontWeight: 700 }}>{kiLaeuft}</p>}
+              </div>
+            )}
+            {berichte.length === 0 && !kiLaeuft && (
+              <div className="leer">{istLehrerin ? "Noch keine Berichte – erstelle oben den ersten!" : "Noch keine Berichte. Nach der nächsten Stunde findest du hier, was ihr gemacht habt – mit Erklärung, Beispielen und Hausaufgaben."}</div>
+            )}
+            {berichte.map((b) => (
+              <div key={b.id} className="card">
+                <button className="berichtkopf" onClick={() => setOffenerBericht(offenerBericht === b.id ? null : b.id)}>
+                  <span style={{ fontSize: "1.15rem" }}>{b.art === "quiz" ? "🎲" : "📖"}</span>
+                  <span className="info"><b>{b.titel}</b><br />
+                    <span className="muted" style={{ fontSize: ".8rem" }}>{wannText(b.created_at)}</span></span>
+                  <span className="muted">{offenerBericht === b.id ? "▲" : "▼"}</span>
+                </button>
+                {offenerBericht === b.id && (<>
+                  <div className="bericht" dangerouslySetInnerHTML={{ __html: mdZuHtml(b.inhalt) }} />
+                  {istLehrerin && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button className="btnG" onClick={() => void berichtLoeschen(b)}>🗑️ Löschen</button>
+                    </div>
+                  )}
+                </>)}
+              </div>
+            ))}
+          </>)}
+
           {/* ============================ DATEIEN ========================= */}
           {tab === "dateien" && (<>
             {istLehrerin && (
               <div className="card" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <button className="btnA" disabled={beschaeftigt} onClick={() => dateiInputRef.current?.click()}>⬆️ Datei hochladen</button>
+                <select className="feld" style={{ width: "auto" }} value={uploadKat}
+                  onChange={(e) => setUploadKat(e.target.value as "arbeitsblatt" | "hausaufgabe" | "sonstiges")}>
+                  <option value="arbeitsblatt">📄 Arbeitsblatt</option>
+                  <option value="hausaufgabe">🏠 Hausaufgabe</option>
+                  <option value="sonstiges">📦 Sonstiges</option>
+                </select>
                 <select className="feld" style={{ width: "auto" }} value={uploadZiel}
                   onChange={(e) => setUploadZiel(e.target.value as "schueler" | "alle")}>
                   <option value="schueler">nur für {schuelerName}</option>
@@ -412,13 +549,23 @@ export default function KlassenzimmerPage() {
                 <span className="muted" style={{ fontSize: ".8rem" }}>max. 25 MB</span>
               </div>
             )}
-            {dateien.length === 0 && <div className="leer">Noch keine Dateien. {istLehrerin ? "Lade das erste Arbeitsblatt hoch!" : "Kleana lädt hier Arbeitsblätter für dich hoch."}</div>}
-            {dateien.map((f) => (
+            <div style={{ display: "flex", gap: 6, marginBottom: 11, flexWrap: "wrap" }}>
+              {(["alle", "arbeitsblatt", "hausaufgabe", "sonstiges"] as DateiKat[]).map((k) => (
+                <button key={k} className={"katchip" + (dateiKat === k ? " on" : "")} onClick={() => setDateiKat(k)}>
+                  {k === "alle" ? "Alle" : KAT_NAMEN[k]}
+                </button>
+              ))}
+            </div>
+            {dateien.filter((f) => dateiKat === "alle" || (f.category || "sonstiges") === dateiKat).length === 0 &&
+              <div className="leer">{dateien.length === 0
+                ? (istLehrerin ? "Noch keine Dateien. Lade das erste Arbeitsblatt hoch!" : "Kleana lädt hier Arbeitsblätter für dich hoch.")
+                : "In dieser Ecke liegt noch nichts."}</div>}
+            {dateien.filter((f) => dateiKat === "alle" || (f.category || "sonstiges") === dateiKat).map((f) => (
               <div key={f.id} className="card dateizeile">
-                <span style={{ fontSize: "1.3rem" }}>📄</span>
+                <span style={{ fontSize: "1.3rem" }}>{f.category === "hausaufgabe" ? "🏠" : f.category === "arbeitsblatt" ? "📄" : "📦"}</span>
                 <span className="info"><b>{f.name}</b><br />
                   <span className="muted" style={{ fontSize: ".8rem" }}>
-                    {wannText(f.created_at)} · {groesseText(f.size)}{f.fuerAlle ? " · für alle" : ""}
+                    {wannText(f.created_at)} · {groesseText(f.size)} · {KAT_NAMEN[f.category || "sonstiges"]}{f.fuerAlle ? " · für alle" : ""}
                   </span></span>
                 <button className="btnG" onClick={() => void dateiOeffnen(f.id)}>Öffnen</button>
                 {istLehrerin && <button className="btnG" onClick={() => void dateiLoeschen(f.id, f.name)} aria-label="Löschen">🗑️</button>}
