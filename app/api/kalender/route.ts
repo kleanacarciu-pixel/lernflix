@@ -98,13 +98,15 @@ export async function POST(req: Request): Promise<Response> {
       // TEMPO: alles parallel laden; die Stunden-Synchronisation läuft NACH
       // der Antwort (after) und gedrosselt – sie darf das Laden nie bremsen
       const istSchueler = role === "student" && !!prof;
-      const [days, nextLesson, dates, myfixRes] = await Promise.all([
+      const [days, nextLesson, dates, myfixRes, meinTeams] = await Promise.all([
         buildWeek(monday, role, viewerId),
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
         istSchueler
           ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv")
           : Promise.resolve({ data: null }),
+        // Schüler bekommen ihren Teams-Link als festen Knopf in der Kopfzeile
+        istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
       ]);
       if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
@@ -113,6 +115,7 @@ export async function POST(req: Request): Promise<Response> {
       // installierte App, die sonst lange auf altem Stand bleiben kann)
       out.version = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
       if (nextLesson) out.nextLesson = nextLesson;
+      if (meinTeams) out.teamsLink = meinTeams;
       if (istSchueler && dates) {
         const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])
           .map((f) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));

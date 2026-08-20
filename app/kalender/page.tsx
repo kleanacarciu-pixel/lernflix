@@ -277,6 +277,7 @@ export default function KalenderPage() {
   const [nextLesson, setNextLesson] = useState<NextLesson | null>(null);
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
   const [teamsDefault, setTeamsDefault] = useState<string | null>(null);
+  const [meinTeams, setMeinTeams] = useState<string | null>(null); // Schüler: eigener Teams-Knopf
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
@@ -365,7 +366,7 @@ export default function KalenderPage() {
       if (versionRef.current && versionRef.current !== d.version) { window.location.reload(); return; }
       versionRef.current = d.version;
     }
-    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); }
+    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); }
     if (isAdmin && o && o.ok) { setOverview((o.students as OverviewRow[]) || []); setTeamsDefault((o.teamsDefault as string) || null); }
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
     if (!isAdmin) { setOverview(null); setInbox(null); }
@@ -715,7 +716,7 @@ export default function KalenderPage() {
             <a className="back" href="https://lernemitanna.de">← lernemitanna.de</a>
             <a className="btn g sm applink" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
             {session
-              ? <><a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
+              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
           </div>
         </div>
@@ -884,7 +885,8 @@ function StundenLeiste({ lesson, istLehrerin, onWeg }: { lesson: NextLesson; ist
   if (jetzt === null) return null; // erster Render (vor Mount): noch nichts anzeigen
   const start = new Date(lesson.starts_at);
   const einlassAb = start.getTime() - 15 * 60000;
-  const offen = istLehrerin || jetzt >= einlassAb;
+  // Teams hat einen eigenen Wartebereich -> keine 15-Minuten-Sperre nötig
+  const offen = istLehrerin || !!lesson.teamsLink || jetzt >= einlassAb;
   const wann = `${DAYS[(start.getDay() + 6) % 7]} ${dm(start)} um ${pad(start.getHours())}:${pad(start.getMinutes())}`;
   // Vor-Ort-Stunden brauchen keinen Video-Beitritt – nur freundlich erinnern
   if (lesson.mode === "vor_ort") {
