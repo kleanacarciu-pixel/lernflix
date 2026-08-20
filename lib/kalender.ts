@@ -175,9 +175,15 @@ const ADDRESS_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:
 const ONLINE_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0">💻 Der Termin findet <b>online</b> statt – du erhältst den Zugangslink rechtzeitig in einer separaten E-Mail.</div>`;
 function contactBlock(mode?: string | null): string { return mode === "vor_ort" ? ADDRESS_HTML : mode === "online" ? ONLINE_HTML : ""; }
 
+// Teams-Absatz für Bestätigungs-Mails (nur bei Online-Terminen mit Link)
+const teamsBlock = (mode?: string | null, teams?: string | null) =>
+  teams && mode !== "vor_ort"
+    ? `<p style="margin:14px 0"><a href="${teams}" style="background:#4a5fbd;color:#fff;text-decoration:none;padding:11px 18px;border-radius:10px;font-weight:600;display:inline-block">📹 Hier klicken: In Microsoft Teams beitreten</a><br><span style="font-size:12px;color:#888">${teams}</span></p>`
+    : "";
+
 export const mailTemplates = {
-  confirmed: (when: string, mode?: string | null) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>` + contactBlock(mode)),
-  probeConfirmed: (name: string, when: string, mode?: string | null) => wrapMail(`Danke, ${name}! 🎉`, `<p>Schön, dass du <b>Lerne mit Anna</b> kennenlernen möchtest! Deine <b>kostenlose Probestunde</b> am <b>${when}</b> ist bestätigt. Ich freue mich auf dich!</p>` + contactBlock(mode)),
+  confirmed: (when: string, mode?: string | null, teams?: string | null) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
+  probeConfirmed: (name: string, when: string, mode?: string | null, teams?: string | null) => wrapMail(`Danke, ${name}! 🎉`, `<p>Schön, dass du <b>Lerne mit Anna</b> kennenlernen möchtest! Deine <b>kostenlose Probestunde</b> am <b>${when}</b> ist bestätigt. Ich freue mich auf dich!</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
   rejected: (when: string) => wrapMail("Termin abgesagt", `<p>Leider konnte dein angefragter Termin am <b>${when}</b> nicht bestätigt werden. Der Slot ist wieder frei – du kannst gern einen anderen wählen.</p>`),
   annaCancel: (when: string) => wrapMail("Termin verschoben", `<p>Dein Termin am <b>${when}</b> muss leider ausfallen. Du bekommst dafür eine <b>Nachhol-Stunde gutgeschrieben</b> (kein Minus) – buche einfach einen freien Slot.</p>`),
   probeReceived: (name: string, when: string) => wrapMail(`Danke, ${name}!`, `<p>Deine <b>Probestunde</b> am <b>${when}</b> ist angefragt. Kleana bestätigt sie in Kürze – du bekommst dann eine Bestätigung per E-Mail.</p>`),
