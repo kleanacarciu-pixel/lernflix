@@ -13,8 +13,6 @@ const SANS = '"Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans
 export default function AGB() {
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', fontFamily: SANS, color: F.ink, padding: '24px 22px 60px', position: 'relative', overflow: 'hidden' }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
       {/* Dot-grid pattern + glow blobs (matched mit homepage) */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.35, pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', top: '-100px', left: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,180,90,0.22) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)', zIndex: 0 }} />

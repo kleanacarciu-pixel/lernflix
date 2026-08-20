@@ -13,7 +13,6 @@ import LiveStunde from "../stunde/live-stunde";
 const TEAL = "#2BB3C0";
 const BLAU = "#3E7BB6";
 const VERLAUF = `linear-gradient(135deg,${TEAL},${BLAU})`;
-const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";
 
 // Dieselbe Sitzung wie der Terminkalender
 const LS_KEY = "lma_kal_session";
@@ -142,6 +141,8 @@ const CSS = `
   font:inherit;font-size:.8rem;font-weight:700;color:#68737F;cursor:pointer}
 .kz .katchip.on{background:#E6F5F7;border-color:#9AD6DC;color:#0F6F79}
 .kz .status{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center}
+.kz .rechtsfuss{text-align:center;padding:18px 0 4px;color:#9AA3AD;font-size:.76rem}
+.kz .rechtsfuss a{color:#9AA3AD;text-decoration:underline;font-weight:500;font-size:.76rem}
 `;
 
 // --- Feine Linien-Icons (wie im Mockup) --------------------------------------
@@ -476,18 +477,19 @@ export default function KlassenzimmerPage() {
       <div className="status"><div style={{ fontSize: "2rem" }}>🐙</div><p className="muted">Dein Klassenzimmer wird geöffnet …</p></div></div>);
   }
   if (!eingeloggt) {
-    return (<div className="kz"><link rel="stylesheet" href={FONTS} /><style dangerouslySetInnerHTML={{ __html: CSS }} />
+    return (<div className="kz"><style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="status">
         <div style={{ fontSize: "2rem" }}>🐙</div>
         <h2 style={{ margin: 0 }}>Bitte zuerst einloggen</h2>
         <p className="muted" style={{ maxWidth: 420 }}>Melde dich im Terminkalender mit deinen Zugangsdaten an und öffne diese Seite danach noch einmal.</p>
         <a className="btnA" style={{ textDecoration: "none" }} href="/kalender">Zum Login</a>
+        <div className="rechtsfuss"><a href="/datenschutz">Datenschutz</a> · <a href="/impressum">Impressum</a></div>
       </div></div>);
   }
 
   return (
     <div className="kz">
-      <link rel="stylesheet" href={FONTS} />
+      
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       <div className="topbar">
@@ -720,6 +722,7 @@ export default function KlassenzimmerPage() {
           </>)}
 
           {hinweis && <div className="card" style={{ background: "#E8F6F0", borderColor: "#CFEADF", color: "#127A5C", fontWeight: 700, textAlign: "center" }}>{hinweis}</div>}
+          <div className="rechtsfuss"><a href="/datenschutz">Datenschutz</a> · <a href="/impressum">Impressum</a></div>
         </div></main>
       </div>}
     </div>

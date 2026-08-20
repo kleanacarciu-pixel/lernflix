@@ -190,7 +190,8 @@ export const mailTemplates = {
   invite: (name: string, email: string, password: string) => wrapMail(`Willkommen, ${name}!`,
     `<p>Kleana hat dir einen Zugang zum Terminkalender angelegt. Damit siehst du deine Stunden und kannst Termine buchen oder absagen.</p>
      <p style="background:#f4f6f7;border-radius:10px;padding:14px"><b>Anmeldename:</b> ${name}<br><b>Passwort:</b> ${password}</p>
-     <p style="font-size:13px;color:#666">Einloggen geht mit dem Namen (oder der E-Mail ${email}) und dem Passwort. Bitte ändere dein Passwort nach dem ersten Login.</p>`),
+     <p style="font-size:13px;color:#666">Einloggen geht mit dem Namen (oder der E-Mail ${email}) und dem Passwort. Bitte ändere dein Passwort nach dem ersten Login.</p>
+     <p style="font-size:12px;color:#999">Wie wir mit euren Daten umgehen, steht in unserer <a href="https://lernflix.lernemitanna.de/datenschutz" style="color:#999">Datenschutzerklärung</a>.</p>`),
 };
 
 // --- Wochen-Daten berechnen -------------------------------------------------

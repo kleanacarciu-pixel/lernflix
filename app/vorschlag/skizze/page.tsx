@@ -46,8 +46,6 @@ export default function VorschlagSkizze() {
 
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FFF9F0 0%, #FEF3E0 100%)', fontFamily: SANS, color: F.ink, overflowX: 'hidden', position: 'relative' }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" />
 
       {/* Dot-grid pattern + glow blobs */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(23,105,255,0.10) 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.35, pointerEvents: 'none', zIndex: 0 }} />

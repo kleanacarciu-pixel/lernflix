@@ -17,7 +17,6 @@ const HELL = "#F4F6F7";
 const INK = "#1A1A1A";
 const GEDAEMPFT = "#5F574F";
 const VIDEO_BLAU = "#22365C";
-const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
 
 const CSS = `
 .gast{min-height:100dvh;display:flex;flex-direction:column;background:${HELL};color:${INK};font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif}
@@ -141,7 +140,7 @@ function GastInhalt() {
 
   return (
     <div className="gast">
-      <link rel="stylesheet" href={FONTS} />
+      
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <header className="kopf">
         <span className="marke">🐙 Lerne mit Anna</span>

@@ -333,8 +333,6 @@ export default function QuizPage() {
 
   return (
     <main style={{ minHeight: "100vh", background: "#ffffff", fontFamily: SANS, color: F.ink, position: "relative", overflow: "hidden" }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
 
       {/* Karierte papier textur (matched mit homepage) */}
       <div style={{ position: "fixed", inset: 0, backgroundImage: "linear-gradient(rgba(23,105,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,255,0.07) 1px, transparent 1px)", backgroundSize: "40px 40px", pointerEvents: "none", zIndex: 0 }} />

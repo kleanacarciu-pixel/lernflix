@@ -22,7 +22,6 @@ const INK = "#1A1A1A";        // Text
 const GEDAEMPFT = "#5F574F";  // gedämpfter Text
 const LINIE = "rgba(26,26,26,.12)";
 const VIDEO_BLAU = "#22365C"; // dunkler Hintergrund nur im Video-Bereich
-const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
 
 // Dieselbe Sitzung wie der Terminkalender (app/kalender/page.tsx)
 const LS_KEY = "lma_kal_session";
@@ -240,7 +239,7 @@ export default function LiveStunde({ lessonId, eingebettet = false, onSchliessen
 
   return (
     <div className={"stunde" + (eingebettet ? " eingebettet" : "")}>
-      <link rel="stylesheet" href={FONTS} />
+      
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* Kopfzeile: eigenständig mit Marke + Kalender-Link, eingebettet nur
