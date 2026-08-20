@@ -207,6 +207,9 @@ export default function KlassenzimmerPage() {
   const [berichtEntwurf, setBerichtEntwurf] = useState("");
   const [kiLaeuft, setKiLaeuft] = useState<string | null>(null); // Text des Lade-Hinweises
   const [offenerBericht, setOffenerBericht] = useState<string | null>(null);
+  // Diktieren (Spracheingabe des Browsers) für den Stundenbericht
+  const [diktiert, setDiktiert] = useState(false);
+  const erkennungRef = useRef<{ stop: () => void } | null>(null);
 
   const zeige = useCallback((msg: string) => {
     setHinweis(msg);
@@ -323,6 +326,37 @@ export default function KlassenzimmerPage() {
     setBeschaeftigt(false);
     if (d.ok) { setEntwurf(""); void lade("chat"); }
     else zeige(String(d.error || "Senden fehlgeschlagen."));
+  }
+
+  // Diktieren starten/stoppen: nutzt die Spracherkennung des Browsers
+  // (de-DE); der gesprochene Text landet live im Bericht-Feld
+  function diktierenToggle() {
+    if (diktiert) { erkennungRef.current?.stop(); return; }
+    type ErgebnisListe = { length: number; [i: number]: { 0: { transcript: string } } };
+    type Erkennung = {
+      lang: string; continuous: boolean; interimResults: boolean;
+      onresult: ((e: { results: ErgebnisListe }) => void) | null;
+      onend: (() => void) | null; onerror: (() => void) | null;
+      start: () => void; stop: () => void;
+    };
+    const w = window as unknown as { SpeechRecognition?: new () => Erkennung; webkitSpeechRecognition?: new () => Erkennung };
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) { zeige("Diktieren wird hier nicht unterstützt – nutze das Mikrofon auf der Tastatur."); return; }
+    const r = new SR();
+    r.lang = "de-DE";
+    r.continuous = true;
+    r.interimResults = true;
+    const basis = berichtEntwurf.trim();
+    r.onresult = (e) => {
+      let text = "";
+      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+      setBerichtEntwurf((basis ? basis + " " : "") + text.trim());
+    };
+    r.onend = () => setDiktiert(false);
+    r.onerror = () => setDiktiert(false);
+    erkennungRef.current = r;
+    setDiktiert(true);
+    r.start();
   }
 
   // KI-Bericht/Quiz erstellen: dauert 10–40 Sekunden, deshalb mit Hinweis
@@ -498,6 +532,8 @@ export default function KlassenzimmerPage() {
                 <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen: Kürzen und Erweitern geübt, klappt schon gut. Bei Textaufgaben noch unsicher. Klasse 6.“`}
                   value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft} />
                 <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <button className={"btnG"} style={diktiert ? { background: "#FDEEEC", color: "#C03A31" } : undefined}
+                    disabled={!!kiLaeuft} onClick={diktierenToggle}>{diktiert ? "Aufnahme stoppen" : "Diktieren"}</button>
                   <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>Bericht erstellen</button>
                   <button className="btnG" disabled={!!kiLaeuft || berichte.filter((b) => b.art === "bericht").length === 0}
                     title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>Wiederholungs-Quiz</button>
