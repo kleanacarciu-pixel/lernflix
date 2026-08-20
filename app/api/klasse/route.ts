@@ -201,8 +201,11 @@ export async function POST(req: Request): Promise<Response> {
       const eingabe = String(body.eingabe || "").trim().slice(0, 4000);
       if (eingabe.length < 10) return fehler("Bitte kurz beschreiben, was ihr in der Stunde gemacht habt (ein paar Stichpunkte reichen).");
       const profSchueler = await getProfile(zielSchueler);
-      const inhalt = await kiText(BERICHT_SYSTEM,
-        `Schüler/in: ${profSchueler?.name || "unbekannt"}\nDatum der Stunde: ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}\n\nKleanas Stichpunkte zur Stunde:\n${eingabe}`);
+      let inhalt = "";
+      try {
+        inhalt = await kiText(BERICHT_SYSTEM,
+          `Schüler/in: ${profSchueler?.name || "unbekannt"}\nDatum der Stunde: ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}\n\nKleanas Stichpunkte zur Stunde:\n${eingabe}`);
+      } catch (e) { return fehler(e instanceof Error ? e.message : "KI-Fehler – bitte noch einmal versuchen."); }
       if (!inhalt) return fehler("Die KI hat keinen Bericht geliefert – bitte noch einmal versuchen.");
       const titel = (inhalt.match(/^#\s+(.+)$/m)?.[1] || "Stundenbericht").slice(0, 160);
       const { data, error } = await sb.from("lesson_reports")
@@ -224,7 +227,10 @@ export async function POST(req: Request): Promise<Response> {
       if (!berichte.length) return fehler("Noch keine Stundenberichte vorhanden – erstelle zuerst einen Bericht.");
       const stoff = berichte.map((b) => `--- Bericht vom ${new Date(b.created_at).toLocaleDateString("de-DE")} ---\n${b.inhalt}`).join("\n\n").slice(0, 60000);
       const profSchueler = await getProfile(zielSchueler);
-      const inhalt = await kiText(QUIZ_SYSTEM, `Schüler/in: ${profSchueler?.name || "unbekannt"}\n\nDie letzten Stundenberichte:\n\n${stoff}`);
+      let inhalt = "";
+      try {
+        inhalt = await kiText(QUIZ_SYSTEM, `Schüler/in: ${profSchueler?.name || "unbekannt"}\n\nDie letzten Stundenberichte:\n\n${stoff}`);
+      } catch (e) { return fehler(e instanceof Error ? e.message : "KI-Fehler – bitte noch einmal versuchen."); }
       if (!inhalt) return fehler("Die KI hat kein Quiz geliefert – bitte noch einmal versuchen.");
       const titel = (inhalt.match(/^#\s+(.+)$/m)?.[1] || "Wiederholungs-Quiz").slice(0, 160);
       const { data, error } = await sb.from("lesson_reports")

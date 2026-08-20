@@ -9,16 +9,35 @@ export function kiBereit(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
 }
 
-// Einen Text von Claude schreiben lassen (Markdown). Wirft bei Fehlern.
+// Einen Text von Claude schreiben lassen (Markdown). Wirft bei Fehlern –
+// mit verständlicher deutscher Meldung statt API-Kauderwelsch.
 export async function kiText(system: string, prompt: string): Promise<string> {
   const client = new Anthropic();
-  const response = await client.messages.create({
-    model: "claude-opus-5",
-    max_tokens: 16000,
-    output_config: { effort: "medium" },
-    system,
-    messages: [{ role: "user", content: prompt }],
-  });
+  let response;
+  try {
+    response = await client.messages.create({
+      model: "claude-opus-5",
+      max_tokens: 16000,
+      output_config: { effort: "medium" },
+      system,
+      messages: [{ role: "user", content: prompt }],
+    });
+  } catch (e) {
+    if (e instanceof Anthropic.APIError) {
+      const msg = String(e.message || "");
+      if (/credit balance is too low/i.test(msg)) {
+        throw new Error("Dein KI-Guthaben ist aufgebraucht. Bitte auf console.anthropic.com unter „Plans & Billing“ Guthaben aufladen – danach funktioniert es sofort wieder.");
+      }
+      if (e instanceof Anthropic.AuthenticationError) {
+        throw new Error("Der KI-Schlüssel ist ungültig. Bitte ANTHROPIC_API_KEY in Vercel prüfen.");
+      }
+      if (e instanceof Anthropic.RateLimitError) {
+        throw new Error("Die KI ist gerade ausgelastet – bitte in einer Minute noch einmal versuchen.");
+      }
+      throw new Error("KI-Fehler: " + msg);
+    }
+    throw e;
+  }
   let text = "";
   for (const block of response.content) {
     if (block.type === "text") text += block.text;
