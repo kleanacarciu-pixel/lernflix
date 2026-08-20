@@ -329,7 +329,7 @@ export default function KlassenzimmerPage() {
   async function berichtErstellen() {
     const eingabe = berichtEntwurf.trim();
     if (!eingabe || kiLaeuft) return;
-    setKiLaeuft("✨ Die KI schreibt den Bericht … das dauert etwa eine halbe Minute.");
+    setKiLaeuft("Der Bericht wird geschrieben … das dauert etwa eine halbe Minute.");
     const d = await api("berichtErstellen", { ...zielParam(), eingabe });
     setKiLaeuft(null);
     if (d.ok) {
@@ -341,7 +341,7 @@ export default function KlassenzimmerPage() {
   }
   async function quizErstellen() {
     if (kiLaeuft) return;
-    setKiLaeuft("🎲 Die KI stellt das Wiederholungs-Quiz zusammen … einen Moment.");
+    setKiLaeuft("Das Wiederholungs-Quiz wird zusammengestellt … einen Moment.");
     const d = await api("quizErstellen", zielParam());
     setKiLaeuft(null);
     if (d.ok) {
@@ -490,7 +490,7 @@ export default function KlassenzimmerPage() {
           {tab === "berichte" && (<>
             {istLehrerin && (
               <div className="card">
-                <h4>✨ Neuer Stundenbericht</h4>
+                <h4>Neuer Stundenbericht</h4>
                 <p className="muted" style={{ margin: "0 0 8px", fontSize: ".84rem" }}>
                   Schreib in ein paar Stichpunkten, was ihr in der Stunde gemacht habt — die KI macht daraus
                   einen schönen Bericht mit Erklärung, Beispielen und Hausaufgaben für {schuelerName}.
@@ -498,9 +498,9 @@ export default function KlassenzimmerPage() {
                 <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen: Kürzen und Erweitern geübt, klappt schon gut. Bei Textaufgaben noch unsicher. Klasse 6.“`}
                   value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft} />
                 <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                  <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>✨ Bericht erstellen</button>
+                  <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>Bericht erstellen</button>
                   <button className="btnG" disabled={!!kiLaeuft || berichte.filter((b) => b.art === "bericht").length === 0}
-                    title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>🎲 Wiederholungs-Quiz</button>
+                    title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>Wiederholungs-Quiz</button>
                 </div>
                 {kiLaeuft && <p style={{ margin: "10px 0 0", fontWeight: 700 }}>{kiLaeuft}</p>}
               </div>
@@ -511,16 +511,15 @@ export default function KlassenzimmerPage() {
             {berichte.map((b) => (
               <div key={b.id} className="card">
                 <button className="berichtkopf" onClick={() => setOffenerBericht(offenerBericht === b.id ? null : b.id)}>
-                  <span style={{ fontSize: "1.15rem" }}>{b.art === "quiz" ? "🎲" : "📖"}</span>
                   <span className="info"><b>{b.titel}</b><br />
-                    <span className="muted" style={{ fontSize: ".8rem" }}>{wannText(b.created_at)}</span></span>
+                    <span className="muted" style={{ fontSize: ".8rem" }}>{wannText(b.created_at)}{b.art === "quiz" ? " · Quiz" : ""}</span></span>
                   <span className="muted">{offenerBericht === b.id ? "▲" : "▼"}</span>
                 </button>
                 {offenerBericht === b.id && (<>
                   <div className="bericht" dangerouslySetInnerHTML={{ __html: mdZuHtml(b.inhalt) }} />
                   {istLehrerin && (
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <button className="btnG" onClick={() => void berichtLoeschen(b)}>🗑️ Löschen</button>
+                      <button className="btnG" onClick={() => void berichtLoeschen(b)}>Löschen</button>
                     </div>
                   )}
                 </>)}
@@ -535,9 +534,9 @@ export default function KlassenzimmerPage() {
                 <button className="btnA" disabled={beschaeftigt} onClick={() => dateiInputRef.current?.click()}>⬆️ Datei hochladen</button>
                 <select className="feld" style={{ width: "auto" }} value={uploadKat}
                   onChange={(e) => setUploadKat(e.target.value as "arbeitsblatt" | "hausaufgabe" | "sonstiges")}>
-                  <option value="arbeitsblatt">📄 Arbeitsblatt</option>
-                  <option value="hausaufgabe">🏠 Hausaufgabe</option>
-                  <option value="sonstiges">📦 Sonstiges</option>
+                  <option value="arbeitsblatt">Arbeitsblatt</option>
+                  <option value="hausaufgabe">Hausaufgabe</option>
+                  <option value="sonstiges">Sonstiges</option>
                 </select>
                 <select className="feld" style={{ width: "auto" }} value={uploadZiel}
                   onChange={(e) => setUploadZiel(e.target.value as "schueler" | "alle")}>
@@ -562,7 +561,7 @@ export default function KlassenzimmerPage() {
                 : "In dieser Ecke liegt noch nichts."}</div>}
             {dateien.filter((f) => dateiKat === "alle" || (f.category || "sonstiges") === dateiKat).map((f) => (
               <div key={f.id} className="card dateizeile">
-                <span style={{ fontSize: "1.3rem" }}>{f.category === "hausaufgabe" ? "🏠" : f.category === "arbeitsblatt" ? "📄" : "📦"}</span>
+                <span style={{ fontSize: "1.3rem" }}>📄</span>
                 <span className="info"><b>{f.name}</b><br />
                   <span className="muted" style={{ fontSize: ".8rem" }}>
                     {wannText(f.created_at)} · {groesseText(f.size)} · {KAT_NAMEN[f.category || "sonstiges"]}{f.fuerAlle ? " · für alle" : ""}
