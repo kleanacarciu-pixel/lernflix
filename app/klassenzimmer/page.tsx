@@ -64,18 +64,33 @@ const CSS = `
 .kz .navk:hover{background:#F0F3F6}
 .kz .navk.on{background:#E6F5F7;color:#0F6F79}
 .kz .navk svg{width:19px;height:19px;flex:0 0 auto}
+.kz .tabs{display:contents}
 .kz .zurstunde{margin-top:auto;padding:8px}
 .kz .inhalt{flex:1;min-width:0;overflow-y:auto;padding:18px}
 .kz .inhalt-innen{max-width:760px;margin:0 auto}
 @media(max-width:760px){
+  /* Handy: wie eine richtige App – Tab-Leiste UNTEN (große Knöpfe mit
+     Beschriftung), Schüler-Auswahl als umbrechende Chips, nichts scrollt
+     seitlich. */
+  .kz .topbar{padding:8px 12px;gap:8px;font-size:.82rem}
+  .kz .fach{display:none}
   .kz .haupt{flex-direction:column}
-  .kz .nav{flex:0 0 auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid #E2E7ED;
-    overflow-x:auto;padding:8px}
+  .kz .nav{flex:0 0 auto;border-right:0;padding:0;gap:0}
   .kz .nav .klasse{display:none}
-  .kz .schueler{flex-direction:row;max-height:none;overflow-x:auto}
   .kz .trenn{display:none}
-  .kz .navk{width:auto}
-  .kz .zurstunde{margin-top:0;margin-left:auto;padding:0 4px}
+  .kz .schueler{flex-direction:row;flex-wrap:wrap;gap:6px;max-height:none;overflow:visible;
+    padding:10px 12px;border-bottom:1px solid #E2E7ED;background:#fff}
+  .kz .schueler .navk{width:auto;padding:7px 12px;border:1px solid #E2E7ED;border-radius:999px;font-size:.82rem;gap:7px}
+  .kz .schueler .navk.on{border-color:#9AD6DC}
+  .kz .zurstunde{margin:0;padding:10px 12px 0}
+  .kz .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:#fff;
+    border-top:1px solid #E2E7ED;padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(23,34,46,.06)}
+  .kz .tabs .navk{flex:1 1 0;min-width:0;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 2px;font-size:.68rem;font-weight:700;border-radius:10px}
+  .kz .tabs .navk svg{width:22px;height:22px}
+  .kz .inhalt{padding:14px 12px calc(96px + env(safe-area-inset-bottom))}
+  .kz .msg{max-width:88%}
 }
 .kz .card{background:#fff;border:1px solid #E2E7ED;border-radius:13px;padding:14px;margin-bottom:11px;
   box-shadow:0 1px 2px rgba(23,34,46,.04)}
@@ -506,11 +521,14 @@ export default function KlassenzimmerPage() {
               <div className="trenn" />
             </div>
           )}
-          <button className={"navk" + (tab === "chat" ? " on" : "")} onClick={() => setTab("chat")}><Icon art="chat" />Chat</button>
-          <button className={"navk" + (tab === "berichte" ? " on" : "")} onClick={() => setTab("berichte")}><Icon art="bericht" />Berichte</button>
-          <button className={"navk" + (tab === "material" ? " on" : "")} onClick={() => setTab("material")}><Icon art="material" />Lernmaterial</button>
-          <button className={"navk" + (tab === "dateien" ? " on" : "")} onClick={() => setTab("dateien")}><Icon art="datei" />Dateien</button>
-          <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
+          {/* Am PC: Liste in der Seitenleiste – am Handy: feste Tab-Leiste unten */}
+          <div className="tabs">
+            <button className={"navk" + (tab === "chat" ? " on" : "")} onClick={() => setTab("chat")}><Icon art="chat" />Chat</button>
+            <button className={"navk" + (tab === "berichte" ? " on" : "")} onClick={() => setTab("berichte")}><Icon art="bericht" />Berichte</button>
+            <button className={"navk" + (tab === "material" ? " on" : "")} onClick={() => setTab("material")}><Icon art="material" />Material</button>
+            <button className={"navk" + (tab === "dateien" ? " on" : "")} onClick={() => setTab("dateien")}><Icon art="datei" />Dateien</button>
+            <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
+          </div>
           {nextLesson && nextLesson.mode !== "vor_ort" && (
             <div className="zurstunde">
               {nextLesson.teamsLink
