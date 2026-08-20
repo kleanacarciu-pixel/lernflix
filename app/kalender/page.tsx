@@ -39,6 +39,8 @@ const CSS = `
 .nurmobil{display:none}
 .legtoggle{display:none}
 .ovcards{display:none}
+.rechtsfuss{text-align:center;padding:20px 0 6px;color:var(--muted);font-size:.78rem}
+.rechtsfuss a{color:var(--muted);text-decoration:underline}
 .hdr{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
 .hdr h1{font-size:1.55rem}
 .hdr .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
@@ -272,6 +274,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
   .ovz .stpb{width:26px;height:26px}
   .daychips{gap:4px}
   .daychip{flex:1 1 0;min-width:0;padding:8px 2px;font-size:.84rem;text-align:center}
+  .rechtsfuss{padding:16px 0 4px}
   .daychip small{font-size:.66rem}
   .otagwrap{grid-template-columns:40px 1fr;border-radius:10px}
   .ostunde{font-size:.7rem;padding-right:4px}
@@ -279,7 +282,6 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 }
 `;
 
-const FONTS = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap";
 const LS_KEY = "lma_kal_session";
 
 export default function KalenderPage() {
@@ -741,7 +743,7 @@ export default function KalenderPage() {
 
   return (
     <div className="kal">
-      <link rel="stylesheet" href={FONTS} />
+      
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="wrap">
         <div className="hdr">
@@ -886,6 +888,7 @@ export default function KalenderPage() {
             </>}
           </div>
         </div>
+        <div className="rechtsfuss"><a href="/datenschutz">Datenschutz</a> · <a href="/impressum">Impressum</a></div>
       </div>
       {modal && <div className="ov">{modal}</div>}
       {busy && <div className="saving">Speichern…</div>}
