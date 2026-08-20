@@ -35,7 +35,10 @@ const CSS = `
 .kal *{box-sizing:border-box}
 .kal{--ink:#1A1A1A;--muted:#5f574f;--teal:#2BB3C0;--blue:#3E7BB6;--grad:linear-gradient(135deg,#2BB3C0,#3E7BB6);--line:rgba(26,26,26,.12);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink);background:#f4f6f7;min-height:100vh;line-height:1.5}
 .kal h1,.kal h2,.kal h3{font-family:'Playfair Display',Georgia,serif;margin:0}
-.wrap{max-width:1120px;margin:0 auto;padding:24px}
+.wrap{max-width:1120px;margin:0 auto;padding:24px;display:flex;flex-direction:column}
+.nurmobil{display:none}
+.legtoggle{display:none}
+.ovcards{display:none}
 .hdr{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
 .hdr h1{font-size:1.55rem}
 .hdr .sp{margin-left:auto;display:flex;gap:10px;align-items:center}
@@ -231,25 +234,44 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .wkhead .pfeil:hover{background:#eef2f4}
 .wkhead b{font-size:1.02rem;margin-left:4px}
 @media(max-width:700px){
-  /* Handy: aufgeräumt wie eine App – Monatskalender per Tipp auf den Titel */
+  /* Handy: aufgeräumt wie eine App – NICHTS scrollt seitlich.
+     Selten Gebrauchtes wandert ins Menü, die Farb-Legende ist einklappbar,
+     der Kalender steht (für Kleana) VOR der langen Schüler-Übersicht. */
   .side{display:none}
   .wkhead{flex-wrap:wrap;gap:4px}
   .wkhead b{font-size:.92rem}
-  .wkhead .heutebtn{padding:6px 10px;font-size:.8rem}
+  .wkhead .heutebtn{padding:8px 12px;font-size:.85rem}
   .mkdrop{max-width:none}
-  .hdr{gap:6px}
-  .hdr h1{width:100%}
-  .hdr .sp{width:100%;overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start;padding-bottom:3px}
-  .hdr .sp .btn,.hdr .sp a{white-space:nowrap;flex:0 0 auto}
-  .hdr .sp .who{display:none}
+  .hdr{gap:8px;align-items:center}
+  .hdr h1{flex:1;font-size:1.2rem}
+  .hdr .sp{margin-left:0;width:auto;flex-wrap:wrap;gap:6px}
+  .nurdesk{display:none !important}
+  .nurmobil{display:inline-block}
   .who{display:none}
-  .hint{font-size:.82rem;padding:9px 11px}
-  .balance{overflow-x:auto;flex-wrap:nowrap;padding-bottom:3px}
-  .balance .pill{white-space:nowrap;flex:0 0 auto}
-  .legend{flex-wrap:nowrap;overflow-x:auto;padding:8px 10px}
-  .legitem{white-space:nowrap;flex:0 0 auto}
+  .hint{font-size:.84rem;padding:10px 12px}
+  .balance{flex-wrap:wrap;overflow:visible}
+  .balance .lbl{width:100%;margin-bottom:-2px}
+  /* Farb-Legende: eingeklappt, per Knopf aufklappbar */
+  .legend{display:none}
+  .legend.offen{display:flex;flex-wrap:wrap;overflow:visible}
+  .legtoggle{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:10px 16px;font:inherit;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer}
+  /* Reihenfolge: Anfragen und Kalender zuerst, lange Übersicht danach */
+  .overview{order:3}
+  .overview.inbx{order:1}
+  .layout{order:2}
+  /* Schüler-Übersicht als Karten statt Quer-Wisch-Tabelle */
+  .otblwrap{display:none}
+  .ovcards{display:flex;flex-direction:column;gap:8px}
+  .ovcard{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff}
+  .ovtop{display:flex;align-items:center;gap:8px}
+  .ovtop .namebtn{flex:1;text-align:left;font-size:1rem}
+  .ovfix{color:var(--muted);font-size:.82rem;margin-top:4px}
+  .ovzahlen{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .ovz{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:9px;padding:5px 8px}
+  .ovz .ovl{font-size:.74rem;color:var(--muted);font-weight:600}
+  .ovz .stpb{width:26px;height:26px}
   .daychips{gap:4px}
-  .daychip{flex:1 1 0;min-width:0;padding:6px 2px;font-size:.82rem;text-align:center}
+  .daychip{flex:1 1 0;min-width:0;padding:8px 2px;font-size:.84rem;text-align:center}
   .daychip small{font-size:.66rem}
   .otagwrap{grid-template-columns:40px 1fr;border-radius:10px}
   .ostunde{font-size:.7rem;padding-right:4px}
@@ -281,6 +303,7 @@ export default function KalenderPage() {
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
+  const [legendOffen, setLegendOffen] = useState(false); // Handy: Farben & Filter eingeklappt
   const [modal, setModal] = useState<ReactNode | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -545,6 +568,17 @@ export default function KalenderPage() {
       return String(d.error || "Fehler.");
     }} />);
   }
+  // Handy: aufgeräumtes Menü hinter dem ☰-Knopf statt vieler kleiner Knöpfe
+  function openMobilMenu() {
+    setModal(<div className="modal"><h2>Menü</h2>
+      <div className="col">
+        <a className="btn g" style={{ textDecoration: "none", textAlign: "center" }} href="/app-installieren">📱 Als App installieren</a>
+        {session && <button className="btn g" onClick={() => { setModal(null); openPassword(); }}>Passwort ändern</button>}
+        {session && <button className="btn g" onClick={() => { setModal(null); saveSession(null); setBalance(null); setOverview(null); }}>Abmelden ({session.name})</button>}
+        <a className="btn g" style={{ textDecoration: "none", textAlign: "center" }} href="https://lernemitanna.de">← Zur Website</a>
+        <button className="btn p" onClick={() => setModal(null)}>Schließen</button>
+      </div></div>);
+  }
   function openPassword() {
     setModal(<ChangePassword onClose={() => setModal(null)} onSave={async (pw) => {
       const d = await api("changePassword", { password: pw });
@@ -713,11 +747,12 @@ export default function KalenderPage() {
         <div className="hdr">
           <h1>📅 Terminkalender</h1>
           <div className="sp">
-            <a className="back" href="https://lernemitanna.de">← lernemitanna.de</a>
-            <a className="btn g sm applink" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
+            <a className="back nurdesk" href="https://lernemitanna.de">← lernemitanna.de</a>
+            <a className="btn g sm applink nurdesk" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
             {session
-              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm" onClick={openPassword}>Passwort</button><button className="btn g sm" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
+              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who nurdesk">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm nurdesk" onClick={openPassword}>Passwort</button><button className="btn g sm nurdesk" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
+            <button className="btn g sm nurmobil" aria-label="Menü öffnen" onClick={openMobilMenu}>☰</button>
           </div>
         </div>
 
@@ -753,11 +788,31 @@ export default function KalenderPage() {
                 <td><button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button></td></tr>))}
                 {overview.length === 0 && <tr><td colSpan={6} style={{ color: "#999" }}>Noch keine Schüler. Lege oben rechts den ersten an.</td></tr>}
               </tbody></table></div>
+            {/* Handy: dieselbe Übersicht als Karten – nichts scrollt seitlich */}
+            <div className="ovcards">
+              {overview.map((r) => (
+                <div key={r.id} className="ovcard">
+                  <div className="ovtop">
+                    <button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button>
+                    <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a>
+                    <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link setzen"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button>
+                    <button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button>
+                  </div>
+                  {r.fix ? <div className="ovfix">Fester Termin: {r.fix}</div> : null}
+                  <div className="ovzahlen">
+                    <span className="ovz"><span className="ovl">Minus</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag " + (r.minus ? "m" : "z")}>{r.minus}</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span>
+                    <span className="ovz"><span className="ovl">Plus</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag " + (r.plus ? "p" : "z")}>{r.plus}</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span>
+                    <span className="ovz"><span className="ovl">Gutschrift</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag " + (r.nach ? "p" : "z")}>{r.nach}</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span>
+                  </div>
+                </div>
+              ))}
+              {overview.length === 0 && <p style={{ color: "#999", margin: "6px 0 0" }}>Noch keine Schüler.</p>}
+            </div>
           </div>
         )}
 
         {role === "admin" && inbox && (inbox.requests.length > 0 || inbox.cancellations.length > 0) && (
-          <div className="overview">
+          <div className="overview inbx">
             <h3>Offene Anfragen (alle Daten)</h3>
             {inbox.requests.length === 0 ? <p style={{ color: "#999", margin: "6px 0 0" }}>Keine offenen Anfragen.</p> :
               <div className="inbxlist">{inbox.requests.map((r, i) => {
@@ -795,7 +850,9 @@ export default function KalenderPage() {
               </button>
             </div>
             {mkOffen && <div className="mkdrop">{miniKalender(() => setMkOffen(false))}</div>}
-            <div className="legend">{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
+            {/* Handy: Legende eingeklappt hinter einem Aufklapp-Knopf, am PC immer sichtbar */}
+            <button className="legtoggle" onClick={() => setLegendOffen(!legendOffen)}>Was bedeuten die Farben? {filterCls ? "· Filter aktiv " : ""}{legendOffen ? "▴" : "▾"}</button>
+            <div className={"legend" + (legendOffen ? " offen" : "")}>{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
             ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
             {days.length === 0 ? <div className="kloading"><span className="kspin" /> Kalender wird geladen…</div> : <>
