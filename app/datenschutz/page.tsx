@@ -69,7 +69,7 @@ export default function Datenschutz() {
           sowie gebuchte, angefragte und abgesagte Termine und der Stunden-Kontostand (Plus-, Minus- und
           Nachholstunden); bei einer Probestunden-Anfrage ohne Konto Name, E-Mail-Adresse und Wunschtermin.
           Die Konten werden von uns nach Absprache mit den Eltern angelegt. Gespeichert werden die Daten bei
-          unserem Auftragsverarbeiter Supabase (Supabase Inc., USA) in einem Rechenzentrum in der EU;
+          unserem Auftragsverarbeiter Supabase (Supabase Inc., USA) in einem Rechenzentrum in der EU (Irland);
           mit Supabase besteht ein Auftragsverarbeitungsvertrag. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
           (Durchführung des Unterrichtsvertrags).
         </Section>
