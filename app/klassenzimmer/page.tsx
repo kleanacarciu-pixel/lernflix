@@ -27,13 +27,12 @@ function speichereSession(s: Session) {
 }
 
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; mode?: string | null; teamsLink?: string | null };
-type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean };
-type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean; category?: string };
+type Nachricht = { id: string; body: string; created_at: string; sender: string; mine: boolean; datei?: string | null };
+type Datei = { id: string; name: string; size: number; created_at: string; fuerAlle: boolean; category?: string; beschreibung?: string | null };
 type Bericht = { id: string; titel: string; art: "bericht" | "quiz"; inhalt: string; created_at: string; eingabe?: string };
 type DateiKat = "alle" | "arbeitsblatt" | "hausaufgabe" | "sonstiges";
 const KAT_NAMEN: Record<string, string> = { arbeitsblatt: "Arbeitsblätter", hausaufgabe: "Hausaufgaben", sonstiges: "Sonstiges" };
 type Stunde = { id: string; title: string; subject: string | null; starts_at: string; ends_at: string; mode?: string | null; notes: { summary: string; homework: string } | null };
-type Antwort = { question: string; answer: string; is_correct: boolean | null; answered_at: string };
 
 const CSS = `
 .kz{min-height:100dvh;display:flex;flex-direction:column;background:#F7F9FB;color:#17222E;
@@ -101,6 +100,9 @@ const CSS = `
 .kz .msg.mein .blase{background:#E6F5F7;border-color:#C7E8EC;border-radius:13px 3px 13px 13px}
 .kz .msg.mein .wer{text-align:right}
 .kz .sendezeile{display:flex;gap:8px}
+.kz .anhang{display:block;margin-top:6px;background:#F0F3F6;border:1px solid #E2E7ED;border-radius:9px;
+  padding:7px 11px;font:inherit;font-size:.84rem;font-weight:600;color:#0F6F79;cursor:pointer;text-align:left;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kz .dateizeile{display:flex;align-items:center;gap:11px}
 .kz .dateizeile .info{flex:1;min-width:0}
 .kz .dateizeile .info b{word-break:break-word}
@@ -128,12 +130,13 @@ const CSS = `
 `;
 
 // --- Feine Linien-Icons (wie im Mockup) --------------------------------------
-function Icon({ art }: { art: "chat" | "datei" | "aufgabe" | "kamera" | "bericht" }) {
+function Icon({ art }: { art: "chat" | "datei" | "aufgabe" | "kamera" | "bericht" | "material" }) {
   const s = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   return (
     <svg viewBox="0 0 24 24" aria-hidden>
       {art === "chat" && (<><path {...s} d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H9.6L5 19.6V16A3 3 0 0 1 4 13z" /><path {...s} d="M8.5 8.7h7M8.5 11.7h4.6" /></>)}
       {art === "bericht" && (<><path {...s} d="M12 6.2C10.6 4.9 8.6 4.2 6 4.2v13.6c2.6 0 4.6.7 6 2 1.4-1.3 3.4-2 6-2V4.2c-2.6 0-4.6.7-6 2z" /><path {...s} d="M12 6.2v13.6" /></>)}
+      {art === "material" && (<><rect {...s} x="3.4" y="4.4" width="17.2" height="12.4" rx="2.2" /><path {...s} d="M3.4 8.2h17.2M8.4 20h7.2" /></>)}
       {art === "datei" && (<><path {...s} d="M6.2 3.4h8.2l3.4 3.4v13.8H6.2z" /><path {...s} d="M9 10h6M9 13.2h6M9 16.4h3.6" /></>)}
       {art === "aufgabe" && (<><rect {...s} x="4" y="3.6" width="16" height="16.8" rx="2.6" /><path {...s} d="m8 12.4 2.7 2.7 5.3-5.6" /></>)}
       {art === "kamera" && (<><rect {...s} x="2.6" y="6" width="12.6" height="12" rx="2.6" /><path {...s} d="M15.2 10.6 21 7.4v9.2l-5.8-3.2" /></>)}
@@ -152,7 +155,7 @@ function groesseText(bytes: number): string {
   return Math.max(1, Math.round(bytes / 1024)) + " KB";
 }
 
-type Tab = "chat" | "berichte" | "dateien" | "aufgaben" | "stunden";
+type Tab = "chat" | "berichte" | "material" | "dateien" | "stunden";
 
 // Kleiner Markdown-Renderer für die KI-Berichte (Überschriften, Listen,
 // fett/kursiv) – Eingabe wird zuerst entschärft, dann formatiert
@@ -192,7 +195,10 @@ export default function KlassenzimmerPage() {
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [dateien, setDateien] = useState<Datei[]>([]);
   const [stunden, setStunden] = useState<{ upcoming: Stunde[]; past: Stunde[] }>({ upcoming: [], past: [] });
-  const [punkte, setPunkte] = useState<{ points: number; stickers: string[]; recent: Antwort[] }>({ points: 0, stickers: [], recent: [] });
+  const [material, setMaterial] = useState<Datei[]>([]);
+  const [materialText, setMaterialText] = useState("");
+  const materialInputRef = useRef<HTMLInputElement>(null);
+  const chatDateiRef = useRef<HTMLInputElement>(null);
   const [entwurf, setEntwurf] = useState("");
   const [beschaeftigt, setBeschaeftigt] = useState(false);
   // Live-Stunde direkt im Klassenzimmer (Zoom-Stil): gesetzte ID = Video läuft
@@ -200,7 +206,6 @@ export default function KlassenzimmerPage() {
   const [hinweis, setHinweis] = useState<string | null>(null);
   const chatEndeRef = useRef<HTMLDivElement>(null);
   const dateiInputRef = useRef<HTMLInputElement>(null);
-  const [uploadZiel, setUploadZiel] = useState<"schueler" | "alle">("schueler");
   const [uploadKat, setUploadKat] = useState<"arbeitsblatt" | "hausaufgabe" | "sonstiges">("arbeitsblatt");
   const [dateiKat, setDateiKat] = useState<DateiKat>("alle");
   const [berichte, setBerichte] = useState<Bericht[]>([]);
@@ -294,9 +299,9 @@ export default function KlassenzimmerPage() {
       const d = await api("lessons", zielParam());
       if (d.ok) setStunden({ upcoming: (d.upcoming as Stunde[]) || [], past: (d.past as Stunde[]) || [] });
     }
-    if (welcherTab === "aufgaben") {
-      const d = await api("exercises", zielParam());
-      if (d.ok) setPunkte({ points: Number(d.points) || 0, stickers: (d.stickers as string[]) || [], recent: (d.recent as Antwort[]) || [] });
+    if (welcherTab === "material") {
+      const d = await api("material");
+      if (d.ok) setMaterial((d.files as Datei[]) || []);
     }
   }, [api, schuelerId, zielParam]);
 
@@ -391,6 +396,29 @@ export default function KlassenzimmerPage() {
     else zeige(String(d.error || "Löschen fehlgeschlagen."));
   }
 
+  // Foto/Datei im Chat verschicken (dürfen auch Schüler)
+  async function chatHochladen(datei: File) {
+    const session = ladeSession();
+    if (!session?.token) return;
+    setBeschaeftigt(true);
+    const form = new FormData();
+    form.append("action", "chatUpload");
+    form.append("token", session.token);
+    const zp = zielParam();
+    if (typeof zp.studentId === "string") form.append("studentId", zp.studentId);
+    form.append("file", datei);
+    const res = await fetch("/api/klasse", { method: "POST", body: form }).catch(() => null);
+    const d = (await res?.json().catch(() => ({}))) as Record<string, unknown> | undefined;
+    setBeschaeftigt(false);
+    if (d?.ok) void lade("chat");
+    else zeige(String(d?.error || "Hochladen fehlgeschlagen."));
+  }
+  async function chatAnhangOeffnen(messageId: string) {
+    const d = await api("chatFileUrl", { ...zielParam(), messageId });
+    if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
+    else zeige(String(d.error || "Datei konnte nicht geöffnet werden."));
+  }
+
   async function dateiOeffnen(id: string) {
     const d = await api("fileUrl", { ...zielParam(), fileId: id });
     if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
@@ -404,21 +432,23 @@ export default function KlassenzimmerPage() {
     void lade("dateien");
   }
 
-  async function hochladen(datei: File) {
+  async function hochladen(datei: File, ziel: "schueler" | "material") {
     const session = ladeSession();
     if (!session?.token) return;
     setBeschaeftigt(true);
     const form = new FormData();
     form.append("action", "upload");
     form.append("token", session.token);
-    form.append("studentId", uploadZiel === "alle" ? "alle" : schuelerId);
-    form.append("category", uploadKat);
+    form.append("studentId", ziel === "material" ? "alle" : schuelerId);
+    form.append("category", ziel === "material" ? "lernmaterial" : uploadKat);
+    if (ziel === "material" && materialText.trim()) form.append("beschreibung", materialText.trim());
     form.append("file", datei);
     const res = await fetch("/api/klasse", { method: "POST", body: form }).catch(() => null);
     const d = (await res?.json().catch(() => ({}))) as Record<string, unknown> | undefined;
     setBeschaeftigt(false);
-    zeige(d?.ok ? "Datei hochgeladen ✓" : String(d?.error || "Hochladen fehlgeschlagen."));
-    void lade("dateien");
+    zeige(d?.ok ? (ziel === "material" ? "Hochgeladen – alle Schüler sehen es jetzt ✓" : "Datei hochgeladen ✓") : String(d?.error || "Hochladen fehlgeschlagen."));
+    if (ziel === "material") { setMaterialText(""); void lade("material"); }
+    else void lade("dateien");
   }
 
   const schuelerName = istLehrerin
@@ -478,8 +508,8 @@ export default function KlassenzimmerPage() {
           )}
           <button className={"navk" + (tab === "chat" ? " on" : "")} onClick={() => setTab("chat")}><Icon art="chat" />Chat</button>
           <button className={"navk" + (tab === "berichte" ? " on" : "")} onClick={() => setTab("berichte")}><Icon art="bericht" />Berichte</button>
+          <button className={"navk" + (tab === "material" ? " on" : "")} onClick={() => setTab("material")}><Icon art="material" />Lernmaterial</button>
           <button className={"navk" + (tab === "dateien" ? " on" : "")} onClick={() => setTab("dateien")}><Icon art="datei" />Dateien</button>
-          <button className={"navk" + (tab === "aufgaben" ? " on" : "")} onClick={() => setTab("aufgaben")}><Icon art="aufgabe" />Aufgaben</button>
           <button className={"navk" + (tab === "stunden" ? " on" : "")} onClick={() => setTab("stunden")}><Icon art="kamera" />Stunden</button>
           {nextLesson && nextLesson.mode !== "vor_ort" && (
             <div className="zurstunde">
@@ -506,12 +536,19 @@ export default function KlassenzimmerPage() {
               {nachrichten.map((m) => (
                 <div key={m.id} className={"msg" + (m.mine ? " mein" : "")}>
                   <div className="wer">{m.mine ? "Du" : m.sender} <span className="wann">· {wannText(m.created_at)}</span></div>
-                  <div className="blase">{m.body}</div>
+                  <div className="blase">
+                    {m.body}
+                    {m.datei && <button className="anhang" onClick={() => void chatAnhangOeffnen(m.id)}>📎 {m.datei}</button>}
+                  </div>
                 </div>
               ))}
               <div ref={chatEndeRef} />
             </div>
             <div className="sendezeile">
+              <button className="btnG" title="Foto oder Datei senden" disabled={beschaeftigt}
+                onClick={() => chatDateiRef.current?.click()} style={{ flex: "0 0 auto" }}>📎</button>
+              <input ref={chatDateiRef} type="file" style={{ display: "none" }}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void chatHochladen(f); e.target.value = ""; }} />
               <input className="feld" placeholder="Nachricht schreiben …" value={entwurf}
                 onChange={(e) => setEntwurf(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") void senden(); }} />
@@ -563,6 +600,38 @@ export default function KlassenzimmerPage() {
             ))}
           </>)}
 
+          {/* ============================ LERNMATERIAL ==================== */}
+          {tab === "material" && (<>
+            {istLehrerin && (
+              <div className="card">
+                <h4>Lernmaterial für alle</h4>
+                <p className="muted" style={{ margin: "0 0 8px", fontSize: ".84rem" }}>
+                  Einmal hochladen – alle Schüler sehen es sofort in ihrem Klassenzimmer.
+                </p>
+                <input className="feld" placeholder="Kurze Beschreibung (optional), z. B. „Formelsammlung für die Klassenarbeit“"
+                  value={materialText} onChange={(e) => setMaterialText(e.target.value)} maxLength={500} />
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, flexWrap: "wrap" }}>
+                  <button className="btnA" disabled={beschaeftigt} onClick={() => materialInputRef.current?.click()}>Material hochladen</button>
+                  <input ref={materialInputRef} type="file" style={{ display: "none" }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void hochladen(f, "material"); e.target.value = ""; }} />
+                  <span className="muted" style={{ fontSize: ".8rem" }}>max. 25 MB</span>
+                </div>
+              </div>
+            )}
+            {material.length === 0 && <div className="leer">{istLehrerin ? "Noch kein Lernmaterial – lade das erste hoch!" : "Hier findest du Lernmaterial von Kleana – für alle Schüler."}</div>}
+            {material.map((f) => (
+              <div key={f.id} className="card">
+                <div className="dateizeile">
+                  <span className="info"><b>{f.name}</b><br />
+                    <span className="muted" style={{ fontSize: ".8rem" }}>{wannText(f.created_at)} · {groesseText(f.size)}</span></span>
+                  <button className="btnG" onClick={() => void dateiOeffnen(f.id)}>Öffnen</button>
+                  {istLehrerin && <button className="btnG" onClick={() => void dateiLoeschen(f.id, f.name)} aria-label="Löschen">🗑️</button>}
+                </div>
+                {f.beschreibung && <p style={{ margin: "8px 0 0" }}>{f.beschreibung}</p>}
+              </div>
+            ))}
+          </>)}
+
           {/* ============================ DATEIEN ========================= */}
           {tab === "dateien" && (<>
             {istLehrerin && (
@@ -574,13 +643,9 @@ export default function KlassenzimmerPage() {
                   <option value="hausaufgabe">Hausaufgabe</option>
                   <option value="sonstiges">Sonstiges</option>
                 </select>
-                <select className="feld" style={{ width: "auto" }} value={uploadZiel}
-                  onChange={(e) => setUploadZiel(e.target.value as "schueler" | "alle")}>
-                  <option value="schueler">nur für {schuelerName}</option>
-                  <option value="alle">für alle Schüler</option>
-                </select>
+                <span className="muted" style={{ fontSize: ".8rem" }}>nur für {schuelerName}</span>
                 <input ref={dateiInputRef} type="file" style={{ display: "none" }}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void hochladen(f); e.target.value = ""; }} />
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void hochladen(f, "schueler"); e.target.value = ""; }} />
                 <span className="muted" style={{ fontSize: ".8rem" }}>max. 25 MB</span>
               </div>
             )}
@@ -600,33 +665,12 @@ export default function KlassenzimmerPage() {
                 <span style={{ fontSize: "1.3rem" }}>📄</span>
                 <span className="info"><b>{f.name}</b><br />
                   <span className="muted" style={{ fontSize: ".8rem" }}>
-                    {wannText(f.created_at)} · {groesseText(f.size)} · {KAT_NAMEN[f.category || "sonstiges"]}{f.fuerAlle ? " · für alle" : ""}
+                    {wannText(f.created_at)} · {groesseText(f.size)} · {KAT_NAMEN[f.category || "sonstiges"]}
                   </span></span>
                 <button className="btnG" onClick={() => void dateiOeffnen(f.id)}>Öffnen</button>
                 {istLehrerin && <button className="btnG" onClick={() => void dateiLoeschen(f.id, f.name)} aria-label="Löschen">🗑️</button>}
               </div>
             ))}
-          </>)}
-
-          {/* ============================ AUFGABEN ======================== */}
-          {tab === "aufgaben" && (<>
-            <div className="card">
-              <div className="points">🐙 {punkte.points} Punkte</div>
-              {punkte.stickers.length > 0 && <div className="stickers">{punkte.stickers.join(" ")}</div>}
-            </div>
-            <div className="card">
-              <h4>Zuletzt geübt</h4>
-              {punkte.recent.length === 0 && <p className="muted" style={{ margin: 0 }}>Noch keine Übungen – die erste kommt in der nächsten Stunde!</p>}
-              {punkte.recent.map((a, i) => (
-                <p key={i} style={{ margin: "0 0 8px" }}>
-                  {a.question}<br />
-                  <span className="muted" style={{ fontSize: ".84rem" }}>Antwort: {a.answer} </span>
-                  {a.is_correct === true ? <span className="tagOk">✓ richtig</span>
-                    : a.is_correct === false ? <span className="tagNo">✗ üben wir nochmal</span>
-                      : <span className="muted" style={{ fontSize: ".8rem" }}>· von Kleana angeschaut</span>}
-                </p>
-              ))}
-            </div>
           </>)}
 
           {/* ============================ STUNDEN ========================= */}

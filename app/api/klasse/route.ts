@@ -43,7 +43,7 @@ export async function POST(req: Request): Promise<Response> {
       const form = await req.formData();
       action = String(form.get("action") || "");
       token = String(form.get("token") || "");
-      body = { studentId: form.get("studentId"), category: form.get("category") };
+      body = { studentId: form.get("studentId"), category: form.get("category"), beschreibung: form.get("beschreibung") };
       const f = form.get("file");
       if (f instanceof File) uploadDatei = f;
     } else {
@@ -81,15 +81,29 @@ export async function POST(req: Request): Promise<Response> {
       return ok(out);
     }
 
+    // ======================= LERNMATERIAL (für alle) ========================
+    // Wie ein schwarzes Brett: Kleana lädt EINMAL hoch, alle Schüler sehen es
+    // in ihrem Klassenzimmer – unabhängig davon, welcher Schüler gewählt ist.
+    if (action === "material") {
+      const { data } = await sb.from("class_files").select("*")
+        .is("student_id", null)
+        .order("created_at", { ascending: false }).limit(200);
+      return ok({
+        files: ((data || []) as { id: string; name: string; size_bytes: number; created_at: string; beschreibung?: string | null }[])
+          .map((f) => ({ id: f.id, name: f.name, size: f.size_bytes, created_at: f.created_at, beschreibung: f.beschreibung || null })),
+      });
+    }
+
     if (!zielSchueler) return fehler("Bitte zuerst einen Schüler wählen.");
 
     // ======================= CHAT ===========================================
     if (action === "messages") {
+      // "*" statt fester Spalten: datei_name kommt erst mit der V6-Migration
       const { data: msgs } = await sb.from("class_messages")
-        .select("id,sender_id,body,created_at")
+        .select("*")
         .eq("student_id", zielSchueler)
         .order("created_at", { ascending: false }).limit(100);
-      const liste = ((msgs || []) as { id: string; sender_id: string; body: string; created_at: string }[]).reverse();
+      const liste = ((msgs || []) as { id: string; sender_id: string; body: string; created_at: string; datei_name?: string | null }[]).reverse();
       const ids = Array.from(new Set(liste.map((m) => m.sender_id)));
       const namen = new Map<string, string>();
       if (ids.length) {
@@ -100,9 +114,43 @@ export async function POST(req: Request): Promise<Response> {
         messages: liste.map((m) => ({
           id: m.id, body: m.body, created_at: m.created_at,
           sender: namen.get(m.sender_id) || "Unbekannt", mine: m.sender_id === user.id,
+          datei: m.datei_name || null,
         })),
         nextLesson: await nextLessonFor(zielSchueler), // für die Kopfzeile gleich mitliefern
       });
+    }
+
+    // Foto/Datei im Chat verschicken – dürfen BEIDE (auch Schüler, z. B.
+    // ein Foto der Hausaufgabe). Landet als Nachricht mit Anhang.
+    if (action === "chatUpload") {
+      if (!uploadDatei) return fehler("Keine Datei erhalten.");
+      if (uploadDatei.size > MAX_DATEI_BYTES) return fehler("Die Datei ist größer als 25 MB.");
+      const sauberName = uploadDatei.name.replace(/[^\wäöüÄÖÜß.\- ]+/g, "_").slice(0, 120) || "datei";
+      const pfad = `chat/${zielSchueler}/${crypto.randomUUID()}-${sauberName}`;
+      const bytes = Buffer.from(await uploadDatei.arrayBuffer());
+      const { error: upErr } = await sb.storage.from(BUCKET)
+        .upload(pfad, bytes, { contentType: uploadDatei.type || "application/octet-stream" });
+      if (upErr) return fehler("Hochladen fehlgeschlagen: " + upErr.message);
+      const { error } = await sb.from("class_messages")
+        .insert({ student_id: zielSchueler, sender_id: user.id, body: "", datei_pfad: pfad, datei_name: sauberName });
+      if (error) return fehler(/datei_/.test(error.message)
+        ? "Bitte zuerst das SQL „klassenzimmer_v6“ in Supabase ausführen (steht im Chat mit Claude)."
+        : "Senden fehlgeschlagen: " + error.message);
+      return ok({ message: "Gesendet ✓" });
+    }
+
+    // Signierter Link zum Öffnen eines Chat-Anhangs
+    if (action === "chatFileUrl") {
+      if (!istUuid(body.messageId)) return fehler("Nicht gefunden.", 404);
+      const { data: m } = await sb.from("class_messages")
+        .select("student_id,datei_pfad,datei_name").eq("id", body.messageId).maybeSingle();
+      const msg = m as { student_id: string; datei_pfad: string | null; datei_name: string | null } | null;
+      if (!msg?.datei_pfad) return fehler("Nicht gefunden.", 404);
+      if (!istLehrerin && msg.student_id !== user.id) return fehler("Kein Zugriff.", 403);
+      const { data: signed, error } = await sb.storage.from(BUCKET)
+        .createSignedUrl(msg.datei_pfad, 3600, { download: msg.datei_name || undefined });
+      if (error || !signed?.signedUrl) return fehler("Link konnte nicht erstellt werden.");
+      return ok({ url: signed.signedUrl });
     }
 
     if (action === "sendMessage") {
@@ -116,14 +164,16 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= DATEIEN ========================================
     if (action === "files") {
-      // "*" statt fester Spalten: category kommt erst mit der V5-Migration
+      // "*" statt fester Spalten: category kommt erst mit der V5-Migration.
+      // Nur die persönlichen Dateien des Schülers – Material für alle liegt
+      // im eigenen Bereich "Lernmaterial".
       const { data } = await sb.from("class_files")
         .select("*")
-        .or(`student_id.eq.${zielSchueler},student_id.is.null`)
+        .eq("student_id", zielSchueler)
         .order("created_at", { ascending: false }).limit(200);
       return ok({
         files: ((data || []) as { id: string; student_id: string | null; name: string; size_bytes: number; created_at: string; category?: string | null }[])
-          .map((f) => ({ id: f.id, name: f.name, size: f.size_bytes, created_at: f.created_at, fuerAlle: f.student_id === null, category: f.category || "sonstiges" })),
+          .map((f) => ({ id: f.id, name: f.name, size: f.size_bytes, created_at: f.created_at, fuerAlle: false, category: f.category || "sonstiges" })),
       });
     }
 
@@ -140,13 +190,14 @@ export async function POST(req: Request): Promise<Response> {
       const { error: upErr } = await sb.storage.from(BUCKET)
         .upload(pfad, bytes, { contentType: uploadDatei.type || "application/octet-stream" });
       if (upErr) return fehler("Hochladen fehlgeschlagen: " + upErr.message);
-      const kategorie = ["arbeitsblatt", "hausaufgabe", "sonstiges"].includes(String(body.category)) ? String(body.category) : "sonstiges";
+      const kategorie = ["arbeitsblatt", "hausaufgabe", "sonstiges", "lernmaterial"].includes(String(body.category)) ? String(body.category) : "sonstiges";
+      const beschreibung = typeof body.beschreibung === "string" && body.beschreibung.trim() ? body.beschreibung.trim().slice(0, 500) : null;
       let { error } = await sb.from("class_files").insert({
         student_id: fuerAlle ? null : body.studentId, uploader_id: user.id,
-        name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size, category: kategorie,
+        name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size, category: kategorie, beschreibung,
       });
-      // Ohne V5-Migration gibt es die Spalte category noch nicht
-      if (error && /category/.test(error.message)) {
+      // Ohne V5/V6-Migration fehlen die Spalten category/beschreibung noch
+      if (error && /category|beschreibung/.test(error.message)) {
         ({ error } = await sb.from("class_files").insert({
           student_id: fuerAlle ? null : body.studentId, uploader_id: user.id,
           name: sauberName, storage_path: pfad, size_bytes: uploadDatei.size,
