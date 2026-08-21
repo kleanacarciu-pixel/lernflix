@@ -20,19 +20,45 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
-type Quelle = { id: string; name: string; url: string; kategorie: string };
+type Quelle = { id: string; name: string; urls: string[]; kategorie: string };
 
 // Quellen-Liste. Faellt eine Quelle aus oder aendert ihre URL, wird sie still
 // uebersprungen - die Seite bleibt funktionsfaehig. Debug: /api/news?debug=1
 const QUELLEN: Quelle[] = [
-  { id: "wdp",      name: "Welt der Physik",   url: "https://www.weltderphysik.de/rss/news.xml",                        kategorie: "Physik" },
-  { id: "spektrum", name: "Spektrum.de",       url: "https://www.spektrum.de/alias/rss/spektrum-de-rss-feed/996406",    kategorie: "Wissenschaft" },
-  { id: "wissen",   name: "wissenschaft.de",   url: "https://www.wissenschaft.de/feed/",                                kategorie: "Wissenschaft" },
-  { id: "mpg",      name: "Max-Planck-Gesellschaft", url: "https://www.mpg.de/rss/institute",                           kategorie: "Wissenschaft" },
-  { id: "dlfbild",  name: "Deutschlandfunk",   url: "https://www.deutschlandfunk.de/campus-und-karriere-102.xml",       kategorie: "Schule" },
-  { id: "bmbf",     name: "Bildungsministerium", url: "https://www.bmbf.de/SiteGlobals/Functions/RSSFeed/DE/RSSNewsfeed/RSSNewsfeed.xml", kategorie: "Schule" },
-  { id: "kmbayern", name: "Kultusministerium Bayern", url: "https://www.km.bayern.de/allgemein/meldung.rss",            kategorie: "Schule Bayern" },
-  { id: "bronline", name: "BR24 Bayern",       url: "https://feeds.br.de/br24/bayern/feed.xml",                         kategorie: "Schule Bayern" },
+  { id: "wdp", name: "Welt der Physik", kategorie: "Physik", urls: [
+    "https://www.weltderphysik.de/RSS-Forschung",
+    "https://www.weltderphysik.de/RSS-alles",
+  ] },
+  { id: "spektrum", name: "Spektrum.de", kategorie: "Wissenschaft", urls: [
+    "https://www.spektrum.de/alias/rss/spektrum-de-rss-feed/996406",
+  ] },
+  { id: "wissen", name: "wissenschaft.de", kategorie: "Wissenschaft", urls: [
+    "https://www.wissenschaft.de/feed/",
+  ] },
+  { id: "scinexx", name: "scinexx", kategorie: "Wissenschaft", urls: [
+    "https://www.scinexx.de/feed/",
+  ] },
+  { id: "mpg", name: "Max-Planck-Gesellschaft", kategorie: "Wissenschaft", urls: [
+    "https://www.mpg.de/de/rss",
+    "https://www.mpg.de/rss/highlights",
+    "https://www.mpg.de/rss",
+  ] },
+  { id: "n4t", name: "News4teachers", kategorie: "Schule", urls: [
+    "https://www.news4teachers.de/feed/",
+  ] },
+  { id: "bildungsklick", name: "bildungsklick", kategorie: "Schule", urls: [
+    "https://bildungsklick.de/rss.xml",
+    "https://bildungsklick.de/feed",
+    "https://bildungsklick.de/rss",
+  ] },
+  { id: "br24", name: "BR24 Bayern", kategorie: "Schule Bayern", urls: [
+    "https://www.br.de/nachrichten/rss/bayern",
+    "https://feeds.br.de/br24-nachrichten/feed.xml",
+    "https://www.br.de/nachrichten/bayern/rss",
+  ] },
+  { id: "sz", name: "Süddeutsche Bayern", kategorie: "Schule Bayern", urls: [
+    "https://rss.sueddeutsche.de/rss/Bayern",
+  ] },
 ];
 
 const MAX_PRO_QUELLE = 6;
@@ -121,9 +147,9 @@ function parse(xml: string, q: Quelle): Eintrag[] {
   return out;
 }
 
-async function holeFeed(q: Quelle): Promise<{ q: Quelle; eintraege: Eintrag[]; fehler?: string }> {
+async function holeEine(url: string, q: Quelle): Promise<{ eintraege: Eintrag[]; fehler?: string }> {
   try {
-    const res = await fetch(q.url, {
+    const res = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; LerneMitAnna-News/1.0; +https://lernemitanna.de)",
         Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
@@ -131,13 +157,24 @@ async function holeFeed(q: Quelle): Promise<{ q: Quelle; eintraege: Eintrag[]; f
       signal: AbortSignal.timeout(8000),
       next: { revalidate },
     });
-    if (!res.ok) return { q, eintraege: [], fehler: `HTTP ${res.status}` };
-    const xml = await res.text();
-    const eintraege = parse(xml, q);
-    return { q, eintraege, fehler: eintraege.length ? undefined : "keine Eintraege gefunden" };
+    if (!res.ok) return { eintraege: [], fehler: `HTTP ${res.status}` };
+    const eintraege = parse(await res.text(), q);
+    return { eintraege, fehler: eintraege.length ? undefined : "keine Eintraege" };
   } catch (e) {
-    return { q, eintraege: [], fehler: e instanceof Error ? e.message.slice(0, 120) : "Fehler" };
+    return { eintraege: [], fehler: e instanceof Error ? e.message.slice(0, 90) : "Fehler" };
   }
+}
+
+// Probiert die Kandidaten-URLs der Quelle der Reihe nach - die erste, die
+// Eintraege liefert, gewinnt. So ueberlebt der Feed einen URL-Wechsel.
+async function holeFeed(q: Quelle): Promise<{ q: Quelle; eintraege: Eintrag[]; url?: string; fehler?: string }> {
+  const fehler: string[] = [];
+  for (const url of q.urls) {
+    const r = await holeEine(url, q);
+    if (r.eintraege.length) return { q, eintraege: r.eintraege, url };
+    fehler.push(`${url} -> ${r.fehler}`);
+  }
+  return { q, eintraege: [], fehler: fehler.join(" | ").slice(0, 300) };
 }
 
 export async function OPTIONS(req: Request): Promise<Response> {
@@ -171,7 +208,7 @@ export async function GET(req: Request): Promise<Response> {
   };
   if (debug) {
     body.quellen = ergebnisse.map((r) => ({
-      id: r.q.id, name: r.q.name, url: r.q.url,
+      id: r.q.id, name: r.q.name, url: r.url ?? null,
       treffer: r.eintraege.length, fehler: r.fehler ?? null,
     }));
   }
