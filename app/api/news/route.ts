@@ -2,11 +2,12 @@
 // Quellen und Einlese-Logik stehen in lib/news.ts (auch von der
 // Ueberwachung unter /api/cron/news-check genutzt).
 import { NextResponse } from "next/server";
-import { sammleNews, MAX_GESAMT, NEWS_REVALIDATE } from "@/lib/news";
+import { sammleNews, MAX_GESAMT } from "@/lib/news";
 
 export const runtime = "nodejs";
-// Ergebnis wird eine Stunde zwischengespeichert (schnell + schont die Quellen).
-export const revalidate = NEWS_REVALIDATE;
+// Muss eine feste Zahl sein - Next.js liest diese Angabe statisch aus
+// und lehnt importierte Konstanten oder Ausdruecke ab (= 1 Stunde).
+export const revalidate = 3600;
 
 const ALLOWED = new Set(["https://lernemitanna.de", "https://www.lernemitanna.de"]);
 function cors(origin: string | null): Record<string, string> {
