@@ -20,10 +20,16 @@ function cors(origin: string | null): Record<string, string> {
   };
 }
 
-type Quelle = { id: string; name: string; urls: string[]; kategorie: string };
+type Quelle = { id: string; name: string; urls: string[]; kategorie: string;
+  // Nur fuer breite Quellen: Eintrag muss eines dieser Woerter enthalten,
+  // sonst wird er verworfen (haelt themenfremde Meldungen draussen).
+  nurMit?: RegExp };
 
 // Quellen-Liste. Faellt eine Quelle aus oder aendert ihre URL, wird sie still
 // uebersprungen - die Seite bleibt funktionsfaehig. Debug: /api/news?debug=1
+const SCHUL_THEMEN =
+  /(schul|schüler|schueler|abitur|abi\b|unterricht|lehrer|lehrkraft|lehrkräfte|gymnasium|realschule|grundschule|mittelschule|bildung|klassenzimmer|noten|pisa|ferien|hausaufgab|nachhilfe|kultusminister|mathe|physik)/i;
+
 const QUELLEN: Quelle[] = [
   { id: "wdp", name: "Welt der Physik", kategorie: "Physik", urls: [
     "https://www.weltderphysik.de/RSS-Forschung",
@@ -38,27 +44,13 @@ const QUELLEN: Quelle[] = [
   { id: "scinexx", name: "scinexx", kategorie: "Wissenschaft", urls: [
     "https://www.scinexx.de/feed/",
   ] },
-  { id: "mpg", name: "Max-Planck-Gesellschaft", kategorie: "Wissenschaft", urls: [
-    "https://www.mpg.de/de/rss",
-    "https://www.mpg.de/rss/highlights",
-    "https://www.mpg.de/rss",
-  ] },
   { id: "n4t", name: "News4teachers", kategorie: "Schule", urls: [
     "https://www.news4teachers.de/feed/",
   ] },
-  { id: "bildungsklick", name: "bildungsklick", kategorie: "Schule", urls: [
-    "https://bildungsklick.de/rss.xml",
-    "https://bildungsklick.de/feed",
-    "https://bildungsklick.de/rss",
-  ] },
-  { id: "br24", name: "BR24 Bayern", kategorie: "Schule Bayern", urls: [
-    "https://www.br.de/nachrichten/rss/bayern",
-    "https://feeds.br.de/br24-nachrichten/feed.xml",
-    "https://www.br.de/nachrichten/bayern/rss",
-  ] },
+  // Breiter Regional-Feed: nur Schul-/Bildungsthemen durchlassen.
   { id: "sz", name: "Süddeutsche Bayern", kategorie: "Schule Bayern", urls: [
     "https://rss.sueddeutsche.de/rss/Bayern",
-  ] },
+  ], nurMit: SCHUL_THEMEN },
 ];
 
 const MAX_PRO_QUELLE = 6;
@@ -129,11 +121,15 @@ function parse(xml: string, q: Quelle): Eintrag[] {
                  || xml.match(/<entry(?:\s[^>]*)?>[\s\S]*?<\/entry>/gi)
                  || [];
   const out: Eintrag[] = [];
-  for (const b of bloecke.slice(0, MAX_PRO_QUELLE)) {
+  // Erst filtern, dann begrenzen - sonst faellt bei gefilterten Quellen
+  // fast alles weg, weil nur die ersten Eintraege geprueft wuerden.
+  for (const b of bloecke) {
+    if (out.length >= MAX_PRO_QUELLE) break;
     const titel = clean(tag(b, "title"));
     const link = linkAus(b);
     if (!titel || !/^https?:\/\//.test(link)) continue;
     const text = clean(tag(b, "description") || tag(b, "summary") || tag(b, "content")).slice(0, 220);
+    if (q.nurMit && !q.nurMit.test(titel + " " + text)) continue;
     out.push({
       titel: titel.slice(0, 200),
       link,
