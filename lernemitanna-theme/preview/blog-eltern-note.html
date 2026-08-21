@@ -29,9 +29,9 @@ h1,h2,h3{font-family:'Playfair Display',serif;line-height:1.15;margin:0}p{margin
 .nav>a,.nav__item>a{text-decoration:none;color:var(--ink);font-weight:500;cursor:pointer}
 .nav>a:hover,.nav>a.active,.nav__item>a:hover{color:var(--teal)}
 .nav__item{position:relative}.nav__item>a::after{content:" ▾";font-size:.7em;color:var(--muted)}
-.sub{position:absolute;top:100%;left:-14px;min-width:200px;background:#fff;border:1px solid var(--hairline);border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.1);padding:8px;display:none}
+.sub{position:absolute;top:100%;left:-14px;min-width:235px;background:#fff;border:1px solid var(--hairline);border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.1);padding:8px;display:none}
 .nav__item:hover .sub{display:block}
-.sub a{display:block;padding:9px 14px;border-radius:8px;text-decoration:none;color:var(--ink);font-weight:500}
+.sub a{display:block;white-space:nowrap;padding:9px 14px;border-radius:8px;text-decoration:none;color:var(--ink);font-weight:500}
 .sub a:hover{background:var(--cream);color:var(--teal)}
 .header__contact{display:flex;gap:16px;margin-left:auto;color:var(--ink)}
 .header__contact a{color:inherit;display:inline-flex}.header__contact a:hover{color:var(--teal)}
@@ -58,7 +58,9 @@ h1,h2,h3{font-family:'Playfair Display',serif;line-height:1.15;margin:0}p{margin
 <a class="logo" href="index.html" aria-label="Startseite"><img src="/assets/3d40957abcffa883.jpg" alt="Lerne mit Anna"></a>
 <nav class="nav" aria-label="Hauptnavigation">
 <div class="nav__item"><a href="/nachhilfe">Leistungen</a><div class="sub"><a href="nachhilfe.html">Nachhilfe</a><a href="kurse.html">Kurse</a></div></div>
-<a href="#" title="führt zu lernflix">Shop ↗</a><a href="/aktuelles">Aktuelles</a>
+<a href="#" title="führt zu lernflix">Shop ↗</a><div class="nav__item"><a href="/neuigkeiten">Aktuelles</a>
+        <div class="sub"><a href="/neuigkeiten">Neues von LMA</a><a href="/schlagzeilen">Mathe &amp; Physik News</a></div>
+      </div>
 <div class="nav__item"><a href="#">Mehr</a><div class="sub"><a href="ueber-lma.html">Über LMA</a><a href="/#referenzen">Referenzen</a><a href="kontakt.html">Kontakt</a></div></div>
 </nav>
 <div class="header__contact" aria-label="Kontakt">
@@ -107,7 +109,8 @@ h1,h2,h3{font-family:'Playfair Display',serif;line-height:1.15;margin:0}p{margin
   <a href="/">Startseite</a>
   <a href="/nachhilfe">Nachhilfe</a>
   <a href="/kurse">Kurse</a>
-  <a href="/aktuelles">Aktuelles</a>
+  <a href="/neuigkeiten">Neues von LMA</a>
+  <a href="/schlagzeilen">Mathe &amp; Physik News</a>
   <a href="/ueber-lma">Über LMA</a>
   <a href="/#referenzen">Referenzen</a>
   <a href="/kontakt">Kontakt</a>
