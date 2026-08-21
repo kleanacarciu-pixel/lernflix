@@ -2,10 +2,29 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/leistungen", "destination": "/nachhilfe" },
-    { "source": "/referenzen", "destination": "/#referenzen" },
-    { "source": "/kontakt.html", "destination": "/kontakt" },
-    { "source": "/kalender-mockup", "destination": "/" },
-    { "source": "/kalender-mockup.html", "destination": "/" }
+    {
+      "source": "/leistungen",
+      "destination": "/nachhilfe"
+    },
+    {
+      "source": "/referenzen",
+      "destination": "/#referenzen"
+    },
+    {
+      "source": "/kontakt.html",
+      "destination": "/kontakt"
+    },
+    {
+      "source": "/kalender-mockup",
+      "destination": "/"
+    },
+    {
+      "source": "/kalender-mockup.html",
+      "destination": "/"
+    },
+    {
+      "source": "/aktuelles",
+      "destination": "/neuigkeiten"
+    }
   ]
 }
