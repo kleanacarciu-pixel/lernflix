@@ -219,9 +219,15 @@ export const KATALOG: ThemenBaum = {
       6: [
         "➗ Bruchrechnen",
         "🔢 Dezimalbrüche",
-        "📊 Prozent — Grundlagen",
         "➖ Ganze Zahlen (negativ)",
+        "📊 Prozent — Grundlagen",
         "🔢 Teilbarkeit & Primfaktoren",
+        "📏 Rechnen mit Größen",
+        "📐 Flächeninhalt & Umfang",
+        "📦 Volumen & Oberfläche",
+        "📐 Winkel",
+        "🪞 Symmetrie",
+        "📊 Daten & Diagramme",
       ],
       7: [
         "📊 Prozent- & Zinsrechnung",
