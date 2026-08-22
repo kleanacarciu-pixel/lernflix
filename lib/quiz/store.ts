@@ -32,6 +32,13 @@ import flaecheGym5 from "@/lib/quiz/interaktiv/flaeche-gym5";
 import geometrieGym5 from "@/lib/quiz/interaktiv/geometrie-gym5";
 import symmetrieGym5 from "@/lib/quiz/interaktiv/symmetrie-gym5";
 
+import prozentZinsGym7 from "@/lib/quiz/interaktiv/prozent-zins-gym7";
+import dreisatzGym7 from "@/lib/quiz/interaktiv/dreisatz-gym7";
+import termeGym7 from "@/lib/quiz/interaktiv/terme-gym7";
+import gleichungenGym7 from "@/lib/quiz/interaktiv/gleichungen-gym7";
+import winkelDreieckeGym7 from "@/lib/quiz/interaktiv/winkel-dreiecke-gym7";
+import wahrscheinlichkeitGym7 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-gym7";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -43,6 +50,13 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 5, "Umfang & Flächeninhalt")]: flaecheGym5,
   [themaKey("mathe", "gymnasium", 5, "Geometrie & Koordinaten")]: geometrieGym5,
   [themaKey("mathe", "gymnasium", 5, "Achsensymmetrie")]: symmetrieGym5,
+
+  [themaKey("mathe", "gymnasium", 7, "Prozent- & Zinsrechnung")]: prozentZinsGym7,
+  [themaKey("mathe", "gymnasium", 7, "Proportionalität & Dreisatz")]: dreisatzGym7,
+  [themaKey("mathe", "gymnasium", 7, "Terme & Termumformung")]: termeGym7,
+  [themaKey("mathe", "gymnasium", 7, "Lineare Gleichungen")]: gleichungenGym7,
+  [themaKey("mathe", "gymnasium", 7, "Winkel & Dreiecke")]: winkelDreieckeGym7,
+  [themaKey("mathe", "gymnasium", 7, "Wahrscheinlichkeit")]: wahrscheinlichkeitGym7,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,

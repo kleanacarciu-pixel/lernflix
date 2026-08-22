@@ -238,6 +238,7 @@ export const KATALOG: ThemenBaum = {
         "🔣 Terme & Termumformung",
         "⚖️ Lineare Gleichungen",
         "📐 Winkel & Dreiecke",
+        "🎲 Wahrscheinlichkeit",
       ],
       8: [
         "📈 Lineare Funktionen",
