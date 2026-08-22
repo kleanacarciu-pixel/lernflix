@@ -7,15 +7,12 @@ import type { Fach, SchulartId, Frage, KlassenFragen } from "@/lib/quiz/catalog"
 import { themaOhneEmoji, themaKey } from "@/lib/quiz/catalog";
 
 import gymnasiumMathe from "@/lib/quiz/daten/mathe-gymnasium";
-import realschuleMathe from "@/lib/quiz/daten/mathe-realschule";
-import mittelschuleMathe from "@/lib/quiz/daten/mathe-mittelschule";
 
 // Registrierte Fragensammlungen. Schlüssel: "fach|schulart".
-// Weitere Schularten/Fächer werden ergänzt, sobald geprüfte Fragen vorliegen.
+// Wir bauen bewusst KLASSE FÜR KLASSE komplett aus (erst Gymnasium Klasse 6),
+// statt viele Themen halbfertig zu haben. Weitere kommen dazu, sobald geprüft.
 const REGISTRY: Record<string, KlassenFragen> = {
   "mathe|gymnasium": gymnasiumMathe,
-  "mathe|realschule": realschuleMathe,
-  "mathe|mittelschule": mittelschuleMathe,
 };
 
 function regKey(fach: string, schulart: string): string {

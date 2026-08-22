@@ -7,8 +7,9 @@ import { getFragen } from "@/lib/quiz/store";
 // POST läuft immer zur Laufzeit (Auswahl im Body), daher dynamisch.
 export const dynamic = "force-dynamic";
 
-// Wie viele Fragen ein Durchgang zeigt (aus dem Pool zufällig gezogen).
-const FRAGEN_PRO_RUNDE = 10;
+// Wie viele Fragen ein Durchgang zeigt. Ein Thema hat 15–20 geprüfte Fragen;
+// ein Durchgang spielt möglichst das ganze Thema durch (Mastery-Prinzip).
+const FRAGEN_PRO_RUNDE = 20;
 
 const FAECHER: Fach[] = ["mathe", "physik"];
 
