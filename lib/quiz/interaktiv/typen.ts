@@ -64,6 +64,7 @@ export function normAntwort(s: string): string {
   return s
     .trim()
     .toLowerCase()
+    .replace(/[−–—]/g, "-") // Minus/Gedankenstrich -> normales "-"
     .replace(/\s+/g, " ")
     .replace(/\s*\/\s*/g, "/") // "3 / 4" -> "3/4"
     .replace(/(\d),(\d)/g, "$1.$2"); // Dezimalkomma -> Punkt (0,75 -> 0.75)

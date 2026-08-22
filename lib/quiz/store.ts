@@ -12,10 +12,19 @@ import type { Fach, SchulartId } from "@/lib/quiz/catalog";
 import type { Aufgabe } from "@/lib/quiz/interaktiv/typen";
 
 import bruchrechnenGym6 from "@/lib/quiz/interaktiv/bruchrechnen-gym6";
+import dezimalbruecheGym6 from "@/lib/quiz/interaktiv/dezimalbrueche-gym6";
+import prozentGym6 from "@/lib/quiz/interaktiv/prozent-gym6";
+import teilbarkeitGym6 from "@/lib/quiz/interaktiv/teilbarkeit-gym6";
+import ganzeZahlenGym6 from "@/lib/quiz/interaktiv/ganze-zahlen-gym6";
 
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
+// Gymnasium Klasse 6 ist die erste komplett ausgebaute Klasse.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
+  [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
+  [themaKey("mathe", "gymnasium", 6, "Prozent — Grundlagen")]: prozentGym6,
+  [themaKey("mathe", "gymnasium", 6, "Teilbarkeit & Primfaktoren")]: teilbarkeitGym6,
+  [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
 };
 
 /** Interaktive Aufgaben für eine Auswahl (null, wenn noch nichts hinterlegt). */
