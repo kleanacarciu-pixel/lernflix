@@ -212,9 +212,12 @@ export const KATALOG: ThemenBaum = {
       5: [
         "🔢 Natürliche Zahlen & Stellenwert",
         "➕ Rechnen mit natürlichen Zahlen",
-        "📏 Größen & Einheiten",
-        "📐 Umfang & Flächeninhalt (Rechteck)",
+        "✖️ Multiplizieren & Dividieren",
         "🔢 Teilbarkeit & Primzahlen",
+        "📏 Größen & Einheiten",
+        "📐 Umfang & Flächeninhalt",
+        "🧭 Geometrie & Koordinaten",
+        "🪞 Achsensymmetrie",
       ],
       6: [
         "➗ Bruchrechnen",
