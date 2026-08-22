@@ -1,26 +1,16 @@
 import { NextResponse } from "next/server";
 import type { Fach, SchulartId } from "@/lib/quiz/catalog";
 import { schulartById, themaOhneEmoji } from "@/lib/quiz/catalog";
-import { getFragen } from "@/lib/quiz/store";
+import { getAufgaben } from "@/lib/quiz/store";
+import type { Aufgabe } from "@/lib/quiz/interaktiv/typen";
 
-// Kuratierte Fragen aus dem Repo — KEINE Live-KI, kein Supabase, keine ENV.
+// Kuratierte, interaktive Aufgaben aus dem Repo — KEINE Live-KI, kein Supabase.
 // POST läuft immer zur Laufzeit (Auswahl im Body), daher dynamisch.
 export const dynamic = "force-dynamic";
 
-// Wie viele Fragen ein Durchgang zeigt. Ein Thema hat 15–20 geprüfte Fragen;
-// ein Durchgang spielt möglichst das ganze Thema durch (Mastery-Prinzip).
-const FRAGEN_PRO_RUNDE = 20;
-
 const FAECHER: Fach[] = ["mathe", "physik"];
 
-type Frage = {
-  frage: string;
-  antworten: string[];
-  richtig: number;
-  erklaerung: string;
-};
-
-// Fisher-Yates — gleichverteilt mischen.
+// Fisher-Yates.
 function mischen<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -30,13 +20,15 @@ function mischen<T>(arr: T[]): T[] {
   return a;
 }
 
-// Antwort-Reihenfolge je Frage mischen, damit die richtige Antwort nicht
-// immer an derselben Position steht. richtig-Index wird mitgeführt.
-function antwortenMischen(f: Frage): Frage {
-  const reihenfolge = mischen([0, 1, 2, 3]);
-  const antworten = reihenfolge.map((i) => f.antworten[i]);
-  const richtig = reihenfolge.indexOf(f.richtig);
-  return { frage: f.frage, antworten, richtig, erklaerung: f.erklaerung };
+// Bei Multiple-Choice-Aufgaben die Antwort-Reihenfolge mischen, damit die
+// richtige Antwort nicht immer an derselben Stelle steht. Andere Typen bleiben
+// in der (didaktisch aufsteigenden) Reihenfolge.
+function aufbereiten(a: Aufgabe): Aufgabe {
+  if (a.typ !== "mc") return a;
+  const reihenfolge = mischen([0, 1, 2, 3].slice(0, a.antworten.length));
+  const antworten = reihenfolge.map((i) => a.antworten[i]);
+  const richtig = reihenfolge.indexOf(a.richtig);
+  return { ...a, antworten, richtig };
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -50,35 +42,34 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const fach: Fach = FAECHER.includes(body.fach as Fach) ? (body.fach as Fach) : "mathe";
-    const schulartId = String(body.schulart ?? "");
-    const schulart = schulartById(schulartId);
-    const klasseRaw = parseInt(String(body.klasse ?? ""), 10);
+    const schulart = schulartById(String(body.schulart ?? ""));
+    const klasse = parseInt(String(body.klasse ?? ""), 10);
     const thema = themaOhneEmoji(String(body.thema ?? ""));
 
     if (!schulart) {
-      return NextResponse.json({ fragen: [], status: "fehler", grund: "Schulart fehlt" }, { status: 400 });
+      return NextResponse.json({ aufgaben: [], status: "fehler", grund: "Schulart fehlt" }, { status: 400 });
     }
-    if (!Number.isFinite(klasseRaw) || !schulart.klassen.includes(klasseRaw)) {
-      return NextResponse.json({ fragen: [], status: "fehler", grund: "Klasse ungültig" }, { status: 400 });
+    if (!Number.isFinite(klasse) || !schulart.klassen.includes(klasse)) {
+      return NextResponse.json({ aufgaben: [], status: "fehler", grund: "Klasse ungültig" }, { status: 400 });
     }
     if (!thema) {
-      return NextResponse.json({ fragen: [], status: "fehler", grund: "Thema fehlt" }, { status: 400 });
+      return NextResponse.json({ aufgaben: [], status: "fehler", grund: "Thema fehlt" }, { status: 400 });
     }
 
-    const alle = getFragen(fach, schulart.id as SchulartId, klasseRaw, thema);
+    const aufgaben = getAufgaben(fach, schulart.id as SchulartId, klasse, thema);
 
-    // Noch keine geprüften Fragen für diese Auswahl → freundlich „bald verfügbar".
-    if (alle.length === 0) {
-      return NextResponse.json({ fragen: [], status: "bald" });
+    // Noch keine geprüften Aufgaben → freundlich „bald verfügbar".
+    if (!aufgaben || aufgaben.length === 0) {
+      return NextResponse.json({ aufgaben: [], status: "bald" });
     }
 
-    const fragen = mischen(alle)
-      .slice(0, FRAGEN_PRO_RUNDE)
-      .map(antwortenMischen);
-
-    return NextResponse.json({ fragen, status: "ok", quelle: "kuratiert" });
+    return NextResponse.json({
+      status: "ok",
+      modus: "interaktiv",
+      aufgaben: aufgaben.map(aufbereiten),
+    });
   } catch (error) {
     console.error("[quiz] Fehler:", error instanceof Error ? error.message : String(error));
-    return NextResponse.json({ fragen: [], status: "fehler", grund: "Server-Fehler" }, { status: 500 });
+    return NextResponse.json({ aufgaben: [], status: "fehler", grund: "Server-Fehler" }, { status: 500 });
   }
 }
