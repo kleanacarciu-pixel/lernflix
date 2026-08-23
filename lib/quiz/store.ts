@@ -71,6 +71,10 @@ import elnGym12 from "@/lib/quiz/interaktiv/eln-gym12";
 import raumGym12 from "@/lib/quiz/interaktiv/raum-gym12";
 import binomialGym12 from "@/lib/quiz/interaktiv/binomial-gym12";
 
+import analysisGym13 from "@/lib/quiz/interaktiv/analysis-gym13";
+import geometrieGym13 from "@/lib/quiz/interaktiv/geometrie-gym13";
+import stochastikGym13 from "@/lib/quiz/interaktiv/stochastik-gym13";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -121,6 +125,10 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 12, "e- und ln-Funktion")]: elnGym12,
   [themaKey("mathe", "gymnasium", 12, "Geraden & Ebenen im Raum")]: raumGym12,
   [themaKey("mathe", "gymnasium", 12, "Stochastik (Binomialverteilung)")]: binomialGym12,
+
+  [themaKey("mathe", "gymnasium", 13, "Analysis (Abitur)")]: analysisGym13,
+  [themaKey("mathe", "gymnasium", 13, "Analytische Geometrie (Abitur)")]: geometrieGym13,
+  [themaKey("mathe", "gymnasium", 13, "Stochastik (Abitur)")]: stochastikGym13,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
