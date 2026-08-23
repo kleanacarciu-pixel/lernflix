@@ -20,8 +20,9 @@ import {
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
-import { terminlistePdf, vertragsbestaetigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
+import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
+import { schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten } from "@/lib/zahlung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,6 +151,9 @@ export async function POST(req: Request): Promise<Response> {
       jahresbetrag: (v.rechnung.jahresbetragCent / 100).toFixed(2),
     }).eq("id", v.vertrag.id).is("agb_akzeptiert_am", null).select().single();
     if (up.error || !up.data) return bad("Die Bestätigung ließ sich nicht speichern.", 500);
+
+    // Zahlungsplan anlegen – ab jetzt taucht der Vertrag in der Zahlungsübersicht auf.
+    await schreibeZahlungsplan(v.vertrag.id);
 
     // Frisch laden, damit Zahlweise und Zeitstempel in den PDFs stehen
     const neu = await vollbild(v.vertrag.id);
@@ -346,6 +350,9 @@ export async function POST(req: Request): Promise<Response> {
           })
         : [];
 
+      // Nur die noch offenen Monate anpassen; gezahlte Raten bleiben stehen.
+      if (restplan.length) await aktualisiereRestraten(id, restplan);
+
       // Eltern informieren – mit neuer Terminliste im Anhang
       if (nachher.schueler.email) {
         const dateien = await anhaenge(nachher);
@@ -477,6 +484,11 @@ export async function GET(req: Request): Promise<Response> {
       bestaetigtAm: v.vertrag.agb_akzeptiert_am || new Date().toISOString(),
     });
     name = "Vertragsbestaetigung.pdf";
+  } else if (art === "bescheinigung") {
+    const dat = await bescheinigungDaten(vertragId);
+    if (!dat) return bad("Keine Daten für die Bescheinigung.", 404);
+    datei = await bescheinigungPdf({ ...dat, erstelltAm: new Date().toISOString() });
+    name = `Zahlungsbescheinigung-${v.schuljahr.name.replace("/", "-")}.pdf`;
   } else {
     datei = await terminlistePdf({
       schuelerName: v.schueler.name, schuljahrName: v.schuljahr.name,

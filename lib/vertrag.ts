@@ -28,6 +28,9 @@ export type Vertrag = {
   agb_akzeptiert_am: string | null;
   status: VertragStatus;
   kuendigung_zum: string | null;
+  /** Mahn-Automatik für diesen Vertrag ausgesetzt (Abschnitt 6). */
+  mahn_automatik_pausiert?: boolean;
+  mahn_notiz?: string | null;
 };
 
 export type VertragZeit = {

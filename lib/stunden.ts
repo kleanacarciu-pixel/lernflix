@@ -5,6 +5,8 @@
 // =============================================================================
 import { createHmac } from "node:crypto";
 import { service, berlinInstant, addDaysStr, weekdayOf } from "@/lib/kalender";
+import { pausierteSchueler } from "@/lib/zahlung";
+import { terminFindetStatt } from "@/lib/zahlung-kern";
 
 // Zeitfenster-Regeln (Version 1)
 export const VORLAUF_MINUTEN = 15;  // Schüler dürfen 15 Min. vor Beginn rein
@@ -144,10 +146,18 @@ export async function syncLessons(force = false): Promise<void> {
       });
     };
     const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number | null }[];
+    // Ist ein Vertrag wegen einer offenen Rate pausiert, ruht der feste
+    // Wochentermin – erst zwei Tage nach der Pausierung, damit niemand ohne
+    // Vorwarnung vor der Tür steht. Ohne markierte Rate ist die Liste leer.
+    const pausiert = await pausierteSchueler(von);
     for (let i = 0; i <= SYNC_TAGE; i++) {
       const date = addDaysStr(von, i);
       const wd = weekdayOf(date);
-      fixe.forEach((f) => { if (f.weekday === wd) merken(f.student_id, date, f.hour, f.mode, Number(f.dauer_min) || 60); });
+      fixe.forEach((f) => {
+        if (f.weekday !== wd) return;
+        if (!terminFindetStatt(date, pausiert.get(f.student_id) ?? null)) return;
+        merken(f.student_id, date, f.hour, f.mode, Number(f.dauer_min) || 60);
+      });
     }
     appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
       .forEach((a) => merken(a.student_id!, a.slot_date, a.hour, a.mode, Number(a.dauer_min) || 60));

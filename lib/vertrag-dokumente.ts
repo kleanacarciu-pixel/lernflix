@@ -184,6 +184,98 @@ export async function vertragsbestaetigungPdf(dat: VertragsbestaetigungDaten): P
   return fertig(d);
 }
 
+// --- Plusstunden-Abrechnung -------------------------------------------------
+
+export type PlusstundenDaten = {
+  schuelerName: string;
+  termine: string[];
+  stundensatzCent: number;
+  summeCent: number;
+  faelligAm: string;      // ISO
+  erstelltAm: string;     // ISO
+};
+
+export async function plusstundenPdf(dat: PlusstundenDaten): Promise<Buffer> {
+  const d = neuesDokument();
+  const bank = bankverbindung();
+
+  kopf(d, "Abrechnung Zusatzstunden", `${dat.schuelerName} · ${datumDe(dat.erstelltAm.slice(0, 10))}`);
+
+  d.fontSize(11).fillColor(GRAU).text(
+    "Diese Stunden liegen über dem im Schuljahresvertrag vereinbarten Wochentermin und werden "
+    + "zusätzlich abgerechnet. Nachhol- und Minusstunden sind bereits verrechnet.",
+  );
+  d.moveDown(0.8);
+
+  d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Abgerechnete Stunden");
+  d.moveDown(0.3);
+  for (const t of dat.termine) zeile(d, datumDe(t), centFormat(dat.stundensatzCent));
+  zeile(d, `${dat.termine.length} Zusatzstunden gesamt`, centFormat(dat.summeCent), true);
+  d.moveDown(0.8);
+
+  d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Zahlung");
+  d.moveDown(0.3);
+  zeile(d, "Fällig bis", datumDe(dat.faelligAm.slice(0, 10)), true);
+  zeile(d, "Kontoinhaberin", bank.inhaber);
+  zeile(d, "IBAN", bank.iban);
+  if (bank.bank) zeile(d, "Bank", bank.bank);
+  zeile(d, "Verwendungszweck", `Zusatzstunden ${dat.schuelerName}`);
+  d.moveDown(0.9);
+
+  d.fontSize(10).fillColor(GRAU).text(
+    "Kleinunternehmerin nach § 19 UStG – es wird keine Umsatzsteuer ausgewiesen.",
+  );
+
+  return fertig(d);
+}
+
+// --- Jahresbescheinigung ----------------------------------------------------
+
+export type BescheinigungPdfDaten = {
+  schuelerName: string;
+  schuljahrName: string;
+  posten: { datum: string; betragCent: number }[];
+  summeCent: number;
+  erstelltAm: string;    // ISO
+};
+
+export async function bescheinigungPdf(dat: BescheinigungPdfDaten): Promise<Buffer> {
+  const d = neuesDokument();
+
+  kopf(d, "Zahlungsbescheinigung", `${dat.schuelerName} · Schuljahr ${dat.schuljahrName}`);
+
+  d.fontSize(11).fillColor(GRAU).text(
+    "Hiermit wird bestätigt, dass für die unten aufgeführten Nachhilfestunden die "
+    + "folgenden Zahlungen eingegangen sind.",
+  );
+  d.moveDown(0.8);
+
+  d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Eingegangene Zahlungen");
+  d.moveDown(0.3);
+  if (!dat.posten.length) {
+    d.font("Helvetica").fontSize(11).fillColor(GRAU).text("Bisher sind keine Zahlungen vermerkt.");
+    d.moveDown(0.4);
+  } else {
+    for (const p of dat.posten) zeile(d, datumDe(p.datum.slice(0, 10)), centFormat(p.betragCent));
+  }
+  zeile(d, "Summe", centFormat(dat.summeCent), true);
+  d.moveDown(0.9);
+
+  d.font("Helvetica").fontSize(10).fillColor(GRAU).text(
+    "Kleinunternehmerin nach § 19 UStG – es wird keine Umsatzsteuer ausgewiesen. "
+    + "Nachhilfeunterricht kann je nach persönlicher Situation steuerlich absetzbar sein; "
+    + "das prüft das zuständige Finanzamt.",
+    { lineGap: 1.5 },
+  );
+  d.moveDown(0.9);
+  d.fillColor(INK).fontSize(11).font("Helvetica")
+    .text(`München, den ${datumDe(dat.erstelltAm.slice(0, 10))}`);
+  d.moveDown(0.3);
+  d.text("Kleana Carciu · Lerne mit Anna");
+
+  return fertig(d);
+}
+
 // --- AGB --------------------------------------------------------------------
 
 export type Abschnitt = { titel: string; text: string };

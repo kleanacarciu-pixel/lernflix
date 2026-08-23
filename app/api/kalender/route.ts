@@ -9,7 +9,7 @@ import {
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
-import { buchungErlaubt } from "@/lib/vertrag";
+import { buchungErlaubtGesamt as buchungErlaubt } from "@/lib/zahlung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -16,6 +16,10 @@ const F = {
 };
 
 type Rate = { monat: string; betragCent: number };
+type ZahlStatus = 'bezahlt' | 'offen' | 'ueberfaellig' | 'pausiert';
+type Zahlstand = { monat: string; monatName: string; betragCent: number; status: ZahlStatus };
+type Sperre = { grund?: string; regelterminAusgesetzt: boolean; termineEntfallenAb: string | null };
+type Bank = { inhaber: string; iban: string; bank: string };
 type Vertragsdaten = {
   schuelerName: string; schuljahr: string; zeitText: string;
   termine: string[]; jahresbetragCent: number;
@@ -31,12 +35,22 @@ const monatName = (iso: string) => {
 };
 const heute = () => new Date().toISOString().slice(0, 10);
 
+const ZAHL_FARBE: Record<ZahlStatus, string> = {
+  bezahlt: '#127a5c', offen: '#8a6a20', ueberfaellig: '#c2410c', pausiert: '#a12a2a',
+};
+const ZAHL_TEXT: Record<ZahlStatus, string> = {
+  bezahlt: 'bezahlt', offen: 'offen', ueberfaellig: 'überfällig', pausiert: 'pausiert',
+};
+
 export default function TerminlisteSeite() {
   const [token, setToken] = useState('');
   const [daten, setDaten] = useState<Vertragsdaten | null>(null);
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState('');
   const [alle, setAlle] = useState(false);
+  const [zahlstand, setZahlstand] = useState<Zahlstand[]>([]);
+  const [sperre, setSperre] = useState<Sperre | null>(null);
+  const [bank, setBank] = useState<Bank | null>(null);
 
   useEffect(() => {
     try {
@@ -56,6 +70,18 @@ export default function TerminlisteSeite() {
       const d = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (!res.ok || !d.ok) throw new Error(String(d.error || 'Das hat nicht geklappt.'));
       setDaten((d.vertrag as Vertragsdaten) ?? null);
+
+      // Zahlungsstand ist nur ein Zusatz – schlägt er fehl, bleibt die Seite nutzbar.
+      const zRes = await fetch('/api/zahlungen', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'meineZahlungen', token }),
+      });
+      const z = (await zRes.json().catch(() => ({}))) as Record<string, unknown>;
+      if (zRes.ok && z.ok) {
+        setZahlstand((z.zahlungen || []) as Zahlstand[]);
+        setSperre((z.sperre as Sperre | null) ?? null);
+        setBank((z.bank as Bank | null) ?? null);
+      }
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
     } finally { setLaden(false); }
@@ -102,6 +128,32 @@ export default function TerminlisteSeite() {
       <h1 style={h1}>Terminliste {daten.schuljahr}</h1>
       <p style={{ color: F.soft, marginTop: 0 }}>{daten.schuelerName} · {daten.zeitText}</p>
 
+      {sperre && (
+        <div style={{
+          border: '1px solid rgba(161,42,42,.35)', background: 'rgba(161,42,42,.08)',
+          color: '#a12a2a', borderRadius: 12, padding: '14px 16px', margin: '14px 0',
+        }}>
+          <b>{sperre.regelterminAusgesetzt ? 'Der Unterricht ist pausiert' : 'Buchungen sind gerade gesperrt'}</b>
+          <p style={{ margin: '6px 0 0', fontSize: 14 }}>
+            Bei uns ist eine Rate noch nicht angekommen.{' '}
+            {sperre.regelterminAusgesetzt
+              ? 'Der feste Wochentermin ruht deshalb vorerst.'
+              : 'Zusätzliche Stunden lassen sich deshalb gerade nicht buchen; der feste Wochentermin läuft weiter.'}
+            {sperre.termineEntfallenAb && ` Termine vor dem ${datumDe(sperre.termineEntfallenAb)} finden noch statt.`}
+            {' '}Sobald die Zahlung da ist, ist sofort alles wieder frei.
+          </p>
+          {bank && (
+            <p style={{ margin: '8px 0 0', fontSize: 14 }}>
+              {bank.inhaber} · IBAN {bank.iban}
+            </p>
+          )}
+          <p style={{ margin: '8px 0 0', fontSize: 14 }}>
+            Hat sich das mit deiner Überweisung überschnitten oder ist etwas dazwischengekommen?
+            Schreib Anna kurz – wir finden eine Lösung.
+          </p>
+        </div>
+      )}
+
       <section style={karte}>
         <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap' }}>
           <Kennzahl wert={String(daten.termine.length)} text="Termine im Schuljahr" />
@@ -144,12 +196,40 @@ export default function TerminlisteSeite() {
         )}
       </section>
 
+      {!!zahlstand.length && (
+        <section style={karte}>
+          <h2 style={h2}>Zahlungsstand</h2>
+          <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+            Jede Rate ist vom 1. bis 10. des Monats fällig. Was hier nicht als offen steht,
+            ist bei Anna angekommen.
+          </p>
+          {zahlstand.map((z) => (
+            <div key={z.monat} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              gap: 12, padding: '7px 0', borderTop: `1px solid ${F.line}`, fontSize: 15,
+            }}>
+              <span style={{ color: F.soft }}>{z.monatName}</span>
+              <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {eur(z.betragCent)}
+                <span style={{
+                  fontSize: 12, fontWeight: 700, padding: '2px 9px', borderRadius: 20,
+                  background: `${ZAHL_FARBE[z.status]}1a`, color: ZAHL_FARBE[z.status],
+                }}>{ZAHL_TEXT[z.status]}</span>
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
+
       <section style={karte}>
         <h2 style={h2}>Dokumente</h2>
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
           <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=terminliste`} target="_blank" rel="noopener">Terminliste (PDF)</a>
           {daten.bestaetigt && (
             <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=bestaetigung`} target="_blank" rel="noopener">Vertragsbestätigung (PDF)</a>
+          )}
+          {daten.bestaetigt && (
+            <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=bescheinigung`} target="_blank" rel="noopener">Zahlungsbescheinigung (PDF)</a>
           )}
           <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=agb`} target="_blank" rel="noopener">AGB (PDF)</a>
         </div>
