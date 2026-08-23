@@ -153,7 +153,9 @@ export default function ZahlungenSeite() {
         <h1 style={h1}>Zahlungen</h1>
         <p style={{ color: F.soft, marginTop: 0 }}>
           Es zählt nur, was <b>fehlt</b>. Alles Nicht-Markierte gilt als bezahlt.{' '}
-          <a href="/kalender" style={{ color: F.blue }}>Zurück zum Kalender</a>
+          <a href="/vertraege" style={{ color: F.blue }}>Verträge</a> ·{' '}
+          <a href="/schuljahr" style={{ color: F.blue }}>Schuljahr &amp; Ferien</a> ·{' '}
+          <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
 
         {fehler && <div style={{ ...box, borderColor: '#f5b5b5', background: '#ffeaea', color: F.warn }}>{fehler}</div>}

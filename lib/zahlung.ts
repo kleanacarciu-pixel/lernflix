@@ -11,6 +11,7 @@ import { datumDe } from "@/lib/schuljahr-kern";
 import type { Schuljahr } from "@/lib/schuljahr";
 import {
   status, faelligeAktionen, zahlungsSperre, terminFindetStatt, pausierungAb,
+  giltAlsBezahlt, bezahltAm,
   type Zahlung as ZahlungKern, type Status,
 } from "@/lib/zahlung-kern";
 import { bankverbindung } from "@/lib/vertrag-dokumente";
@@ -427,16 +428,19 @@ export async function bescheinigungDaten(vertragId: string): Promise<Bescheinigu
   if (!geladen) return null;
 
   const [zRes, pRes, sjRes] = await Promise.all([
-    sb.from("zahlungen").select("*").eq("vertrag_id", vertragId).not("bezahlt_am", "is", null).order("bezahlt_am"),
+    sb.from("zahlungen").select("*").eq("vertrag_id", vertragId).order("monat"),
     sb.from("profiles").select("name").eq("user_id", geladen.vertrag.schueler_id).single(),
     sb.from("schuljahre").select("name").eq("id", geladen.vertrag.schuljahr_id).single(),
   ]);
 
-  const zahlungen = (zRes.data || []) as Zahlung[];
+  // Umkehrlogik: bescheinigt wird alles, was nicht als fehlend markiert ist
+  // und dessen Zahlungsfenster vorbei ist – nicht nur die abgehakten Zeilen.
+  const heute = heuteIso();
+  const zahlungen = ((zRes.data || []) as Zahlung[]).filter((z) => giltAlsBezahlt(z, heute));
   const posten = zahlungen.map((z) => ({
-    datum: z.bezahlt_am as string,
+    datum: bezahltAm(z),
     betragCent: euroZuCent(Number(z.soll_betrag)),
-  }));
+  })).sort((a, b) => a.datum.localeCompare(b.datum));
   return {
     schuelerName: (pRes.data as { name: string } | null)?.name || "Schüler/in",
     schuljahrName: (sjRes.data as { name: string } | null)?.name || "",

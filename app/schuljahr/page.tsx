@@ -110,7 +110,10 @@ export default function SchuljahrSeite() {
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 20px 60px' }}>
         <h1 style={h1}>Schuljahr &amp; Ferien</h1>
         <p style={{ color: F.soft, marginTop: 0 }}>
-          Grundlage für die Terminberechnung. <a href="/kalender" style={{ color: F.blue }}>Zurück zum Kalender</a>
+          Grundlage für die Terminberechnung.{' '}
+          <a href="/vertraege" style={{ color: F.blue }}>Verträge</a> ·{' '}
+          <a href="/zahlungen" style={{ color: F.blue }}>Zahlungen</a> ·{' '}
+          <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
 
         {fehler && <div style={{ ...box, borderColor: '#f5b5b5', background: '#ffeaea', color: F.warn }}>{fehler}</div>}

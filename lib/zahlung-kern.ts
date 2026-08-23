@@ -66,6 +66,28 @@ export function status(z: Zahlung, heute: string): Status {
 }
 
 /**
+ * Ist das Geld für diese Rate da?
+ *
+ * Auch das folgt der Umkehrlogik: nicht markiert heißt eingegangen – aber
+ * erst, wenn das Zahlungsfenster (1.–10.) vorbei ist. Ein künftiger Monat
+ * ist schlicht noch nicht fällig und zählt deshalb nicht als bezahlt.
+ * Grundlage für Jahresbescheinigung und Endabrechnung.
+ */
+export function giltAlsBezahlt(z: Zahlung, heute: string): boolean {
+  if (z.bezahlt_am) return true;
+  if (z.offen_seit) return false;
+  return heute > tagImMonat(z.monat, FAELLIG_BIS_TAG);
+}
+
+/**
+ * Welches Datum steht auf der Bescheinigung? Der tatsächlich vermerkte Tag,
+ * sonst der letzte Fälligkeitstag des Monats.
+ */
+export function bezahltAm(z: Zahlung): string {
+  return z.bezahlt_am ? z.bezahlt_am.slice(0, 10) : tagImMonat(z.monat, FAELLIG_BIS_TAG);
+}
+
+/**
  * Was muss der Mahnlauf für diese Zahlung heute tun?
  *
  *  * erinnerung – die „letzter Tag"-E-Mail an die Eltern. Sie geht am 10.

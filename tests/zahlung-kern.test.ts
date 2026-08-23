@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {
   status, faelligeAktionen, pausierungAb, zahlungsSperre,
   terminFindetStatt, termineEntfallenAb, tagImMonat, plusTage,
+  giltAlsBezahlt, bezahltAm,
   type Zahlung,
 } from "../lib/zahlung-kern.ts";
 
@@ -40,6 +41,35 @@ describe("Umkehrlogik: nicht markiert = bezahlt", () => {
     assert.equal(status(markiert, "2027-03-12"), "ueberfaellig");
     // Kleana entfernt die Markierung -> offen_seit wieder null
     assert.equal(status({ ...markiert, offen_seit: null }, "2027-03-12"), "bezahlt");
+  });
+});
+
+describe("Ist das Geld da? (Bescheinigung und Endabrechnung)", () => {
+  test("nicht markiert und Fälligkeit vorbei: gilt als bezahlt", () => {
+    assert.equal(giltAlsBezahlt(z(), "2027-03-11"), true);
+    assert.equal(giltAlsBezahlt(z(), "2027-08-01"), true);
+  });
+
+  test("nicht markiert, aber noch im Zahlungsfenster: noch nicht bezahlt", () => {
+    assert.equal(giltAlsBezahlt(z(), "2027-03-05"), false);
+    assert.equal(giltAlsBezahlt(z(), "2027-03-10"), false);
+  });
+
+  test("künftiger Monat zählt nicht mit", () => {
+    assert.equal(giltAlsBezahlt(z({ monat: "2027-06-01" }), "2027-03-20"), false);
+  });
+
+  test("als offen markiert: nicht bezahlt, egal wann", () => {
+    assert.equal(giltAlsBezahlt(z({ offen_seit: "2027-03-02" }), "2027-06-01"), false);
+  });
+
+  test("ausdrücklich abgehakt zählt sofort", () => {
+    assert.equal(giltAlsBezahlt(z({ bezahlt_am: "2027-03-04" }), "2027-03-04"), true);
+  });
+
+  test("Datum für die Bescheinigung", () => {
+    assert.equal(bezahltAm(z({ bezahlt_am: "2027-03-04" })), "2027-03-04");
+    assert.equal(bezahltAm(z()), "2027-03-10");   // sonst der letzte Fälligkeitstag
   });
 });
 

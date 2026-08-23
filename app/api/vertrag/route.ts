@@ -22,7 +22,11 @@ import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
 import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
-import { schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten } from "@/lib/zahlung";
+import { schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso } from "@/lib/zahlung";
+import {
+  abrechnungsbild, abrechnungsText, kuendigen, kuendigungZuruecknehmen,
+  alsBeendetMarkieren, monatsEnde, pruefeKuendigung,
+} from "@/lib/kuendigung";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -211,6 +215,95 @@ export async function POST(req: Request): Promise<Response> {
   if (!prof || prof.role !== "admin") return bad("Nur Kleana darf das.", 403);
 
   switch (action) {
+    // Alle Verträge samt Schülernamen – Grundlage der Admin-Seite
+    case "liste": {
+      const [vRes, pRes, sjRes] = await Promise.all([
+        sb.from("vertraege").select("*").order("erstellt_am", { ascending: false }),
+        sb.from("profiles").select("user_id,name,email").eq("role", "student").order("name"),
+        sb.from("schuljahre").select("id,name,aktiv"),
+      ]);
+      const vertraege = (vRes.data || []) as Vertrag[];
+      const profile = (pRes.data || []) as { user_id: string; name: string; email: string | null }[];
+      const jahre = (sjRes.data || []) as { id: string; name: string; aktiv: boolean }[];
+
+      const zRes = vertraege.length
+        ? await sb.from("vertrag_zeiten").select("*").in("vertrag_id", vertraege.map((v) => v.id)).order("wochentag")
+        : { data: [] };
+      const alleZeiten = (zRes.data || []) as { vertrag_id: string; wochentag: number; uhrzeit: string; bis_datum: string | null }[];
+
+      return ok({
+        schueler: profile,
+        schuljahre: jahre,
+        vertraege: vertraege.map((v) => {
+          // Nur die aktuell gültigen Zeiten anzeigen (beendete Zeilen weglassen)
+          const zeiten = alleZeiten.filter((z) => z.vertrag_id === v.id && !z.bis_datum);
+          return {
+            id: v.id,
+            schuelerId: v.schueler_id,
+            name: profile.find((p) => p.user_id === v.schueler_id)?.name || "Schüler/in",
+            schuljahr: jahre.find((j) => j.id === v.schuljahr_id)?.name || "",
+            zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+            zeitText: zeitText(zeiten),
+            stundensatz: Number(v.stundensatz),
+            jahresbetragCent: euroZuCent(Number(v.jahresbetrag)),
+            zahlweise: v.zahlweise,
+            status: v.status,
+            bestaetigt: !!v.agb_akzeptiert_am,
+            kuendigungZum: v.kuendigung_zum,
+          };
+        }),
+        heute: heuteIso(),
+        monatsEndeHeute: monatsEnde(heuteIso()),
+      });
+    }
+
+    // Endabrechnung durchrechnen, ohne etwas zu speichern
+    case "kuendigungVorschau": {
+      const id = text(body.vertrag_id, 40);
+      const zum = text(body.zum, 10);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Enddatum angeben.");
+      const bild = await abrechnungsbild(id, zum);
+      if (!bild) return bad("Vertrag nicht gefunden.", 404);
+      return ok({ abrechnung: bild, text: abrechnungsText(bild) });
+    }
+
+    case "kuendigen": {
+      const id = text(body.vertrag_id, 40);
+      const zum = text(body.zum, 10);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Enddatum angeben.");
+      const r = await kuendigen(id, zum);
+      if (!r.ok) return bad(r.error || "Die Kündigung ließ sich nicht speichern.", 500);
+      const bild = await abrechnungsbild(id, zum);
+      return ok({
+        frist: r.frist,
+        abrechnung: bild,
+        text: bild ? abrechnungsText(bild) : "",
+      });
+    }
+
+    case "kuendigungZurueck": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const r = await kuendigungZuruecknehmen(id);
+      return r.ok ? ok() : bad(r.error || "Das ließ sich nicht speichern.", 500);
+    }
+
+    case "beenden": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const r = await alsBeendetMarkieren(id);
+      return r.ok ? ok() : bad(r.error || "Das ließ sich nicht speichern.", 500);
+    }
+
+    // Frist zu einem Wunschdatum prüfen, ohne zu rechnen
+    case "fristPruefen": {
+      const zum = text(body.zum, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Datum angeben.");
+      return ok({ frist: pruefeKuendigung(heuteIso(), zum) });
+    }
+
     // Beträge durchrechnen, ohne etwas zu speichern
     case "vorschau": {
       const sj = await aktivesSchuljahr();
