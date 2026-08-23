@@ -156,7 +156,10 @@ export async function sendMail(
   if (!key) return { ok: false, error: "RESEND_API_KEY fehlt in den Vercel-Umgebungsvariablen" };
   if (!to) return { ok: false, error: "keine Empfänger-Adresse" };
   try {
-    const r = await fetch("https://api.resend.com/emails", {
+    // Die Adresse ist einstellbar, damit ein Testlauf die E-Mails abfangen
+    // kann, ohne sie wirklich zu verschicken. Ohne die Variable bleibt es
+    // beim echten Dienst – im Betrieb ändert sich dadurch nichts.
+    const r = await fetch(process.env.RESEND_URL || "https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({

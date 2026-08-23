@@ -149,16 +149,18 @@ describe("Unterschriften und Zeitstempel", async () => {
     assert.ok(pdf.length > 1000);
   });
 
-  test("jede Unterschrift bringt ihr Bild mit", async () => {
-    // Ein PNG mit Durchsichtigkeit landet als ZWEI Bildobjekte in der Datei:
-    // das Bild selbst und seine Maske. Gezählt wird deshalb paarweise.
-    const bilder = async (dat: Partial<typeof beispiel> & Record<string, unknown>) =>
-      [...(await nachhilfevertragPdf({ ...beispiel, ...dat } as Parameters<typeof nachhilfevertragPdf>[0]))
-        .toString("latin1").matchAll(/\/Subtype\s*\/Image/g)].length;
+  test("jede Unterschrift wird auch wirklich gezeichnet", async () => {
+    // Gezählt wird der Zeichenbefehl („Do"), nicht die Zahl der Bildobjekte:
+    // ein PNG mit Durchsichtigkeit legt zusätzlich seine Maske ab, ein
+    // deckendes nicht. Wer Objekte zählt, zählt je nach Bild anders.
+    const gezeichnet = async (dat: Record<string, unknown>) =>
+      [...inhalt(await nachhilfevertragPdf({ ...beispiel, ...dat } as Parameters<typeof nachhilfevertragPdf>[0]))
+        .matchAll(/\/[A-Za-z0-9]+ Do/g)].length;
 
-    assert.equal(await bilder({ unterschriftAnbieterin: PNG }), 2, "Kleanas Unterschrift fehlt");
-    assert.equal(await bilder({ unterschriftEltern: PNG }), 2, "Unterschrift der Eltern fehlt");
-    assert.equal(await bilder({ unterschriftAnbieterin: PNG, unterschriftEltern: PNG }), 4,
+    assert.equal(await gezeichnet({}), 0, "ohne Unterschrift darf kein Bild stehen");
+    assert.equal(await gezeichnet({ unterschriftAnbieterin: PNG }), 1, "Kleanas Unterschrift fehlt");
+    assert.equal(await gezeichnet({ unterschriftEltern: PNG }), 1, "Unterschrift der Eltern fehlt");
+    assert.equal(await gezeichnet({ unterschriftAnbieterin: PNG, unterschriftEltern: PNG }), 2,
       "es müssen beide Unterschriften im Vertrag stehen");
   });
 

@@ -474,7 +474,11 @@ export default function VertraegeSeite() {
                 const frage = `Vertrag für ${schueler.find((x) => x.user_id === nSchueler)?.name || 'die Schülerin'} anlegen?\n\n`
                   + `${vorschau.anzahlTermine} Termine · Jahresbetrag ${eur(vorschau.jahresbetragCent)}\n`
                   + `${vorschau.raten.length} Raten à ${eur(vorschau.raten[0]?.betragCent ?? 0)}\n\n`
-                  + 'Das Angebot geht danach per E-Mail raus.';
+                  // Ohne Namen bleibt im Vertrag die Zeile leer, in der steht,
+                  // WER ihn eigentlich schließt. Das soll hier auffallen –
+                  // nachtragen geht später über „Elterndaten".
+                  + (eName.trim() ? '' : 'ACHTUNG: Ohne Name der Erziehungsberechtigten bleibt diese Zeile im Vertrag leer.\n\n')
+                  + 'Der Vertrag geht danach per E-Mail zur Unterschrift raus.';
                 if (confirm(frage)) {
                   setFehler(''); setHinweis('');
                   void (async () => {
