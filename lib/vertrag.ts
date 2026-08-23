@@ -9,7 +9,7 @@ import { service } from "@/lib/kalender";
 import { berechneTermine, type Schuljahr } from "@/lib/schuljahr";
 import {
   berechneJahresbetrag, ratenplan, einmalbetragCent, euroZuCent, centFormat,
-  ZWEIT_ABSCHLAG_CENT, type Ratenplan, type Zahlweise, type TerminTag,
+  ZWEIT_ABSCHLAG_CENT, darfBuchen, type Ratenplan, type Zahlweise, type TerminTag,
 } from "@/lib/vertrag-kern";
 
 export type VertragStatus = "angeboten" | "aktiv" | "gekuendigt" | "beendet";
@@ -127,12 +127,7 @@ export async function laufenderVertrag(schuelerId: string): Promise<Vertrag | nu
  * Probestunden und Schüler ohne Schuljahresvertrag bleiben wie bisher möglich.
  */
 export async function buchungErlaubt(schuelerId: string): Promise<{ erlaubt: boolean; grund?: string }> {
-  const v = await laufenderVertrag(schuelerId);
-  if (!v) return { erlaubt: true };
-  if (!v.agb_akzeptiert_am) {
-    return { erlaubt: false, grund: "Bitte bestätige zuerst den Vertrag und die AGB." };
-  }
-  return { erlaubt: true };
+  return darfBuchen(await laufenderVertrag(schuelerId));
 }
 
 export { euroZuCent, centFormat };

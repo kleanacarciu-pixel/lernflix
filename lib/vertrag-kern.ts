@@ -155,3 +155,24 @@ export function ratenNeuVerteilen(opt: {
   const betraege = berechneRaten(rest, opt.verbleibendeMonate.length);
   return opt.verbleibendeMonate.map((monat, i) => ({ monat, betragCent: betraege[i] }));
 }
+
+// --- Buchungssperre (Abschnitt 4) -------------------------------------------
+
+/**
+ * Darf für diesen Schüler gebucht werden?
+ *
+ * Ohne laufenden Vertrag greift die Sperre NICHT – Probestunden und Schüler
+ * ohne Schuljahresvertrag bleiben wie bisher möglich. Gibt es einen Vertrag,
+ * muss er bestätigt sein.
+ */
+export function darfBuchen(
+  vertrag: { status: string; agb_akzeptiert_am: string | null } | null,
+): { erlaubt: boolean; grund?: string } {
+  if (!vertrag) return { erlaubt: true };
+  const laufend = vertrag.status === "angeboten" || vertrag.status === "aktiv";
+  if (!laufend) return { erlaubt: true };
+  if (!vertrag.agb_akzeptiert_am) {
+    return { erlaubt: false, grund: "Bitte bestätige zuerst den Vertrag und die AGB." };
+  }
+  return { erlaubt: true };
+}

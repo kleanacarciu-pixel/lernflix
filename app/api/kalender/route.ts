@@ -9,6 +9,7 @@ import {
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
+import { buchungErlaubt } from "@/lib/vertrag";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,6 +153,8 @@ export async function POST(req: Request): Promise<Response> {
 
     // === SCHÜLER-AKTIONEN ===
     if (action === "requestFixed") {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
@@ -163,6 +166,8 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
     if (action === "bookExtra") {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
@@ -287,6 +292,8 @@ export async function POST(req: Request): Promise<Response> {
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       if (body.fest === true) {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(sid); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
         const { error } = await service().from("fixed_slots").insert({
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
@@ -365,6 +372,8 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(s.fixedPending.student_id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
         if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
