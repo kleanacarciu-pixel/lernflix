@@ -55,6 +55,63 @@ export function pruefeUnterzeichnung(e: Unterzeichnungseingabe): Unterzeichnungs
   return { ok: true, datenUri: bild.datenUri };
 }
 
+// --- Rückfall: außerhalb des Portals unterschrieben -------------------------
+
+/**
+ * Wer lieber auf Papier unterschreibt, schickt ein Foto oder eine PDF. Die
+ * darf größer sein als eine Unterschrift – es ist ein ganzes Dokument.
+ */
+export const MAX_EXTERN_BYTES = 4 * 1024 * 1024;
+
+const EXTERN_KOEPFE: Record<string, string> = {
+  "data:application/pdf;base64,": "pdf",
+  "data:image/png;base64,": "png",
+  "data:image/jpeg;base64,": "jpeg",
+  "data:image/jpg;base64,": "jpeg",
+};
+
+export type ExternePruefung =
+  | { ok: true; art: string; bytes: number; datenUri: string }
+  | { ok: false; grund: string };
+
+/** Prüft die hochgeladene, außerhalb des Portals unterschriebene Fassung. */
+export function pruefeExterneUnterschrift(eingabe: unknown): ExternePruefung {
+  if (typeof eingabe !== "string" || !eingabe.trim()) {
+    return { ok: false, grund: "Es wurde keine Datei übergeben." };
+  }
+  const wert = eingabe.trim();
+  const kopf = Object.keys(EXTERN_KOEPFE).find((k) => wert.startsWith(k));
+  if (!kopf) return { ok: false, grund: "Bitte eine PDF, ein PNG oder ein JPG hochladen." };
+
+  const base64 = wert.slice(kopf.length).replace(/\s/g, "");
+  if (!base64) return { ok: false, grund: "Die Datei ist leer." };
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) {
+    return { ok: false, grund: "Die Datei ließ sich nicht lesen." };
+  }
+  const polster = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  const bytes = Math.floor((base64.length * 3) / 4) - polster;
+  if (bytes <= 0) return { ok: false, grund: "Die Datei ist leer." };
+  if (bytes > MAX_EXTERN_BYTES) {
+    return {
+      ok: false,
+      grund: `Die Datei ist zu groß (${Math.round(bytes / 1024 / 1024 * 10) / 10} MB). `
+        + `Erlaubt sind ${MAX_EXTERN_BYTES / 1024 / 1024} MB.`,
+    };
+  }
+  return { ok: true, art: EXTERN_KOEPFE[kopf], bytes, datenUri: `${kopf}${base64}` };
+}
+
+/** Der Datei-Typ einer abgelegten Fassung – zum Ausliefern gebraucht. */
+export function externerTyp(datenUri: string | null | undefined): { mime: string; endung: string } | null {
+  if (!datenUri) return null;
+  const kopf = Object.keys(EXTERN_KOEPFE).find((k) => datenUri.startsWith(k));
+  if (!kopf) return null;
+  const art = EXTERN_KOEPFE[kopf];
+  return art === "pdf"
+    ? { mime: "application/pdf", endung: "pdf" }
+    : { mime: `image/${art}`, endung: art === "jpeg" ? "jpg" : art };
+}
+
 // --- Stand eines Vertrags ---------------------------------------------------
 
 export type Vertragsstand = "erstellt" | "eingeladen" | "unterschrieben" | "beendet";

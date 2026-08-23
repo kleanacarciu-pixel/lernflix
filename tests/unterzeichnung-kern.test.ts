@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import {
   pruefeUnterzeichnung, istUnterzeichnet, vertragsstand, PFLICHT_BESTAETIGUNGEN,
   MIN_UNTERSCHRIFT_BYTES, STAND_TEXT,
+  pruefeExterneUnterschrift, externerTyp, MAX_EXTERN_BYTES,
 } from "../lib/unterzeichnung-kern.ts";
 import { BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF } from "../lib/vertrag-pdf-texte.ts";
 
@@ -88,6 +89,54 @@ describe("Wann gilt ein Vertrag als unterschrieben?", () => {
 
   test("Freischaltung von Hand genügt auch (Papier-Rückfall)", () => {
     assert.equal(istUnterzeichnet({ status: "aktiv", manuell_aktiviert_am: "2026-09-01T10:00:00Z" }), true);
+  });
+});
+
+describe("Auf Papier unterschrieben – der Rückfall", () => {
+  const inhalt = (bytes: number) => "A".repeat(Math.ceil((bytes * 4) / 3));
+
+  test("eine PDF geht durch", () => {
+    const r = pruefeExterneUnterschrift(`data:application/pdf;base64,${inhalt(5000)}`);
+    assert.equal(r.ok, true);
+    assert.equal(r.ok && r.art, "pdf");
+  });
+
+  test("ein Handyfoto geht auch", () => {
+    for (const kopf of ["data:image/jpeg;base64,", "data:image/jpg;base64,", "data:image/png;base64,"]) {
+      assert.equal(pruefeExterneUnterschrift(`${kopf}${inhalt(9000)}`).ok, true, kopf);
+    }
+  });
+
+  test("ein Word-Dokument nicht", () => {
+    const r = pruefeExterneUnterschrift(`data:application/msword;base64,${inhalt(500)}`);
+    assert.equal(r.ok, false);
+    assert.match(r.ok ? "" : r.grund, /PDF/);
+  });
+
+  test("nichts hochgeladen wird abgefangen", () => {
+    for (const leer of [undefined, null, "", "   ", 42]) {
+      assert.equal(pruefeExterneUnterschrift(leer).ok, false, String(leer));
+    }
+  });
+
+  test("zu große Dateien werden abgewiesen, mit Größe im Text", () => {
+    const r = pruefeExterneUnterschrift(`data:application/pdf;base64,${inhalt(MAX_EXTERN_BYTES + 5000)}`);
+    assert.equal(r.ok, false);
+    assert.match(r.ok ? "" : r.grund, /zu groß/);
+    assert.match(r.ok ? "" : r.grund, /MB/);
+  });
+
+  test("eine Unterschrift darf hier größer sein als im Portal", () => {
+    // Ein ganzes Dokument braucht mehr Platz als ein Namenszug.
+    assert.ok(MAX_EXTERN_BYTES > MIN_UNTERSCHRIFT_BYTES * 100);
+  });
+
+  test("der Typ wird zum Ausliefern wiedererkannt", () => {
+    assert.deepEqual(externerTyp("data:application/pdf;base64,AAAA"), { mime: "application/pdf", endung: "pdf" });
+    assert.deepEqual(externerTyp("data:image/jpeg;base64,AAAA"), { mime: "image/jpeg", endung: "jpg" });
+    assert.deepEqual(externerTyp("data:image/png;base64,AAAA"), { mime: "image/png", endung: "png" });
+    assert.equal(externerTyp(null), null);
+    assert.equal(externerTyp("irgendwas"), null);
   });
 });
 

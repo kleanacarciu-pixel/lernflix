@@ -24,6 +24,14 @@ type VertragZeile = {
   status: 'angeboten' | 'aktiv' | 'gekuendigt' | 'beendet';
   bestaetigt: boolean; kuendigungZum: string | null;
   eltern: { name: string; anschrift: string; email: string; telefon: string };
+  /** Stand der Unterzeichnung (Schritt 4). */
+  stand: 'erstellt' | 'eingeladen' | 'unterschrieben' | 'beendet';
+  standSeit: string | null;
+  eingeladenAm: string | null;
+  unterzeichnetAm: string | null;
+  manuellAktiviertAm: string | null;
+  erinnertAm: string | null;
+  hatExterneFassung: boolean;
 };
 type Posten = {
   wochentag: number; anzahl: number; satzCent: number; summeCent: number;
@@ -66,6 +74,34 @@ const STATUS_FARBE: Record<VertragZeile['status'], string> = {
   angeboten: '#8a6a20', aktiv: '#127a5c', gekuendigt: '#c2410c', beendet: '#64748b',
 };
 
+// Der Weg eines Vertrags: erstellt → eingeladen → unterschrieben
+const STAND_TEXT: Record<VertragZeile['stand'], string> = {
+  erstellt: 'erstellt', eingeladen: 'wartet auf Unterschrift',
+  unterschrieben: 'unterschrieben', beendet: 'beendet',
+};
+const STAND_FARBE: Record<VertragZeile['stand'], string> = {
+  erstellt: '#64748b', eingeladen: '#8a6a20', unterschrieben: '#127a5c', beendet: '#64748b',
+};
+
+/** „vor 6 Tagen" – damit auf einen Blick sichtbar ist, wo es hakt. */
+function seitTagen(iso: string | null, heute: string): number | null {
+  if (!iso || !heute) return null;
+  // Nur die Kalendertage vergleichen. Mit der Uhrzeit käme bei einer
+  // Einladung um 18 Uhr ein Tag zu wenig heraus – gezählt wird aber so,
+  // wie ein Mensch zählt: vom 17. bis zum 23. sind es sechs Tage.
+  const tage = Math.round(
+    (Date.parse(`${heute}T00:00:00Z`) - Date.parse(`${iso.slice(0, 10)}T00:00:00Z`)) / 86_400_000,
+  );
+  return tage >= 0 ? tage : 0;
+}
+
+const zeitpunkt = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}, ${p(d.getHours())}:${p(d.getMinutes())} Uhr`;
+};
+
 export default function VertraegeSeite() {
   const [token, setToken] = useState('');
   const [laden, setLaden] = useState(true);
@@ -93,6 +129,10 @@ export default function VertraegeSeite() {
   const [eTelefon, setETelefon] = useState('');
   const [elternFuer, setElternFuer] = useState<VertragZeile | null>(null);
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
+  // Rückfall: auf Papier unterschrieben
+  const [externFuer, setExternFuer] = useState<VertragZeile | null>(null);
+  const [xZahlweise, setXZahlweise] = useState<'raten' | 'einmal'>('raten');
+  const [xLaedt, setXLaedt] = useState(false);
 
   // Wechsel und Kündigung
   const [wechselFuer, setWechselFuer] = useState<VertragZeile | null>(null);
@@ -140,6 +180,31 @@ export default function VertraegeSeite() {
     setFehler(''); setHinweis('');
     try { await fn(); setHinweis(erfolg); await neuLaden(); }
     catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+  }
+
+  /**
+   * Die auf Papier unterschriebene Fassung hochladen und den Vertrag von Hand
+   * freischalten. Gelesen wird die Datei im Browser; auf dem Server wird
+   * dieselbe Prüfung noch einmal gemacht.
+   */
+  async function externHochladen(datei: File) {
+    const v = externFuer;
+    if (!v) return;
+    setXLaedt(true); setFehler(''); setHinweis('');
+    try {
+      const uri = await new Promise<string>((fertig, schief) => {
+        const leser = new FileReader();
+        leser.onload = () => fertig(String(leser.result || ''));
+        leser.onerror = () => schief(new Error('Die Datei ließ sich nicht lesen.'));
+        leser.readAsDataURL(datei);
+      });
+      await api('externAktivieren', { vertrag_id: v.id, datei: uri, zahlweise: xZahlweise });
+      setExternFuer(null);
+      await neuLaden();
+      setHinweis(`Vertrag für ${v.name} freigeschaltet – die Familie kann ab sofort buchen.`);
+    } catch (e) {
+      setFehler(e instanceof Error ? e.message : 'Fehler beim Hochladen.');
+    } finally { setXLaedt(false); }
   }
 
   const felder = () => ({
@@ -238,27 +303,47 @@ export default function VertraegeSeite() {
             <div key={v.id} style={zeile}>
               <div>
                 <b>{v.name}</b>
-                <span style={{ ...pille, background: `${STATUS_FARBE[v.status]}1a`, color: STATUS_FARBE[v.status] }}>
-                  {STATUS_TEXT[v.status]}
-                </span>
-                {v.status === 'angeboten' && !v.bestaetigt && (
-                  <span style={{ ...pille, background: 'rgba(148,163,184,.16)', color: F.soft }}>noch nicht bestätigt</span>
+                {/* Bei „angeboten" sagt der Stand schon alles – zwei Schilder
+                    nebeneinander („Angebot verschickt" / „noch nicht
+                    verschickt") würden sich sonst widersprechen. */}
+                {v.status !== 'angeboten' && (
+                  <span style={{ ...pille, background: `${STATUS_FARBE[v.status]}1a`, color: STATUS_FARBE[v.status] }}>
+                    {STATUS_TEXT[v.status]}
+                  </span>
                 )}
+                <span style={{ ...pille, background: `${STAND_FARBE[v.stand]}1a`, color: STAND_FARBE[v.stand] }}>
+                  {STAND_TEXT[v.stand]}
+                </span>
                 <div style={{ color: F.soft, fontSize: 14, marginTop: 2 }}>
                   {v.schuljahr} · {v.zeitText || '—'} · {eur(v.jahresbetragCent)}
                   {v.zahlweise === 'einmal' ? ' (Einmalzahlung)' : ''}
                 </div>
+                <Standzeile v={v} heute={heute} />
                 {v.kuendigungZum && (
                   <div style={{ color: '#c2410c', fontSize: 14 }}>endet zum {datumDe(v.kuendigungZum)}</div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {v.status === 'angeboten' && (
+                {!v.bestaetigt && v.status !== 'beendet' && (
                   <button style={knopfKlein}
-                    onClick={() => void tun(() => api('erneutSenden', { vertrag_id: v.id }), 'Angebot erneut verschickt.')}>
-                    Angebot erneut senden
+                    onClick={() => void tun(() => api('erneutSenden', { vertrag_id: v.id }),
+                      'Vertrag erneut zur Unterschrift verschickt.')}>
+                    {v.eingeladenAm ? 'nochmal senden' : 'zur Unterschrift senden'}
                   </button>
                 )}
+                {!v.bestaetigt && v.status !== 'beendet' && (
+                  <button style={knopfKlein} onClick={() => { setExternFuer(v); setXZahlweise('raten'); }}>
+                    auf Papier unterschrieben
+                  </button>
+                )}
+                {v.hatExterneFassung && (
+                  <a style={{ ...knopfKlein, textDecoration: 'none' }}
+                    href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=extern`}
+                    target="_blank" rel="noopener">hochgeladene Fassung</a>
+                )}
+                <a style={{ ...knopfKlein, textDecoration: 'none' }}
+                  href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=vertrag`}
+                  target="_blank" rel="noopener">Vertrag</a>
                 {(v.status === 'aktiv' || v.status === 'angeboten') && v.zeiten.length > 1 && (
                   <button style={knopfKlein} onClick={() => {
                     setEndeFuer(v); setETag(v.zeiten[v.zeiten.length - 1].wochentag); setEZum('');
@@ -524,6 +609,53 @@ export default function VertraegeSeite() {
           </div>
         )}
 
+        {/* ------------------------------------ auf Papier unterschrieben */}
+        {externFuer && (
+          <div style={overlay} onClick={() => setExternFuer(null)}>
+            <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Auf Papier unterschrieben – {externFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Für Eltern, die lieber ausdrucken und mit der Hand unterschreiben.
+                Lade die unterschriebene Fassung hoch (PDF oder Foto) – der Vertrag
+                wird damit aktiv, der Zahlungsplan läuft an und die Familie kann buchen.
+              </p>
+
+              <div style={{ marginTop: 6 }}>
+                <div style={{ ...etikett, marginBottom: 8 }}>Gewählte Zahlweise</div>
+                {(['raten', 'einmal'] as const).map((z) => (
+                  <label key={z} style={{ display: 'flex', gap: 9, alignItems: 'center', marginBottom: 7, cursor: 'pointer' }}>
+                    <input type="radio" checked={xZahlweise === z} onChange={() => setXZahlweise(z)} />
+                    <span style={{ fontSize: 15 }}>
+                      {z === 'raten' ? 'Monatsraten' : 'Einmalzahlung (50,00 € Nachlass)'}
+                    </span>
+                  </label>
+                ))}
+                <p style={{ color: F.muted, fontSize: 13, margin: '2px 0 0' }}>
+                  So, wie die Eltern es auf dem Papier angekreuzt haben.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button style={knopf} disabled={xLaedt}
+                  onClick={() => document.getElementById('externe-datei')?.click()}>
+                  {xLaedt ? 'wird hochgeladen …' : 'Datei wählen und freischalten'}
+                </button>
+                <button style={knopfKlein} onClick={() => setExternFuer(null)}>abbrechen</button>
+              </div>
+              <input id="externe-datei" type="file" accept="application/pdf,image/png,image/jpeg"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]; e.target.value = '';
+                  if (f) void externHochladen(f);
+                }} />
+              <p style={{ color: F.muted, fontSize: 13, marginTop: 12 }}>
+                PDF, PNG oder JPG, höchstens 4 MB. Ein Handyfoto reicht, solange
+                die Unterschrift gut lesbar ist.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* --------------------------------------------- Wochentermin beenden */}
         {endeFuer && (
           <div style={overlay} onClick={() => setEndeFuer(null)}>
@@ -691,6 +823,43 @@ function monatsEndeVon(iso: string): string {
   const [j, m] = iso.split('-').map(Number);
   const d = new Date(Date.UTC(j, m, 0));
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Eine Zeile in Klartext: Wo steht dieser Vertrag gerade?
+ *
+ * Wichtig ist nicht nur der Zustand, sondern wie lange er schon dauert –
+ * „seit 6 Tagen eingeladen" ist der Hinweis, dass eine Erinnerung fällig wird.
+ */
+function Standzeile({ v, heute }: { v: VertragZeile; heute: string }) {
+  if (v.stand === 'unterschrieben') {
+    const wann = zeitpunkt(v.unterzeichnetAm || v.manuellAktiviertAm);
+    return (
+      <div style={{ color: '#127a5c', fontSize: 13.5, marginTop: 3 }}>
+        {v.manuellAktiviertAm && !v.unterzeichnetAm
+          ? `auf Papier unterschrieben, von dir freigeschaltet am ${wann}`
+          : `im Portal unterschrieben am ${wann}`}
+      </div>
+    );
+  }
+  if (v.stand === 'eingeladen') {
+    const tage = seitTagen(v.eingeladenAm, heute);
+    return (
+      <div style={{ color: '#8a6a20', fontSize: 13.5, marginTop: 3 }}>
+        verschickt am {zeitpunkt(v.eingeladenAm)}
+        {tage !== null && tage > 0 && ` · seit ${tage} ${tage === 1 ? 'Tag' : 'Tagen'} keine Unterschrift`}
+        {v.erinnertAm && ` · erinnert am ${zeitpunkt(v.erinnertAm)}`}
+      </div>
+    );
+  }
+  if (v.stand === 'erstellt') {
+    return (
+      <div style={{ color: F.muted, fontSize: 13.5, marginTop: 3 }}>
+        noch nicht verschickt – die Eltern wissen davon nichts
+      </div>
+    );
+  }
+  return null;
 }
 
 function Zeile({ links, rechts, fett }: { links: string; rechts: string; fett?: boolean }) {

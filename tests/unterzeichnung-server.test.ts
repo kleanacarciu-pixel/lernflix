@@ -62,6 +62,46 @@ describe("Ohne Unterschrift wird nichts aktiviert", () => {
   });
 });
 
+describe("Freischalten von Hand (Papier-Rückfall)", () => {
+  const block = (() => {
+    const start = route.indexOf('case "externAktivieren"');
+    assert.ok(start > 0, "Die Aktion 'externAktivieren' wurde nicht gefunden");
+    const ende = route.indexOf('case "kuendigungVorschau"', start);
+    return route.slice(start, ende);
+  })();
+
+  test("nur Kleana kommt dort hin", () => {
+    // Die Aktion steht hinter der Admin-Pruefung, nicht im oeffentlichen Teil.
+    const adminAb = route.indexOf('if (!prof || prof.role !== "admin")');
+    assert.ok(adminAb > 0);
+    assert.ok(route.indexOf('case "externAktivieren"') > adminAb,
+      "Das Freischalten von Hand darf nicht ohne Anmeldung erreichbar sein");
+  });
+
+  test("die Datei wird geprüft, bevor irgendetwas gespeichert wird", () => {
+    const pruefung = block.indexOf("pruefeExterneUnterschrift(");
+    const speichern = block.indexOf('.update(');
+    assert.ok(pruefung > 0 && speichern > pruefung);
+    assert.match(block, /if \(!datei\.ok\) return bad\(datei\.grund\);/);
+  });
+
+  test("ein bereits unterschriebener Vertrag wird nicht überschrieben", () => {
+    assert.match(block, /istUnterzeichnet\(v\.vertrag\)\) return bad\(/);
+    assert.match(block, /\.is\("manuell_aktiviert_am", null\)/);
+  });
+
+  test("der Vertrag wird aktiv und bekommt seinen Zahlungsplan", () => {
+    assert.match(block, /manuell_aktiviert_am: jetzt/);
+    assert.match(block, /status: "aktiv"/);
+    assert.match(block, /schreibeZahlungsplan\(id\)/);
+  });
+
+  test("eine vorhandene AGB-Zustimmung wird nicht überschrieben", () => {
+    // Sonst stünde bei einem Wechsel vom Portal aufs Papier ein falscher Tag.
+    assert.match(block, /agb_akzeptiert_am: v\.vertrag\.agb_akzeptiert_am \|\| jetzt/);
+  });
+});
+
 describe("Die Buchungssperre hängt an der Unterschrift", () => {
   test("darfBuchen fragt nach unterzeichnet_am", () => {
     const kern = readFileSync("lib/vertrag-kern.ts", "utf8");

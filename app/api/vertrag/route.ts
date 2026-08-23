@@ -26,6 +26,7 @@ import {
 } from "@/lib/vertrag-dokumente";
 import {
   pruefeUnterzeichnung, istUnterzeichnet, PFLICHT_BESTAETIGUNGEN,
+  vertragsstand, pruefeExterneUnterschrift, externerTyp,
 } from "@/lib/unterzeichnung-kern";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
 import { unterschriftBytes, unterschriftAnbieterin } from "@/lib/einstellungen";
@@ -361,8 +362,19 @@ export async function POST(req: Request): Promise<Response> {
             jahresbetragCent: euroZuCent(Number(v.jahresbetrag)),
             zahlweise: v.zahlweise,
             status: v.status,
-            bestaetigt: !!v.agb_akzeptiert_am,
+            bestaetigt: istUnterzeichnet(v),
             kuendigungZum: v.kuendigung_zum,
+            // Stand der Unterzeichnung – erstellt → eingeladen → unterschrieben
+            ...(() => {
+              const s = vertragsstand(v);
+              return { stand: s.stand, standSeit: s.seit };
+            })(),
+            eingeladenAm: v.eingeladen_am ?? null,
+            unterzeichnetAm: v.unterzeichnet_am ?? null,
+            manuellAktiviertAm: v.manuell_aktiviert_am ?? null,
+            erinnertAm: v.erinnert_am ?? null,
+            // Nur ob eine Datei da ist – das Dokument selbst wäre hier zu groß.
+            hatExterneFassung: !!v.externe_unterschrift,
             eltern: {
               name: v.eltern_name ?? "", anschrift: v.eltern_anschrift ?? "",
               email: v.eltern_email ?? "", telefon: v.eltern_telefon ?? "",
@@ -386,6 +398,43 @@ export async function POST(req: Request): Promise<Response> {
         geaendert_am: new Date().toISOString(),
       }).eq("id", id);
       return r.error ? bad(r.error.message, 500) : ok();
+    }
+
+    /**
+     * Rückfall: außerhalb des Portals unterschrieben.
+     *
+     * Manche Eltern drucken lieber aus und unterschreiben auf Papier. Kleana
+     * lädt die Fassung hier hoch und schaltet den Vertrag von Hand frei –
+     * danach gilt er wie ein im Portal unterschriebener: Zahlungsplan läuft,
+     * Buchen ist frei.
+     */
+    case "externAktivieren": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const datei = pruefeExterneUnterschrift(body.datei);
+      if (!datei.ok) return bad(datei.grund);
+
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (istUnterzeichnet(v.vertrag)) return bad("Dieser Vertrag ist bereits unterschrieben.");
+
+      const zahlweise = text(body.zahlweise, 10) === "einmal" ? "einmal" : "raten";
+      const jetzt = new Date().toISOString();
+      const up = await sb.from("vertraege").update({
+        externe_unterschrift: datei.datenUri,
+        manuell_aktiviert_am: jetzt,
+        // Die Unterschrift auf Papier IST die Zustimmung – ohne diesen
+        // Zeitstempel stünde der Vertrag in Bescheinigung und Zahlungsteil
+        // weiterhin als offen.
+        agb_akzeptiert_am: v.vertrag.agb_akzeptiert_am || jetzt,
+        zahlweise,
+        status: "aktiv",
+        jahresbetrag: (v.rechnung.jahresbetragCent / 100).toFixed(2),
+      }).eq("id", id).is("manuell_aktiviert_am", null).select().single();
+      if (up.error || !up.data) return bad("Das ließ sich nicht speichern.", 500);
+
+      await schreibeZahlungsplan(id);
+      return ok({ art: datei.art, kb: Math.round(datei.bytes / 1024) });
     }
 
     // Endabrechnung durchrechnen, ohne etwas zu speichern
@@ -825,6 +874,23 @@ export async function GET(req: Request): Promise<Response> {
   if (!v) return bad("Vertrag nicht gefunden.", 404);
 
   const art = url.searchParams.get("art") || "terminliste";
+
+  // Die hochgeladene, auf Papier unterschriebene Fassung. Sie kann eine PDF
+  // oder ein Foto sein und wird deshalb mit ihrem eigenen Typ ausgeliefert.
+  if (art === "extern") {
+    const typ = externerTyp(v.vertrag.externe_unterschrift);
+    if (!typ) return bad("Für diesen Vertrag ist keine unterschriebene Fassung hinterlegt.", 404);
+    const roh = v.vertrag.externe_unterschrift as string;
+    const bytes = Buffer.from(roh.slice(roh.indexOf(",") + 1), "base64");
+    return new Response(new Uint8Array(bytes), {
+      headers: {
+        "Content-Type": typ.mime,
+        "Content-Disposition": `inline; filename="Vertrag-unterschrieben.${typ.endung}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   let datei: Buffer, name: string;
   if (art === "vertrag") {
     datei = await vertragPdf(v);
