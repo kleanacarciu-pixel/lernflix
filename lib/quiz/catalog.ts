@@ -254,6 +254,7 @@ export const KATALOG: ThemenBaum = {
         "📊 pq-Formel & quadratische Gleichungen",
         "📐 Strahlensätze & Ähnlichkeit",
         "🔢 Potenzen & Potenzgesetze",
+        "📐 Trigonometrie (sin, cos, tan)",
       ],
       10: [
         "📐 Trigonometrie (sin, cos, tan)",

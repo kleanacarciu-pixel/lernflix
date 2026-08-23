@@ -46,6 +46,13 @@ import wurzelnGym8 from "@/lib/quiz/interaktiv/wurzeln-gym8";
 import kreisGym8 from "@/lib/quiz/interaktiv/kreis-gym8";
 import wahrscheinlichkeit2Gym8 from "@/lib/quiz/interaktiv/wahrscheinlichkeit2-gym8";
 
+import pythagorasGym9 from "@/lib/quiz/interaktiv/pythagoras-gym9";
+import quadrFunktionenGym9 from "@/lib/quiz/interaktiv/quadr-funktionen-gym9";
+import pqFormelGym9 from "@/lib/quiz/interaktiv/pq-formel-gym9";
+import strahlensatzGym9 from "@/lib/quiz/interaktiv/strahlensatz-gym9";
+import potenzenGym9 from "@/lib/quiz/interaktiv/potenzen-gym9";
+import trigonometrieGym9 from "@/lib/quiz/interaktiv/trigonometrie-gym9";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -71,6 +78,13 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 8, "Wurzeln & reelle Zahlen")]: wurzelnGym8,
   [themaKey("mathe", "gymnasium", 8, "Kreis: Umfang & Fläche")]: kreisGym8,
   [themaKey("mathe", "gymnasium", 8, "Wahrscheinlichkeit (mehrstufig)")]: wahrscheinlichkeit2Gym8,
+
+  [themaKey("mathe", "gymnasium", 9, "Satz des Pythagoras")]: pythagorasGym9,
+  [themaKey("mathe", "gymnasium", 9, "Quadratische Funktionen")]: quadrFunktionenGym9,
+  [themaKey("mathe", "gymnasium", 9, "pq-Formel & quadratische Gleichungen")]: pqFormelGym9,
+  [themaKey("mathe", "gymnasium", 9, "Strahlensätze & Ähnlichkeit")]: strahlensatzGym9,
+  [themaKey("mathe", "gymnasium", 9, "Potenzen & Potenzgesetze")]: potenzenGym9,
+  [themaKey("mathe", "gymnasium", 9, "Trigonometrie (sin, cos, tan)")]: trigonometrieGym9,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
