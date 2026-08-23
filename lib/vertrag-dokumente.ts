@@ -107,10 +107,14 @@ export async function terminlistePdf(dat: TerminlisteDaten): Promise<Buffer> {
   for (let s = 0; s < spalten; s++) {
     const teil = dat.termine.slice(s * proSpalte, (s + 1) * proSpalte);
     let y = startY;
-    for (const t of teil) {
-      d.text(datumDe(t), RAND + s * breite, y, { width: breite - 8 });
+    teil.forEach((t, i) => {
+      // Durchlaufende Nummer über alle Spalten hinweg – so lässt sich am
+      // Telefon schnell sagen „die 14. Stunde am …".
+      const nr = s * proSpalte + i + 1;
+      d.fillColor(GRAU).text(`${nr}.`, RAND + s * breite, y, { width: 22, align: "right" });
+      d.fillColor(INK).text(datumDe(t), RAND + s * breite + 26, y, { width: breite - 34 });
       y += 15;
-    }
+    });
   }
   d.y = startY + proSpalte * 15 + 12;
 

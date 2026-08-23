@@ -11,7 +11,7 @@ import { datumDe } from "@/lib/schuljahr-kern";
 import type { Schuljahr } from "@/lib/schuljahr";
 import {
   status, faelligeAktionen, zahlungsSperre, terminFindetStatt, pausierungAb,
-  giltAlsBezahlt, bezahltAm,
+  giltAlsBezahlt, bezahltAm, istBankCheckTag,
   type Zahlung as ZahlungKern, type Status,
 } from "@/lib/zahlung-kern";
 import { bankverbindung } from "@/lib/vertrag-dokumente";
@@ -252,12 +252,11 @@ export async function mahnlauf(heute = heuteIso()): Promise<{
   adminHinweis: boolean; erinnerungen: number; pausierungen: number;
 }> {
   const sb = service();
-  const tag = Number(heute.slice(8, 10));
   let erinnerungen = 0, pausierungen = 0;
 
   // Tag 9: Bank-Check-Erinnerung an Kleana – nur wenn es überhaupt Verträge gibt
   let adminHinweis = false;
-  if (tag === 9) {
+  if (istBankCheckTag(heute)) {
     const anz = await sb.from("vertraege").select("id", { count: "exact", head: true }).eq("status", "aktiv");
     if ((anz.count ?? 0) > 0) {
       await vorlageSenden("adminCheck", ADMIN_EMAIL, {});
