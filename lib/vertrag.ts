@@ -31,6 +31,21 @@ export type Vertrag = {
   /** Mahn-Automatik für diesen Vertrag ausgesetzt (Abschnitt 6). */
   mahn_automatik_pausiert?: boolean;
   mahn_notiz?: string | null;
+  /** Erziehungsberechtigte – stehen so im Vertrag (alle optional). */
+  eltern_name?: string | null;
+  eltern_anschrift?: string | null;
+  eltern_email?: string | null;
+  eltern_telefon?: string | null;
+  /** Unterzeichnung im Portal (Abschnitt „Vertragsabschluss“). */
+  eltern_unterschrift?: string | null;
+  unterzeichnet_am?: string | null;
+  agb_bestaetigt_am?: string | null;
+  widerruf_bestaetigt_am?: string | null;
+  eingeladen_am?: string | null;
+  erinnert_am?: string | null;
+  externe_unterschrift?: string | null;
+  manuell_aktiviert_am?: string | null;
+  erstellt_am?: string | null;
 };
 
 export type VertragZeit = {

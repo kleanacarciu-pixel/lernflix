@@ -149,9 +149,19 @@ export async function POST(req: Request): Promise<Response> {
       const betreff = text(body.betreff, 200);
       const inhalt = String(body.text ?? "").slice(0, 5000);
       if (!schluessel || !betreff || !inhalt) return bad("Betreff und Text dürfen nicht leer sein.");
-      const r = await sb.from("mahn_vorlagen")
-        .update({ betreff, text: inhalt, geaendert_am: new Date().toISOString() })
-        .eq("schluessel", schluessel);
+      // Ohne {link} wäre die Einladung nutzlos: Die Eltern bekämen eine
+      // freundliche Nachricht, aber keinen Weg zum Unterschreiben – und es
+      // würde niemandem auffallen. Deshalb hier abfangen.
+      if (["vertragEinladung", "vertragErinnerung"].includes(schluessel) && !inhalt.includes("{link}")) {
+        return bad("In diesem Text muss {link} vorkommen – sonst kommen die Eltern nicht zum Vertrag.");
+      }
+      // Anlegen statt nur ändern: Steht der Text bisher nur im Programm
+      // (Standardvorlage), gäbe es sonst nichts zu ändern und das Speichern
+      // liefe ins Leere.
+      const r = await sb.from("mahn_vorlagen").upsert(
+        { schluessel, betreff, text: inhalt, geaendert_am: new Date().toISOString() },
+        { onConflict: "schluessel" },
+      );
       return r.error ? bad(r.error.message, 500) : ok();
     }
 

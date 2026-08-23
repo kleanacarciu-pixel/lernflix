@@ -43,8 +43,21 @@ async function inspectSlot(date: string, hour: number) {
   };
 }
 
-async function setBalance(id: string, patch: Partial<Pick<Profile, "minus_hours" | "plus_hours" | "makeup_credits">>) {
-  await service().from("profiles").update(patch).eq("user_id", id);
+/**
+ * Stundenkonto schreiben.
+ *
+ * Der Fehler wurde hier frueher verschluckt: Als die Obergrenze im Code auf
+ * vier stieg, die Datenbank aber noch drei erlaubte, waere die vierte
+ * Gutschrift still verloren gegangen – die Schuelerin haette trotzdem
+ * "gutgeschrieben" gelesen. Deshalb wird jetzt gemeldet, ob es geklappt hat.
+ */
+async function setBalance(
+  id: string,
+  patch: Partial<Pick<Profile, "minus_hours" | "plus_hours" | "makeup_credits">>,
+): Promise<boolean> {
+  const { error } = await service().from("profiles").update(patch).eq("user_id", id);
+  if (error) console.error("Stundenkonto konnte nicht geschrieben werden:", error.message, patch);
+  return !error;
 }
 // Einzel-Buchung verrechnen (bei Bestätigung): makeup -> minus -> sonst plus
 // Die Regel selbst steht in lib/stundenkonto-kern.ts und ist dort getestet;
@@ -206,7 +219,7 @@ export async function POST(req: Request): Promise<Response> {
 
         const { gutschrift: credit, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
         await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
-        if (aenderung) await setBalance(user.id, aenderung);
+        const kontoOk = aenderung ? await setBalance(user.id, aenderung) : true;
 
         // Frühwarnung: mit dieser Gutschrift ist nur noch eine frei.
         const danach = { ...prof, ...(aenderung ?? {}) };
@@ -221,7 +234,10 @@ export async function POST(req: Request): Promise<Response> {
         }
 
         after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
-        return ok({ message: absageText });
+        return ok({
+          message: kontoOk ? absageText
+            : absageText + " ACHTUNG: Die Gutschrift konnte nicht gespeichert werden – bitte melde dich kurz bei Anna.",
+        });
       }
       return bad("Hier ist kein eigener Termin.");
     }

@@ -53,6 +53,24 @@ const VORLAGEN_NAMEN: Record<string, string> = {
   erinnerung: 'Letzter Zahltag – an die Eltern (Tag 10)',
   pausierung: 'Unterricht pausiert (Tag 15)',
   dank: 'Zahlung angekommen',
+  minusWarnung: 'Frühwarnung: Minus-Stunden fast voll',
+  terminEnde: 'Ein Wochentermin endet (Familienpreis entfällt)',
+  vertragEinladung: 'Vertrag verschickt – Einladung zum Unterschreiben',
+  vertragErinnerung: 'Erinnerung nach 5 Tagen ohne Unterschrift',
+  vertragUnterschrieben: 'Vertrag unterschrieben – Bestätigung an die Eltern',
+};
+
+// Welche Platzhalter es in welchem Text gibt. Ohne diese Liste müsste Kleana
+// raten – und ein falsch geschriebener Platzhalter fällt erst auf, wenn die
+// E-Mail beim Empfänger als „{name}" ankommt.
+const VORLAGEN_PLATZHALTER: Record<string, string> = {
+  standard: '{name} {betrag} {monat} {iban} {inhaber} {verwendungszweck}',
+  adminCheck: '— keine —',
+  minusWarnung: '{name} {offen} {frei} {grenze}',
+  terminEnde: '{name} {alterTag} {bleibtTag} {endeAm} {abMonat} {satz} {jahresbetrag} {rate}',
+  vertragEinladung: '{name} {schuljahr} {termin} {anzahl} {jahresbetrag} {raten} {rate} {einmal} {link}',
+  vertragErinnerung: '{name} {schuljahr} {tage} {link}',
+  vertragUnterschrieben: '{name} {schuljahr} {termin} {anzahl} {jahresbetrag} {zahlweise} {inhaber} {iban} {verwendungszweck}',
 };
 
 export default function ZahlungenSeite() {
@@ -309,12 +327,21 @@ export default function ZahlungenSeite() {
             <div style={{ ...karte, maxWidth: 680, margin: 0, maxHeight: '86vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
               <h2 style={h2}>E-Mail-Texte</h2>
               <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
-                Platzhalter in geschweiften Klammern werden beim Versand ersetzt:{' '}
-                <code>{'{name} {betrag} {monat} {iban} {inhaber} {verwendungszweck}'}</code>
+                Platzhalter in geschweiften Klammern werden beim Versand ersetzt.
+                Bei jedem Text steht darunter, welche es dort gibt – was nicht
+                aufgeführt ist, bleibt als <code>{'{…}'}</code> in der E-Mail stehen.
               </p>
               {vorlagen.map((v, i) => (
                 <div key={v.schluessel} style={{ borderTop: `1px solid ${F.line}`, paddingTop: 14, marginTop: 14 }}>
                   <b>{VORLAGEN_NAMEN[v.schluessel] || v.schluessel}</b>
+                  <div style={{ color: F.muted, fontSize: 12.5, marginTop: 4 }}>
+                    <code>{VORLAGEN_PLATZHALTER[v.schluessel] || VORLAGEN_PLATZHALTER.standard}</code>
+                    {(v.schluessel === 'vertragEinladung' || v.schluessel === 'vertragErinnerung') && (
+                      <span style={{ color: '#8a6a20' }}>
+                        {' '}· <b>{'{link}'}</b> muss stehen bleiben – ohne ihn kommen die Eltern nicht zum Vertrag.
+                      </span>
+                    )}
+                  </div>
                   <input value={v.betreff} style={{ ...feld, width: '100%', marginTop: 8 }}
                     onChange={(e) => setVorlagen(vorlagen.map((x, j) => j === i ? { ...x, betreff: e.target.value } : x))} />
                   <textarea value={v.text} style={{ ...feld, width: '100%', minHeight: 150, marginTop: 8, fontFamily: 'inherit' }}

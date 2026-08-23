@@ -19,10 +19,18 @@ import {
   ratenNeuVerteilen, monatsErster,
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
-import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
-import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
+import { pruefeVertragToken, bestaetigungsLink, vertragToken } from "@/lib/vertrag-token";
+import {
+  terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung,
+  nachhilfevertragPdf,
+} from "@/lib/vertrag-dokumente";
+import {
+  pruefeUnterzeichnung, istUnterzeichnet, PFLICHT_BESTAETIGUNGEN,
+  vertragsstand, pruefeExterneUnterschrift, externerTyp,
+} from "@/lib/unterzeichnung-kern";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
-import { unterschriftBytes } from "@/lib/einstellungen";
+import { unterschriftBytes, unterschriftAnbieterin } from "@/lib/einstellungen";
+import { ANBIETERIN } from "@/lib/vertrag-pdf-texte";
 import {
   schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
   vorlageSenden, monatName,
@@ -61,13 +69,17 @@ async function vollbild(vertragId: string) {
   const { vertrag, zeiten } = geladen;
 
   const sb = service();
-  const [schuelerRes, sjRes] = await Promise.all([
+  const [schuelerRes, sjRes, schuleRes] = await Promise.all([
     sb.from("profiles").select("user_id,name,email").eq("user_id", vertrag.schueler_id).single(),
     sb.from("schuljahre").select("id,name,erster_schultag,letzter_schultag,aktiv").eq("id", vertrag.schuljahr_id).single(),
+    vertrag.schule_id
+      ? sb.from("schulen").select("name").eq("id", vertrag.schule_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   if (sjRes.error || !sjRes.data) return null;
   const schuljahr = sjRes.data as Schuljahr;
   const schueler = (schuelerRes.data || { name: "Schüler/in", email: null }) as { name: string; email: string | null };
+  const schule = ((schuleRes.data as { name: string } | null) ?? null)?.name ?? null;
 
   const rechnung = await rechneVertrag({
     schuljahr,
@@ -79,7 +91,89 @@ async function vollbild(vertragId: string) {
     schuleId: vertrag.schule_id,
   });
 
-  return { vertrag, zeiten, schueler, schuljahr, rechnung };
+  return { vertrag, zeiten, schueler, schuljahr, rechnung, schule };
+}
+
+type Vollbild = NonNullable<Awaited<ReturnType<typeof vollbild>>>;
+
+/**
+ * Alles, was die Vertragsseite im Portal anzeigt.
+ *
+ * Bewusst dieselbe Zusammenstellung für den Link aus der E-Mail und für die
+ * angemeldete Familie – so sehen beide Wege denselben Vertrag.
+ */
+async function vertragsansicht(v: Vollbild) {
+  return {
+    schuelerName: v.schueler.name,
+    schuljahr: v.schuljahr.name,
+    zeiten: v.zeiten.filter((z) => !z.bis_datum).map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+    zeitText: zeitText(v.zeiten.filter((z) => !z.bis_datum)),
+    termine: v.rechnung.alleTermine,
+    posten: v.rechnung.posten,
+    stundensatzCent: euroZuCent(Number(v.vertrag.stundensatz)),
+    jahresbetragCent: v.rechnung.jahresbetragCent,
+    raten: v.rechnung.raten,
+    einmalCent: v.rechnung.einmalCent,
+    zahlweise: v.vertrag.zahlweise,
+    status: v.vertrag.status,
+    unterzeichnetAm: v.vertrag.unterzeichnet_am ?? null,
+    schonUnterschrieben: istUnterzeichnet(v.vertrag),
+    anbieter: ANBIETERIN.zeile,
+    // Ehrlich statt fest verdrahtet: ohne hinterlegtes Bild bleibt die Zeile
+    // im Vertrag leer, und das soll die Seite auch sagen.
+    anbieterinHatUnterschrieben: !!(await unterschriftAnbieterin()),
+    eltern: {
+      name: v.vertrag.eltern_name ?? "", anschrift: v.vertrag.eltern_anschrift ?? "",
+      email: v.vertrag.eltern_email ?? "", telefon: v.vertrag.eltern_telefon ?? "",
+    },
+    kind: { name: v.schueler.name, schule: v.schule },
+    bestaetigungen: PFLICHT_BESTAETIGUNGEN,
+    bank: bankverbindung(),
+  };
+}
+
+/** Rohe Bytes aus einem Daten-URI – so braucht pdfkit das Bild. */
+function bildBytes(datenUri: string | null | undefined): Buffer | null {
+  if (!datenUri) return null;
+  const komma = datenUri.indexOf(",");
+  if (komma < 0) return null;
+  try { return Buffer.from(datenUri.slice(komma + 1), "base64"); } catch { return null; }
+}
+
+/**
+ * Der eigentliche Nachhilfevertrag als PDF.
+ *
+ * Alles, was darin steht, kommt aus der Datenbank – auch die Zeitstempel der
+ * Unterschrift. Dieselben Daten ergeben deshalb immer dieselbe Datei: das
+ * Archiv ist der Vertrag selbst, es braucht keine zusätzlich abgelegte Kopie.
+ */
+async function vertragPdf(v: Vollbild): Promise<Buffer> {
+  const { vertrag, zeiten, schueler, schuljahr, rechnung } = v;
+  const offen = zeiten.filter((z) => !z.bis_datum);
+  return nachhilfevertragPdf({
+    schuljahrName: schuljahr.name,
+    eltern: {
+      name: vertrag.eltern_name, anschrift: vertrag.eltern_anschrift,
+      email: vertrag.eltern_email, telefon: vertrag.eltern_telefon,
+    },
+    kind: { name: schueler.name, schule: v.schule },
+    zeiten: (offen.length ? offen : zeiten).map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+    anzahlTermine: rechnung.alleTermine.length,
+    // Immer der erste tatsächliche Termin – bei einem Quereinstieg ist er
+    // die wichtigste Angabe des Vertrags, sonst schadet er nicht.
+    abDatum: rechnung.alleTermine[0] ?? null,
+    stundensatzCent: euroZuCent(Number(vertrag.stundensatz)),
+    jahresbetragCent: rechnung.jahresbetragCent,
+    zahlweise: vertrag.zahlweise,
+    raten: rechnung.raten,
+    einmalCent: rechnung.einmalCent,
+    agbBestaetigtAm: vertrag.agb_bestaetigt_am ?? vertrag.agb_akzeptiert_am ?? null,
+    widerrufBestaetigtAm: vertrag.widerruf_bestaetigt_am ?? null,
+    unterschriftAnbieterin: await unterschriftBytes(),
+    unterschriftEltern: bildBytes(vertrag.eltern_unterschrift),
+    unterzeichnetAm: vertrag.unterzeichnet_am ?? null,
+    erstelltAm: vertrag.erstellt_am ?? null,
+  });
 }
 
 /** Die drei PDF-Anhänge der Bestätigungs-E-Mail. */
@@ -109,6 +203,30 @@ async function anhaenge(v: NonNullable<Awaited<ReturnType<typeof vollbild>>>): P
   ];
 }
 
+/**
+ * Die drei Anhänge nach der Unterzeichnung: der unterschriebene Vertrag,
+ * die Terminliste und die AGB. Die Bankverbindung steht im Text der E-Mail,
+ * damit die Eltern zum Überweisen keinen Anhang öffnen müssen.
+ */
+async function unterschriftAnhaenge(v: Vollbild): Promise<MailAnhang[]> {
+  const { zeiten, schueler, schuljahr, rechnung } = v;
+  const [vertragDatei, liste, agb] = await Promise.all([
+    vertragPdf(v),
+    terminlistePdf({
+      schuelerName: schueler.name, schuljahrName: schuljahr.name,
+      zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+      termine: rechnung.alleTermine,
+    }),
+    textPdf("Allgemeine Geschäftsbedingungen", `Schuljahresvertrag · Stand ${AGB_STAND}`, AGB_VERTRAG),
+  ]);
+  const jahr = schuljahr.name.replace("/", "-");
+  return [
+    { filename: `Nachhilfevertrag-${jahr}.pdf`, content: vertragDatei },
+    { filename: `Terminliste-${jahr}.pdf`, content: liste },
+    { filename: `AGB-${jahr}.pdf`, content: agb },
+  ];
+}
+
 export async function POST(req: Request): Promise<Response> {
   let body: Record<string, unknown> = {};
   try { const r = await req.json(); if (r && typeof r === "object") body = r as Record<string, unknown>; } catch { /* {} */ }
@@ -116,7 +234,7 @@ export async function POST(req: Request): Promise<Response> {
   const sb = service();
 
   // ---------------------------------------------------------------- öffentlich
-  if (action === "laden" || action === "bestaetigen") {
+  if (action === "laden" || action === "unterzeichnen") {
     const pruef = pruefeVertragToken(text(body.vertragToken, 500));
     if (!pruef.ok) {
       return bad(pruef.grund === "abgelaufen"
@@ -126,68 +244,55 @@ export async function POST(req: Request): Promise<Response> {
     const v = await vollbild(pruef.vertragId);
     if (!v) return bad("Vertrag nicht gefunden.", 404);
 
-    if (action === "laden") {
-      return ok({
-        schuelerName: v.schueler.name,
-        schuljahr: v.schuljahr.name,
-        zeiten: v.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
-        zeitText: zeitText(v.zeiten),
-        termine: v.rechnung.alleTermine,
-        posten: v.rechnung.posten,
-        jahresbetragCent: v.rechnung.jahresbetragCent,
-        raten: v.rechnung.raten,
-        einmalCent: v.rechnung.einmalCent,
-        status: v.vertrag.status,
-        bereitsBestaetigt: !!v.vertrag.agb_akzeptiert_am,
-        bank: bankverbindung(),
-      });
-    }
+    if (action === "laden") return ok(await vertragsansicht(v));
 
-    // --- bestaetigen ---
-    if (v.vertrag.agb_akzeptiert_am) return ok({ schonBestaetigt: true });
+    // --- unterzeichnen ---
+    if (istUnterzeichnet(v.vertrag)) return ok({ schonUnterschrieben: true });
 
     const zahlweise = text(body.zahlweise, 10) === "einmal" ? "einmal" : "raten";
-    // Alle drei Bestätigungen sind Pflicht – serverseitig geprüft, nicht nur im Formular.
-    if (body.agb !== true || body.widerruf !== true || body.beginn !== true) {
-      return bad("Bitte bestätige alle drei Punkte.");
-    }
+    // Beide Häkchen und ein echtes Unterschriftsbild sind Pflicht – geprüft
+    // wird das hier auf dem Server, nicht nur im Formular.
+    const pruefung = pruefeUnterzeichnung({
+      agb: body.agb, widerruf: body.widerruf, unterschrift: body.unterschrift,
+    });
+    if (!pruefung.ok) return bad(pruefung.grund);
 
     const jetzt = new Date().toISOString();
     const up = await sb.from("vertraege").update({
+      eltern_unterschrift: pruefung.datenUri,
+      unterzeichnet_am: jetzt,
+      agb_bestaetigt_am: jetzt,
+      widerruf_bestaetigt_am: jetzt,
+      // Bleibt gesetzt, weil Bescheinigung und Zahlungsteil damit rechnen.
       agb_akzeptiert_am: jetzt,
       zahlweise,
       status: "aktiv",
       jahresbetrag: (v.rechnung.jahresbetragCent / 100).toFixed(2),
-    }).eq("id", v.vertrag.id).is("agb_akzeptiert_am", null).select().single();
-    if (up.error || !up.data) return bad("Die Bestätigung ließ sich nicht speichern.", 500);
+    }).eq("id", v.vertrag.id).is("unterzeichnet_am", null).select().single();
+    if (up.error || !up.data) return bad("Die Unterschrift ließ sich nicht speichern.", 500);
 
     // Zahlungsplan anlegen – ab jetzt taucht der Vertrag in der Zahlungsübersicht auf.
     await schreibeZahlungsplan(v.vertrag.id);
 
-    // Frisch laden, damit Zahlweise und Zeitstempel in den PDFs stehen
+    // Frisch laden, damit Unterschrift, Zahlweise und Zeitstempel in der PDF stehen
     const neu = await vollbild(v.vertrag.id);
     if (neu && v.schueler.email) {
-      const dateien = await anhaenge(neu);
-      const betrag = zahlweise === "einmal"
-        ? `Einmalzahlung: <b>${centFormat(neu.rechnung.einmalCent)}</b>`
-        : `${neu.rechnung.raten.length} Monatsraten à <b>${centFormat(neu.rechnung.raten[0]?.betragCent ?? 0)}</b>`;
-      await sendMail(
-        v.schueler.email,
-        `Vertrag bestätigt – Schuljahr ${v.schuljahr.name}`,
-        `<p>Hallo,</p>
-         <p>danke – der Vertrag für <b>${v.schueler.name}</b> ist bestätigt.</p>
-         <p><b>Termin:</b> ${zeitText(v.zeiten)}<br>
-            <b>Jahresbetrag:</b> ${centFormat(neu.rechnung.jahresbetragCent)}<br>
-            ${betrag}</p>
-         <p>Im Anhang findest du die AGB, die Terminliste für das ganze Schuljahr und die
-            Vertragsbestätigung mit den Überweisungsdaten. Die Vertragsbestätigung kannst du
-            als Jahresbeleg aufbewahren.</p>
-         <p>Liebe Grüße<br>Anna</p>`,
-        undefined,
-        { anhaenge: dateien, kopieAn: ADMIN_EMAIL },
-      );
+      const bank = bankverbindung();
+      await vorlageSenden("vertragUnterschrieben", v.schueler.email, {
+        name: v.schueler.name,
+        schuljahr: v.schuljahr.name,
+        termin: zeitText(v.zeiten),
+        anzahl: String(neu.rechnung.alleTermine.length),
+        jahresbetrag: centFormat(neu.rechnung.jahresbetragCent),
+        zahlweise: zahlweise === "einmal"
+          ? `Einmalzahlung von ${centFormat(neu.rechnung.einmalCent)}, fällig innerhalb von 14 Tagen`
+          : `${neu.rechnung.raten.length} Monatsraten à ${centFormat(neu.rechnung.raten[0]?.betragCent ?? 0)}, jeweils 1.–10. des Monats`,
+        inhaber: bank.inhaber,
+        iban: bank.iban,
+        verwendungszweck: `Nachhilfe ${v.schueler.name} ${v.schuljahr.name}`,
+      }, await unterschriftAnhaenge(neu));
     }
-    return ok({ bestaetigt: true });
+    return ok({ unterschrieben: true });
   }
 
   // ------------------------------------------- eigener Vertrag (angemeldet)
@@ -206,7 +311,11 @@ export async function POST(req: Request): Promise<Response> {
         jahresbetragCent: v.rechnung.jahresbetragCent,
         zahlweise: v.vertrag.zahlweise, raten: v.rechnung.raten,
         einmalCent: v.rechnung.einmalCent,
-        bestaetigt: !!v.vertrag.agb_akzeptiert_am,
+        bestaetigt: istUnterzeichnet(v.vertrag),
+        unterzeichnetAm: v.vertrag.unterzeichnet_am ?? null,
+        // Der Weg zur Unterschrift, auch ohne die E-Mail: Wer angemeldet ist,
+        // bekommt hier einen frischen Link zur eigenen Vertragsseite.
+        vertragLink: istUnterzeichnet(v.vertrag) ? null : `/vertrag/${vertragToken(v.vertrag.id)}`,
       },
     });
   }
@@ -253,13 +362,79 @@ export async function POST(req: Request): Promise<Response> {
             jahresbetragCent: euroZuCent(Number(v.jahresbetrag)),
             zahlweise: v.zahlweise,
             status: v.status,
-            bestaetigt: !!v.agb_akzeptiert_am,
+            bestaetigt: istUnterzeichnet(v),
             kuendigungZum: v.kuendigung_zum,
+            // Stand der Unterzeichnung – erstellt → eingeladen → unterschrieben
+            ...(() => {
+              const s = vertragsstand(v);
+              return { stand: s.stand, standSeit: s.seit };
+            })(),
+            eingeladenAm: v.eingeladen_am ?? null,
+            unterzeichnetAm: v.unterzeichnet_am ?? null,
+            manuellAktiviertAm: v.manuell_aktiviert_am ?? null,
+            erinnertAm: v.erinnert_am ?? null,
+            // Nur ob eine Datei da ist – das Dokument selbst wäre hier zu groß.
+            hatExterneFassung: !!v.externe_unterschrift,
+            eltern: {
+              name: v.eltern_name ?? "", anschrift: v.eltern_anschrift ?? "",
+              email: v.eltern_email ?? "", telefon: v.eltern_telefon ?? "",
+            },
           };
         }),
         heute: heuteIso(),
         monatsEndeHeute: monatsEnde(heuteIso()),
       });
+    }
+
+    // Daten der Erziehungsberechtigten nachtragen oder ändern
+    case "elternSpeichern": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const r = await sb.from("vertraege").update({
+        eltern_name: text(body.eltern_name, 120) || null,
+        eltern_anschrift: text(body.eltern_anschrift, 200) || null,
+        eltern_email: text(body.eltern_email, 160) || null,
+        eltern_telefon: text(body.eltern_telefon, 60) || null,
+        geaendert_am: new Date().toISOString(),
+      }).eq("id", id);
+      return r.error ? bad(r.error.message, 500) : ok();
+    }
+
+    /**
+     * Rückfall: außerhalb des Portals unterschrieben.
+     *
+     * Manche Eltern drucken lieber aus und unterschreiben auf Papier. Kleana
+     * lädt die Fassung hier hoch und schaltet den Vertrag von Hand frei –
+     * danach gilt er wie ein im Portal unterschriebener: Zahlungsplan läuft,
+     * Buchen ist frei.
+     */
+    case "externAktivieren": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const datei = pruefeExterneUnterschrift(body.datei);
+      if (!datei.ok) return bad(datei.grund);
+
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (istUnterzeichnet(v.vertrag)) return bad("Dieser Vertrag ist bereits unterschrieben.");
+
+      const zahlweise = text(body.zahlweise, 10) === "einmal" ? "einmal" : "raten";
+      const jetzt = new Date().toISOString();
+      const up = await sb.from("vertraege").update({
+        externe_unterschrift: datei.datenUri,
+        manuell_aktiviert_am: jetzt,
+        // Die Unterschrift auf Papier IST die Zustimmung – ohne diesen
+        // Zeitstempel stünde der Vertrag in Bescheinigung und Zahlungsteil
+        // weiterhin als offen.
+        agb_akzeptiert_am: v.vertrag.agb_akzeptiert_am || jetzt,
+        zahlweise,
+        status: "aktiv",
+        jahresbetrag: (v.rechnung.jahresbetragCent / 100).toFixed(2),
+      }).eq("id", id).is("manuell_aktiviert_am", null).select().single();
+      if (up.error || !up.data) return bad("Das ließ sich nicht speichern.", 500);
+
+      await schreibeZahlungsplan(id);
+      return ok({ art: datei.art, kb: Math.round(datei.bytes / 1024) });
     }
 
     // Endabrechnung durchrechnen, ohne etwas zu speichern
@@ -374,6 +549,11 @@ export async function POST(req: Request): Promise<Response> {
 
       const vRes = await sb.from("vertraege").insert({
         schueler_id: schuelerId, schuljahr_id: sj.id, schule_id: text(body.schule_id, 40) || null,
+        // Erziehungsberechtigte – stehen so im Vertrag. Alle optional.
+        eltern_name: text(body.eltern_name, 120) || null,
+        eltern_anschrift: text(body.eltern_anschrift, 200) || null,
+        eltern_email: text(body.eltern_email, 160) || null,
+        eltern_telefon: text(body.eltern_telefon, 60) || null,
         stundensatz: (satzCent / 100).toFixed(2),
         stundensatz_zweittermin: (zweitCent / 100).toFixed(2),
         zweites_kind: body.zweites_kind === true,
@@ -612,43 +792,41 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   const link = bestaetigungsLink(vertragId, baseUrl);
   const rate = v.rechnung.raten[0]?.betragCent ?? 0;
 
-  const ergebnis = await sendMail(
-    v.schueler.email,
-    `Dein Vertragsangebot für das Schuljahr ${v.schuljahr.name}`,
-    `<p>Hallo,</p>
-     <p>hier ist das Angebot für <b>${v.schueler.name}</b> im Schuljahr ${v.schuljahr.name}.</p>
-     <p><b>Fester Termin:</b> ${zeitText(v.zeiten)}<br>
-        <b>Termine im Schuljahr:</b> ${v.rechnung.alleTermine.length}<br>
-        <b>Jahresbetrag:</b> ${centFormat(v.rechnung.jahresbetragCent)}</p>
-     <p>Du kannst wählen:<br>
-        • <b>${v.rechnung.raten.length} Monatsraten</b> à ${centFormat(rate)} (jeweils 1.–10. des Monats)<br>
-        • <b>Einmalzahlung ${centFormat(v.rechnung.einmalCent)}</b> (50,00 € Nachlass)</p>
-     <p style="margin:22px 0">
-       <a href="${link}" style="background:#2BB3C0;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600">
-         Vertrag ansehen und bestätigen
-       </a>
-     </p>
-     <p style="color:#5f574f;font-size:14px">Der Link ist 14 Tage gültig. Dort siehst du auch alle
-        Termine des Schuljahres im Überblick.</p>
-     <p>Liebe Grüße<br>Anna</p>`,
-  );
+  // Text und Betreff kommen aus der Vorlage – änderbar unter
+  // „Zahlungen → E-Mail-Vorlagen", ohne dass jemand Programmcode anfasst.
+  // Ausdrücklich OHNE Kopie an die Admin-Adresse: siehe der Hinweis oben.
+  const ergebnis = await vorlageSenden("vertragEinladung", v.schueler.email, {
+    name: v.schueler.name,
+    schuljahr: v.schuljahr.name,
+    termin: zeitText(v.zeiten),
+    anzahl: String(v.rechnung.alleTermine.length),
+    jahresbetrag: centFormat(v.rechnung.jahresbetragCent),
+    raten: String(v.rechnung.raten.length),
+    rate: centFormat(rate),
+    einmal: centFormat(v.rechnung.einmalCent),
+    link,
+  }, undefined, { kopieAnAdmin: false });
 
   // Getrennte Nachricht an Kleana – bewusst OHNE Bestätigungslink.
   if (ergebnis.ok) {
+    // Zeitpunkt der Einladung festhalten: daran hängt später die Erinnerung
+    // und die Übersicht „eingeladen am".
+    await service().from("vertraege")
+      .update({ eingeladen_am: new Date().toISOString() }).eq("id", vertragId);
     await sendMail(
       ADMIN_EMAIL,
-      `Angebot verschickt: ${v.schueler.name}`,
-      `<p>Das Vertragsangebot für <b>${v.schueler.name}</b> ist raus.</p>
+      `Vertrag verschickt: ${v.schueler.name}`,
+      `<p>Der Vertrag für <b>${v.schueler.name}</b> ist zur Unterschrift raus.</p>
        <p><b>An:</b> ${v.schueler.email}<br>
           <b>Termin:</b> ${zeitText(v.zeiten)}<br>
           <b>Termine im Schuljahr:</b> ${v.rechnung.alleTermine.length}<br>
           <b>Jahresbetrag:</b> ${centFormat(v.rechnung.jahresbetragCent)}<br>
           <b>Raten:</b> ${v.rechnung.raten.length} × ${centFormat(rate)}</p>
        <p style="color:#5f574f;font-size:14px">
-         Der Bestätigungslink steht bewusst nicht in dieser Nachricht – die AGB
-         sollen die Eltern selbst bestätigen. Unter
+         Der Unterschriftslink steht bewusst nicht in dieser Nachricht – die
+         Eltern sollen selbst unterschreiben. Unter
          <a href="${baseUrl}/vertraege">Verträge</a> siehst du, sobald das
-         passiert ist; dort kannst du das Angebot auch erneut verschicken.
+         passiert ist; dort kannst du den Vertrag auch erneut verschicken.
        </p>`,
     );
   }
@@ -688,8 +866,28 @@ export async function GET(req: Request): Promise<Response> {
   if (!v) return bad("Vertrag nicht gefunden.", 404);
 
   const art = url.searchParams.get("art") || "terminliste";
+
+  // Die hochgeladene, auf Papier unterschriebene Fassung. Sie kann eine PDF
+  // oder ein Foto sein und wird deshalb mit ihrem eigenen Typ ausgeliefert.
+  if (art === "extern") {
+    const typ = externerTyp(v.vertrag.externe_unterschrift);
+    if (!typ) return bad("Für diesen Vertrag ist keine unterschriebene Fassung hinterlegt.", 404);
+    const roh = v.vertrag.externe_unterschrift as string;
+    const bytes = Buffer.from(roh.slice(roh.indexOf(",") + 1), "base64");
+    return new Response(new Uint8Array(bytes), {
+      headers: {
+        "Content-Type": typ.mime,
+        "Content-Disposition": `inline; filename="Vertrag-unterschrieben.${typ.endung}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   let datei: Buffer, name: string;
-  if (art === "agb") {
+  if (art === "vertrag") {
+    datei = await vertragPdf(v);
+    name = `Nachhilfevertrag-${v.schuljahr.name.replace("/", "-")}.pdf`;
+  } else if (art === "agb") {
     datei = await textPdf("Allgemeine Geschäftsbedingungen", `Schuljahresvertrag · Stand ${AGB_STAND}`, AGB_VERTRAG);
     name = "AGB.pdf";
   } else if (art === "widerruf") {

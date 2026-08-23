@@ -229,23 +229,39 @@ describe("Raten nach Vertragsänderung (Vorbereitung Abschnitt 5)", () => {
   });
 });
 
-describe("Buchungssperre ohne AGB-Bestätigung (Abschnitt 4)", () => {
+describe("Buchungssperre ohne Unterschrift (Abschnitt 4)", () => {
   test("ohne Vertrag darf gebucht werden (Probestunde bleibt möglich)", () => {
     assert.equal(darfBuchen(null).erlaubt, true);
   });
 
-  test("angebotener Vertrag ohne Bestätigung sperrt die Buchung", () => {
+  test("angebotener Vertrag ohne Unterschrift sperrt die Buchung", () => {
     const r = darfBuchen({ status: "angeboten", agb_akzeptiert_am: null });
     assert.equal(r.erlaubt, false);
-    assert.match(r.grund || "", /AGB/);
+    assert.match(r.grund || "", /unterschreib/i);
   });
 
-  test("aktiver Vertrag ohne Bestätigung sperrt ebenfalls", () => {
+  test("aktiver Vertrag ohne Unterschrift sperrt ebenfalls", () => {
     assert.equal(darfBuchen({ status: "aktiv", agb_akzeptiert_am: null }).erlaubt, false);
   });
 
-  test("nach der Bestätigung ist die Buchung frei", () => {
-    assert.equal(darfBuchen({ status: "aktiv", agb_akzeptiert_am: "2026-09-01T10:00:00Z" }).erlaubt, true);
+  test("AGB-Zustimmung allein genügt nicht mehr", () => {
+    // Vor der Unterzeichnung im Portal reichte dieser Zeitstempel aus.
+    // Jetzt zählt die Unterschrift – sonst wäre die harte Sperre umgehbar.
+    assert.equal(darfBuchen({ status: "aktiv", agb_akzeptiert_am: "2026-09-01T10:00:00Z" }).erlaubt, false);
+  });
+
+  test("nach der Unterschrift im Portal ist die Buchung frei", () => {
+    assert.equal(darfBuchen({
+      status: "aktiv", agb_akzeptiert_am: "2026-09-01T10:00:00Z",
+      unterzeichnet_am: "2026-09-01T10:00:00Z",
+    }).erlaubt, true);
+  });
+
+  test("auch die Freischaltung von Hand gibt die Buchung frei", () => {
+    assert.equal(darfBuchen({
+      status: "aktiv", agb_akzeptiert_am: null,
+      manuell_aktiviert_am: "2026-09-02T08:00:00Z",
+    }).erlaubt, true);
   });
 
   test("beendeter oder gekündigter Vertrag sperrt nicht", () => {

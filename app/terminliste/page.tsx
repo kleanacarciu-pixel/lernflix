@@ -25,6 +25,9 @@ type Vertragsdaten = {
   termine: string[]; jahresbetragCent: number;
   zahlweise: 'raten' | 'einmal'; raten: Rate[]; einmalCent: number;
   bestaetigt: boolean;
+  unterzeichnetAm: string | null;
+  /** Weg zur Unterschrift, solange der Vertrag noch offen ist. */
+  vertragLink: string | null;
 };
 
 const eur = (c: number) => (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
@@ -128,6 +131,25 @@ export default function TerminlisteSeite() {
       <h1 style={h1}>Terminliste {daten.schuljahr}</h1>
       <p style={{ color: F.soft, marginTop: 0 }}>{daten.schuelerName} · {daten.zeitText}</p>
 
+      {!daten.bestaetigt && daten.vertragLink && (
+        <div style={{
+          border: `1px solid ${F.teal}`, background: 'rgba(43,179,192,.08)',
+          borderRadius: 12, padding: '14px 16px', margin: '14px 0',
+        }}>
+          <b>Der Vertrag ist noch nicht unterschrieben</b>
+          <p style={{ margin: '6px 0 10px', fontSize: 14, color: F.soft }}>
+            Solange er offen ist, lassen sich keine Stunden buchen. Das dauert nur
+            eine Minute – unterschrieben wird direkt auf der Seite.
+          </p>
+          <a href={daten.vertragLink} style={{
+            display: 'inline-block', background: F.teal, color: '#fff', textDecoration: 'none',
+            fontWeight: 700, padding: '10px 18px', borderRadius: 10, fontSize: 15,
+          }}>
+            Vertrag ansehen und unterschreiben
+          </a>
+        </div>
+      )}
+
       {sperre && (
         <div style={{
           border: '1px solid rgba(161,42,42,.35)', background: 'rgba(161,42,42,.08)',
@@ -224,6 +246,9 @@ export default function TerminlisteSeite() {
       <section style={karte}>
         <h2 style={h2}>Dokumente</h2>
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+          {daten.bestaetigt && (
+            <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=vertrag`} target="_blank" rel="noopener">Vertrag (PDF)</a>
+          )}
           <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=terminliste`} target="_blank" rel="noopener">Terminliste (PDF)</a>
           {daten.bestaetigt && (
             <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=bestaetigung`} target="_blank" rel="noopener">Vertragsbestätigung (PDF)</a>
