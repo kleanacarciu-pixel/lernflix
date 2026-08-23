@@ -53,6 +53,13 @@ import strahlensatzGym9 from "@/lib/quiz/interaktiv/strahlensatz-gym9";
 import potenzenGym9 from "@/lib/quiz/interaktiv/potenzen-gym9";
 import trigonometrieGym9 from "@/lib/quiz/interaktiv/trigonometrie-gym9";
 
+import exponentialGym10 from "@/lib/quiz/interaktiv/exponential-gym10";
+import logarithmenGym10 from "@/lib/quiz/interaktiv/logarithmen-gym10";
+import wachstumGym10 from "@/lib/quiz/interaktiv/wachstum-gym10";
+import koerperGym10 from "@/lib/quiz/interaktiv/koerper-gym10";
+import trigSeitenGym10 from "@/lib/quiz/interaktiv/trig-seiten-gym10";
+import stochastikGym10 from "@/lib/quiz/interaktiv/stochastik-gym10";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -85,6 +92,13 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 9, "Strahlensätze & Ähnlichkeit")]: strahlensatzGym9,
   [themaKey("mathe", "gymnasium", 9, "Potenzen & Potenzgesetze")]: potenzenGym9,
   [themaKey("mathe", "gymnasium", 9, "Trigonometrie (sin, cos, tan)")]: trigonometrieGym9,
+
+  [themaKey("mathe", "gymnasium", 10, "Exponentialfunktionen")]: exponentialGym10,
+  [themaKey("mathe", "gymnasium", 10, "Logarithmen")]: logarithmenGym10,
+  [themaKey("mathe", "gymnasium", 10, "Wachstum & Zerfall")]: wachstumGym10,
+  [themaKey("mathe", "gymnasium", 10, "Körper: Pyramide, Kegel, Kugel")]: koerperGym10,
+  [themaKey("mathe", "gymnasium", 10, "Trigonometrie: Seiten & Winkel")]: trigSeitenGym10,
+  [themaKey("mathe", "gymnasium", 10, "Stochastik")]: stochastikGym10,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,

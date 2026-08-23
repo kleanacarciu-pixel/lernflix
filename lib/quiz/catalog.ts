@@ -257,10 +257,11 @@ export const KATALOG: ThemenBaum = {
         "📐 Trigonometrie (sin, cos, tan)",
       ],
       10: [
-        "📐 Trigonometrie (sin, cos, tan)",
         "📈 Exponentialfunktionen",
         "📉 Logarithmen",
-        "🌐 Körper: Kugel, Kegel, Pyramide",
+        "📊 Wachstum & Zerfall",
+        "🌐 Körper: Pyramide, Kegel, Kugel",
+        "📐 Trigonometrie: Seiten & Winkel",
         "🎲 Stochastik",
       ],
       11: [
