@@ -107,10 +107,14 @@ export async function terminlistePdf(dat: TerminlisteDaten): Promise<Buffer> {
   for (let s = 0; s < spalten; s++) {
     const teil = dat.termine.slice(s * proSpalte, (s + 1) * proSpalte);
     let y = startY;
-    for (const t of teil) {
-      d.text(datumDe(t), RAND + s * breite, y, { width: breite - 8 });
+    teil.forEach((t, i) => {
+      // Durchlaufende Nummer über alle Spalten hinweg – so lässt sich am
+      // Telefon schnell sagen „die 14. Stunde am …".
+      const nr = s * proSpalte + i + 1;
+      d.fillColor(GRAU).text(`${nr}.`, RAND + s * breite, y, { width: 22, align: "right" });
+      d.fillColor(INK).text(datumDe(t), RAND + s * breite + 26, y, { width: breite - 34 });
       y += 15;
-    }
+    });
   }
   d.y = startY + proSpalte * 15 + 12;
 
@@ -123,7 +127,7 @@ export type VertragsbestaetigungDaten = {
   schuelerName: string;
   schuljahrName: string;
   zeiten: { wochentag: number; uhrzeit?: string }[];
-  posten: { wochentag: number; anzahl: number; satzCent: number }[];
+  posten: { wochentag: number; anzahl: number; satzCent: number; ermaessigt?: boolean }[];
   jahresbetragCent: number;
   zahlweise: "raten" | "einmal";
   raten: { monat: string; betragCent: number }[];
@@ -147,7 +151,8 @@ export async function vertragsbestaetigungPdf(dat: VertragsbestaetigungDaten): P
   d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Jahresbetrag");
   d.moveDown(0.3);
   for (const p of dat.posten) {
-    zeile(d, `${WOCHENTAGE[p.wochentag]}: ${p.anzahl} Termine × ${centFormat(p.satzCent)}`,
+    zeile(d, `${WOCHENTAGE[p.wochentag]}: ${p.anzahl} Termine × ${centFormat(p.satzCent)}`
+      + (p.ermaessigt ? " (Familienpreis)" : ""),
       centFormat(p.anzahl * p.satzCent));
   }
   zeile(d, "Jahresbetrag gesamt", centFormat(dat.jahresbetragCent), true);

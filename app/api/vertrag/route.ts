@@ -16,13 +16,16 @@ import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
 import {
   euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
-  ratenNeuVerteilen,
+  ratenNeuVerteilen, monatsErster,
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
 import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
-import { schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso } from "@/lib/zahlung";
+import {
+  schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
+  vorlageSenden, monatName,
+} from "@/lib/zahlung";
 import {
   abrechnungsbild, abrechnungsText, kuendigen, kuendigungZuruecknehmen,
   alsBeendetMarkieren, monatsEnde, pruefeKuendigung,
@@ -314,16 +317,24 @@ export async function POST(req: Request): Promise<Response> {
       const zweitCent = body.stundensatz_zweittermin != null
         ? euroZuCent(Number(body.stundensatz_zweittermin))
         : standardZweitsatzCent(satzCent);
-      const beginn = text(body.vertragsbeginn, 10) || sj.erster_schultag.slice(0, 8) + "01";
+      // Die erste Stunde darf an jedem Tag liegen; die Raten laufen ab dem
+      // Monat, in dem sie liegt.
+      const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10)
+        || sj.erster_schultag.slice(0, 10);
+      const beginn = monatsErster(start);
 
       const r = await rechneVertrag({
-        schuljahr: sj, zeiten, stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
+        schuljahr: sj,
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
       });
       return ok({
         schuljahr: sj.name, posten: r.posten, jahresbetragCent: r.jahresbetragCent,
         raten: r.raten, einmalCent: r.einmalCent, anzahlTermine: r.alleTermine.length,
+        unterrichtsbeginn: start, vertragsbeginn: beginn,
+        ersterTermin: r.alleTermine[0] ?? null,
       });
     }
 
@@ -341,14 +352,23 @@ export async function POST(req: Request): Promise<Response> {
       const zweitCent = body.stundensatz_zweittermin != null
         ? euroZuCent(Number(body.stundensatz_zweittermin))
         : standardZweitsatzCent(satzCent);
-      const beginn = text(body.vertragsbeginn, 10);
-      if (!/^\d{4}-\d{2}-01$/.test(beginn)) return bad("Der Vertragsbeginn muss ein Monatserster sein.");
+      // Die erste Stunde darf an jedem Tag des Monats liegen – ein Schüler,
+      // der am 17. anfängt, ist der Normalfall. Abgerechnet wird trotzdem in
+      // Monatsraten, deshalb wird der Monatserste daraus abgeleitet.
+      const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return bad("Bitte ein gültiges Datum für die erste Stunde angeben.");
+      const beginn = monatsErster(start);
 
       const r = await rechneVertrag({
-        schuljahr: sj, zeiten, stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
+        schuljahr: sj,
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
       });
+      if (!r.alleTermine.length) {
+        return bad("Ab diesem Datum gibt es in dem Wochentermin keine Stunden mehr. Bitte Datum oder Wochentag prüfen.");
+      }
 
       const vRes = await sb.from("vertraege").insert({
         schueler_id: schuelerId, schuljahr_id: sj.id, schule_id: text(body.schule_id, 40) || null,
@@ -369,7 +389,11 @@ export async function POST(req: Request): Promise<Response> {
       const vertrag = vRes.data as Vertrag;
 
       const zRes = await sb.from("vertrag_zeiten").insert(
-        zeiten.map((z) => ({ vertrag_id: vertrag.id, wochentag: z.wochentag, uhrzeit: z.uhrzeit || "15:00" })),
+        zeiten.map((z) => ({
+          vertrag_id: vertrag.id, wochentag: z.wochentag, uhrzeit: z.uhrzeit || "15:00",
+          // Nur setzen, wenn der Unterricht nicht am Monatsersten beginnt.
+          ab_datum: start === beginn ? null : start,
+        })),
       );
       if (zRes.error) return bad(zRes.error.message, 500);
 
@@ -475,6 +499,74 @@ export async function POST(req: Request): Promise<Response> {
       return ok({
         jahresbetragCent: nachher.rechnung.jahresbetragCent,
         anzahlTermine: nachher.rechnung.alleTermine.length,
+        bereitsFaelligCent, restraten: restplan,
+      });
+    }
+
+    // Einen Wochentermin beenden (Familientermin endet, AGB § 6 Abs. 2)
+    case "terminBeenden": {
+      const id = text(body.vertrag_id, 40);
+      const wochentag = Number(body.wochentag);
+      const zum = text(body.zum, 10);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!Number.isInteger(wochentag) || wochentag < 0 || wochentag > 6) return bad("Bitte einen gültigen Wochentag wählen.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Enddatum angeben.");
+
+      const vorher = await vollbild(id);
+      if (!vorher) return bad("Vertrag nicht gefunden.", 404);
+      const offene = vorher.zeiten.filter((z) => !z.bis_datum || z.bis_datum > zum);
+      if (offene.length < 2) {
+        return bad("Dieser Vertrag hat nur noch einen Wochentermin. Zum Beenden des ganzen Vertrags bitte kündigen.");
+      }
+      if (!offene.some((z) => z.wochentag === wochentag)) {
+        return bad("Dieser Wochentag gehört nicht zu dem Vertrag.");
+      }
+
+      for (const z of offene.filter((z) => z.wochentag === wochentag)) {
+        const r = await sb.from("vertrag_zeiten").update({ bis_datum: zum }).eq("id", z.id);
+        if (r.error) return bad(r.error.message, 500);
+      }
+
+      const nachher = await vollbild(id);
+      if (!nachher) return bad("Neuberechnung fehlgeschlagen.", 500);
+      await sb.from("vertraege")
+        .update({ jahresbetrag: (nachher.rechnung.jahresbetragCent / 100).toFixed(2) })
+        .eq("id", id);
+
+      // Restraten neu verteilen – bereits fällige bleiben unverändert.
+      const monate = ratenMonate(nachher.vertrag.vertragsbeginn, nachher.schuljahr.letzter_schultag);
+      const { faellig, verbleibend } = teileRatenmonate(monate, zum);
+      const alteRateCent = monate.length
+        ? Math.round(euroZuCent(Number(vorher.vertrag.jahresbetrag)) / monate.length) : 0;
+      const bereitsFaelligCent = alteRateCent * faellig.length;
+      const restplan = verbleibend.length
+        ? ratenNeuVerteilen({
+            neuerJahresbetragCent: nachher.rechnung.jahresbetragCent,
+            bereitsFaelligCent, verbleibendeMonate: verbleibend,
+          })
+        : [];
+      if (restplan.length) await aktualisiereRestraten(id, restplan);
+
+      // Eltern informieren – Text kommt aus der editierbaren Vorlage.
+      if (nachher.schueler.email) {
+        const bleibt = nachher.zeiten.find((z) => z.wochentag !== wochentag && (!z.bis_datum || z.bis_datum > zum));
+        const regulaer = nachher.rechnung.posten.find((p) => !p.ermaessigt);
+        await vorlageSenden("terminEnde", nachher.schueler.email, {
+          name: nachher.schueler.name,
+          alterTag: WOCHENTAGE[wochentag],
+          bleibtTag: bleibt ? WOCHENTAGE[bleibt.wochentag] : "—",
+          endeAm: datumDe(zum),
+          abMonat: monatName(monatsErster(zum)),
+          satz: centFormat(regulaer?.satzCent ?? euroZuCent(Number(nachher.vertrag.stundensatz))),
+          jahresbetrag: centFormat(nachher.rechnung.jahresbetragCent),
+          rate: restplan.length ? centFormat(restplan[0].betragCent) : "keine weiteren Raten",
+        }, await anhaenge(nachher));
+      }
+
+      return ok({
+        jahresbetragCent: nachher.rechnung.jahresbetragCent,
+        posten: nachher.rechnung.posten,
+        familienMonate: nachher.rechnung.familienMonate,
         bereitsFaelligCent, restraten: restplan,
       });
     }

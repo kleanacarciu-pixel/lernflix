@@ -11,6 +11,10 @@
 --
 -- Keine Sorge: Du kannst diese Datei auch zweimal laufen lassen, ohne
 -- dass etwas kaputtgeht. Bestehende Daten werden nicht angefasst.
+--
+-- HINWEIS: Diese Datei wird aus den drei Einzeldateien zusammengesetzt.
+-- Nicht von Hand bearbeiten – tests/sql-sammeldatei.test.ts prüft, dass
+-- sie zum Inhalt der Einzeldateien passt.
 -- =============================================================================
 
 
@@ -133,11 +137,16 @@ on conflict (name) do update
 with sj as (select id from public.schuljahre where name = '2026/27'),
      daten (bezeichnung, datum_von, datum_bis, ist_feiertag) as (
        values
+         -- Gesetzliche Feiertage gelten für ALLE Schüler, auch für Schulen mit
+         -- eigenem Ferienkalender (ist_feiertag = true). Die beiden folgenden
+         -- fallen 2026/27 auf einen Samstag – für Samstagstermine zählen sie.
+         ('Tag der Deutschen Einheit', date '2026-10-03', date '2026-10-03', true),
          ('Herbstferien',        date '2026-11-02', date '2026-11-06', false),
          ('Buß- und Bettag',     date '2026-11-18', date '2026-11-18', false),
          ('Weihnachtsferien',    date '2026-12-24', date '2027-01-08', false),
          ('Frühjahrsferien',     date '2027-02-08', date '2027-02-12', false),
          ('Osterferien',         date '2027-03-22', date '2027-04-02', false),
+         ('Tag der Arbeit',      date '2027-05-01', date '2027-05-01', true),
          ('Christi Himmelfahrt', date '2027-05-06', date '2027-05-06', true),
          ('Pfingstmontag',       date '2027-05-17', date '2027-05-17', true),
          ('Pfingstferien',       date '2027-05-18', date '2027-05-28', false)
@@ -351,6 +360,10 @@ create table if not exists public.mahn_vorlagen (
 
 -- Startvorlagen. Platzhalter in geschweiften Klammern werden ersetzt:
 -- {name} {betrag} {monat} {iban} {inhaber} {verwendungszweck}
+-- Bei 'terminEnde' zusaetzlich:
+--   {alterTag} {bleibtTag} {endeAm} {abMonat} {satz} {jahresbetrag} {rate}
+-- Bei 'minusWarnung' zusaetzlich:
+--   {offen} {frei} {grenze}
 insert into public.mahn_vorlagen (schluessel, betreff, text) values
   ('adminCheck',
    'Kurzer Bank-Check',
@@ -361,6 +374,12 @@ insert into public.mahn_vorlagen (schluessel, betreff, text) values
   ('pausierung',
    'Unterricht vorübergehend pausiert',
    E'Hallo,\n\nfür die Rate {monat} ({betrag}) ist bei mir leider noch nichts eingegangen. Deshalb pausiere ich den Unterricht für {name} vorerst – der feste Wochentermin ruht und es lassen sich keine Stunden buchen.\n\nSobald die Zahlung da ist, geht es sofort normal weiter. Termine in den nächsten zwei Tagen finden noch statt.\n\nEmpfänger: {inhaber}\nIBAN: {iban}\nVerwendungszweck: {verwendungszweck}\n\nMeld dich gern, wenn etwas dazwischengekommen ist – wir finden eine Lösung.\n\nLiebe Grüße\nAnna'),
+  ('minusWarnung',
+   'Nur noch {frei} Gutschrift frei – {name}',
+   E'Hallo,\n\nkurzer Hinweis: {name} hat gerade {offen} offene Minus-Stunden. Damit ist nur noch {frei} von {grenze} Gutschriften frei.\n\nWird das Konto voll, verfällt eine weitere Absage ersatzlos – sie wird dann nicht mehr gutgeschrieben.\n\nBucht am besten bald Nachholtermine im Kalender, dann wird wieder Platz frei.\n\nLiebe Grüße\nAnna'),
+  ('terminEnde',
+   'Änderung: {name} hat ab jetzt einen Wochentermin',
+   E'Hallo,\n\nder Termin am {alterTag} für {name} endet zum {endeAm}. Ab {abMonat} bleibt der Termin am {bleibtTag}.\n\nDamit entfällt der Familienpreis: Für einen einzelnen Wochentermin gilt wieder der reguläre Stundensatz von {satz} (AGB § 6 Abs. 2). Die bereits gezahlten Raten bleiben unverändert.\n\nNeuer Jahresbetrag: {jahresbetrag}\nRestliche Raten: {rate}\n\nDie aktualisierte Terminliste findest du im Anhang.\n\nMeld dich gern, wenn etwas unklar ist.\n\nLiebe Grüße\nAnna'),
   ('dank',
    'Zahlung angekommen – es geht weiter',
    E'Hallo,\n\ndie Rate {monat} für {name} ist angekommen, vielen Dank! Alles ist wieder freigeschaltet und der feste Termin läuft wie gewohnt.\n\nLiebe Grüße\nAnna')

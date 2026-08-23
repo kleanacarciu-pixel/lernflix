@@ -11,16 +11,27 @@
 // Die Regeln:
 //   * Verrechnung einer Einzelstunde: Nachhol-Guthaben -> Minus -> sonst Plus
 //   * Absage durch den Schüler: ab 4 Stunden Vorlauf gibt es eine Minus-Stunde
-//     gutgeschrieben, aber höchstens drei gleichzeitig (die „4er-Sperre")
+//     gutgeschrieben, aber höchstens MAX_MINUS gleichzeitig
 //   * Rückgängig: die Verrechnung wird spiegelbildlich zurückgedreht
 //
 // Bewusst ohne Importe, damit die Regeln ohne Datenbank testbar bleiben.
 // =============================================================================
 
-/** Mehr als drei offene Minus-Stunden gibt es nicht – die vierte Absage bleibt ohne Gutschrift. */
-export const MAX_MINUS = 3;
+/**
+ * Höchstzahl offener Minus-Stunden. Ist das Konto voll, bringt eine weitere
+ * Absage keine Gutschrift mehr – gebucht werden darf aber weiterhin, denn
+ * genau darüber werden die offenen Stunden ja wieder abgebaut.
+ */
+export const MAX_MINUS = 4;
 /** Ab diesem Vorlauf gilt eine Absage als rechtzeitig. */
 export const ABSAGE_FRIST_STUNDEN = 4;
+
+/**
+ * Ab so vielen offenen Minus-Stunden wird vorgewarnt: eine Gutschrift ist
+ * dann noch frei. Die Familie soll nicht überrascht werden, wenn die
+ * nächste Absage verfällt.
+ */
+export const WARNUNG_AB_MINUS = MAX_MINUS - 1;
 
 export type Konto = {
   minus_hours: number;
@@ -92,5 +103,58 @@ export function bewerteAbsage(k: Konto, stundenBisTermin: number): Absagebewertu
   return {
     gutschrift, note, text,
     aenderung: gutschrift ? { minus_hours: k.minus_hours + 1 } : null,
+  };
+}
+
+// --- Vorwarnungen -----------------------------------------------------------
+
+/** Ist das Konto so voll, dass vorgewarnt werden sollte? */
+export function warntVorLimit(k: Konto): boolean {
+  return k.minus_hours >= WARNUNG_AB_MINUS && k.minus_hours < MAX_MINUS;
+}
+
+/** Wie viele Gutschriften sind noch frei? */
+export function freieGutschriften(k: Konto): number {
+  return Math.max(0, MAX_MINUS - k.minus_hours);
+}
+
+export type Absagevorschau = {
+  /** Bekäme die Familie eine Gutschrift, wenn sie jetzt absagt? */
+  gutschrift: boolean;
+  /** Muss sie den Verfall ausdrücklich bestätigen? */
+  bestaetigungNoetig: boolean;
+  /** Warum es keine Gutschrift gäbe – null, wenn es eine gibt. */
+  grund: null | "kontoVoll" | "zuSpaet";
+  /** Text für den Bestätigungsdialog. */
+  text: string;
+};
+
+/**
+ * Was passiert, WENN jetzt abgesagt wird? Gleiche Regel wie bewerteAbsage,
+ * nur vorher statt nachher – damit der Dialog warnen kann, bevor eine
+ * Stunde ersatzlos verfällt.
+ */
+export function absageVorschau(k: Konto, stundenBisTermin: number): Absagevorschau {
+  const b = bewerteAbsage(k, stundenBisTermin);
+  if (b.gutschrift) {
+    const frei = freieGutschriften(k) - 1;
+    return {
+      gutschrift: true, bestaetigungNoetig: false, grund: null,
+      text: frei > 0
+        ? `Wird als Minus-Stunde gutgeschrieben. Danach ${frei} von ${MAX_MINUS} Gutschriften frei.`
+        : `Wird als Minus-Stunde gutgeschrieben. Danach ist dein Stundenkonto voll (${MAX_MINUS}/${MAX_MINUS}).`,
+    };
+  }
+  const kontoVoll = b.note === "overmax";
+  return {
+    gutschrift: false,
+    bestaetigungNoetig: true,
+    grund: kontoVoll ? "kontoVoll" : "zuSpaet",
+    text: kontoVoll
+      ? `Achtung: Euer Stundenkonto ist voll (${MAX_MINUS}/${MAX_MINUS}). `
+        + "Diese Stunde wird NICHT gutgeschrieben und verfällt. "
+        + "Bucht am besten zuerst Nachholtermine."
+      : `Achtung: Weniger als ${ABSAGE_FRIST_STUNDEN} Stunden vorher. `
+        + "Diese Stunde wird NICHT gutgeschrieben und verfällt.",
   };
 }

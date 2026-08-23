@@ -17,11 +17,13 @@ const f = (bez: string, von: string, bis: string, feiertag = false, schule: stri
   ({ bezeichnung: bez, datum_von: von, datum_bis: bis, ist_feiertag: feiertag, schule_id: schule });
 
 const BAYERN: FreierZeitraum[] = [
+  f("Tag der Deutschen Einheit", "2026-10-03", "2026-10-03", true),
   f("Herbstferien", "2026-11-02", "2026-11-06"),
   f("Buß- und Bettag", "2026-11-18", "2026-11-18"),
   f("Weihnachtsferien", "2026-12-24", "2027-01-08"),
   f("Frühjahrsferien", "2027-02-08", "2027-02-12"),
   f("Osterferien", "2027-03-22", "2027-04-02"),
+  f("Tag der Arbeit", "2027-05-01", "2027-05-01", true),
   f("Christi Himmelfahrt", "2027-05-06", "2027-05-06", true),
   f("Pfingstmontag", "2027-05-17", "2027-05-17", true),
   f("Pfingstferien", "2027-05-18", "2027-05-28"),
@@ -65,6 +67,9 @@ describe("Termin-Engine: Sollwerte 2026/27", () => {
   // Die im Auftrag festgeschriebenen Erwartungswerte
   const SOLL: Record<string, [number, number]> = {
     Montag: [0, 37], Dienstag: [1, 38], Mittwoch: [2, 37], Donnerstag: [3, 36], Freitag: [4, 37],
+    // Samstag: die beiden gesetzlichen Feiertage am 03.10.2026 und 01.05.2027
+    // fallen auf einen Samstag und ziehen von 41 auf 39 ab.
+    Samstag: [5, 39],
   };
   for (const [name, [wd, anzahl]] of Object.entries(SOLL)) {
     test(`${name}: ${anzahl} Termine`, () => {
@@ -178,5 +183,42 @@ describe("Termin-Engine: Schulen mit eigenen Ferien", () => {
   test("unbekannte Schule: nur Feiertage bleiben übrig", () => {
     const frei = relevanteFreieTage(GEMISCHT, "gibt-es-nicht");
     assert.ok(frei.every((x) => x.ist_feiertag));
+  });
+});
+
+describe("Gesetzliche Feiertage am Samstag", () => {
+  const samstage = (frei: FreierZeitraum[]) => termine(5, frei).length;
+  const ohne = BAYERN.filter((x) =>
+    x.bezeichnung !== "Tag der Deutschen Einheit" && x.bezeichnung !== "Tag der Arbeit");
+
+  test("beide Daten sind wirklich Samstage", () => {
+    assert.equal(wochentagVon("2026-10-03"), 5);
+    assert.equal(wochentagVon("2027-05-01"), 5);
+  });
+
+  test("sie ziehen genau zwei Samstage ab: 41 -> 39", () => {
+    assert.equal(samstage(ohne), 41);
+    assert.equal(samstage(BAYERN), 39);
+  });
+
+  test("die beiden Tage kommen nicht mehr als Termin vor", () => {
+    const t = termine(5);
+    assert.equal(t.includes("2026-10-03"), false);
+    assert.equal(t.includes("2027-05-01"), false);
+  });
+
+  test("Montag bis Freitag bleiben davon unberührt", () => {
+    for (const [wd, soll] of [[0, 37], [1, 38], [2, 37], [3, 36], [4, 37]] as const) {
+      assert.equal(termine(wd, ohne).length, soll, `Wochentag ${wd} ohne die Feiertage`);
+      assert.equal(termine(wd).length, soll, `Wochentag ${wd} mit den Feiertagen`);
+    }
+  });
+
+  test("als Feiertag markiert – gilt also auch für Schulen mit eigenen Ferien", () => {
+    const eigene = relevanteFreieTage(BAYERN, "schule-1");
+    assert.ok(eigene.some((x) => x.bezeichnung === "Tag der Deutschen Einheit"));
+    assert.ok(eigene.some((x) => x.bezeichnung === "Tag der Arbeit"));
+    // Reine Schulferien Bayerns gelten für diese Schule dagegen nicht.
+    assert.equal(eigene.some((x) => x.bezeichnung === "Herbstferien"), false);
   });
 });

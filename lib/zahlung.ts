@@ -4,14 +4,14 @@
 // Die Regeln stehen in lib/zahlung-kern.ts (ohne Datenbank, dadurch testbar);
 // hier kommen Laden, Speichern und der E-Mail-Versand dazu.
 // =============================================================================
-import { service, sendMail, ADMIN_EMAIL } from "@/lib/kalender";
+import { service, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { ladeVertrag, rechneVertrag, buchungErlaubt, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { datumDe } from "@/lib/schuljahr-kern";
 import type { Schuljahr } from "@/lib/schuljahr";
 import {
   status, faelligeAktionen, zahlungsSperre, terminFindetStatt, pausierungAb,
-  giltAlsBezahlt, bezahltAm,
+  giltAlsBezahlt, bezahltAm, istBankCheckTag,
   type Zahlung as ZahlungKern, type Status,
 } from "@/lib/zahlung-kern";
 import { bankverbindung } from "@/lib/vertrag-dokumente";
@@ -187,13 +187,20 @@ function alsHtml(text: string): string {
   return sicher.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
 }
 
-async function vorlageSenden(schluessel: string, an: string, werte: Record<string, string>): Promise<void> {
+/**
+ * Eine Vorlage verschicken. Öffentlich, damit auch der Vertragsteil sie
+ * nutzen kann (z. B. das Ende eines Familientermins).
+ */
+export async function vorlageSenden(
+  schluessel: string, an: string, werte: Record<string, string>,
+  anhaenge?: MailAnhang[],
+): Promise<void> {
   const res = await service().from("mahn_vorlagen").select("*").eq("schluessel", schluessel).maybeSingle();
   const v = res.data as Vorlage | null;
   if (!v) return;
   // Jede automatische E-Mail geht in Kopie an die Admin-Adresse.
   await sendMail(an, fuelle(v.betreff, werte), alsHtml(fuelle(v.text, werte)), undefined,
-    { kopieAn: an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL });
+    { kopieAn: an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL, anhaenge });
 }
 
 // --- Mahnlauf ---------------------------------------------------------------
@@ -252,12 +259,11 @@ export async function mahnlauf(heute = heuteIso()): Promise<{
   adminHinweis: boolean; erinnerungen: number; pausierungen: number;
 }> {
   const sb = service();
-  const tag = Number(heute.slice(8, 10));
   let erinnerungen = 0, pausierungen = 0;
 
   // Tag 9: Bank-Check-Erinnerung an Kleana – nur wenn es überhaupt Verträge gibt
   let adminHinweis = false;
-  if (tag === 9) {
+  if (istBankCheckTag(heute)) {
     const anz = await sb.from("vertraege").select("id", { count: "exact", head: true }).eq("status", "aktiv");
     if ((anz.count ?? 0) > 0) {
       await vorlageSenden("adminCheck", ADMIN_EMAIL, {});

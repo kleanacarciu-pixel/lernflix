@@ -12,6 +12,8 @@
 /** Ablauf: Rate fällig 1.–10., überfällig ab dem 11., Pausierung ab dem 15. */
 export const FAELLIG_BIS_TAG = 10;
 export const PAUSE_AB_TAG = 15;
+/** An diesem Tag erinnert die Automatik Kleana, aufs Konto zu schauen. */
+export const BANK_CHECK_TAG = 9;
 /** Wird erst nach dem 10. markiert, bleiben ab Markierung 5 Tage. */
 export const PAUSE_NACH_MARKIERUNG_TAGE = 5;
 /** Termine kurz nach der Pausierung finden noch statt. */
@@ -63,6 +65,11 @@ export function status(z: Zahlung, heute: string): Status {
   if (ab && heute >= ab) return "pausiert";
   if (heute > tagImMonat(z.monat, FAELLIG_BIS_TAG)) return "ueberfaellig";
   return "offen";
+}
+
+/** Ist heute der Tag, an dem der Bank-Check an Kleana rausgeht? */
+export function istBankCheckTag(heute: string): boolean {
+  return Number(heute.slice(8, 10)) === BANK_CHECK_TAG;
 }
 
 /**
