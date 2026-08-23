@@ -25,16 +25,17 @@ describe("Angebots-Mail geht ohne Kopie raus", () => {
 
   test("sie enthält den Bestätigungslink", () => {
     assert.match(block, /bestaetigungsLink\(/);
-    assert.match(block, /href="\$\{link\}"/);
+    // Der Text steht in einer Vorlage; der Link geht als Platzhalter hinein.
+    assert.match(block, /vorlageSenden\("vertragEinladung"/);
+    assert.match(block, /\blink,/);
   });
 
   test("die Mail an die Familie hat KEINE Kopie an die Admin-Adresse", () => {
-    // Zwischen dem Link und dem Ende der Familien-Mail darf kein kopieAn stehen.
-    const linkStelle = block.indexOf("href=\"${link}\"");
     const familienMail = block.slice(0, block.indexOf("Getrennte Nachricht"));
-    assert.ok(linkStelle > 0);
-    assert.equal(/kopieAn/.test(familienMail), false,
-      "Die Angebots-Mail mit dem Link darf nicht in Kopie an die Admin-Adresse gehen");
+    assert.match(familienMail, /kopieAnAdmin: false/,
+      "Die Einladung mit dem Link muss die Admin-Kopie ausdrücklich abschalten");
+    assert.equal(/kopieAn:/.test(familienMail), false,
+      "Die Einladung mit dem Link darf nicht in Kopie an die Admin-Adresse gehen");
   });
 
   test("Kleana bekommt stattdessen eine eigene Nachricht", () => {

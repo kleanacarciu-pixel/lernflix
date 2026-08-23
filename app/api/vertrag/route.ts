@@ -792,28 +792,20 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   const link = bestaetigungsLink(vertragId, baseUrl);
   const rate = v.rechnung.raten[0]?.betragCent ?? 0;
 
-  const ergebnis = await sendMail(
-    v.schueler.email,
-    `Dein Vertrag für das Schuljahr ${v.schuljahr.name} – bitte unterschreiben`,
-    `<p>Hallo,</p>
-     <p>hier ist der Vertrag für <b>${v.schueler.name}</b> im Schuljahr ${v.schuljahr.name}.
-        Ich habe ihn bereits unterschrieben – jetzt fehlt nur noch deine Unterschrift.</p>
-     <p><b>Fester Termin:</b> ${zeitText(v.zeiten)}<br>
-        <b>Termine im Schuljahr:</b> ${v.rechnung.alleTermine.length}<br>
-        <b>Jahresbetrag:</b> ${centFormat(v.rechnung.jahresbetragCent)}</p>
-     <p>Du kannst wählen:<br>
-        • <b>${v.rechnung.raten.length} Monatsraten</b> à ${centFormat(rate)} (jeweils 1.–10. des Monats)<br>
-        • <b>Einmalzahlung ${centFormat(v.rechnung.einmalCent)}</b> (50,00 € Nachlass)</p>
-     <p style="margin:22px 0">
-       <a href="${link}" style="background:#2BB3C0;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600">
-         Vertrag ansehen und unterschreiben
-       </a>
-     </p>
-     <p style="color:#5f574f;font-size:14px">Unterschrieben wird direkt auf der Seite – mit dem Finger
-        am Handy oder mit der Maus am Rechner. Danach bekommst du den fertigen Vertrag als PDF.
-        Der Link ist 14 Tage gültig.</p>
-     <p>Liebe Grüße<br>Anna</p>`,
-  );
+  // Text und Betreff kommen aus der Vorlage – änderbar unter
+  // „Zahlungen → E-Mail-Vorlagen", ohne dass jemand Programmcode anfasst.
+  // Ausdrücklich OHNE Kopie an die Admin-Adresse: siehe der Hinweis oben.
+  const ergebnis = await vorlageSenden("vertragEinladung", v.schueler.email, {
+    name: v.schueler.name,
+    schuljahr: v.schuljahr.name,
+    termin: zeitText(v.zeiten),
+    anzahl: String(v.rechnung.alleTermine.length),
+    jahresbetrag: centFormat(v.rechnung.jahresbetragCent),
+    raten: String(v.rechnung.raten.length),
+    rate: centFormat(rate),
+    einmal: centFormat(v.rechnung.einmalCent),
+    link,
+  }, undefined, { kopieAnAdmin: false });
 
   // Getrennte Nachricht an Kleana – bewusst OHNE Bestätigungslink.
   if (ergebnis.ok) {

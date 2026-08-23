@@ -253,10 +253,19 @@ describe("28) Markierung entfernen", () => {
 describe("29) Automatische E-Mails gehen in Kopie an die Admin-Adresse", () => {
   test("vorlageSenden setzt kopieAn", () => {
     const q = readFileSync("lib/zahlung.ts", "utf8");
-    const start = q.indexOf("async function vorlageSenden");
-    const block = q.slice(start, start + 600);
+    const start = q.indexOf("export async function vorlageSenden");
+    const block = q.slice(start, q.indexOf("\n}", start));
     assert.match(block, /kopieAn:/);
     assert.match(block, /ADMIN_EMAIL/);
+  });
+
+  test("die Kopie entfällt nur dort, wo sie ausdrücklich abgeschaltet wird", () => {
+    // Standard ist die Kopie. Ausgeschaltet wird sie nur für Nachrichten mit
+    // Unterschriftslink – siehe tests/bestaetigungslink.test.ts.
+    const q = readFileSync("lib/zahlung.ts", "utf8");
+    const start = q.indexOf("export async function vorlageSenden");
+    const block = q.slice(start, q.indexOf("\n}", start));
+    assert.match(block, /opt\?\.kopieAnAdmin === false/);
   });
 });
 

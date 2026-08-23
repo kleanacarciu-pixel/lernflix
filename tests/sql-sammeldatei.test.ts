@@ -2,7 +2,7 @@
 // Die Sammeldatei muss zu den Einzeldateien passen
 //
 // supabase/schuljahr_ALLES.sql ist nur eine Zusammenstellung der sechs
-// Einzeldateien, damit beim Einrichten einmal statt sechsmal kopiert werden
+// Einzeldateien, damit beim Einrichten einmal statt siebenmal kopiert werden
 // muss. Sie kann still veralten, wenn jemand eine Einzeldatei ändert und
 // das Zusammensetzen vergisst – genau das ist schon passiert. Dieser Test
 // merkt es sofort. Neu bauen mit: bash supabase/bau-sammeldatei.sh
@@ -18,6 +18,7 @@ const TEILE = [
   "supabase/schuljahr_v4_unterschrift.sql",
   "supabase/schuljahr_v5_vertragsabschluss.sql",
   "supabase/schuljahr_v6_unterzeichnung.sql",
+  "supabase/schuljahr_v7_vorlagen.sql",
 ];
 const alles = readFileSync("supabase/schuljahr_ALLES.sql", "utf8");
 
@@ -39,7 +40,7 @@ describe("Sammeldatei enthält alle Einzeldateien vollständig", () => {
   test("keine der Vorlagen fehlt", () => {
     for (const schluessel of [
       "adminCheck", "erinnerung", "pausierung", "dank", "terminEnde", "minusWarnung",
-      "vertragUnterschrieben",
+      "vertragUnterschrieben", "vertragEinladung", "vertragErinnerung",
     ]) {
       assert.ok(alles.includes(`'${schluessel}'`), `Vorlage ${schluessel} fehlt in der Sammeldatei`);
     }

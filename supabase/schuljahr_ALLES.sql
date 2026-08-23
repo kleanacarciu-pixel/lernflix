@@ -12,7 +12,7 @@
 -- Keine Sorge: Du kannst diese Datei auch zweimal laufen lassen, ohne
 -- dass etwas kaputtgeht. Bestehende Daten werden nicht angefasst.
 --
--- HINWEIS: Diese Datei wird aus den sechs Einzeldateien zusammengesetzt.
+-- HINWEIS: Diese Datei wird aus den sieben Einzeldateien zusammengesetzt.
 -- Nicht von Hand bearbeiten – tests/sql-sammeldatei.test.ts prüft, dass
 -- sie zum Inhalt der Einzeldateien passt.
 -- =============================================================================
@@ -633,5 +633,43 @@ insert into public.mahn_vorlagen (schluessel, betreff, text) values
   ('vertragUnterschrieben',
    'Vertrag unterschrieben – Schuljahr {schuljahr}',
    E'Hallo,\n\nvielen Dank – der Vertrag für {name} ist unterschrieben und der Unterricht ist freigeschaltet.\n\nFester Termin: {termin}\nTermine im Schuljahr: {anzahl}\nJahresbetrag: {jahresbetrag}\nZahlweise: {zahlweise}\n\nÜberweisung an:\n{inhaber}\nIBAN: {iban}\nVerwendungszweck: {verwendungszweck}\n\nIm Anhang findest du den unterschriebenen Vertrag, die Terminliste für das ganze Schuljahr und die AGB. Bitte gut aufbewahren.\n\nIm Kalender könnt ihr ab sofort Termine absagen, Nachholstunden buchen und die Terminliste jederzeit ansehen.\n\nLiebe Grüße\nAnna')
+on conflict (schluessel) do nothing;
+
+
+-- #############################################################################
+-- ### TEIL AUS: schuljahr_v7_vorlagen.sql
+-- #############################################################################
+
+-- =============================================================================
+-- Lerne mit Anna – Schuljahresmodell, Teil 7: E-Mail-Vorlagen zur Unterschrift
+--
+-- Voraussetzung: schuljahr_v1 bis schuljahr_v6
+-- In Supabase ausführen:  Dashboard → SQL Editor → einfügen → Run
+--
+-- Zwei Vorlagen, beide danach unter „Zahlungen → E-Mail-Vorlagen" änderbar:
+--   * vertragEinladung   – geht raus, wenn ein Vertrag verschickt wird
+--   * vertragErinnerung  – geht raus, wenn nach fünf Tagen nichts passiert ist
+--
+-- WICHTIG: Beide enthalten den persönlichen Unterschriftslink {link}. Sie
+-- gehen deshalb AUSSCHLIESSLICH an die Familie – ohne Kopie an Kleana. Wer
+-- den Link hat, kann unterschreiben; läge er auch im Postfach der Anbieterin,
+-- stünde im System womöglich eine Unterschrift, die nicht von den Eltern
+-- stammt. Das ist im Programm so festgelegt und durch einen Test abgesichert.
+--
+-- Gefahrlos mehrfach ausführbar.
+-- =============================================================================
+
+-- Platzhalter der Einladung:
+--   {name} {schuljahr} {termin} {anzahl} {jahresbetrag} {raten} {rate}
+--   {einmal} {link}
+-- Platzhalter der Erinnerung:
+--   {name} {schuljahr} {tage} {link}
+insert into public.mahn_vorlagen (schluessel, betreff, text) values
+  ('vertragEinladung',
+   'Der Vertrag für {name} – bitte unterschreiben',
+   E'Hallo,\n\nhier ist der Vertrag für {name} im Schuljahr {schuljahr}. Ich habe ihn bereits unterschrieben – jetzt fehlt nur noch deine Unterschrift.\n\nFester Termin: {termin}\nTermine im Schuljahr: {anzahl}\nJahresbetrag: {jahresbetrag}\n\nDu kannst wählen:\n• {raten} Monatsraten à {rate} (jeweils 1.–10. des Monats)\n• Einmalzahlung {einmal} (50,00 € Nachlass)\n\nHier geht es zum Vertrag:\n{link}\n\nUnterschrieben wird direkt auf der Seite – am Handy mit dem Finger, am Rechner mit der Maus. Danach bekommst du den fertigen Vertrag als PDF, zusammen mit der Terminliste fürs ganze Schuljahr und den AGB. Der Link ist 14 Tage gültig.\n\nErst nach der Unterschrift lassen sich Stunden buchen und absagen – am besten also gleich erledigen, es dauert eine Minute.\n\nLiebe Grüße\nAnna'),
+  ('vertragErinnerung',
+   'Kurze Erinnerung: der Vertrag für {name}',
+   E'Hallo,\n\nvor {tage} Tagen habe ich dir den Vertrag für {name} geschickt – unterschrieben ist er noch nicht. Vielleicht ist er im Alltag untergegangen, das kenne ich gut.\n\nHier ist ein frischer Link:\n{link}\n\nEs dauert wirklich nur eine Minute: zwei Häkchen setzen, mit dem Finger unterschreiben, fertig. Danach ist alles freigeschaltet und ihr könnt Stunden buchen und absagen.\n\nWenn etwas unklar ist oder du lieber auf Papier unterschreiben möchtest, meld dich einfach – wir finden eine Lösung.\n\nLiebe Grüße\nAnna')
 on conflict (schluessel) do nothing;
 

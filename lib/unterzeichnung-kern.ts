@@ -147,6 +147,41 @@ export function vertragsstand(v: StandVertrag): { stand: Vertragsstand; seit: st
   return { stand: "erstellt", seit: null };
 }
 
+// --- Erinnerung -------------------------------------------------------------
+
+/** Nach so vielen Tagen ohne Unterschrift geht eine Erinnerung raus. */
+export const ERINNERUNG_NACH_TAGEN = 5;
+
+/**
+ * Tage zwischen zwei Zeitpunkten – gezählt in Kalendertagen.
+ *
+ * Mit der Uhrzeit gerechnet käme bei einer Einladung um 18 Uhr ein Tag zu
+ * wenig heraus; gezählt wird aber so, wie ein Mensch zählt.
+ */
+export function tageSeit(iso: string | null | undefined, heute: string): number | null {
+  if (!iso || !heute) return null;
+  const a = Date.parse(`${iso.slice(0, 10)}T00:00:00Z`);
+  const b = Date.parse(`${heute.slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return Math.max(0, Math.round((b - a) / 86_400_000));
+}
+
+export type ErinnerungsVertrag = StandVertrag & { erinnert_am?: string | null };
+
+/**
+ * Ist für diesen Vertrag heute eine Erinnerung fällig?
+ *
+ * Nur einmal: Wer nach der Erinnerung nicht unterschreibt, bekommt keine
+ * zweite automatische Nachricht – ab da ist ein Anruf das bessere Mittel.
+ */
+export function erinnerungFaellig(v: ErinnerungsVertrag, heute: string): boolean {
+  if (istUnterzeichnet(v)) return false;
+  if (v.status !== "angeboten" && v.status !== "aktiv") return false;
+  if (!v.eingeladen_am || v.erinnert_am) return false;
+  const tage = tageSeit(v.eingeladen_am, heute);
+  return tage !== null && tage >= ERINNERUNG_NACH_TAGEN;
+}
+
 export const STAND_TEXT: Record<Vertragsstand, string> = {
   erstellt: "erstellt – noch nicht eingeladen",
   eingeladen: "eingeladen – wartet auf Unterschrift",
