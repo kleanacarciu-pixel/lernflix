@@ -23,6 +23,7 @@ type VertragZeile = {
   jahresbetragCent: number; zahlweise: 'raten' | 'einmal';
   status: 'angeboten' | 'aktiv' | 'gekuendigt' | 'beendet';
   bestaetigt: boolean; kuendigungZum: string | null;
+  eltern: { name: string; anschrift: string; email: string; telefon: string };
 };
 type Posten = {
   wochentag: number; anzahl: number; satzCent: number; summeCent: number;
@@ -85,6 +86,12 @@ export default function VertraegeSeite() {
   const [nZweitesKind, setNZweitesKind] = useState(false);
   const [nBeginn, setNBeginn] = useState('');   // Tag der ersten Stunde, beliebig
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
+  // Erziehungsberechtigte – stehen so im Vertrag
+  const [eName, setEName] = useState('');
+  const [eAnschrift, setEAnschrift] = useState('');
+  const [eEmail, setEEmail] = useState('');
+  const [eTelefon, setETelefon] = useState('');
+  const [elternFuer, setElternFuer] = useState<VertragZeile | null>(null);
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
 
   // Wechsel und Kündigung
@@ -142,6 +149,8 @@ export default function VertraegeSeite() {
     stundensatz_zweittermin: nZweitSatz ? Number(nZweitSatz.replace(',', '.')) : undefined,
     zweites_kind: nZweitesKind,
     unterrichtsbeginn: nBeginn,
+    eltern_name: eName, eltern_anschrift: eAnschrift,
+    eltern_email: eEmail, eltern_telefon: eTelefon,
   });
 
   // Läuft auch automatisch – deshalb werden hier KEINE Meldungen gelöscht,
@@ -264,6 +273,10 @@ export default function VertraegeSeite() {
                     setWDatum('');
                   }}>Termin wechseln</button>
                 )}
+                <button style={knopfKlein} onClick={() => {
+                  setElternFuer(v); setEName(v.eltern?.name || ''); setEAnschrift(v.eltern?.anschrift || '');
+                  setEEmail(v.eltern?.email || ''); setETelefon(v.eltern?.telefon || '');
+                }}>{v.eltern?.name ? 'Elterndaten' : 'Elterndaten fehlen'}</button>
                 <a style={{ ...knopfKlein, textDecoration: 'none' }}
                   href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=terminliste`}
                   target="_blank" rel="noopener">Terminliste</a>
@@ -325,6 +338,31 @@ export default function VertraegeSeite() {
             )}
           </div>
 
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${F.line}` }}>
+            <b style={{ fontSize: 15 }}>Erziehungsberechtigte/r</b>
+            <p style={{ color: F.muted, fontSize: 13, margin: '2px 0 10px' }}>
+              Steht so im Vertrag. Leere Felder werden im Vertrag weggelassen.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 10 }}>
+              <label style={etikett}>Name
+                <input style={feld} value={eName} onChange={(e) => setEName(e.target.value)}
+                  placeholder="Maria Muster" />
+              </label>
+              <label style={etikett}>Anschrift
+                <input style={feld} value={eAnschrift} onChange={(e) => setEAnschrift(e.target.value)}
+                  placeholder="Beispielweg 3, 80331 München" />
+              </label>
+              <label style={etikett}>E-Mail
+                <input style={feld} value={eEmail} onChange={(e) => setEEmail(e.target.value)}
+                  placeholder="nur falls abweichend" />
+              </label>
+              <label style={etikett}>Telefon
+                <input style={feld} value={eTelefon} onChange={(e) => setETelefon(e.target.value)}
+                  placeholder="0176 1234567" />
+              </label>
+            </div>
+          </div>
+
           <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${F.line}` }}>
             <label style={{ color: F.soft, fontSize: 14, display: 'flex', gap: 7, alignItems: 'center' }}>
               <input type="checkbox" checked={nZweitesKind}
@@ -358,6 +396,7 @@ export default function VertraegeSeite() {
                     try {
                       const d = await api('anlegen', felder());
                       setVorschau(null);
+                      setEName(''); setEAnschrift(''); setEEmail(''); setETelefon('');
                       await neuLaden();          // erst laden, dann melden
                       if (d.mailVerschickt) setHinweis('Vertrag angelegt, Angebot verschickt.');
                       else setFehler('Vertrag angelegt – aber das Angebot konnte NICHT verschickt werden: '
@@ -446,6 +485,40 @@ export default function VertraegeSeite() {
                   wechseln und Eltern informieren
                 </button>
                 <button style={knopfKlein} onClick={() => setWechselFuer(null)}>abbrechen</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------------- Elterndaten */}
+        {elternFuer && (
+          <div style={overlay} onClick={() => setElternFuer(null)}>
+            <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Erziehungsberechtigte/r – {elternFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Diese Angaben stehen im Vertrag. Was leer bleibt, wird dort weggelassen.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
+                <label style={etikett}>Name
+                  <input style={feld} value={eName} onChange={(e) => setEName(e.target.value)} />
+                </label>
+                <label style={etikett}>Anschrift
+                  <input style={feld} value={eAnschrift} onChange={(e) => setEAnschrift(e.target.value)} />
+                </label>
+                <label style={etikett}>E-Mail
+                  <input style={feld} value={eEmail} onChange={(e) => setEEmail(e.target.value)} />
+                </label>
+                <label style={etikett}>Telefon
+                  <input style={feld} value={eTelefon} onChange={(e) => setETelefon(e.target.value)} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                <button style={knopf} onClick={() => { const v = elternFuer; setElternFuer(null);
+                  void tun(() => api('elternSpeichern', {
+                    vertrag_id: v.id, eltern_name: eName, eltern_anschrift: eAnschrift,
+                    eltern_email: eEmail, eltern_telefon: eTelefon,
+                  }), 'Elterndaten gespeichert.'); }}>speichern</button>
+                <button style={knopfKlein} onClick={() => setElternFuer(null)}>abbrechen</button>
               </div>
             </div>
           </div>

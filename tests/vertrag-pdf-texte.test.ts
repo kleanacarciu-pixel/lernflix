@@ -76,6 +76,14 @@ describe("„Das Wichtigste auf einen Blick“ – wortgleich", () => {
       "Vertragstext und Programmregel dürfen nicht auseinanderlaufen");
   });
 
+  test("die Absagefrist im Vertrag ist dieselbe wie im Programm", async () => {
+    const { ABSAGE_FRIST_STUNDEN } = await import("../lib/stundenkonto-kern.ts");
+    assert.equal(ABSAGE_FRIST_STUNDEN, 4, "Die Frist muss vier Stunden betragen");
+    assert.match(punkt("Absagen")!.text,
+      new RegExp(`Bis ${ABSAGE_FRIST_STUNDEN} Stunden vor dem Termin`),
+      "Im Vertrag muss dieselbe Frist stehen wie im Programm");
+  });
+
   test("Vorzeitiges Ende: nur gehaltene Stunden, 14 Tage, Nachlass entfällt", () => {
     const p = punkt("Vorzeitiges Ende")!;
     assert.match(p.text, /nur die tatsächlich gehaltenen Stunden zum vollen Stundensatz/);

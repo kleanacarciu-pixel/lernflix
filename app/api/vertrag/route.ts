@@ -255,11 +255,29 @@ export async function POST(req: Request): Promise<Response> {
             status: v.status,
             bestaetigt: !!v.agb_akzeptiert_am,
             kuendigungZum: v.kuendigung_zum,
+            eltern: {
+              name: v.eltern_name ?? "", anschrift: v.eltern_anschrift ?? "",
+              email: v.eltern_email ?? "", telefon: v.eltern_telefon ?? "",
+            },
           };
         }),
         heute: heuteIso(),
         monatsEndeHeute: monatsEnde(heuteIso()),
       });
+    }
+
+    // Daten der Erziehungsberechtigten nachtragen oder ändern
+    case "elternSpeichern": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const r = await sb.from("vertraege").update({
+        eltern_name: text(body.eltern_name, 120) || null,
+        eltern_anschrift: text(body.eltern_anschrift, 200) || null,
+        eltern_email: text(body.eltern_email, 160) || null,
+        eltern_telefon: text(body.eltern_telefon, 60) || null,
+        geaendert_am: new Date().toISOString(),
+      }).eq("id", id);
+      return r.error ? bad(r.error.message, 500) : ok();
     }
 
     // Endabrechnung durchrechnen, ohne etwas zu speichern
@@ -374,6 +392,11 @@ export async function POST(req: Request): Promise<Response> {
 
       const vRes = await sb.from("vertraege").insert({
         schueler_id: schuelerId, schuljahr_id: sj.id, schule_id: text(body.schule_id, 40) || null,
+        // Erziehungsberechtigte – stehen so im Vertrag. Alle optional.
+        eltern_name: text(body.eltern_name, 120) || null,
+        eltern_anschrift: text(body.eltern_anschrift, 200) || null,
+        eltern_email: text(body.eltern_email, 160) || null,
+        eltern_telefon: text(body.eltern_telefon, 60) || null,
         stundensatz: (satzCent / 100).toFixed(2),
         stundensatz_zweittermin: (zweitCent / 100).toFixed(2),
         zweites_kind: body.zweites_kind === true,
