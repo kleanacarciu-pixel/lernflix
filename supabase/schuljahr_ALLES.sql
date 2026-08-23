@@ -133,11 +133,16 @@ on conflict (name) do update
 with sj as (select id from public.schuljahre where name = '2026/27'),
      daten (bezeichnung, datum_von, datum_bis, ist_feiertag) as (
        values
+         -- Gesetzliche Feiertage gelten für ALLE Schüler, auch für Schulen mit
+         -- eigenem Ferienkalender (ist_feiertag = true). Die beiden folgenden
+         -- fallen 2026/27 auf einen Samstag – für Samstagstermine zählen sie.
+         ('Tag der Deutschen Einheit', date '2026-10-03', date '2026-10-03', true),
          ('Herbstferien',        date '2026-11-02', date '2026-11-06', false),
          ('Buß- und Bettag',     date '2026-11-18', date '2026-11-18', false),
          ('Weihnachtsferien',    date '2026-12-24', date '2027-01-08', false),
          ('Frühjahrsferien',     date '2027-02-08', date '2027-02-12', false),
          ('Osterferien',         date '2027-03-22', date '2027-04-02', false),
+         ('Tag der Arbeit',      date '2027-05-01', date '2027-05-01', true),
          ('Christi Himmelfahrt', date '2027-05-06', date '2027-05-06', true),
          ('Pfingstmontag',       date '2027-05-17', date '2027-05-17', true),
          ('Pfingstferien',       date '2027-05-18', date '2027-05-28', false)

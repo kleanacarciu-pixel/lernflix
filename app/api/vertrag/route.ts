@@ -16,7 +16,7 @@ import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
 import {
   euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
-  ratenNeuVerteilen,
+  ratenNeuVerteilen, monatsErster,
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
@@ -314,16 +314,24 @@ export async function POST(req: Request): Promise<Response> {
       const zweitCent = body.stundensatz_zweittermin != null
         ? euroZuCent(Number(body.stundensatz_zweittermin))
         : standardZweitsatzCent(satzCent);
-      const beginn = text(body.vertragsbeginn, 10) || sj.erster_schultag.slice(0, 8) + "01";
+      // Die erste Stunde darf an jedem Tag liegen; die Raten laufen ab dem
+      // Monat, in dem sie liegt.
+      const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10)
+        || sj.erster_schultag.slice(0, 10);
+      const beginn = monatsErster(start);
 
       const r = await rechneVertrag({
-        schuljahr: sj, zeiten, stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
+        schuljahr: sj,
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
       });
       return ok({
         schuljahr: sj.name, posten: r.posten, jahresbetragCent: r.jahresbetragCent,
         raten: r.raten, einmalCent: r.einmalCent, anzahlTermine: r.alleTermine.length,
+        unterrichtsbeginn: start, vertragsbeginn: beginn,
+        ersterTermin: r.alleTermine[0] ?? null,
       });
     }
 
@@ -341,14 +349,23 @@ export async function POST(req: Request): Promise<Response> {
       const zweitCent = body.stundensatz_zweittermin != null
         ? euroZuCent(Number(body.stundensatz_zweittermin))
         : standardZweitsatzCent(satzCent);
-      const beginn = text(body.vertragsbeginn, 10);
-      if (!/^\d{4}-\d{2}-01$/.test(beginn)) return bad("Der Vertragsbeginn muss ein Monatserster sein.");
+      // Die erste Stunde darf an jedem Tag des Monats liegen – ein Schüler,
+      // der am 17. anfängt, ist der Normalfall. Abgerechnet wird trotzdem in
+      // Monatsraten, deshalb wird der Monatserste daraus abgeleitet.
+      const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return bad("Bitte ein gültiges Datum für die erste Stunde angeben.");
+      const beginn = monatsErster(start);
 
       const r = await rechneVertrag({
-        schuljahr: sj, zeiten, stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
+        schuljahr: sj,
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
       });
+      if (!r.alleTermine.length) {
+        return bad("Ab diesem Datum gibt es in dem Wochentermin keine Stunden mehr. Bitte Datum oder Wochentag prüfen.");
+      }
 
       const vRes = await sb.from("vertraege").insert({
         schueler_id: schuelerId, schuljahr_id: sj.id, schule_id: text(body.schule_id, 40) || null,
@@ -369,7 +386,11 @@ export async function POST(req: Request): Promise<Response> {
       const vertrag = vRes.data as Vertrag;
 
       const zRes = await sb.from("vertrag_zeiten").insert(
-        zeiten.map((z) => ({ vertrag_id: vertrag.id, wochentag: z.wochentag, uhrzeit: z.uhrzeit || "15:00" })),
+        zeiten.map((z) => ({
+          vertrag_id: vertrag.id, wochentag: z.wochentag, uhrzeit: z.uhrzeit || "15:00",
+          // Nur setzen, wenn der Unterricht nicht am Monatsersten beginnt.
+          ab_datum: start === beginn ? null : start,
+        })),
       );
       if (zRes.error) return bad(zRes.error.message, 500);
 

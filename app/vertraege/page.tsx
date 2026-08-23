@@ -29,6 +29,7 @@ type Rate = { monat: string; betragCent: number };
 type Vorschau = {
   schuljahr: string; posten: Posten[]; jahresbetragCent: number;
   raten: Rate[]; einmalCent: number; anzahlTermine: number;
+  unterrichtsbeginn: string; vertragsbeginn: string; ersterTermin: string | null;
 };
 type Termin = { datum: string; satzCent: number };
 type Abrechnung = {
@@ -79,7 +80,7 @@ export default function VertraegeSeite() {
   const [nSatz, setNSatz] = useState('45');
   const [nZweitSatz, setNZweitSatz] = useState('');
   const [nZweitesKind, setNZweitesKind] = useState(false);
-  const [nBeginn, setNBeginn] = useState('');
+  const [nBeginn, setNBeginn] = useState('');   // Tag der ersten Stunde, beliebig
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
 
@@ -134,7 +135,7 @@ export default function VertraegeSeite() {
     stundensatz: Number(nSatz.replace(',', '.')) || 0,
     stundensatz_zweittermin: nZweitSatz ? Number(nZweitSatz.replace(',', '.')) : undefined,
     zweites_kind: nZweitesKind,
-    vertragsbeginn: nBeginn,
+    unterrichtsbeginn: nBeginn,
   });
 
   async function vorschauHolen() {
@@ -265,9 +266,12 @@ export default function VertraegeSeite() {
               <input style={feld} value={nSatz} inputMode="decimal"
                 onChange={(e) => { setNSatz(e.target.value); setVorschau(null); }} />
             </label>
-            <label style={etikett}>Vertragsbeginn (Monatserster)
+            <label style={etikett}>Erste Stunde am
               <input style={feld} type="date" value={nBeginn}
                 onChange={(e) => { setNBeginn(e.target.value); setVorschau(null); }} />
+              <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
+                beliebiger Tag – die Raten laufen ab diesem Monat
+              </span>
             </label>
           </div>
 
@@ -321,6 +325,14 @@ export default function VertraegeSeite() {
           {vorschau && (
             <div style={{ ...box, borderColor: F.line, background: '#fbfbfa', marginTop: 16 }}>
               <b>Schuljahr {vorschau.schuljahr} · {vorschau.anzahlTermine} Termine</b>
+              {vorschau.ersterTermin && (
+                <div style={{ color: F.soft, fontSize: 14, marginTop: 4 }}>
+                  Erste Stunde: <b>{datumDe(vorschau.ersterTermin)}</b>
+                  {vorschau.vertragsbeginn !== vorschau.unterrichtsbeginn && (
+                    <> · Raten ab {monatName(vorschau.vertragsbeginn)}</>
+                  )}
+                </div>
+              )}
               <div style={{ marginTop: 10 }}>
                 {vorschau.posten.map((p) => (
                   <Zeile key={p.wochentag}
