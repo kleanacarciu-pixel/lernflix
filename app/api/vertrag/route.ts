@@ -397,8 +397,11 @@ export async function POST(req: Request): Promise<Response> {
       );
       if (zRes.error) return bad(zRes.error.message, 500);
 
-      await angebotSenden(vertrag.id, basisUrl(req));
-      return ok({ vertragId: vertrag.id });
+      // Ehrlich zurueckmelden, ob das Angebot wirklich rausging: ohne
+      // hinterlegte E-Mail-Adresse wird der Vertrag zwar angelegt, die
+      // Eltern bekommen aber nichts zu sehen.
+      const mail = await angebotSenden(vertrag.id, basisUrl(req));
+      return ok({ vertragId: vertrag.id, mailVerschickt: mail.ok, mailFehler: mail.error ?? null });
     }
 
     case "erneutSenden": {

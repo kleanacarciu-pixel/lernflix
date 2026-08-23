@@ -144,11 +144,25 @@ export default function VertraegeSeite() {
     unterrichtsbeginn: nBeginn,
   });
 
+  // Läuft auch automatisch – deshalb werden hier KEINE Meldungen gelöscht,
+  // sonst verschwindet die Rückmeldung des vorherigen Schritts sofort wieder.
   async function vorschauHolen() {
-    setFehler(''); setHinweis('');
     try { setVorschau((await api('vorschau', felder())) as unknown as Vorschau); }
     catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); setVorschau(null); }
   }
+
+  // Sobald das Formular vollständig ist, die Beträge von selbst holen.
+  // Vorher war ein Klick auf „Beträge ansehen" Pflicht, sonst blieb der
+  // Anlegen-Knopf gesperrt – ohne dass man ihm das ansah.
+  const vollstaendig = !!nSchueler && !!nBeginn && nZeiten.length > 0
+    && (Number(nSatz.replace(',', '.')) || 0) > 0;
+  useEffect(() => {
+    if (!token || !vollstaendig || vorschau) return;
+    const t = setTimeout(() => { void vorschauHolen(); }, 300);
+    return () => clearTimeout(t);
+    // vorschauHolen haengt an den Formularfeldern; die stehen alle in vollstaendig.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, vollstaendig, vorschau, nSchueler, nBeginn, nSatz, nZweitSatz, nZweitesKind, nZeiten]);
 
   async function kuendigungRechnen(v: VertragZeile, zum: string) {
     setFehler('');
@@ -326,12 +340,41 @@ export default function VertraegeSeite() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-            <button style={knopfKlein} onClick={() => void vorschauHolen()}>Beträge ansehen</button>
-            <button style={knopf} disabled={!vorschau}
-              onClick={() => { if (confirm('Vertrag anlegen und das Angebot per E-Mail verschicken?')) void tun(async () => { await api('anlegen', felder()); setVorschau(null); }, 'Vertrag angelegt, Angebot verschickt.'); }}>
+            <button style={knopfKlein} onClick={() => void vorschauHolen()}>Beträge neu berechnen</button>
+            <button
+              style={vorschau ? knopf : { ...knopf, background: F.line, color: F.muted, cursor: 'not-allowed' }}
+              disabled={!vorschau}
+              title={vorschau ? '' : 'Bitte zuerst alle Felder ausfüllen – die Beträge erscheinen dann von selbst.'}
+              onClick={() => {
+                if (!vorschau) return;
+                const frage = `Vertrag für ${schueler.find((x) => x.user_id === nSchueler)?.name || 'die Schülerin'} anlegen?\n\n`
+                  + `${vorschau.anzahlTermine} Termine · Jahresbetrag ${eur(vorschau.jahresbetragCent)}\n`
+                  + `${vorschau.raten.length} Raten à ${eur(vorschau.raten[0]?.betragCent ?? 0)}\n\n`
+                  + 'Das Angebot geht danach per E-Mail raus.';
+                if (confirm(frage)) {
+                  setFehler(''); setHinweis('');
+                  void (async () => {
+                    try {
+                      const d = await api('anlegen', felder());
+                      setVorschau(null);
+                      await neuLaden();          // erst laden, dann melden
+                      if (d.mailVerschickt) setHinweis('Vertrag angelegt, Angebot verschickt.');
+                      else setFehler('Vertrag angelegt – aber das Angebot konnte NICHT verschickt werden: '
+                        + String(d.mailFehler || 'unbekannter Grund')
+                        + ' Bitte die E-Mail-Adresse im Kalender nachtragen und dann „Angebot erneut senden" klicken.');
+                    } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+                  })();
+                }
+              }}>
               Vertrag anlegen und Angebot senden
             </button>
           </div>
+          {!vollstaendig && (
+            <p style={{ color: F.muted, fontSize: 13, margin: '8px 0 0' }}>
+              Bitte Schüler/in, Stundensatz, Datum und Wochentermin ausfüllen – die Beträge
+              erscheinen dann von selbst.
+            </p>
+          )}
 
           {vorschau && (
             <div style={{ ...box, borderColor: F.line, background: '#fbfbfa', marginTop: 16 }}>
