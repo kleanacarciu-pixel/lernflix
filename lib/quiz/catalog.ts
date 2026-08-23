@@ -245,7 +245,8 @@ export const KATALOG: ThemenBaum = {
         "🧩 Lineare Gleichungssysteme",
         "📐 Binomische Formeln",
         "√ Wurzeln & reelle Zahlen",
-        "🎲 Wahrscheinlichkeit",
+        "⭕ Kreis: Umfang & Fläche",
+        "🎲 Wahrscheinlichkeit (mehrstufig)",
       ],
       9: [
         "📐 Satz des Pythagoras",

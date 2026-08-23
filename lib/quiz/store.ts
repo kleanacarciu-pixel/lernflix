@@ -39,6 +39,13 @@ import gleichungenGym7 from "@/lib/quiz/interaktiv/gleichungen-gym7";
 import winkelDreieckeGym7 from "@/lib/quiz/interaktiv/winkel-dreiecke-gym7";
 import wahrscheinlichkeitGym7 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-gym7";
 
+import lineareFunktionenGym8 from "@/lib/quiz/interaktiv/lineare-funktionen-gym8";
+import lgsGym8 from "@/lib/quiz/interaktiv/lgs-gym8";
+import binomeGym8 from "@/lib/quiz/interaktiv/binome-gym8";
+import wurzelnGym8 from "@/lib/quiz/interaktiv/wurzeln-gym8";
+import kreisGym8 from "@/lib/quiz/interaktiv/kreis-gym8";
+import wahrscheinlichkeit2Gym8 from "@/lib/quiz/interaktiv/wahrscheinlichkeit2-gym8";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -57,6 +64,13 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 7, "Lineare Gleichungen")]: gleichungenGym7,
   [themaKey("mathe", "gymnasium", 7, "Winkel & Dreiecke")]: winkelDreieckeGym7,
   [themaKey("mathe", "gymnasium", 7, "Wahrscheinlichkeit")]: wahrscheinlichkeitGym7,
+
+  [themaKey("mathe", "gymnasium", 8, "Lineare Funktionen")]: lineareFunktionenGym8,
+  [themaKey("mathe", "gymnasium", 8, "Lineare Gleichungssysteme")]: lgsGym8,
+  [themaKey("mathe", "gymnasium", 8, "Binomische Formeln")]: binomeGym8,
+  [themaKey("mathe", "gymnasium", 8, "Wurzeln & reelle Zahlen")]: wurzelnGym8,
+  [themaKey("mathe", "gymnasium", 8, "Kreis: Umfang & Fläche")]: kreisGym8,
+  [themaKey("mathe", "gymnasium", 8, "Wahrscheinlichkeit (mehrstufig)")]: wahrscheinlichkeit2Gym8,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
