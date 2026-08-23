@@ -150,6 +150,7 @@ export default function ZahlungenSeite() {
           Es zählt nur, was <b>fehlt</b>. Alles Nicht-Markierte gilt als bezahlt.{' '}
           <a href="/vertraege" style={{ color: F.blue }}>Verträge</a> ·{' '}
           <a href="/schuljahr" style={{ color: F.blue }}>Schuljahr &amp; Ferien</a> ·{' '}
+          <a href="/einstellungen" style={{ color: F.blue }}>Einstellungen</a> ·{' '}
           <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
 

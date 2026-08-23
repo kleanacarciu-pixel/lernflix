@@ -109,6 +109,7 @@ export default function SchuljahrSeite() {
           Grundlage für die Terminberechnung.{' '}
           <a href="/vertraege" style={{ color: F.blue }}>Verträge</a> ·{' '}
           <a href="/zahlungen" style={{ color: F.blue }}>Zahlungen</a> ·{' '}
+          <a href="/einstellungen" style={{ color: F.blue }}>Einstellungen</a> ·{' '}
           <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
 

@@ -203,6 +203,7 @@ export default function VertraegeSeite() {
           Schuljahresverträge anlegen, Termine wechseln, kündigen und abrechnen.{' '}
           <a href="/zahlungen" style={{ color: F.blue }}>Zahlungen</a> ·{' '}
           <a href="/schuljahr" style={{ color: F.blue }}>Schuljahr &amp; Ferien</a> ·{' '}
+          <a href="/einstellungen" style={{ color: F.blue }}>Einstellungen</a> ·{' '}
           <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
 

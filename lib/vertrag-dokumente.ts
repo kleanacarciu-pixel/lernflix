@@ -124,6 +124,8 @@ export async function terminlistePdf(dat: TerminlisteDaten): Promise<Buffer> {
 // --- Vertragsbestätigung ----------------------------------------------------
 
 export type VertragsbestaetigungDaten = {
+  /** Kleanas Unterschrift als Bytes – fehlt sie, bleibt das Feld leer. */
+  unterschriftAnbieterin?: Buffer | null;
   schuelerName: string;
   schuljahrName: string;
   zeiten: { wochentag: number; uhrzeit?: string }[];
@@ -186,7 +188,33 @@ export async function vertragsbestaetigungPdf(dat: VertragsbestaetigungDaten): P
   d.fontSize(10).fillColor(GRAU)
     .text(`Bestätigt am ${datumDe(dat.bestaetigtAm.slice(0, 10))}. Dieses Dokument dient als Jahresbeleg und ist jederzeit im Portal abrufbar.`);
 
+  unterschriftsfeld(d, dat.unterschriftAnbieterin ?? null);
+
   return fertig(d);
+}
+
+/**
+ * Unterschrift der Anbieterin unten auf der Seite.
+ * Ohne hinterlegtes Bild bleibt die Linie leer – die PDF entsteht trotzdem,
+ * damit ein fehlendes Bild nie den ganzen Vertrag blockiert.
+ */
+function unterschriftsfeld(d: PDFKit.PDFDocument, bild: Buffer | null): void {
+  d.moveDown(1.4);
+  const y = d.y;
+  const breite = 190;
+
+  if (bild) {
+    try {
+      d.image(bild, RAND, y, { fit: [breite, 46] });
+    } catch {
+      // Unbrauchbares Bild: lieber ohne Unterschrift als ohne Vertrag.
+    }
+  }
+  const linieY = y + 52;
+  d.moveTo(RAND, linieY).lineTo(RAND + breite, linieY).strokeColor(GRAU).lineWidth(0.7).stroke();
+  d.fontSize(9).fillColor(GRAU).font("Helvetica")
+    .text("Kleana Carciu · Lerne mit Anna", RAND, linieY + 4, { width: breite });
+  d.y = linieY + 20;
 }
 
 // --- Plusstunden-Abrechnung -------------------------------------------------
