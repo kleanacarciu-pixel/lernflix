@@ -34,7 +34,7 @@ describe("Sammeldatei enthält alle Einzeldateien vollständig", () => {
   });
 
   test("keine der Vorlagen fehlt", () => {
-    for (const schluessel of ["adminCheck", "erinnerung", "pausierung", "dank", "terminEnde"]) {
+    for (const schluessel of ["adminCheck", "erinnerung", "pausierung", "dank", "terminEnde", "minusWarnung"]) {
       assert.ok(alles.includes(`'${schluessel}'`), `Vorlage ${schluessel} fehlt in der Sammeldatei`);
     }
   });

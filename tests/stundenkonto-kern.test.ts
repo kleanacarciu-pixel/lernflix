@@ -10,7 +10,8 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
-  MAX_MINUS, ABSAGE_FRIST_STUNDEN,
+  absageVorschau, warntVorLimit, freieGutschriften,
+  MAX_MINUS, ABSAGE_FRIST_STUNDEN, WARNUNG_AB_MINUS,
   type Konto,
 } from "../lib/stundenkonto-kern.ts";
 
@@ -184,5 +185,79 @@ describe("Zusammenspiel über mehrere Schritte", () => {
     r = verrechne(konto); konto = { ...konto, ...r.aenderung };
     assert.equal(r.counted, "plus");
     assert.deepEqual(konto, k({ plus_hours: 1 }));
+  });
+});
+
+describe("Frühwarnung: nur noch eine Gutschrift frei", () => {
+  test("die Warnschwelle liegt eine Stunde unter der Grenze", () => {
+    assert.equal(WARNUNG_AB_MINUS, MAX_MINUS - 1);
+    assert.equal(WARNUNG_AB_MINUS, 3);
+  });
+
+  test("gewarnt wird ab drei offenen Minus-Stunden", () => {
+    assert.equal(warntVorLimit(k({ minus_hours: 2 })), false);
+    assert.equal(warntVorLimit(k({ minus_hours: 3 })), true);
+  });
+
+  test("bei vollem Konto ist es keine Vorwarnung mehr, sondern der Ernstfall", () => {
+    assert.equal(warntVorLimit(k({ minus_hours: MAX_MINUS })), false);
+  });
+
+  test("freie Gutschriften werden richtig gezählt", () => {
+    assert.equal(freieGutschriften(k({ minus_hours: 0 })), 4);
+    assert.equal(freieGutschriften(k({ minus_hours: 3 })), 1);
+    assert.equal(freieGutschriften(k({ minus_hours: MAX_MINUS })), 0);
+  });
+
+  test("die Warnung greift genau bei der Absage, die auf drei führt", () => {
+    const vorher = k({ minus_hours: 2 });
+    const nachher = { ...vorher, ...bewerteAbsage(vorher, 24).aenderung };
+    assert.equal(nachher.minus_hours, 3);
+    assert.equal(warntVorLimit(nachher), true);
+  });
+});
+
+describe("Warnung VOR der Absage", () => {
+  test("normale Absage: Gutschrift, keine Bestätigung nötig", () => {
+    const v = absageVorschau(k({ minus_hours: 0 }), 24);
+    assert.equal(v.gutschrift, true);
+    assert.equal(v.bestaetigungNoetig, false);
+    assert.equal(v.grund, null);
+    assert.match(v.text, /gutgeschrieben/);
+  });
+
+  test("bei drei offenen: Gutschrift, aber der Hinweis nennt das volle Konto", () => {
+    const v = absageVorschau(k({ minus_hours: 3 }), 24);
+    assert.equal(v.gutschrift, true);
+    assert.equal(v.bestaetigungNoetig, false);
+    assert.match(v.text, /voll \(4\/4\)/);
+  });
+
+  test("volles Konto: keine Gutschrift, Bestätigung nötig, deutlicher Text", () => {
+    const v = absageVorschau(k({ minus_hours: MAX_MINUS }), 24);
+    assert.equal(v.gutschrift, false);
+    assert.equal(v.bestaetigungNoetig, true);
+    assert.equal(v.grund, "kontoVoll");
+    assert.match(v.text, /Achtung/);
+    assert.match(v.text, /NICHT gutgeschrieben/);
+    assert.match(v.text, /verfällt/);
+  });
+
+  test("zu spät abgesagt: ebenfalls Verfall, aber mit anderem Grund", () => {
+    const v = absageVorschau(k({ minus_hours: 0 }), 2);
+    assert.equal(v.gutschrift, false);
+    assert.equal(v.grund, "zuSpaet");
+    assert.match(v.text, /Weniger als 4 Stunden vorher/);
+    assert.match(v.text, /verfällt/);
+  });
+
+  test("die Vorschau sagt dasselbe wie die spätere Bewertung", () => {
+    for (const minus of [0, 1, 2, 3, 4]) {
+      for (const std of [24, 4, 3.9, 0, -1]) {
+        const konto = k({ minus_hours: minus });
+        assert.equal(absageVorschau(konto, std).gutschrift, bewerteAbsage(konto, std).gutschrift,
+          `Konto ${minus}, ${std} Std. vorher`);
+      }
+    }
   });
 });

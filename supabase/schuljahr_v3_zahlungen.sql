@@ -57,6 +57,8 @@ create table if not exists public.mahn_vorlagen (
 -- {name} {betrag} {monat} {iban} {inhaber} {verwendungszweck}
 -- Bei 'terminEnde' zusaetzlich:
 --   {alterTag} {bleibtTag} {endeAm} {abMonat} {satz} {jahresbetrag} {rate}
+-- Bei 'minusWarnung' zusaetzlich:
+--   {offen} {frei} {grenze}
 insert into public.mahn_vorlagen (schluessel, betreff, text) values
   ('adminCheck',
    'Kurzer Bank-Check',
@@ -67,6 +69,9 @@ insert into public.mahn_vorlagen (schluessel, betreff, text) values
   ('pausierung',
    'Unterricht vorübergehend pausiert',
    E'Hallo,\n\nfür die Rate {monat} ({betrag}) ist bei mir leider noch nichts eingegangen. Deshalb pausiere ich den Unterricht für {name} vorerst – der feste Wochentermin ruht und es lassen sich keine Stunden buchen.\n\nSobald die Zahlung da ist, geht es sofort normal weiter. Termine in den nächsten zwei Tagen finden noch statt.\n\nEmpfänger: {inhaber}\nIBAN: {iban}\nVerwendungszweck: {verwendungszweck}\n\nMeld dich gern, wenn etwas dazwischengekommen ist – wir finden eine Lösung.\n\nLiebe Grüße\nAnna'),
+  ('minusWarnung',
+   'Nur noch {frei} Gutschrift frei – {name}',
+   E'Hallo,\n\nkurzer Hinweis: {name} hat gerade {offen} offene Minus-Stunden. Damit ist nur noch {frei} von {grenze} Gutschriften frei.\n\nWird das Konto voll, verfällt eine weitere Absage ersatzlos – sie wird dann nicht mehr gutgeschrieben.\n\nBucht am besten bald Nachholtermine im Kalender, dann wird wieder Platz frei.\n\nLiebe Grüße\nAnna'),
   ('terminEnde',
    'Änderung: {name} hat ab jetzt einen Wochentermin',
    E'Hallo,\n\nder Termin am {alterTag} für {name} endet zum {endeAm}. Ab {abMonat} bleibt der Termin am {bleibtTag}.\n\nDamit entfällt der Familienpreis: Für einen einzelnen Wochentermin gilt wieder der reguläre Stundensatz von {satz} (AGB § 6 Abs. 2). Die bereits gezahlten Raten bleiben unverändert.\n\nNeuer Jahresbetrag: {jahresbetrag}\nRestliche Raten: {rate}\n\nDie aktualisierte Terminliste findest du im Anhang.\n\nMeld dich gern, wenn etwas unklar ist.\n\nLiebe Grüße\nAnna'),

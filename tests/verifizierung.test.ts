@@ -337,3 +337,73 @@ describe("35) Trennung der Konten", () => {
     assert.match(block, /is_admin\(\)/);
   });
 });
+
+// --- Ergänzungen: Frühwarnung und Verfall-Bestätigung -------------------------
+
+describe("Absage bei vollem Konto wird serverseitig abgelehnt", () => {
+  const route = readFileSync("app/api/kalender/route.ts", "utf8");
+
+  test("ohne ausdrückliche Bestätigung bricht die Absage ab", () => {
+    const i = route.indexOf('const vorschau = absageVorschau(prof, hu);');
+    assert.ok(i > 0, "Die Vorschau muss vor der Absage stehen");
+    const block = route.slice(i, i + 500);
+    assert.match(block, /vorschau\.grund === "kontoVoll"/);
+    assert.match(block, /body\.verfallBestaetigt !== true/);
+    assert.match(block, /ok: false/);
+    assert.match(block, /status: 409/);
+  });
+
+  test("die Prüfung steht VOR dem Schreiben in die Datenbank", () => {
+    const pruefung = route.indexOf('body.verfallBestaetigt !== true');
+    const insert = route.indexOf('kind: "absage"');
+    assert.ok(pruefung > 0 && insert > 0);
+    assert.ok(pruefung < insert,
+      "Die Bestätigungsprüfung muss vor dem Anlegen der Absage-Zeile liegen");
+  });
+
+  test("die Frühwarnung geht nur bei erteilter Gutschrift raus", () => {
+    const i = route.indexOf('if (credit && warntVorLimit(danach)');
+    assert.ok(i > 0, "Die Frühwarnung fehlt");
+    const block = route.slice(i, i + 400);
+    assert.match(block, /vorlageSenden\("minusWarnung"/);
+  });
+});
+
+describe("Die Oberfläche warnt vor dem Verfall", () => {
+  const seite = readFileSync("app/kalender/page.tsx", "utf8");
+
+  test("der Absage-Knopf schickt die Bestätigung mit", () => {
+    assert.match(seite, /verfallBestaetigt: !v\.gutschrift/);
+  });
+
+  test("die feste 3 in der Anzeige ist durch die Konstante ersetzt", () => {
+    assert.equal(/Minus \{balance\.minus\}\/3</.test(seite), false);
+    assert.match(seite, /Minus \{balance\.minus\}\/\{MAX_MINUS\}/);
+  });
+
+  test("das Frühwarn-Banner hängt an der Warnschwelle", () => {
+    assert.match(seite, /balance\.minus >= WARNUNG_AB_MINUS/);
+  });
+});
+
+describe("Beide neuen E-Mail-Vorlagen sind angelegt", () => {
+  const sql = readFileSync("supabase/schuljahr_v3_zahlungen.sql", "utf8");
+
+  test("minusWarnung mit allen Platzhaltern", () => {
+    const i = sql.indexOf("('minusWarnung',");
+    assert.ok(i > 0, "Vorlage minusWarnung fehlt");
+    const block = sql.slice(i, sql.indexOf("('terminEnde',"));
+    for (const teil of ["{name}", "{offen}", "{frei}", "{grenze}"]) {
+      assert.ok(block.includes(teil), `Platzhalter ${teil} fehlt`);
+    }
+    assert.match(block, /verfällt/);
+  });
+
+  test("terminEnde mit allen Platzhaltern", () => {
+    const i = sql.indexOf("('terminEnde',");
+    const block = sql.slice(i, sql.indexOf("('dank',"));
+    for (const teil of ["{alterTag}", "{bleibtTag}", "{endeAm}", "{abMonat}", "{satz}", "{jahresbetrag}", "{rate}"]) {
+      assert.ok(block.includes(teil), `Platzhalter ${teil} fehlt`);
+    }
+  });
+});

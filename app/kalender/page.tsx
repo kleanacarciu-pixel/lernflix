@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number };
 type Absage = { start: number; dauer: number; name: string };
 type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[] };
+import {
+  MAX_MINUS, WARNUNG_AB_MINUS, absageVorschau, freieGutschriften,
+} from "@/lib/stundenkonto-kern";
+
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
@@ -495,13 +499,30 @@ export default function KalenderPage() {
         const hu = hoursUntil(date, s.hour);
         const istOnline = s.mode === "online";
         setModal(<div className="modal"><h2>Dein Termin</h2><p>{when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
-          {hu >= 4 ? <div className="okbox">Absagen: mehr als 4 Std. vorher → wird als <b>Minus-Stunde</b> gutgeschrieben (max. 3).</div>
-            : <div className="warn">Absagen: weniger als 4 Std. vorher → zählt <b>nicht</b> als Minus-Stunde.</div>}
+          {(() => {
+            const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: 0, makeup_credits: 0 }, hu);
+            return v.gutschrift
+              ? <div className="okbox">{v.text}</div>
+              : <div className="warn"><b>{v.text}</b></div>;
+          })()}
           <div className="col">
             <button className="btn p" onClick={() => act("setMode", { date, hour: s.hour, mode: istOnline ? "vor_ort" : "online" })}>
               {istOnline ? "🏫 Diese Stunde vor Ort machen" : "💻 Diese Stunde online machen"}
             </button>
-            <button className="btn p" onClick={() => act("cancelMine", { date, hour: s.hour })}>{hu >= 4 ? "Diesen Termin absagen" : "Trotzdem absagen"}</button>
+            {(() => {
+              const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: 0, makeup_credits: 0 }, hu);
+              // Verfaellt die Stunde, muss der Verfall ausdruecklich bestaetigt
+              // werden – der Server laesst die Absage sonst nicht durch.
+              const beschriftung = v.gutschrift ? "Diesen Termin absagen"
+                : v.grund === "kontoVoll" ? "Ja, Stunde verfallen lassen"
+                : "Trotzdem absagen";
+              return (
+                <button className={v.gutschrift ? "btn p" : "btn r"}
+                  onClick={() => act("cancelMine", { date, hour: s.hour, verfallBestaetigt: !v.gutschrift })}>
+                  {beschriftung}
+                </button>
+              );
+            })()}
             {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
             <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
           </div></div>);
@@ -773,9 +794,20 @@ export default function KalenderPage() {
               </button>
             ))}
             <span className="lbl">Deine Stunden:</span>
-            <span className="pill"><span className="m">Minus {balance.minus}/3</span><span className="tip"><b>Minus-Stunden:</b><br />{balance.dates.minus.length ? balance.dates.minus.join(", ") : "keine"}</span></span>
+            <span className="pill"><span className="m">Minus {balance.minus}/{MAX_MINUS}</span><span className="tip"><b>Minus-Stunden:</b><br />{balance.dates.minus.length ? balance.dates.minus.join(", ") : "keine"}</span></span>
             <span className="pill"><span className="p">Plus {balance.plus}</span><span className="tip"><b>Plus-Stunden:</b><br />{balance.dates.plus.length ? balance.dates.plus.join(", ") : "keine"}</span></span>
             <span className="pill"><span className="n">Gutschrift (Kleana) {balance.nach}</span><span className="tip"><b>Gutschrift von Kleana (kostenlos nachholbar):</b><br />{balance.dates.nach.length ? balance.dates.nach.join(", ") : "keine"}</span></span>
+          </div>
+        )}
+        {/* Fruehwarnung: nur noch eine Gutschrift frei (Punkt 1) */}
+        {role === "student" && balance && balance.minus >= WARNUNG_AB_MINUS && (
+          <div className="warn" style={{ margin: "10px 0" }}>
+            {balance.minus >= MAX_MINUS
+              ? <>Dein Stundenkonto ist <b>voll ({MAX_MINUS}/{MAX_MINUS})</b>. Eine weitere Absage
+                  wird <b>nicht</b> gutgeschrieben und verfällt. Buch am besten bald Nachholtermine.</>
+              : <>Du hast <b>{balance.minus} offene Minus-Stunden</b> – nur noch{" "}
+                  <b>{freieGutschriften({ minus_hours: balance.minus, plus_hours: 0, makeup_credits: 0 })}</b>{" "}
+                  Gutschrift frei. Buch am besten bald Nachholtermine.</>}
           </div>
         )}
 

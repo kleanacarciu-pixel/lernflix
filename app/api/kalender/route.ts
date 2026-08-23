@@ -9,8 +9,11 @@ import {
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
-import { buchungErlaubtGesamt as buchungErlaubt } from "@/lib/zahlung";
-import { verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau, MAX_MINUS } from "@/lib/stundenkonto-kern";
+import { buchungErlaubtGesamt as buchungErlaubt, vorlageSenden } from "@/lib/zahlung";
+import {
+  verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
+  absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS,
+} from "@/lib/stundenkonto-kern";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -189,9 +192,34 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absage) {
         const hu = hoursUntil(date, hour);
+
+        // Bei vollem Stundenkonto verfaellt die Stunde ersatzlos. Das darf
+        // niemanden ueberraschen: ohne ausdrueckliche Bestaetigung wird die
+        // Absage abgelehnt und der Grund zurueckgemeldet.
+        const vorschau = absageVorschau(prof, hu);
+        if (vorschau.grund === "kontoVoll" && body.verfallBestaetigt !== true) {
+          return NextResponse.json(
+            { ok: false, error: vorschau.text, bestaetigungNoetig: true, grund: vorschau.grund },
+            { status: 409 },
+          );
+        }
+
         const { gutschrift: credit, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
         await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
         if (aenderung) await setBalance(user.id, aenderung);
+
+        // Frühwarnung: mit dieser Gutschrift ist nur noch eine frei.
+        const danach = { ...prof, ...(aenderung ?? {}) };
+        if (credit && warntVorLimit(danach) && prof.email) {
+          const frei = freieGutschriften(danach);
+          after(() => vorlageSenden("minusWarnung", prof.email as string, {
+            name: prof.name,
+            offen: String(danach.minus_hours),
+            frei: String(frei),
+            grenze: String(MAX_MINUS),
+          }));
+        }
+
         after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
         return ok({ message: absageText });
       }
