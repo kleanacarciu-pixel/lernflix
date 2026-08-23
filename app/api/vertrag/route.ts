@@ -22,6 +22,7 @@ import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
 import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
+import { unterschriftBytes } from "@/lib/einstellungen";
 import {
   schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
   vorlageSenden, monatName,
@@ -91,13 +92,14 @@ async function anhaenge(v: NonNullable<Awaited<ReturnType<typeof vollbild>>>): P
       zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
       termine: rechnung.alleTermine,
     }),
-    vertragsbestaetigungPdf({
+    unterschriftBytes().then((sig: Buffer | null) => vertragsbestaetigungPdf({
+      unterschriftAnbieterin: sig,
       schuelerName: schueler.name, schuljahrName: schuljahr.name,
       zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
       posten: rechnung.posten, jahresbetragCent: rechnung.jahresbetragCent,
       zahlweise: vertrag.zahlweise, raten: rechnung.raten, einmalCent: rechnung.einmalCent,
       bestaetigtAm: vertrag.agb_akzeptiert_am || new Date().toISOString(),
-    }),
+    })),
   ]);
   const jahr = schuljahr.name.replace("/", "-");
   return [
@@ -695,6 +697,7 @@ export async function GET(req: Request): Promise<Response> {
     name = "Widerrufsbelehrung.pdf";
   } else if (art === "bestaetigung") {
     datei = await vertragsbestaetigungPdf({
+      unterschriftAnbieterin: await unterschriftBytes(),
       schuelerName: v.schueler.name, schuljahrName: v.schuljahr.name,
       zeiten: v.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
       posten: v.rechnung.posten, jahresbetragCent: v.rechnung.jahresbetragCent,
