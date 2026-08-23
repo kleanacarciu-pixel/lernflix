@@ -381,135 +381,142 @@ function kaestchen(d: PDFKit.PDFDocument, x: number, y: number, gesetzt: boolean
 }
 
 /** Überschrift eines Abschnitts – Times-Bold auf Teal. */
-function abschnitt(d: PDFKit.PDFDocument, nummer: number, titel: string): void {
+function abschnitt(d: PDFKit.PDFDocument, nummer: number, titel: string, x = 56): void {
   d.moveDown(0.75);
+  // Ausdrücklich am linken Rand: pdfkit merkt sich sonst die letzte
+  // Schreibposition, und die lag zuletzt in einem Formularkasten.
   d.font("Times-Bold").fontSize(12).fillColor(FARBEN.teal)
-    .text(`${nummer}. ${titel}`);
+    .text(`${nummer}. ${titel}`, x, d.y);
   d.moveDown(0.3);
   d.font("Helvetica").fontSize(9.5).fillColor(FARBEN.ink);
 }
 
 /**
  * Der eigentliche Nachhilfevertrag – eine Seite, alle Daten aus der Datenbank.
- * Ersetzt die bisherige statische Vorlage.
+ *
+ * Das Layout folgt Kleanas Vorlage: zentrierter Kopf mit goldener Linie,
+ * die Parteien als beschriftete Formularzeilen, Ankreuzkästchen für die
+ * Zahlweise und Unterschriftslinien unten. Wo in der Vorlage leere Felder
+ * zum Ausfüllen stehen, steht hier der Wert aus der Datenbank.
  */
 export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer> {
-  const d = new PDFDocument({ size: "A4", margin: 44, info: { Title: TITEL, Author: "Lerne mit Anna" } });
-  const R = 44;
+  const d = new PDFDocument({ size: "A4", margin: 56, info: { Title: TITEL, Author: "Lerne mit Anna" } });
+  const R = 56;
   const breite = d.page.width - 2 * R;
+  const mitte = d.page.width / 2;
 
-  // --- Kopf ---
-  d.font("Times-Bold").fontSize(23).fillColor(FARBEN.teal).text(TITEL, R, 48);
-  d.font("Helvetica").fontSize(9).fillColor(FARBEN.gold)
-    .text(unterzeile(dat.schuljahrName), { characterSpacing: 0.8 });
-  d.moveDown(0.5);
-  d.moveTo(R, d.y).lineTo(R + breite, d.y).strokeColor(FARBEN.gold).lineWidth(1.4).stroke();
-  d.moveDown(0.7);
+  // --- Kopf: zentriert, darunter eine goldene Linie ---
+  d.font("Times-Bold").fontSize(20).fillColor(FARBEN.ink)
+    .text(TITEL, R, 54, { width: breite, align: "center" });
+  d.moveDown(0.25);
+  d.font("Helvetica").fontSize(9.5).fillColor(FARBEN.teal)
+    .text(unterzeile(dat.schuljahrName), { width: breite, align: "center", characterSpacing: 0.4 });
+  d.moveDown(0.55);
+  d.moveTo(R, d.y).lineTo(R + breite, d.y).strokeColor(FARBEN.gold).lineWidth(0.9).stroke();
+  d.moveDown(0.85);
 
   // --- Parteien ---
-  d.font("Helvetica").fontSize(9.5).fillColor(FARBEN.ink);
-  d.text(`${ANBIETERIN.zeile} (${ANBIETERIN.rolle})`);
-  d.moveDown(0.35);
+  const yZw = d.y;
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.teal).text("Zwischen", R, yZw, { width: 58 });
+  d.font("Helvetica-Bold").fontSize(9).fillColor(FARBEN.ink)
+    .text(ANBIETERIN.zeile, R + 62, yZw, { width: breite - 62 });
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink)
+    .text(`(${ANBIETERIN.rolle}) und`, R, d.y, { width: breite });
+  d.moveDown(0.45);
 
-  const elternZeilen = [
-    dat.eltern.name,
-    dat.eltern.anschrift,
-    [dat.eltern.email, dat.eltern.telefon].filter(Boolean).join(" · ") || null,
-  ].filter(Boolean) as string[];
-  d.text(elternZeilen.length
-    ? `${elternZeilen.join(" · ")} (nachfolgend „Erziehungsberechtigte“)`
-    : "Erziehungsberechtigte/r");
-  d.moveDown(0.2);
-  d.text(`Kind: ${dat.kind.name}${dat.kind.schule ? ` · Schule: ${dat.kind.schule}` : ""}`);
+  zeileMitFeld(d, R, breite, "Name des Erziehungsberechtigten:", dat.eltern.name);
+  zeileMitFeld(d, R, breite, "Anschrift:", dat.eltern.anschrift);
+  zeileMitFeld(d, R, breite, "E-Mail / Telefon:",
+    [dat.eltern.email, dat.eltern.telefon].filter(Boolean).join(" · "));
+  zeileMitFeld(d, R, breite, "Name des Kindes / Schule:",
+    [dat.kind.name, dat.kind.schule].filter(Boolean).join(" · "));
 
   // --- 1. Unterricht ---
   abschnitt(d, 1, "Unterricht");
   const zeitText = dat.zeiten
     .map((z) => `${WOCHENTAGE[z.wochentag]}${z.uhrzeit ? ` ${String(z.uhrzeit).slice(0, 5)} Uhr` : ""}`)
     .join(" und ");
-  d.text(`Fester Wochentermin: ${zeitText} · Dauer 60 Minuten`);
-  d.text(`Anzahl der Termine laut Terminliste: ${dat.anzahlTermine}`
-    + (dat.abDatum ? ` (ab ${datumDe(dat.abDatum)})` : ""));
-  d.fillColor(FARBEN.grau).fontSize(9).text(HINWEIS_FERIEN, { lineGap: 1 });
-  d.fillColor(FARBEN.ink).fontSize(9.5);
+  zeileMitFeld(d, R, breite, "Fester Wochentermin (Tag / Uhrzeit):", zeitText, "Dauer: 60 Min.", 190);
+  zeileMitFeld(d, R, breite,
+    `Unterrichtstermine im Vertragszeitraum laut Terminliste (Anlage):`,
+    `${dat.anzahlTermine}${dat.abDatum ? ` (ab ${datumDe(dat.abDatum)})` : ""}`, "Termine", 270);
+  d.moveDown(0.15);
+  d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
+    .text(HINWEIS_FERIEN, R, d.y, { width: breite, lineGap: 0.5 });
 
   // --- 2. Vergütung ---
   abschnitt(d, 2, "Vergütung und Zahlung");
-  d.text(`Stundensatz: ${centFormat(dat.stundensatzCent)} · `
-    + `Schuljahresbetrag: ${centFormat(dat.jahresbetragCent)}`);
-  d.moveDown(0.3);
+  const yV = d.y;
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink).text("Stundensatz:", R, yV, { width: 90 });
+  feldKasten(d, R + 92, yV - 3, 96, centFormat(dat.stundensatzCent));
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink)
+    .text("· Schuljahresbetrag gesamt:", R + 196, yV, { width: 140 });
+  feldKasten(d, R + 336, yV - 3, 110, centFormat(dat.jahresbetragCent));
+  d.y = yV + 20;
 
-  // Gewählte Zahlweise hervorheben
-  const gewaehlt = dat.zahlweise === "einmal"
-    ? `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag − 50 €)`
-    : `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} `
-      + "(Sep–Jul, fällig 1.–10.)";
-  const kastenY = d.y;
-  d.rect(R, kastenY - 3, breite, 21).fillColor("#F3F7F6").fill();
-  d.fillColor(FARBEN.teal).font("Helvetica-Bold").fontSize(9.5)
-    .text(`Gewählte Zahlweise: ${gewaehlt}`, R + 8, kastenY + 3, { width: breite - 16 });
-  d.y = kastenY + 24;
-  d.font("Helvetica").fontSize(9).fillColor(FARBEN.grau)
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink).text("Zahlweise:", R, d.y);
+  d.moveDown(0.25);
+  ankreuzZeile(d, R, dat.zahlweise === "raten",
+    `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} (Sep–Jul, fällig 1.–10.)`);
+  ankreuzZeile(d, R, dat.zahlweise === "einmal",
+    `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag – 50 €)`);
+  d.moveDown(0.2);
+  d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
     .text(zahlungshinweis(dat.kind.name.split(" ")[0], dat.schuljahrName), R, d.y, { width: breite });
-  d.fillColor(FARBEN.ink).fontSize(9);
 
-  // --- 3. Das Wichtigste auf einen Blick ---
+  // --- 3. Das Wichtigste ---
   abschnitt(d, 3, "Das Wichtigste auf einen Blick");
   for (const p of WICHTIGSTES) {
-    d.font("Helvetica-Bold").fontSize(9).fillColor(FARBEN.ink).text(`${p.titel}: `, { continued: true });
-    d.font("Helvetica").fillColor(FARBEN.grau).text(p.text, { lineGap: 1 });
-    d.moveDown(0.4);
+    d.font("Helvetica-Bold").fontSize(8.5).fillColor(FARBEN.ink)
+      .text(`${p.titel}: `, { continued: true });
+    d.font("Helvetica").fillColor(FARBEN.grau).text(p.text, { lineGap: 0.6 });
+    d.moveDown(0.2);
   }
 
   // --- Bestätigungen ---
-  d.moveDown(0.8);
-  d.font("Times-Bold").fontSize(12).fillColor(FARBEN.teal).text("Bestätigungen");
-  d.moveDown(0.35);
+  d.moveDown(0.5);
   for (const [text, wann] of [
     [BESTAETIGUNG_AGB, dat.agbBestaetigtAm],
     [BESTAETIGUNG_WIDERRUF, dat.widerrufBestaetigtAm],
   ] as [string, string | null | undefined][]) {
     const y = d.y;
     kaestchen(d, R, y + 1, !!wann);
-    d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink)
-      .text(text, R + 16, y, { width: breite - 16, lineGap: 1 });
+    d.font("Helvetica").fontSize(8.5).fillColor(FARBEN.ink)
+      .text(text, R + 16, y, { width: breite - 16, lineGap: 0.6 });
     if (wann) {
-      d.fontSize(7.5).fillColor(FARBEN.grau).text(`bestätigt am ${zeitstempel(wann)}`, R + 16, d.y + 1);
+      d.fontSize(7).fillColor(FARBEN.grau)
+        .text(`bestätigt am ${zeitstempel(wann)}`, R + 16, d.y + 1);
     }
-    d.moveDown(0.5);
+    d.moveDown(0.45);
   }
 
-  // --- Unterschriften ---
-  d.moveDown(1.6);
-  const sigY = d.y;
-  const spalte = (breite - 30) / 2;
-  const felder: [string, Buffer | null | undefined, string][] = [
-    [`${ANBIETERIN.ort}, den ${datumDe(new Date().toISOString().slice(0, 10))}`,
-      dat.unterschriftAnbieterin, ANBIETERIN.name],
-    [dat.unterzeichnetAm ? zeitstempel(dat.unterzeichnetAm) : "—",
-      dat.unterschriftEltern, dat.eltern.name || "Erziehungsberechtigte/r"],
+  // --- Unterschriften: links Eltern, rechts Kleana (wie in der Vorlage) ---
+  const sigY = Math.max(d.y + 26, d.page.height - 168);
+  const spalte = (breite - 40) / 2;
+  const felder: [number, Buffer | null | undefined, string, string][] = [
+    [R, dat.unterschriftEltern, "Ort, Datum · Unterschrift Erziehungsberechtigte(r)",
+      dat.unterzeichnetAm ? zeitstempel(dat.unterzeichnetAm) : ""],
+    [R + spalte + 40, dat.unterschriftAnbieterin, `Ort, Datum · Unterschrift ${ANBIETERIN.name}`,
+      `${ANBIETERIN.ort}, den ${datumDe(new Date().toISOString().slice(0, 10))}`],
   ];
-  felder.forEach(([wann, bild, name], i) => {
-    const x = R + i * (spalte + 30);
+  for (const [x, bild, beschriftung, wann] of felder) {
     if (bild) {
-      try { d.image(bild, x, sigY, { fit: [spalte, 40] }); } catch { /* lieber ohne Bild als ohne Vertrag */ }
+      try { d.image(bild, x + 4, sigY, { fit: [spalte - 8, 40] }); } catch { /* lieber ohne Bild */ }
     }
-    const linie = sigY + 44;
+    const linie = sigY + 46;
     d.moveTo(x, linie).lineTo(x + spalte, linie).strokeColor(FARBEN.grau).lineWidth(0.6).stroke();
-    d.font("Helvetica").fontSize(8).fillColor(FARBEN.ink).text(name, x, linie + 3, { width: spalte });
-    d.fontSize(7).fillColor(FARBEN.grau).text(wann, x, d.y, { width: spalte });
-  });
-
-  // --- Fußzeile ---
-  // WICHTIG: innerhalb des unteren Seitenrands bleiben. Steht der Text
-  // darunter, legt pdfkit dafür eine zweite Seite an – der Vertrag soll
-  // aber einseitig sein.
-  if (typeof process !== "undefined" && process.env.PDF_DEBUG) {
-    console.log("Vertrag: y vor der Fußzeile =", Math.round(d.y),
-      "| Rand unten bei", Math.round(d.page.height - d.page.margins.bottom));
+    d.font("Helvetica").fontSize(7.5).fillColor(FARBEN.teal)
+      .text(beschriftung, x, linie + 4, { width: spalte, lineBreak: false });
+    if (wann) {
+      d.fontSize(7).fillColor(FARBEN.grau).text(wann, x, linie + 15, { width: spalte, lineBreak: false });
+    }
   }
-  const fussY = d.page.height - d.page.margins.bottom - 12;
-  d.fontSize(7.5).fillColor(FARBEN.grau).font("Helvetica")
+
+  // --- Fußzeile mit goldener Linie darüber ---
+  const fussY = d.page.height - d.page.margins.bottom - 16;
+  d.moveTo(mitte - 90, fussY - 10).lineTo(mitte + 90, fussY - 10)
+    .strokeColor(FARBEN.gold).lineWidth(0.8).stroke();
+  d.font("Helvetica").fontSize(7.5).fillColor(FARBEN.grau)
     .text(FUSSZEILE, R, fussY, { width: breite, align: "center", lineBreak: false });
 
   return new Promise((loesen, ablehnen) => {
@@ -519,4 +526,46 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
     d.on("error", ablehnen);
     d.end();
   });
+}
+
+/** Beschriftung links, Wert in einem hellen Kasten rechts – wie im Formular. */
+function zeileMitFeld(
+  d: PDFKit.PDFDocument, R: number, breite: number,
+  beschriftung: string, wert?: string | null, nachtext?: string, labelBreite = 175,
+): void {
+  const y = d.y;
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.teal)
+    .text(beschriftung, R, y + 2, { width: labelBreite, lineBreak: false });
+  const x = R + labelBreite + 6;
+  const feldBreite = nachtext ? breite - labelBreite - 6 - 82 : breite - labelBreite - 6;
+  feldKasten(d, x, y - 1, feldBreite, wert);
+  if (nachtext) {
+    d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink)
+      .text(nachtext, x + feldBreite + 8, y + 2, { width: 76, lineBreak: false });
+  }
+  d.y = y + 21;
+}
+
+/** Heller Kasten mit dem Wert darin – dort, wo die Vorlage ein Feld zeigt. */
+function feldKasten(
+  d: PDFKit.PDFDocument, x: number, y: number, breite: number, wert?: string | null,
+): void {
+  d.save();
+  d.roundedRect(x, y, breite, 17, 2.5).fillColor("#F6F7F8").fill();
+  d.roundedRect(x, y, breite, 17, 2.5).lineWidth(0.5).strokeColor("#D8DCDF").stroke();
+  d.restore();
+  if (wert) {
+    d.font("Helvetica-Bold").fontSize(8.5).fillColor(FARBEN.ink)
+      .text(wert, x + 6, y + 4.5, { width: breite - 12, lineBreak: false, ellipsis: true });
+  }
+}
+
+/** Ankreuzzeile für die Zahlweise. */
+function ankreuzZeile(d: PDFKit.PDFDocument, R: number, gesetzt: boolean, text: string): void {
+  const y = d.y;
+  kaestchen(d, R + 6, y + 1, gesetzt);
+  d.font(gesetzt ? "Helvetica-Bold" : "Helvetica").fontSize(9)
+    .fillColor(gesetzt ? FARBEN.teal : FARBEN.grau)
+    .text(text, R + 22, y, { width: 430, lineBreak: false });
+  d.y = y + 16;
 }
