@@ -115,19 +115,22 @@ describe("13) Raten Sep–Jul, August frei", () => {
   });
 });
 
-// --- 17) Harte AGB-Sperre ----------------------------------------------------
+// --- 17) Harte Sperre bis zur Unterschrift -----------------------------------
 
-describe("17) Ohne AGB-Bestätigung ist keine Buchung möglich", () => {
-  test("laufender Vertrag ohne Bestätigung sperrt", () => {
+describe("17) Ohne unterschriebenen Vertrag ist keine Buchung möglich", () => {
+  test("laufender Vertrag ohne Unterschrift sperrt", () => {
     for (const s of ["angeboten", "aktiv"]) {
       const r = darfBuchen({ status: s, agb_akzeptiert_am: null });
       assert.equal(r.erlaubt, false, `Status ${s} müsste sperren`);
-      assert.match(r.grund || "", /AGB/);
+      assert.match(r.grund || "", /unterschreib/i);
     }
   });
 
-  test("nach der Bestätigung ist gebucht wieder möglich", () => {
-    assert.equal(darfBuchen({ status: "aktiv", agb_akzeptiert_am: "2026-09-01T10:00:00Z" }).erlaubt, true);
+  test("nach der Unterschrift ist Buchen wieder möglich", () => {
+    assert.equal(darfBuchen({
+      status: "aktiv", agb_akzeptiert_am: "2026-09-01T10:00:00Z",
+      unterzeichnet_am: "2026-09-01T10:00:00Z",
+    }).erlaubt, true);
   });
 
   test("ohne Schuljahresvertrag greift die Sperre nicht (Probestunden)", () => {

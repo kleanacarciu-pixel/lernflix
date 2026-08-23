@@ -38,7 +38,7 @@ describe("Angebots-Mail geht ohne Kopie raus", () => {
   });
 
   test("Kleana bekommt stattdessen eine eigene Nachricht", () => {
-    assert.match(block, /Angebot verschickt: \$\{v\.schueler\.name\}/);
+    assert.match(block, /Vertrag verschickt: \$\{v\.schueler\.name\}/);
     assert.match(block, /ADMIN_EMAIL/);
   });
 
@@ -58,5 +58,20 @@ describe("Die übrigen Admin-Kopien sind unbedenklich", () => {
     const block = angebotSendenBlock();
     assert.ok(block.includes("bestaetigungsLink("),
       "bestaetigungsLink gehört in angebotSenden");
+  });
+
+  test("der frische Link für Angemeldete entsteht nur in 'meinVertrag'", () => {
+    // Seit der Unterzeichnung im Portal gibt es einen zweiten Weg zum
+    // Vertrag: Wer angemeldet ist, bekommt einen frischen Token. Der darf
+    // ausschliesslich in der Antwort an genau diese Person landen – niemals
+    // in einer E-Mail, sonst wäre die Trennung von oben wieder aufgehoben.
+    const treffer = [...route.matchAll(/\bvertragToken\(/g)];
+    assert.equal(treffer.length, 1, "vertragToken wird an mehr als einer Stelle benutzt");
+    const start = route.indexOf('if (action === "meinVertrag")');
+    const ende = route.indexOf("// ------------------------------------------------------------------- Admin");
+    assert.ok(start > 0 && ende > start, "Der Block 'meinVertrag' wurde nicht gefunden");
+    const stelle = treffer[0].index as number;
+    assert.ok(stelle > start && stelle < ende,
+      "vertragToken steht ausserhalb von 'meinVertrag'");
   });
 });

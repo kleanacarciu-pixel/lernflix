@@ -239,16 +239,29 @@ export function ratenNeuVerteilen(opt: {
  *
  * Ohne laufenden Vertrag greift die Sperre NICHT – Probestunden und Schüler
  * ohne Schuljahresvertrag bleiben wie bisher möglich. Gibt es einen Vertrag,
- * muss er bestätigt sein.
+ * muss er unterschrieben sein: entweder im Portal (unterzeichnet_am) oder –
+ * wenn jemand lieber auf Papier unterschreibt – von Kleana freigeschaltet
+ * (manuell_aktiviert_am).
+ *
+ * Die reine AGB-Zustimmung genügt seit der Unterzeichnung im Portal NICHT
+ * mehr; sie entsteht dort ohnehin im selben Schritt wie die Unterschrift.
  */
 export function darfBuchen(
-  vertrag: { status: string; agb_akzeptiert_am: string | null } | null,
+  vertrag: {
+    status: string;
+    agb_akzeptiert_am: string | null;
+    unterzeichnet_am?: string | null;
+    manuell_aktiviert_am?: string | null;
+  } | null,
 ): { erlaubt: boolean; grund?: string } {
   if (!vertrag) return { erlaubt: true };
   const laufend = vertrag.status === "angeboten" || vertrag.status === "aktiv";
   if (!laufend) return { erlaubt: true };
-  if (!vertrag.agb_akzeptiert_am) {
-    return { erlaubt: false, grund: "Bitte bestätige zuerst den Vertrag und die AGB." };
+  if (!vertrag.unterzeichnet_am && !vertrag.manuell_aktiviert_am) {
+    return {
+      erlaubt: false,
+      grund: "Bitte unterschreibe zuerst den Vertrag im Portal – danach lässt sich buchen.",
+    };
   }
   return { erlaubt: true };
 }

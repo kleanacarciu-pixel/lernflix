@@ -9,8 +9,8 @@
 // dafür keine Code-Änderung nötig ist.
 // =============================================================================
 import PDFDocument from "pdfkit";
-import { datumDe, WOCHENTAGE } from "@/lib/schuljahr-kern";
-import { centFormat } from "@/lib/vertrag-kern";
+import { datumDe, WOCHENTAGE } from "./schuljahr-kern.ts";
+import { centFormat } from "./vertrag-kern.ts";
 
 export type Bankverbindung = { inhaber: string; iban: string; bank: string };
 
@@ -331,7 +331,7 @@ export async function textPdf(titel: string, unterzeile: string, abschnitte: Abs
 import {
   TITEL, ANBIETERIN, FUSSZEILE, unterzeile, HINWEIS_FERIEN, zahlungshinweis,
   WICHTIGSTES, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
-} from "@/lib/vertrag-pdf-texte";
+} from "./vertrag-pdf-texte.ts";
 
 export type VertragPdfDaten = {
   schuljahrName: string;
@@ -355,6 +355,12 @@ export type VertragPdfDaten = {
   unterschriftAnbieterin?: Buffer | null;
   unterschriftEltern?: Buffer | null;
   unterzeichnetAm?: string | null;
+  /**
+   * Tag, an dem Kleana den Vertrag erstellt und damit unterschrieben hat.
+   * Bewusst mitgegeben statt „heute": Die archivierte PDF muss beim erneuten
+   * Öffnen Zeichen für Zeichen dieselbe sein wie beim Unterschreiben.
+   */
+  erstelltAm?: string | null;
 };
 
 const zeitstempel = (iso: string) => {
@@ -497,7 +503,7 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
     [R, dat.unterschriftEltern, "Ort, Datum · Unterschrift Erziehungsberechtigte(r)",
       dat.unterzeichnetAm ? zeitstempel(dat.unterzeichnetAm) : ""],
     [R + spalte + 40, dat.unterschriftAnbieterin, `Ort, Datum · Unterschrift ${ANBIETERIN.name}`,
-      `${ANBIETERIN.ort}, den ${datumDe(new Date().toISOString().slice(0, 10))}`],
+      `${ANBIETERIN.ort}, den ${datumDe((dat.erstelltAm || new Date().toISOString()).slice(0, 10))}`],
   ];
   for (const [x, bild, beschriftung, wann] of felder) {
     if (bild) {

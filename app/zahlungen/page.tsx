@@ -53,6 +53,9 @@ const VORLAGEN_NAMEN: Record<string, string> = {
   erinnerung: 'Letzter Zahltag – an die Eltern (Tag 10)',
   pausierung: 'Unterricht pausiert (Tag 15)',
   dank: 'Zahlung angekommen',
+  minusWarnung: 'Frühwarnung: Minus-Stunden fast voll',
+  terminEnde: 'Ein Wochentermin endet (Familienpreis entfällt)',
+  vertragUnterschrieben: 'Vertrag unterschrieben – Bestätigung an die Eltern',
 };
 
 export default function ZahlungenSeite() {

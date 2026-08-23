@@ -36,6 +36,16 @@ export type Vertrag = {
   eltern_anschrift?: string | null;
   eltern_email?: string | null;
   eltern_telefon?: string | null;
+  /** Unterzeichnung im Portal (Abschnitt „Vertragsabschluss“). */
+  eltern_unterschrift?: string | null;
+  unterzeichnet_am?: string | null;
+  agb_bestaetigt_am?: string | null;
+  widerruf_bestaetigt_am?: string | null;
+  eingeladen_am?: string | null;
+  erinnert_am?: string | null;
+  externe_unterschrift?: string | null;
+  manuell_aktiviert_am?: string | null;
+  erstellt_am?: string | null;
 };
 
 export type VertragZeit = {

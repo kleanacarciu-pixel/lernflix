@@ -12,7 +12,7 @@
 -- Keine Sorge: Du kannst diese Datei auch zweimal laufen lassen, ohne
 -- dass etwas kaputtgeht. Bestehende Daten werden nicht angefasst.
 --
--- HINWEIS: Diese Datei wird aus den drei Einzeldateien zusammengesetzt.
+-- HINWEIS: Diese Datei wird aus den sechs Einzeldateien zusammengesetzt.
 -- Nicht von Hand bearbeiten – tests/sql-sammeldatei.test.ts prüft, dass
 -- sie zum Inhalt der Einzeldateien passt.
 -- =============================================================================
@@ -472,4 +472,166 @@ language sql stable security definer set search_path = public as $$
         and current_date > (date_trunc('month', z.monat) + interval '10 days')::date
     );
 $$;
+
+
+-- #############################################################################
+-- ### TEIL AUS: schuljahr_v4_unterschrift.sql
+-- #############################################################################
+
+-- =============================================================================
+-- Lerne mit Anna – Schuljahresmodell, Teil 4: Unterschriften
+--
+-- Voraussetzung: schuljahr_v1_schema.sql bis schuljahr_v3_zahlungen.sql
+-- In Supabase ausführen:  Dashboard → SQL Editor → einfügen → Run
+--
+-- Schritt 1 von „Vertragsabschluss im System": Kleanas eigene Unterschrift
+-- wird einmalig hinterlegt und danach in jede Vertrags-PDF eingebettet.
+--
+-- Das Bild liegt als Daten-URI direkt in der Tabelle. Ein eigener
+-- Speicher-Eimer mit Rechteverwaltung wäre für ein einzelnes Bild
+-- unverhältnismäßig, und die PDF-Erzeugung braucht die Bytes ohnehin.
+-- =============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1) EINSTELLUNGEN  (Schlüssel/Wert, bewusst schlicht gehalten)
+-- ---------------------------------------------------------------------------
+create table if not exists public.admin_einstellungen (
+  schluessel   text primary key,
+  wert         text,
+  geaendert_am timestamptz not null default now()
+);
+
+comment on table public.admin_einstellungen is
+  'Innensicht: Einstellungen, die nur Kleana pflegt. Aktuell die eigene Unterschrift.';
+
+-- Startzeile, damit die Oberfläche etwas zum Anzeigen hat.
+insert into public.admin_einstellungen (schluessel, wert)
+values ('unterschrift_anbieterin', null)
+on conflict (schluessel) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- 2) BERECHTIGUNGEN
+--    Reine Innensicht – niemand außer Kleana sieht oder ändert das.
+-- ---------------------------------------------------------------------------
+alter table public.admin_einstellungen enable row level security;
+
+drop policy if exists einstellungen_admin on public.admin_einstellungen;
+create policy einstellungen_admin on public.admin_einstellungen
+  for all using (public.is_admin()) with check (public.is_admin());
+
+
+-- #############################################################################
+-- ### TEIL AUS: schuljahr_v5_vertragsabschluss.sql
+-- #############################################################################
+
+-- =============================================================================
+-- Lerne mit Anna – Schuljahresmodell, Teil 5: Vertragsabschluss im System
+--
+-- Voraussetzung: schuljahr_v1 bis schuljahr_v4
+-- In Supabase ausführen:  Dashboard → SQL Editor → einfügen → Run
+--
+-- Drei Dinge:
+--   1) WICHTIGE KORREKTUR an profiles.minus_hours (siehe unten)
+--   2) Daten der Erziehungsberechtigten am Vertrag – für die Vertrags-PDF
+--   3) Felder für die Unterzeichnung im Portal
+-- =============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1) KORREKTUR: Obergrenze der Minus-Stunden von 3 auf 4
+--
+-- Die Regel im Code erlaubt seit der Umstellung VIER offene Minus-Stunden,
+-- die Datenbank ließ aber weiterhin nur DREI zu. Die vierte Gutschrift wäre
+-- abgewiesen worden – und weil die Schreibung ihren Fehler bisher verschluckt
+-- hat, wäre die Stunde still verloren gegangen, obwohl der Schülerin eine
+-- Gutschrift angezeigt wurde.
+-- ---------------------------------------------------------------------------
+alter table public.profiles
+  drop constraint if exists profiles_minus_hours_check;
+alter table public.profiles
+  add constraint profiles_minus_hours_check
+  check (minus_hours >= 0 and minus_hours <= 4);
+
+-- ---------------------------------------------------------------------------
+-- 2) ERZIEHUNGSBERECHTIGTE  (für die Vertrags-PDF)
+--    Alle optional: ein Vertrag soll auch dann anlegbar sein, wenn noch
+--    nicht jedes Feld bekannt ist. Die PDF lässt Unbekanntes einfach weg.
+-- ---------------------------------------------------------------------------
+alter table public.vertraege add column if not exists eltern_name      text;
+alter table public.vertraege add column if not exists eltern_anschrift text;
+alter table public.vertraege add column if not exists eltern_email     text;
+alter table public.vertraege add column if not exists eltern_telefon   text;
+
+comment on column public.vertraege.eltern_email is
+  'Abweichende Vertragsadresse. Ist sie leer, gilt die E-Mail aus profiles.';
+
+-- ---------------------------------------------------------------------------
+-- 3) UNTERZEICHNUNG IM PORTAL
+--    Die Unterschrift der Eltern entsteht auf einer Zeichenfläche und wird
+--    als Daten-URI abgelegt – wie Kleanas Unterschrift in Teil 4.
+-- ---------------------------------------------------------------------------
+alter table public.vertraege add column if not exists eltern_unterschrift   text;
+alter table public.vertraege add column if not exists unterzeichnet_am      timestamptz;
+alter table public.vertraege add column if not exists agb_bestaetigt_am     timestamptz;
+alter table public.vertraege add column if not exists widerruf_bestaetigt_am timestamptz;
+-- Zeitpunkt der Einladung – Grundlage für die Erinnerung nach fünf Tagen.
+alter table public.vertraege add column if not exists eingeladen_am         timestamptz;
+alter table public.vertraege add column if not exists erinnert_am           timestamptz;
+-- Fallback: extern unterschriebene PDF (z. B. Foto aus WhatsApp).
+alter table public.vertraege add column if not exists externe_unterschrift  text;
+alter table public.vertraege add column if not exists manuell_aktiviert_am  timestamptz;
+
+comment on column public.vertraege.externe_unterschrift is
+  'Von Kleana hochgeladene, außerhalb des Portals unterschriebene Fassung.';
+
+
+-- #############################################################################
+-- ### TEIL AUS: schuljahr_v6_unterzeichnung.sql
+-- #############################################################################
+
+-- =============================================================================
+-- Lerne mit Anna – Schuljahresmodell, Teil 6: Unterzeichnung im Portal
+--
+-- Voraussetzung: schuljahr_v1 bis schuljahr_v5
+-- In Supabase ausführen:  Dashboard → SQL Editor → einfügen → Run
+--
+-- Zwei Dinge – beide gefahrlos mehrfach ausführbar:
+--   1) Bestehende Verträge nachziehen, damit die neue Buchungssperre sie
+--      nicht plötzlich aussperrt
+--   2) Die Vorlage für die Bestätigungs-E-Mail nach der Unterschrift
+-- =============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1) BESTEHENDE VERTRÄGE NACHZIEHEN
+--
+-- Bis jetzt genügte die AGB-Zustimmung, um buchen zu dürfen. Ab sofort zählt
+-- die Unterschrift. Verträge, die vorher auf dem alten Weg bestätigt wurden,
+-- bekommen deshalb den Zeitpunkt der Zustimmung als Unterschriftsdatum –
+-- sonst könnten diese Familien von einem Tag auf den anderen nichts mehr
+-- buchen, ohne etwas falsch gemacht zu haben.
+--
+-- Neue Verträge sind davon nicht betroffen: dort entstehen Zustimmung und
+-- Unterschrift ohnehin im selben Augenblick.
+-- ---------------------------------------------------------------------------
+update public.vertraege
+   set unterzeichnet_am = agb_akzeptiert_am
+ where agb_akzeptiert_am is not null
+   and unterzeichnet_am is null;
+
+-- ---------------------------------------------------------------------------
+-- 2) E-MAIL-VORLAGE: VERTRAG UNTERSCHRIEBEN
+--
+-- Geht an die Eltern, sobald im Portal unterschrieben wurde – mit dem
+-- fertigen Vertrag, der Terminliste und den AGB im Anhang. Eine Kopie geht
+-- automatisch an Kleana. Der Text ist unter „Zahlungen → E-Mail-Vorlagen"
+-- jederzeit änderbar.
+--
+-- Platzhalter in geschweiften Klammern:
+--   {name} {schuljahr} {termin} {anzahl} {jahresbetrag} {zahlweise}
+--   {inhaber} {iban} {verwendungszweck}
+-- ---------------------------------------------------------------------------
+insert into public.mahn_vorlagen (schluessel, betreff, text) values
+  ('vertragUnterschrieben',
+   'Vertrag unterschrieben – Schuljahr {schuljahr}',
+   E'Hallo,\n\nvielen Dank – der Vertrag für {name} ist unterschrieben und der Unterricht ist freigeschaltet.\n\nFester Termin: {termin}\nTermine im Schuljahr: {anzahl}\nJahresbetrag: {jahresbetrag}\nZahlweise: {zahlweise}\n\nÜberweisung an:\n{inhaber}\nIBAN: {iban}\nVerwendungszweck: {verwendungszweck}\n\nIm Anhang findest du den unterschriebenen Vertrag, die Terminliste für das ganze Schuljahr und die AGB. Bitte gut aufbewahren.\n\nIm Kalender könnt ihr ab sofort Termine absagen, Nachholstunden buchen und die Terminliste jederzeit ansehen.\n\nLiebe Grüße\nAnna')
+on conflict (schluessel) do nothing;
 
