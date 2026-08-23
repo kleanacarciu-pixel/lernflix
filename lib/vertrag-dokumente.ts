@@ -325,3 +325,198 @@ export async function textPdf(titel: string, unterzeile: string, abschnitte: Abs
   }
   return fertig(d);
 }
+
+// --- Nachhilfevertrag (Vertragsabschluss im System) -------------------------
+
+import {
+  TITEL, ANBIETERIN, FUSSZEILE, unterzeile, HINWEIS_FERIEN, zahlungshinweis,
+  WICHTIGSTES, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
+} from "@/lib/vertrag-pdf-texte";
+
+export type VertragPdfDaten = {
+  schuljahrName: string;
+  /** Erziehungsberechtigte – Unbekanntes wird weggelassen. */
+  eltern: { name?: string | null; anschrift?: string | null; email?: string | null; telefon?: string | null };
+  kind: { name: string; schule?: string | null };
+  /** Fester Wochentermin. */
+  zeiten: { wochentag: number; uhrzeit?: string | null }[];
+  anzahlTermine: number;
+  /** Beginn bei Quereinstieg – nur gesetzt, wenn nicht ab Schuljahresbeginn. */
+  abDatum?: string | null;
+  stundensatzCent: number;
+  jahresbetragCent: number;
+  zahlweise: "raten" | "einmal";
+  raten: { monat: string; betragCent: number }[];
+  einmalCent: number;
+  /** Zeitstempel der beiden Bestätigungen (ISO) – null = noch offen. */
+  agbBestaetigtAm?: string | null;
+  widerrufBestaetigtAm?: string | null;
+  /** Unterschriften als Bytes. */
+  unterschriftAnbieterin?: Buffer | null;
+  unterschriftEltern?: Buffer | null;
+  unterzeichnetAm?: string | null;
+};
+
+const zeitstempel = (iso: string) => {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getUTCDate())}.${p(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}, `
+    + `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} Uhr`;
+};
+
+/**
+ * Ankreuzkästchen als Vektor.
+ *
+ * Die Zeichen ✓ und □ stehen NICHT im WinAnsi-Zeichensatz der eingebauten
+ * PDF-Schriften – sie kämen gar nicht an. Deshalb gezeichnet statt gesetzt.
+ */
+function kaestchen(d: PDFKit.PDFDocument, x: number, y: number, gesetzt: boolean): void {
+  d.save();
+  d.rect(x, y, 8.5, 8.5).lineWidth(0.7).strokeColor(gesetzt ? FARBEN.teal : FARBEN.grau).stroke();
+  if (gesetzt) {
+    d.moveTo(x + 1.8, y + 4.4).lineTo(x + 3.5, y + 6.4).lineTo(x + 6.8, y + 1.9)
+      .lineWidth(1.3).strokeColor(FARBEN.teal).stroke();
+  }
+  d.restore();
+}
+
+/** Überschrift eines Abschnitts – Times-Bold auf Teal. */
+function abschnitt(d: PDFKit.PDFDocument, nummer: number, titel: string): void {
+  d.moveDown(0.75);
+  d.font("Times-Bold").fontSize(12).fillColor(FARBEN.teal)
+    .text(`${nummer}. ${titel}`);
+  d.moveDown(0.3);
+  d.font("Helvetica").fontSize(9.5).fillColor(FARBEN.ink);
+}
+
+/**
+ * Der eigentliche Nachhilfevertrag – eine Seite, alle Daten aus der Datenbank.
+ * Ersetzt die bisherige statische Vorlage.
+ */
+export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer> {
+  const d = new PDFDocument({ size: "A4", margin: 44, info: { Title: TITEL, Author: "Lerne mit Anna" } });
+  const R = 44;
+  const breite = d.page.width - 2 * R;
+
+  // --- Kopf ---
+  d.font("Times-Bold").fontSize(23).fillColor(FARBEN.teal).text(TITEL, R, 48);
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.gold)
+    .text(unterzeile(dat.schuljahrName), { characterSpacing: 0.8 });
+  d.moveDown(0.5);
+  d.moveTo(R, d.y).lineTo(R + breite, d.y).strokeColor(FARBEN.gold).lineWidth(1.4).stroke();
+  d.moveDown(0.7);
+
+  // --- Parteien ---
+  d.font("Helvetica").fontSize(9.5).fillColor(FARBEN.ink);
+  d.text(`${ANBIETERIN.zeile} (${ANBIETERIN.rolle})`);
+  d.moveDown(0.35);
+
+  const elternZeilen = [
+    dat.eltern.name,
+    dat.eltern.anschrift,
+    [dat.eltern.email, dat.eltern.telefon].filter(Boolean).join(" · ") || null,
+  ].filter(Boolean) as string[];
+  d.text(elternZeilen.length
+    ? `${elternZeilen.join(" · ")} (nachfolgend „Erziehungsberechtigte“)`
+    : "Erziehungsberechtigte/r");
+  d.moveDown(0.2);
+  d.text(`Kind: ${dat.kind.name}${dat.kind.schule ? ` · Schule: ${dat.kind.schule}` : ""}`);
+
+  // --- 1. Unterricht ---
+  abschnitt(d, 1, "Unterricht");
+  const zeitText = dat.zeiten
+    .map((z) => `${WOCHENTAGE[z.wochentag]}${z.uhrzeit ? ` ${String(z.uhrzeit).slice(0, 5)} Uhr` : ""}`)
+    .join(" und ");
+  d.text(`Fester Wochentermin: ${zeitText} · Dauer 60 Minuten`);
+  d.text(`Anzahl der Termine laut Terminliste: ${dat.anzahlTermine}`
+    + (dat.abDatum ? ` (ab ${datumDe(dat.abDatum)})` : ""));
+  d.fillColor(FARBEN.grau).fontSize(9).text(HINWEIS_FERIEN, { lineGap: 1 });
+  d.fillColor(FARBEN.ink).fontSize(9.5);
+
+  // --- 2. Vergütung ---
+  abschnitt(d, 2, "Vergütung und Zahlung");
+  d.text(`Stundensatz: ${centFormat(dat.stundensatzCent)} · `
+    + `Schuljahresbetrag: ${centFormat(dat.jahresbetragCent)}`);
+  d.moveDown(0.3);
+
+  // Gewählte Zahlweise hervorheben
+  const gewaehlt = dat.zahlweise === "einmal"
+    ? `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag − 50 €)`
+    : `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} `
+      + "(Sep–Jul, fällig 1.–10.)";
+  const kastenY = d.y;
+  d.rect(R, kastenY - 3, breite, 21).fillColor("#F3F7F6").fill();
+  d.fillColor(FARBEN.teal).font("Helvetica-Bold").fontSize(9.5)
+    .text(`Gewählte Zahlweise: ${gewaehlt}`, R + 8, kastenY + 3, { width: breite - 16 });
+  d.y = kastenY + 24;
+  d.font("Helvetica").fontSize(9).fillColor(FARBEN.grau)
+    .text(zahlungshinweis(dat.kind.name.split(" ")[0], dat.schuljahrName), R, d.y, { width: breite });
+  d.fillColor(FARBEN.ink).fontSize(9);
+
+  // --- 3. Das Wichtigste auf einen Blick ---
+  abschnitt(d, 3, "Das Wichtigste auf einen Blick");
+  for (const p of WICHTIGSTES) {
+    d.font("Helvetica-Bold").fontSize(9).fillColor(FARBEN.ink).text(`${p.titel}: `, { continued: true });
+    d.font("Helvetica").fillColor(FARBEN.grau).text(p.text, { lineGap: 1 });
+    d.moveDown(0.4);
+  }
+
+  // --- Bestätigungen ---
+  d.moveDown(0.8);
+  d.font("Times-Bold").fontSize(12).fillColor(FARBEN.teal).text("Bestätigungen");
+  d.moveDown(0.35);
+  for (const [text, wann] of [
+    [BESTAETIGUNG_AGB, dat.agbBestaetigtAm],
+    [BESTAETIGUNG_WIDERRUF, dat.widerrufBestaetigtAm],
+  ] as [string, string | null | undefined][]) {
+    const y = d.y;
+    kaestchen(d, R, y + 1, !!wann);
+    d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink)
+      .text(text, R + 16, y, { width: breite - 16, lineGap: 1 });
+    if (wann) {
+      d.fontSize(7.5).fillColor(FARBEN.grau).text(`bestätigt am ${zeitstempel(wann)}`, R + 16, d.y + 1);
+    }
+    d.moveDown(0.5);
+  }
+
+  // --- Unterschriften ---
+  d.moveDown(1.6);
+  const sigY = d.y;
+  const spalte = (breite - 30) / 2;
+  const felder: [string, Buffer | null | undefined, string][] = [
+    [`${ANBIETERIN.ort}, den ${datumDe(new Date().toISOString().slice(0, 10))}`,
+      dat.unterschriftAnbieterin, ANBIETERIN.name],
+    [dat.unterzeichnetAm ? zeitstempel(dat.unterzeichnetAm) : "—",
+      dat.unterschriftEltern, dat.eltern.name || "Erziehungsberechtigte/r"],
+  ];
+  felder.forEach(([wann, bild, name], i) => {
+    const x = R + i * (spalte + 30);
+    if (bild) {
+      try { d.image(bild, x, sigY, { fit: [spalte, 40] }); } catch { /* lieber ohne Bild als ohne Vertrag */ }
+    }
+    const linie = sigY + 44;
+    d.moveTo(x, linie).lineTo(x + spalte, linie).strokeColor(FARBEN.grau).lineWidth(0.6).stroke();
+    d.font("Helvetica").fontSize(8).fillColor(FARBEN.ink).text(name, x, linie + 3, { width: spalte });
+    d.fontSize(7).fillColor(FARBEN.grau).text(wann, x, d.y, { width: spalte });
+  });
+
+  // --- Fußzeile ---
+  // WICHTIG: innerhalb des unteren Seitenrands bleiben. Steht der Text
+  // darunter, legt pdfkit dafür eine zweite Seite an – der Vertrag soll
+  // aber einseitig sein.
+  if (typeof process !== "undefined" && process.env.PDF_DEBUG) {
+    console.log("Vertrag: y vor der Fußzeile =", Math.round(d.y),
+      "| Rand unten bei", Math.round(d.page.height - d.page.margins.bottom));
+  }
+  const fussY = d.page.height - d.page.margins.bottom - 12;
+  d.fontSize(7.5).fillColor(FARBEN.grau).font("Helvetica")
+    .text(FUSSZEILE, R, fussY, { width: breite, align: "center", lineBreak: false });
+
+  return new Promise((loesen, ablehnen) => {
+    const teile: Buffer[] = [];
+    d.on("data", (c: Buffer) => teile.push(c));
+    d.on("end", () => loesen(Buffer.concat(teile)));
+    d.on("error", ablehnen);
+    d.end();
+  });
+}
