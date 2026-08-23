@@ -10,7 +10,7 @@ import {
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { buchungErlaubtGesamt as buchungErlaubt } from "@/lib/zahlung";
-import { verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau } from "@/lib/stundenkonto-kern";
+import { verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau, MAX_MINUS } from "@/lib/stundenkonto-kern";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -527,7 +527,7 @@ export async function POST(req: Request): Promise<Response> {
       const cur = field === "makeup" ? p.makeup_credits : field === "plus" ? p.plus_hours : p.minus_hours;
       let nv = cur + delta;
       if (nv < 0) nv = 0;
-      if (field === "minus" && nv > 3) nv = 3;
+      if (field === "minus" && nv > MAX_MINUS) nv = MAX_MINUS;
       await service().from("profiles").update({ [col]: nv }).eq("user_id", sid);
       return ok({ message: "Aktualisiert." });
     }

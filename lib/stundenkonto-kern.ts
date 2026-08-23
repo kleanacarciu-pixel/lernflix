@@ -11,14 +11,18 @@
 // Die Regeln:
 //   * Verrechnung einer Einzelstunde: Nachhol-Guthaben -> Minus -> sonst Plus
 //   * Absage durch den Schüler: ab 4 Stunden Vorlauf gibt es eine Minus-Stunde
-//     gutgeschrieben, aber höchstens drei gleichzeitig (die „4er-Sperre")
+//     gutgeschrieben, aber höchstens MAX_MINUS gleichzeitig
 //   * Rückgängig: die Verrechnung wird spiegelbildlich zurückgedreht
 //
 // Bewusst ohne Importe, damit die Regeln ohne Datenbank testbar bleiben.
 // =============================================================================
 
-/** Mehr als drei offene Minus-Stunden gibt es nicht – die vierte Absage bleibt ohne Gutschrift. */
-export const MAX_MINUS = 3;
+/**
+ * Höchstzahl offener Minus-Stunden. Ist das Konto voll, bringt eine weitere
+ * Absage keine Gutschrift mehr – gebucht werden darf aber weiterhin, denn
+ * genau darüber werden die offenen Stunden ja wieder abgebaut.
+ */
+export const MAX_MINUS = 4;
 /** Ab diesem Vorlauf gilt eine Absage als rechtzeitig. */
 export const ABSAGE_FRIST_STUNDEN = 4;
 
