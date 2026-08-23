@@ -266,6 +266,7 @@ export const KATALOG: ThemenBaum = {
       ],
       11: [
         "📊 Ableitung — Grundlagen",
+        "🔗 Ableitungsregeln (Produkt- & Kettenregel)",
         "📈 Kurvendiskussion",
         "∫ Integralrechnung — Einstieg",
         "➡️ Vektoren — Grundlagen",

@@ -60,6 +60,12 @@ import koerperGym10 from "@/lib/quiz/interaktiv/koerper-gym10";
 import trigSeitenGym10 from "@/lib/quiz/interaktiv/trig-seiten-gym10";
 import stochastikGym10 from "@/lib/quiz/interaktiv/stochastik-gym10";
 
+import ableitungGym11 from "@/lib/quiz/interaktiv/ableitung-gym11";
+import ableitungsregelnGym11 from "@/lib/quiz/interaktiv/ableitungsregeln-gym11";
+import kurvendiskussionGym11 from "@/lib/quiz/interaktiv/kurvendiskussion-gym11";
+import integralGym11 from "@/lib/quiz/interaktiv/integral-gym11";
+import vektorenGym11 from "@/lib/quiz/interaktiv/vektoren-gym11";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -99,6 +105,12 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 10, "Körper: Pyramide, Kegel, Kugel")]: koerperGym10,
   [themaKey("mathe", "gymnasium", 10, "Trigonometrie: Seiten & Winkel")]: trigSeitenGym10,
   [themaKey("mathe", "gymnasium", 10, "Stochastik")]: stochastikGym10,
+
+  [themaKey("mathe", "gymnasium", 11, "Ableitung — Grundlagen")]: ableitungGym11,
+  [themaKey("mathe", "gymnasium", 11, "Ableitungsregeln (Produkt- & Kettenregel)")]: ableitungsregelnGym11,
+  [themaKey("mathe", "gymnasium", 11, "Kurvendiskussion")]: kurvendiskussionGym11,
+  [themaKey("mathe", "gymnasium", 11, "Integralrechnung — Einstieg")]: integralGym11,
+  [themaKey("mathe", "gymnasium", 11, "Vektoren — Grundlagen")]: vektorenGym11,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
