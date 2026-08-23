@@ -591,7 +591,17 @@ export async function POST(req: Request): Promise<Response> {
   }
 }
 
-/** Angebots-E-Mail mit frischem Bestätigungslink verschicken. */
+/**
+ * Angebots-E-Mail mit frischem Bestätigungslink verschicken.
+ *
+ * WICHTIG: Diese E-Mail geht AUSSCHLIESSLICH an die Familie – keine Kopie an
+ * die Admin-Adresse. Sie enthält den Bestätigungslink, und wer den hat, kann
+ * die AGB-Zustimmung auslösen. Läge er auch in Kleanas Postfach, stünde im
+ * System womöglich eine Zustimmung, die gar nicht von den Eltern stammt.
+ *
+ * Damit Kleana trotzdem weiß, dass das Angebot raus ist, geht ihr eine
+ * getrennte Nachricht zu – mit allen Daten, aber OHNE den Link.
+ */
 async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: boolean; error?: string }> {
   const v = await vollbild(vertragId);
   if (!v) return { ok: false, error: "Vertrag nicht gefunden." };
@@ -600,7 +610,7 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   const link = bestaetigungsLink(vertragId, baseUrl);
   const rate = v.rechnung.raten[0]?.betragCent ?? 0;
 
-  return sendMail(
+  const ergebnis = await sendMail(
     v.schueler.email,
     `Dein Vertragsangebot für das Schuljahr ${v.schuljahr.name}`,
     `<p>Hallo,</p>
@@ -619,9 +629,29 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
      <p style="color:#5f574f;font-size:14px">Der Link ist 14 Tage gültig. Dort siehst du auch alle
         Termine des Schuljahres im Überblick.</p>
      <p>Liebe Grüße<br>Anna</p>`,
-    undefined,
-    { kopieAn: ADMIN_EMAIL },
   );
+
+  // Getrennte Nachricht an Kleana – bewusst OHNE Bestätigungslink.
+  if (ergebnis.ok) {
+    await sendMail(
+      ADMIN_EMAIL,
+      `Angebot verschickt: ${v.schueler.name}`,
+      `<p>Das Vertragsangebot für <b>${v.schueler.name}</b> ist raus.</p>
+       <p><b>An:</b> ${v.schueler.email}<br>
+          <b>Termin:</b> ${zeitText(v.zeiten)}<br>
+          <b>Termine im Schuljahr:</b> ${v.rechnung.alleTermine.length}<br>
+          <b>Jahresbetrag:</b> ${centFormat(v.rechnung.jahresbetragCent)}<br>
+          <b>Raten:</b> ${v.rechnung.raten.length} × ${centFormat(rate)}</p>
+       <p style="color:#5f574f;font-size:14px">
+         Der Bestätigungslink steht bewusst nicht in dieser Nachricht – die AGB
+         sollen die Eltern selbst bestätigen. Unter
+         <a href="${baseUrl}/vertraege">Verträge</a> siehst du, sobald das
+         passiert ist; dort kannst du das Angebot auch erneut verschicken.
+       </p>`,
+    );
+  }
+
+  return ergebnis;
 }
 
 // Terminliste als PDF herunterladen (Portal): /api/vertrag?pdf=<token>
