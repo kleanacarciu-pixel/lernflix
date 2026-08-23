@@ -9,6 +9,8 @@ import {
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
+import { buchungErlaubtGesamt as buchungErlaubt } from "@/lib/zahlung";
+import { verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau } from "@/lib/stundenkonto-kern";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,16 +44,17 @@ async function setBalance(id: string, patch: Partial<Pick<Profile, "minus_hours"
   await service().from("profiles").update(patch).eq("user_id", id);
 }
 // Einzel-Buchung verrechnen (bei Bestätigung): makeup -> minus -> sonst plus
+// Die Regel selbst steht in lib/stundenkonto-kern.ts und ist dort getestet;
+// hier bleibt nur das Schreiben in die Datenbank.
 async function applyEinzelCounting(p: Profile): Promise<"makeup" | "minus" | "plus"> {
-  if (p.makeup_credits > 0) { await setBalance(p.user_id, { makeup_credits: p.makeup_credits - 1 }); return "makeup"; }
-  if (p.minus_hours > 0) { await setBalance(p.user_id, { minus_hours: p.minus_hours - 1 }); return "minus"; }
-  await setBalance(p.user_id, { plus_hours: p.plus_hours + 1 }); return "plus";
+  const { counted, aenderung } = verrechne(p);
+  await setBalance(p.user_id, aenderung);
+  return counted;
 }
 // Verrechnung rückgängig machen (bei Absage einer Einzel-Buchung)
 async function revertCounting(p: Profile, counted: string | null) {
-  if (counted === "plus") await setBalance(p.user_id, { plus_hours: Math.max(0, p.plus_hours - 1) });
-  else if (counted === "minus") await setBalance(p.user_id, { minus_hours: Math.min(3, p.minus_hours + 1) });
-  else if (counted === "makeup") await setBalance(p.user_id, { makeup_credits: p.makeup_credits + 1 });
+  const aenderung = macheRueckgaengig(p, counted);
+  if (aenderung) await setBalance(p.user_id, aenderung);
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -152,6 +155,8 @@ export async function POST(req: Request): Promise<Response> {
 
     // === SCHÜLER-AKTIONEN ===
     if (action === "requestFixed") {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
@@ -163,13 +168,15 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
     if (action === "bookExtra") {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       { const { error } = await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode, dauer_min: dauerMin }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       after(() => sendMail(ADMIN_EMAIL, "Neue Terminanfrage", `${prof.name} möchte am ${prettyDate(date, hour)} eine Stunde (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
-      const preview = prof.makeup_credits > 0 ? "Nachhol-Guthaben wird eingelöst." : prof.minus_hours > 0 ? "Minus-Stunde wird nachgeholt." : "Zählt als Extra-Stunde (Plus).";
+      const preview = verrechnungsVorschau(prof);
       return ok({ message: "Stunde angefragt. Kleana bestätigt sie. " + preview });
     }
     if (action === "cancelMine") {
@@ -182,12 +189,11 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absage) {
         const hu = hoursUntil(date, hour);
-        const credit = hu >= 4 && prof.minus_hours < 3;
-        const cnote = credit ? null : (hu < 4 ? "late" : "overmax");
+        const { gutschrift: credit, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
         await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
-        if (credit) await setBalance(user.id, { minus_hours: prof.minus_hours + 1 });
+        if (aenderung) await setBalance(user.id, aenderung);
         after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
-        return ok({ message: hu >= 4 ? (credit ? "Abgesagt. +1 Minus-Stunde gutgeschrieben." : "Abgesagt. (Minus-Konto bereits voll: 3/3.)") : "Abgesagt. Weniger als 4 Std. vorher – keine Gutschrift." });
+        return ok({ message: absageText });
       }
       return bad("Hier ist kein eigener Termin.");
     }
@@ -287,6 +293,8 @@ export async function POST(req: Request): Promise<Response> {
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       if (body.fest === true) {
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(sid); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
         const { error } = await service().from("fixed_slots").insert({
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
@@ -365,6 +373,8 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
+      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
+      { const g = await buchungErlaubt(s.fixedPending.student_id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
         if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
