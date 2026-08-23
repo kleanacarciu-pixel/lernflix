@@ -53,41 +53,48 @@ describe("6) Sollwerte aller sechs Wochentage", () => {
 
 // --- 11) Familienpreis ------------------------------------------------------
 
-describe("11) Familienpreis bei zwei Wochenterminen", () => {
-  // ACHTUNG: So steht es im ursprünglichen Auftrag – voller Satz auf den Tag
-  // mit MEHR Terminen, ermäßigter Satz auf den anderen. Dieser Test hält das
-  // fest, damit eine spätere Änderung nicht unbemerkt passiert.
-  const p = berechneJahresbetrag({
-    tage: [{ wochentag: 1, anzahl: 38 }, { wochentag: 3, anzahl: 36 }],
-    stundensatzCent: 4500, stundensatzZweitCent: 4000,
+describe("11) Familienpreis: ermäßigt auf ALLE Termine", () => {
+  const SJ = { ab: "2026-09-15", bis: "2027-07-30" };
+  const t = (wochentag: number, n: number, ab = SJ.ab, bis = SJ.bis) => ({
+    wochentag, ab, bis,
+    termine: Array.from({ length: n }, (_, i) =>
+      `${ab.slice(0, 7)}-${String((i % 28) + 1).padStart(2, "0")}`),
   });
 
-  test("der Tag mit mehr Terminen bekommt den vollen Satz", () => {
-    const voll = p.posten.find((x) => x.voll);
-    assert.equal(voll?.wochentag, 1);
-    assert.equal(voll?.anzahl, 38);
-    assert.equal(voll?.satzCent, 4500);
+  test("zwei Wochentermine: JEDER Termin zum ermäßigten Satz", () => {
+    const p = berechneJahresbetrag({
+      tage: [t(1, 38), t(3, 36)],
+      stundensatzCent: 4500, stundensatzZweitCent: 4000,
+    });
+    assert.equal(p.posten.length, 2);
+    for (const x of p.posten) assert.equal(x.ermaessigt, true);
+    assert.equal(p.jahresbetragCent, (38 + 36) * 4000);
+    assert.equal(centFormat(p.jahresbetragCent), "2.960,00 €");
   });
 
-  test("der andere Tag bekommt den ermäßigten Satz", () => {
-    const erm = p.posten.find((x) => !x.voll);
-    assert.equal(erm?.satzCent, 4000);
+  test("die alte Logik ist weg: kein voller Satz mehr bei zwei Terminen", () => {
+    const p = berechneJahresbetrag({
+      tage: [t(1, 38), t(3, 36)],
+      stundensatzCent: 4500, stundensatzZweitCent: 4000,
+    });
+    assert.equal(p.posten.some((x) => x.satzCent === 4500), false,
+      "Es darf kein Posten mehr zum vollen Satz laufen");
   });
 
-  test("Gesamtbetrag 3.150,00 € – NICHT alles zum ermäßigten Satz", () => {
-    assert.equal(centFormat(p.jahresbetragCent), "3.150,00 €");
-    const allesErmaessigt = (38 + 36) * 4000;
-    assert.notEqual(p.jahresbetragCent, allesErmaessigt);
-    assert.equal(p.jahresbetragCent - allesErmaessigt, 19_000);   // 190 € Unterschied
+  test("ein Wochentermin allein: voller Satz", () => {
+    const p = berechneJahresbetrag({
+      tage: [t(1, 38)], stundensatzCent: 4500, stundensatzZweitCent: 4000,
+    });
+    assert.equal(p.posten[0].ermaessigt, false);
+    assert.equal(p.jahresbetragCent, 38 * 4500);
   });
 
   test("Geschwisterkind mit nur einem Termin: alles ermäßigt", () => {
-    const q = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: 37 }],
-      stundensatzCent: 4500, stundensatzZweitCent: 4000, zweitesKind: true,
+    const p = berechneJahresbetrag({
+      tage: [t(2, 37)], stundensatzCent: 4500, stundensatzZweitCent: 4000, zweitesKind: true,
     });
-    assert.equal(q.posten[0].satzCent, 4000);
-    assert.equal(q.posten[0].voll, false);
+    assert.equal(p.posten[0].ermaessigt, true);
+    assert.equal(p.jahresbetragCent, 37 * 4000);
   });
 });
 

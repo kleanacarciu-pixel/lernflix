@@ -9,7 +9,7 @@ import { service } from "@/lib/kalender";
 import { berechneTermine, type Schuljahr } from "@/lib/schuljahr";
 import {
   berechneJahresbetrag, ratenplan, einmalbetragCent, euroZuCent, centFormat,
-  ZWEIT_ABSCHLAG_CENT, darfBuchen, type Ratenplan, type Zahlweise, type TerminTag,
+  ZWEIT_ABSCHLAG_CENT, darfBuchen, type Ratenplan, type Zahlweise, type TerminTag, type Posten,
 } from "@/lib/vertrag-kern";
 
 export type VertragStatus = "angeboten" | "aktiv" | "gekuendigt" | "beendet";
@@ -48,13 +48,15 @@ export function standardZweitsatzCent(stundensatzCent: number): number {
 }
 
 export type Vertragsrechnung = {
-  tage: (TerminTag & { uhrzeit?: string; termine: string[] })[];
+  tage: (TerminTag & { uhrzeit?: string })[];
   jahresbetragCent: number;
-  posten: { wochentag: number; anzahl: number; satzCent: number; summeCent: number; voll: boolean }[];
+  posten: Posten[];
   raten: Ratenplan;
   einmalCent: number;
   /** Alle Termine des Vertrags, aufsteigend – Grundlage der Terminliste. */
   alleTermine: string[];
+  /** Monate mit Familienpreis ("YYYY-MM") – für die Anzeige. */
+  familienMonate: string[];
 };
 
 /**
@@ -80,11 +82,15 @@ export async function rechneVertrag(opt: {
     const ab = [vertragsbeginn, z.ab_datum].filter(Boolean).sort().pop() as string;
     let termine = await berechneTermine(schuljahr.id, z.wochentag, ab, schuleId);
     if (z.bis_datum) termine = termine.filter((d) => d <= (z.bis_datum as string));
-    tage.push({ wochentag: z.wochentag, uhrzeit: z.uhrzeit, anzahl: termine.length, termine });
+    // Geltungszeitraum des Wochentermins – daran haengt der Familienpreis.
+    tage.push({
+      wochentag: z.wochentag, uhrzeit: z.uhrzeit, termine,
+      ab, bis: z.bis_datum || schuljahr.letzter_schultag,
+    });
   }
 
   const preis = berechneJahresbetrag({
-    tage: tage.map((t) => ({ wochentag: t.wochentag, anzahl: t.anzahl })),
+    tage: tage.map((t) => ({ wochentag: t.wochentag, termine: t.termine, ab: t.ab, bis: t.bis })),
     stundensatzCent, stundensatzZweitCent, zweitesKind,
   });
 
@@ -99,6 +105,7 @@ export async function rechneVertrag(opt: {
     }),
     einmalCent: einmalbetragCent(preis.jahresbetragCent),
     alleTermine: tage.flatMap((t) => t.termine).sort(),
+    familienMonate: preis.familienMonate,
   };
 }
 

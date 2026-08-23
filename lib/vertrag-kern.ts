@@ -10,10 +10,16 @@
 
 export type Zahlweise = "raten" | "einmal";
 
-/** Ein Wochentermin des Vertrags mit der Anzahl seiner Termine im Schuljahr. */
+/**
+ * Ein Wochentermin des Vertrags: seine konkreten Termine und der Zeitraum,
+ * in dem er gilt. Der Zeitraum wird gebraucht, weil der Familienpreis
+ * monatsweise gilt – ein Wochentermin kann mitten im Schuljahr enden.
+ */
 export type TerminTag = {
   wochentag: number;   // 0=Mo .. 6=So
-  anzahl: number;      // Termine dieses Wochentags im Schuljahr
+  termine: string[];   // konkrete Daten, aufsteigend
+  ab: string;          // erster Tag, an dem dieser Wochentermin gilt
+  bis: string;         // letzter Tag, an dem er gilt
 };
 
 /** Nachlass bei Einmalzahlung. */
@@ -45,21 +51,73 @@ export function kaufmaennisch(x: number): number {
 
 // --- Jahresbetrag -----------------------------------------------------------
 
+export type Posten = {
+  wochentag: number;
+  anzahl: number;
+  satzCent: number;
+  summeCent: number;
+  /** true = Familienpreis (um ZWEIT_ABSCHLAG_CENT reduziert) */
+  ermaessigt: boolean;
+  /** Zeitraum dieses Postens – ein Wochentag kann zwei Posten haben. */
+  von: string;
+  bis: string;
+};
+
 export type Preisaufstellung = {
   jahresbetragCent: number;
-  posten: { wochentag: number; anzahl: number; satzCent: number; summeCent: number; voll: boolean }[];
+  posten: Posten[];
+  /** Monate, in denen der Familienpreis gilt ("YYYY-MM"). */
+  familienMonate: string[];
 };
+
+/** Alle Monate "YYYY-MM" zwischen zwei Daten, beide einschließlich. */
+export function monateZwischen(von: string, bis: string): string[] {
+  const out: string[] = [];
+  let j = Number(von.slice(0, 4)), m = Number(von.slice(5, 7));
+  const endJ = Number(bis.slice(0, 4)), endM = Number(bis.slice(5, 7));
+  while (j < endJ || (j === endJ && m <= endM)) {
+    out.push(`${j}-${String(m).padStart(2, "0")}`);
+    if (++m > 12) { m = 1; j++; }
+  }
+  return out;
+}
+
+/**
+ * In welchen Monaten gilt der Familienpreis?
+ *
+ * Nur wenn zwei Wochentermine ECHT GLEICHZEITIG laufen. Das ist wichtig:
+ * Bei einem Wochentagswechsel (Abschnitt 5) gibt es zwei Zeilen, die
+ * aneinander anschließen – alter Tag bis zum 10.01., neuer ab dem 11.01.
+ * Das ist EIN Wochentermin, der umzieht, und darf keinen Familienpreis
+ * auslösen. Deshalb zählt die Überschneidung der Zeiträume, nicht die
+ * bloße Anwesenheit im selben Monat.
+ *
+ * Maßgeblich ist der Geltungszeitraum, nicht ob zufällig ein Termin in den
+ * Monat fällt – sonst würde ein Ferienmonat den Familienpreis kippen.
+ */
+export function familienMonateVon(tage: TerminTag[]): string[] {
+  const monate = new Set<string>();
+  for (let i = 0; i < tage.length; i++) {
+    for (let j = i + 1; j < tage.length; j++) {
+      const von = tage[i].ab > tage[j].ab ? tage[i].ab : tage[j].ab;
+      const bis = tage[i].bis < tage[j].bis ? tage[i].bis : tage[j].bis;
+      if (von > bis) continue;                      // keine Überschneidung
+      for (const m of monateZwischen(von, bis)) monate.add(m);
+    }
+  }
+  return [...monate].sort();
+}
 
 /**
  * Jahresbetrag aus den Wochenterminen.
  *
- *  * Ein Wochentermin: voller Stundensatz.
- *  * Zwei Wochentermine: voller Satz auf den Tag mit MEHR Terminen,
- *    reduzierter Satz auf den anderen. Bei Gleichstand bekommt der frühere
- *    Wochentag den vollen Satz (damit das Ergebnis eindeutig bleibt).
- *  * Flag „zweites Kind" bei nur einem Wochentermin: der gesamte Vertrag
- *    läuft zum reduzierten Satz – der Nachlass gilt hier dem Geschwisterkind,
- *    nicht einem Zweittermin.
+ * FAMILIENPREIS: Ab dem zweiten festen Wochentermin – zweites Kind oder
+ * Doppeltermin – wird JEDER Termin der Familie mit dem reduzierten Satz
+ * berechnet, nicht nur der zweite Tag.
+ *
+ * Endet einer der beiden Termine, gilt für den verbleibenden ab dem
+ * FOLGEMONAT wieder der reguläre Satz (AGB § 6 Abs. 2). Deshalb kann ein
+ * Wochentag zwei Posten haben: einen ermäßigten und einen regulären.
  */
 export function berechneJahresbetrag(opt: {
   tage: TerminTag[];
@@ -68,21 +126,39 @@ export function berechneJahresbetrag(opt: {
   zweitesKind?: boolean;
 }): Preisaufstellung {
   const { stundensatzCent, stundensatzZweitCent, zweitesKind = false } = opt;
-  const tage = opt.tage.filter((t) => t.anzahl > 0);
-  if (tage.length === 0) return { jahresbetragCent: 0, posten: [] };
+  const tage = opt.tage.filter((t) => t.termine.length > 0);
+  if (tage.length === 0) return { jahresbetragCent: 0, posten: [], familienMonate: [] };
 
-  // Meiste Termine zuerst; bei Gleichstand der frühere Wochentag.
-  const sortiert = [...tage].sort((a, b) => b.anzahl - a.anzahl || a.wochentag - b.wochentag);
+  const familien = new Set(familienMonateVon(tage));
 
-  const posten = sortiert.map((t, i) => {
-    // Der erste Tag bekommt den vollen Satz – außer der Vertrag ist als
-    // zweites Kind angelegt und hat nur einen einzigen Wochentermin.
-    const voll = i === 0 && !(zweitesKind && sortiert.length === 1);
-    const satzCent = voll ? stundensatzCent : stundensatzZweitCent;
-    return { wochentag: t.wochentag, anzahl: t.anzahl, satzCent, summeCent: t.anzahl * satzCent, voll };
-  });
+  const posten: Posten[] = [];
+  for (const t of [...tage].sort((a, b) => a.wochentag - b.wochentag)) {
+    // Termine dieses Wochentags nach Satz gruppieren.
+    const gruppen = new Map<boolean, string[]>();
+    for (const d of [...t.termine].sort()) {
+      const erm = zweitesKind || familien.has(d.slice(0, 7));
+      const liste = gruppen.get(erm) ?? [];
+      liste.push(d);
+      gruppen.set(erm, liste);
+    }
+    // Ermäßigte Posten zuerst – sie liegen zeitlich vorn.
+    for (const erm of [true, false]) {
+      const daten = gruppen.get(erm);
+      if (!daten?.length) continue;
+      const satzCent = erm ? stundensatzZweitCent : stundensatzCent;
+      posten.push({
+        wochentag: t.wochentag, anzahl: daten.length, satzCent,
+        summeCent: daten.length * satzCent, ermaessigt: erm,
+        von: daten[0], bis: daten[daten.length - 1],
+      });
+    }
+  }
 
-  return { jahresbetragCent: posten.reduce((s, p) => s + p.summeCent, 0), posten };
+  return {
+    jahresbetragCent: posten.reduce((s, p) => s + p.summeCent, 0),
+    posten,
+    familienMonate: [...familien].sort(),
+  };
 }
 
 /** Einmalzahlung: Jahresbetrag abzüglich Nachlass (nie unter null). */

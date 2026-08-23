@@ -4,7 +4,7 @@
 // Die Regeln stehen in lib/zahlung-kern.ts (ohne Datenbank, dadurch testbar);
 // hier kommen Laden, Speichern und der E-Mail-Versand dazu.
 // =============================================================================
-import { service, sendMail, ADMIN_EMAIL } from "@/lib/kalender";
+import { service, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { ladeVertrag, rechneVertrag, buchungErlaubt, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { datumDe } from "@/lib/schuljahr-kern";
@@ -187,13 +187,20 @@ function alsHtml(text: string): string {
   return sicher.split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
 }
 
-async function vorlageSenden(schluessel: string, an: string, werte: Record<string, string>): Promise<void> {
+/**
+ * Eine Vorlage verschicken. Öffentlich, damit auch der Vertragsteil sie
+ * nutzen kann (z. B. das Ende eines Familientermins).
+ */
+export async function vorlageSenden(
+  schluessel: string, an: string, werte: Record<string, string>,
+  anhaenge?: MailAnhang[],
+): Promise<void> {
   const res = await service().from("mahn_vorlagen").select("*").eq("schluessel", schluessel).maybeSingle();
   const v = res.data as Vorlage | null;
   if (!v) return;
   // Jede automatische E-Mail geht in Kopie an die Admin-Adresse.
   await sendMail(an, fuelle(v.betreff, werte), alsHtml(fuelle(v.text, werte)), undefined,
-    { kopieAn: an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL });
+    { kopieAn: an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL, anhaenge });
 }
 
 // --- Mahnlauf ---------------------------------------------------------------

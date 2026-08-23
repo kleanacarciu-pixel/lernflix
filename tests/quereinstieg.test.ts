@@ -59,7 +59,7 @@ describe("Schüler startet am 17. März, mittwochs, 50 €", () => {
 
   test("Jahresbetrag zählt nur die tatsächlichen Stunden", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: termine.length }],
+      tage: [{ wochentag: 2, termine, ab: "2027-03-17", bis: ENDE }],
       stundensatzCent: 5000, stundensatzZweitCent: 4500,
     });
     assert.equal(p.jahresbetragCent, termine.length * 5000);
@@ -67,7 +67,7 @@ describe("Schüler startet am 17. März, mittwochs, 50 €", () => {
 
   test("Raten laufen ab März, nicht ab April", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: termine.length }],
+      tage: [{ wochentag: 2, termine, ab: "2027-03-17", bis: ENDE }],
       stundensatzCent: 5000, stundensatzZweitCent: 4500,
     });
     const plan = ratenplan({
@@ -108,7 +108,8 @@ describe("Randfaelle", () => {
 
   test("Betrag in Euro stimmt fuer einen einfachen Fall", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: 10 }], stundensatzCent: euroZuCent(50), stundensatzZweitCent: 0,
+      tage: [{ wochentag: 2, termine: termineAb(2, "2027-05-01").slice(0, 10), ab: "2027-05-01", bis: ENDE }],
+      stundensatzCent: euroZuCent(50), stundensatzZweitCent: 0,
     });
     assert.equal(p.jahresbetragCent, euroZuCent(500));
   });

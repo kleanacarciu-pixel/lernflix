@@ -127,7 +127,7 @@ export type VertragsbestaetigungDaten = {
   schuelerName: string;
   schuljahrName: string;
   zeiten: { wochentag: number; uhrzeit?: string }[];
-  posten: { wochentag: number; anzahl: number; satzCent: number }[];
+  posten: { wochentag: number; anzahl: number; satzCent: number; ermaessigt?: boolean }[];
   jahresbetragCent: number;
   zahlweise: "raten" | "einmal";
   raten: { monat: string; betragCent: number }[];
@@ -151,7 +151,8 @@ export async function vertragsbestaetigungPdf(dat: VertragsbestaetigungDaten): P
   d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Jahresbetrag");
   d.moveDown(0.3);
   for (const p of dat.posten) {
-    zeile(d, `${WOCHENTAGE[p.wochentag]}: ${p.anzahl} Termine × ${centFormat(p.satzCent)}`,
+    zeile(d, `${WOCHENTAGE[p.wochentag]}: ${p.anzahl} Termine × ${centFormat(p.satzCent)}`
+      + (p.ermaessigt ? " (Familienpreis)" : ""),
       centFormat(p.anzahl * p.satzCent));
   }
   zeile(d, "Jahresbetrag gesamt", centFormat(dat.jahresbetragCent), true);

@@ -151,7 +151,7 @@ describe("Beträge nach dem Wechsel (durchgerechnetes Beispiel)", () => {
     // Vorher: Dienstag das ganze Schuljahr
     const vorherTermine = terminlisteAus([{ wochentag: 1 }]);
     const vorher = berechneJahresbetrag({
-      tage: [{ wochentag: 1, anzahl: vorherTermine.length }],
+      tage: [{ wochentag: 1, termine: vorherTermine, ab: ERSTER, bis: LETZTER }],
       stundensatzCent: SATZ, stundensatzZweitCent: SATZ,
     });
 
@@ -163,7 +163,9 @@ describe("Beträge nach dem Wechsel (durchgerechnetes Beispiel)", () => {
     const nachher = berechneJahresbetrag({
       tage: zeitenNeu.map((z) => ({
         wochentag: z.wochentag,
-        anzahl: terminlisteAus([z]).length,
+        termine: terminlisteAus([z]),
+        ab: z.ab_datum || ERSTER,
+        bis: z.bis_datum || LETZTER,
       })),
       stundensatzCent: SATZ, stundensatzZweitCent: SATZ,
     });

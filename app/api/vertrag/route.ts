@@ -22,7 +22,10 @@ import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
 import { terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
-import { schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso } from "@/lib/zahlung";
+import {
+  schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
+  vorlageSenden, monatName,
+} from "@/lib/zahlung";
 import {
   abrechnungsbild, abrechnungsText, kuendigen, kuendigungZuruecknehmen,
   alsBeendetMarkieren, monatsEnde, pruefeKuendigung,
@@ -496,6 +499,74 @@ export async function POST(req: Request): Promise<Response> {
       return ok({
         jahresbetragCent: nachher.rechnung.jahresbetragCent,
         anzahlTermine: nachher.rechnung.alleTermine.length,
+        bereitsFaelligCent, restraten: restplan,
+      });
+    }
+
+    // Einen Wochentermin beenden (Familientermin endet, AGB § 6 Abs. 2)
+    case "terminBeenden": {
+      const id = text(body.vertrag_id, 40);
+      const wochentag = Number(body.wochentag);
+      const zum = text(body.zum, 10);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!Number.isInteger(wochentag) || wochentag < 0 || wochentag > 6) return bad("Bitte einen gültigen Wochentag wählen.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Enddatum angeben.");
+
+      const vorher = await vollbild(id);
+      if (!vorher) return bad("Vertrag nicht gefunden.", 404);
+      const offene = vorher.zeiten.filter((z) => !z.bis_datum || z.bis_datum > zum);
+      if (offene.length < 2) {
+        return bad("Dieser Vertrag hat nur noch einen Wochentermin. Zum Beenden des ganzen Vertrags bitte kündigen.");
+      }
+      if (!offene.some((z) => z.wochentag === wochentag)) {
+        return bad("Dieser Wochentag gehört nicht zu dem Vertrag.");
+      }
+
+      for (const z of offene.filter((z) => z.wochentag === wochentag)) {
+        const r = await sb.from("vertrag_zeiten").update({ bis_datum: zum }).eq("id", z.id);
+        if (r.error) return bad(r.error.message, 500);
+      }
+
+      const nachher = await vollbild(id);
+      if (!nachher) return bad("Neuberechnung fehlgeschlagen.", 500);
+      await sb.from("vertraege")
+        .update({ jahresbetrag: (nachher.rechnung.jahresbetragCent / 100).toFixed(2) })
+        .eq("id", id);
+
+      // Restraten neu verteilen – bereits fällige bleiben unverändert.
+      const monate = ratenMonate(nachher.vertrag.vertragsbeginn, nachher.schuljahr.letzter_schultag);
+      const { faellig, verbleibend } = teileRatenmonate(monate, zum);
+      const alteRateCent = monate.length
+        ? Math.round(euroZuCent(Number(vorher.vertrag.jahresbetrag)) / monate.length) : 0;
+      const bereitsFaelligCent = alteRateCent * faellig.length;
+      const restplan = verbleibend.length
+        ? ratenNeuVerteilen({
+            neuerJahresbetragCent: nachher.rechnung.jahresbetragCent,
+            bereitsFaelligCent, verbleibendeMonate: verbleibend,
+          })
+        : [];
+      if (restplan.length) await aktualisiereRestraten(id, restplan);
+
+      // Eltern informieren – Text kommt aus der editierbaren Vorlage.
+      if (nachher.schueler.email) {
+        const bleibt = nachher.zeiten.find((z) => z.wochentag !== wochentag && (!z.bis_datum || z.bis_datum > zum));
+        const regulaer = nachher.rechnung.posten.find((p) => !p.ermaessigt);
+        await vorlageSenden("terminEnde", nachher.schueler.email, {
+          name: nachher.schueler.name,
+          alterTag: WOCHENTAGE[wochentag],
+          bleibtTag: bleibt ? WOCHENTAGE[bleibt.wochentag] : "—",
+          endeAm: datumDe(zum),
+          abMonat: monatName(monatsErster(zum)),
+          satz: centFormat(regulaer?.satzCent ?? euroZuCent(Number(nachher.vertrag.stundensatz))),
+          jahresbetrag: centFormat(nachher.rechnung.jahresbetragCent),
+          rate: restplan.length ? centFormat(restplan[0].betragCent) : "keine weiteren Raten",
+        }, await anhaenge(nachher));
+      }
+
+      return ok({
+        jahresbetragCent: nachher.rechnung.jahresbetragCent,
+        posten: nachher.rechnung.posten,
+        familienMonate: nachher.rechnung.familienMonate,
         bereitsFaelligCent, restraten: restplan,
       });
     }

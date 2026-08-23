@@ -16,7 +16,10 @@ const F = {
   teal: '#2BB3C0', bg: '#fffdf8', weiss: '#fff', warn: '#a12a2a', gut: '#127a5c',
 };
 
-type Posten = { wochentag: number; anzahl: number; satzCent: number; summeCent: number; voll: boolean };
+type Posten = {
+  wochentag: number; anzahl: number; satzCent: number; summeCent: number;
+  ermaessigt: boolean; von: string; bis: string;
+};
 type Rate = { monat: string; betragCent: number };
 type Daten = {
   schuelerName: string; schuljahr: string; zeitText: string;
@@ -129,8 +132,8 @@ export default function VertragBestaetigen() {
 
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${F.line}` }}>
           {daten.posten.map((p) => (
-            <Zeile key={p.wochentag}
-              links={`${WOCHENTAGE[p.wochentag]}: ${p.anzahl} × ${eur(p.satzCent)}`}
+            <Zeile key={`${p.wochentag}-${p.von}`}
+              links={`${WOCHENTAGE[p.wochentag]}: ${p.anzahl} × ${eur(p.satzCent)}${p.ermaessigt ? ' (Familienpreis)' : ''}`}
               rechts={eur(p.summeCent)} />
           ))}
           <Zeile links="Jahresbetrag" rechts={eur(daten.jahresbetragCent)} fett />

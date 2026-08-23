@@ -24,7 +24,10 @@ type VertragZeile = {
   status: 'angeboten' | 'aktiv' | 'gekuendigt' | 'beendet';
   bestaetigt: boolean; kuendigungZum: string | null;
 };
-type Posten = { wochentag: number; anzahl: number; satzCent: number; summeCent: number; voll: boolean };
+type Posten = {
+  wochentag: number; anzahl: number; satzCent: number; summeCent: number;
+  ermaessigt: boolean; von: string; bis: string;
+};
 type Rate = { monat: string; betragCent: number };
 type Vorschau = {
   schuljahr: string; posten: Posten[]; jahresbetragCent: number;
@@ -90,6 +93,9 @@ export default function VertraegeSeite() {
   const [wNeu, setWNeu] = useState(0);
   const [wZeit, setWZeit] = useState('15:00');
   const [wDatum, setWDatum] = useState('');
+  const [endeFuer, setEndeFuer] = useState<VertragZeile | null>(null);
+  const [eTag, setETag] = useState(0);
+  const [eZum, setEZum] = useState('');
   const [kuendFuer, setKuendFuer] = useState<VertragZeile | null>(null);
   const [kZum, setKZum] = useState('');
   const [abrechnung, setAbrechnung] = useState<Abrechnung | null>(null);
@@ -229,6 +235,11 @@ export default function VertraegeSeite() {
                     Angebot erneut senden
                   </button>
                 )}
+                {(v.status === 'aktiv' || v.status === 'angeboten') && v.zeiten.length > 1 && (
+                  <button style={knopfKlein} onClick={() => {
+                    setEndeFuer(v); setETag(v.zeiten[v.zeiten.length - 1].wochentag); setEZum('');
+                  }}>Termin beenden</button>
+                )}
                 {(v.status === 'aktiv' || v.status === 'angeboten') && (
                   <button style={knopfKlein} onClick={() => {
                     setWechselFuer(v);
@@ -335,8 +346,8 @@ export default function VertraegeSeite() {
               )}
               <div style={{ marginTop: 10 }}>
                 {vorschau.posten.map((p) => (
-                  <Zeile key={p.wochentag}
-                    links={`${WOCHENTAGE[p.wochentag]}: ${p.anzahl} × ${eur(p.satzCent)}${p.voll ? '' : ' (ermäßigt)'}`}
+                  <Zeile key={`${p.wochentag}-${p.von}`}
+                    links={`${WOCHENTAGE[p.wochentag]}: ${p.anzahl} × ${eur(p.satzCent)}${p.ermaessigt ? ' (Familienpreis)' : ''}`}
                     rechts={eur(p.summeCent)} />
                 ))}
                 <Zeile links="Jahresbetrag" rechts={eur(vorschau.jahresbetragCent)} fett />
@@ -391,6 +402,42 @@ export default function VertraegeSeite() {
                   wechseln und Eltern informieren
                 </button>
                 <button style={knopfKlein} onClick={() => setWechselFuer(null)}>abbrechen</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --------------------------------------------- Wochentermin beenden */}
+        {endeFuer && (
+          <div style={overlay} onClick={() => setEndeFuer(null)}>
+            <div style={{ ...karte, maxWidth: 540, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Wochentermin beenden – {endeFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Für den verbleibenden Termin gilt <b>ab dem Folgemonat wieder der reguläre
+                Stundensatz</b> (AGB § 6 Abs. 2). Der Vertrag wird neu berechnet; bereits
+                fällige Raten bleiben unverändert. Die Familie bekommt eine E-Mail mit der
+                neuen Terminliste.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 10 }}>
+                <label style={etikett}>welcher Termin endet
+                  <select style={feld} value={eTag} onChange={(e) => setETag(Number(e.target.value))}>
+                    {endeFuer.zeiten.map((z) => (
+                      <option key={z.wochentag} value={z.wochentag}>{WOCHENTAGE[z.wochentag]}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={etikett}>letzter Tag
+                  <input style={feld} type="date" value={eZum} onChange={(e) => setEZum(e.target.value)} />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                <button style={knopf} disabled={!eZum}
+                  onClick={() => { const v = endeFuer; setEndeFuer(null);
+                    void tun(() => api('terminBeenden', { vertrag_id: v.id, wochentag: eTag, zum: eZum }),
+                      'Termin beendet – neu berechnet, die Familie hat die E-Mail bekommen.'); }}>
+                  beenden und Familie informieren
+                </button>
+                <button style={knopfKlein} onClick={() => setEndeFuer(null)}>abbrechen</button>
               </div>
             </div>
           </div>

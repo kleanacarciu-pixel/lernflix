@@ -21,8 +21,9 @@ const BAYERN: FreierZeitraum[] = [
   f("2027-03-22", "2027-04-02"), f("2027-05-06", "2027-05-06", true),
   f("2027-05-17", "2027-05-17", true), f("2027-05-18", "2027-05-28"),
 ];
-const anzahl = (wochentag: number, abDatum?: string) =>
-  termineImZeitraum({ erster: ERSTER, letzter: LETZTER, wochentag, frei: BAYERN, abDatum }).length;
+const termine = (wochentag: number, abDatum?: string) =>
+  termineImZeitraum({ erster: ERSTER, letzter: LETZTER, wochentag, frei: BAYERN, abDatum });
+const anzahl = (wochentag: number, abDatum?: string) => termine(wochentag, abDatum).length;
 
 describe("Geldbeträge", () => {
   test("euroZuCent rundet kaufmännisch", () => {
@@ -46,77 +47,88 @@ describe("Geldbeträge", () => {
   });
 });
 
+// Hilfsmittel: ein Wochentermin ueber das ganze Schuljahr
+const tag = (wochentag: number, termine: string[], ab = ERSTER, bis = LETZTER) =>
+  ({ wochentag, termine, ab, bis });
+const alle = (wochentag: number) => tag(wochentag, termine(wochentag));
+
 describe("Jahresbetrag: ein Wochentermin", () => {
   test("Mittwoch bei 50 € = 37 × 50 = 1.850 €", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: anzahl(2) }],
+      tage: [alle(2)],
       stundensatzCent: euroZuCent(50), stundensatzZweitCent: euroZuCent(45),
     });
     assert.equal(anzahl(2), 37);
     assert.equal(p.jahresbetragCent, 37 * 5000);
-    assert.equal(p.posten[0].voll, true);
+    assert.equal(p.posten[0].ermaessigt, false);
+    assert.deepEqual(p.familienMonate, []);
   });
 });
 
-describe("Jahresbetrag: zwei Wochentermine (Sollwert aus Abschnitt 8)", () => {
-  test("Di + Do bei 45/40 = 38×45 + 36×40 = 3.150 €", () => {
+describe("Familienpreis: zwei Wochentermine – ALLES ermäßigt", () => {
+  test("Di + Do bei 45/40 = 74 × 40 = 2.960 €", () => {
     const di = anzahl(1), do_ = anzahl(3);
     assert.equal(di, 38);
     assert.equal(do_, 36);
 
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 1, anzahl: di }, { wochentag: 3, anzahl: do_ }],
+      tage: [alle(1), alle(3)],
       stundensatzCent: euroZuCent(45), stundensatzZweitCent: euroZuCent(40),
     });
-    assert.equal(p.jahresbetragCent, euroZuCent(3150));
-    assert.equal(centFormat(p.jahresbetragCent), "3.150,00 €");
+    assert.equal(p.jahresbetragCent, euroZuCent(2960));
+    assert.equal(centFormat(p.jahresbetragCent), "2.960,00 €");
+    assert.equal(di + do_, 74);
 
-    // Voller Satz muss auf dem Tag mit MEHR Terminen liegen (Dienstag)
-    const voll = p.posten.find((x) => x.voll);
-    assert.equal(voll?.wochentag, 1);
-    assert.equal(voll?.satzCent, euroZuCent(45));
-    const reduziert = p.posten.find((x) => !x.voll);
-    assert.equal(reduziert?.wochentag, 3);
-    assert.equal(reduziert?.satzCent, euroZuCent(40));
+    // BEIDE Tage laufen zum ermäßigten Satz – kein voller Satz mehr.
+    assert.equal(p.posten.length, 2);
+    for (const x of p.posten) {
+      assert.equal(x.ermaessigt, true, `Wochentag ${x.wochentag} müsste ermäßigt sein`);
+      assert.equal(x.satzCent, euroZuCent(40));
+    }
   });
 
-  test("Reihenfolge der Eingabe ändert das Ergebnis nicht", () => {
+  test("Reihenfolge der Eingabe ändert nichts", () => {
     const a = berechneJahresbetrag({
-      tage: [{ wochentag: 1, anzahl: 38 }, { wochentag: 3, anzahl: 36 }],
-      stundensatzCent: 4500, stundensatzZweitCent: 4000,
+      tage: [alle(1), alle(3)], stundensatzCent: 4500, stundensatzZweitCent: 4000,
     });
     const b = berechneJahresbetrag({
-      tage: [{ wochentag: 3, anzahl: 36 }, { wochentag: 1, anzahl: 38 }],
-      stundensatzCent: 4500, stundensatzZweitCent: 4000,
+      tage: [alle(3), alle(1)], stundensatzCent: 4500, stundensatzZweitCent: 4000,
     });
     assert.equal(a.jahresbetragCent, b.jahresbetragCent);
-    assert.equal(a.posten.find((x) => x.voll)?.wochentag, 1);
-    assert.equal(b.posten.find((x) => x.voll)?.wochentag, 1);
   });
 
-  test("bei gleicher Terminzahl bekommt der frühere Wochentag den vollen Satz", () => {
+  test("gleiche Terminzahl: trotzdem beide ermäßigt", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 4, anzahl: 37 }, { wochentag: 0, anzahl: 37 }],
-      stundensatzCent: 4500, stundensatzZweitCent: 4000,
+      tage: [alle(4), alle(0)], stundensatzCent: 4500, stundensatzZweitCent: 4000,
     });
-    assert.equal(p.posten.find((x) => x.voll)?.wochentag, 0);
+    assert.equal(p.posten.every((x) => x.ermaessigt), true);
+    assert.equal(p.jahresbetragCent, (anzahl(4) + anzahl(0)) * 4000);
+  });
+
+  test("ein Ferienmonat ohne Termine kippt den Familienpreis nicht", () => {
+    // August liegt ausserhalb; hier zaehlt der Geltungszeitraum, nicht ob
+    // zufaellig ein Termin in den Monat faellt.
+    const p = berechneJahresbetrag({
+      tage: [alle(1), alle(3)], stundensatzCent: 4500, stundensatzZweitCent: 4000,
+    });
+    assert.equal(p.posten.every((x) => x.ermaessigt), true);
   });
 });
 
-describe("Jahresbetrag: zweites Kind", () => {
+describe("Familienpreis: zweites Kind", () => {
   test("ein Wochentermin als zweites Kind läuft zum reduzierten Satz", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: 37 }],
+      tage: [alle(2)],
       stundensatzCent: euroZuCent(45), stundensatzZweitCent: euroZuCent(40),
       zweitesKind: true,
     });
     assert.equal(p.jahresbetragCent, 37 * 4000);
-    assert.equal(p.posten[0].voll, false);
+    assert.equal(p.posten[0].ermaessigt, true);
   });
 
   test("ohne das Flag gilt der volle Satz", () => {
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: 37 }],
+      tage: [alle(2)],
       stundensatzCent: euroZuCent(45), stundensatzZweitCent: euroZuCent(40),
     });
     assert.equal(p.jahresbetragCent, 37 * 4500);
@@ -153,7 +165,7 @@ describe("Raten (Sollwert aus Abschnitt 8)", () => {
     assert.equal(n, 18);
 
     const p = berechneJahresbetrag({
-      tage: [{ wochentag: 2, anzahl: n }],
+      tage: [tag(2, termine(2, "2027-03-01"), "2027-03-01")],
       stundensatzCent: euroZuCent(50), stundensatzZweitCent: euroZuCent(45),
     });
     assert.equal(p.jahresbetragCent, euroZuCent(900));
