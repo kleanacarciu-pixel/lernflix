@@ -779,6 +779,17 @@ export default function KalenderPage() {
           </div>
         )}
 
+        {/* Wege zu den Seiten des Schuljahresmodells – sonst sind sie nur ueber
+            die Adresszeile erreichbar. */}
+        {role === "admin" && (
+          <div className="overview" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <b style={{ marginRight: 4 }}>Schuljahr:</b>
+            <a className="minibtn" style={{ textDecoration: "none" }} href="/vertraege">📄 Verträge</a>
+            <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
+            <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">📅 Schuljahr &amp; Ferien</a>
+          </div>
+        )}
+
         {role === "admin" && overview && (
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>

@@ -9,8 +9,9 @@
 // Nutzt dieselbe Anmeldung wie der Kalender (Sitzung aus dem Browserspeicher).
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
+import Anmeldehinweis from '@/components/Anmeldehinweis';
+import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
 
-const LS_KEY = 'lma_kal_session';
 
 type Status = 'bezahlt' | 'offen' | 'ueberfaellig' | 'pausiert';
 type Zelle = {
@@ -59,6 +60,8 @@ export default function ZahlungenSeite() {
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState('');
   const [hinweis, setHinweis] = useState('');
+  // Abgelaufene Sitzung: Anmeldehinweis statt leerer Matrix zeigen.
+  const [abgemeldet, setAbgemeldet] = useState(false);
 
   const [monate, setMonate] = useState<string[]>([]);
   const [zeilen, setZeilen] = useState<Zeile[]>([]);
@@ -69,21 +72,16 @@ export default function ZahlungenSeite() {
   const [notizText, setNotizText] = useState('');
 
   useEffect(() => {
-    try {
-      const roh = localStorage.getItem(LS_KEY);
-      if (roh) setToken((JSON.parse(roh) as { token?: string }).token || '');
-    } catch { /* keine Sitzung */ }
+    setToken(ladeSitzung()?.token || '');
   }, []);
 
+  // Laeuft der Zugangs-Token ab, verlaengert rufeApi ihn selbst – genau wie
+  // der Kalender. Ausgeloggt wird nur, wenn die Anmeldung wirklich weg ist.
   const api = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
-    const res = await fetch('/api/zahlungen', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, token, ...params }),
-    });
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    if (!res.ok || !data.ok) throw new Error(String(data.error || 'Das hat nicht geklappt.'));
-    return data;
-  }, [token]);
+    const d = await rufeApi('/api/zahlungen', action, params, () => setAbgemeldet(true));
+    setToken(aktuellerToken());   // ggf. erneuerter Token fuer die PDF-Links
+    return d;
+  }, []);
 
   const neuLaden = useCallback(async () => {
     if (!token) { setLaden(false); return; }
@@ -128,16 +126,13 @@ export default function ZahlungenSeite() {
     }
   }
 
-  if (!token) {
+  if (!token || abgemeldet) {
     return (
       <main style={huelle}>
         <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 20px' }}>
           <div style={karte}>
             <h1 style={h1}>Zahlungen</h1>
-            <p style={{ color: F.soft }}>
-              Bitte zuerst im <a href="/kalender" style={{ color: F.blue }}>Kalender</a> anmelden –
-              diese Seite nutzt dieselbe Anmeldung.
-            </p>
+            <Anmeldehinweis abgelaufen={abgemeldet} />
           </div>
         </div>
       </main>

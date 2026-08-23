@@ -5,8 +5,9 @@
 // Nutzt dieselbe Anmeldung wie der Kalender (Sitzung aus dem Browserspeicher).
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
+import Anmeldehinweis from '@/components/Anmeldehinweis';
+import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
 
-const LS_KEY = 'lma_kal_session';
 
 type Schuljahr = { id: string; name: string; erster_schultag: string; letzter_schultag: string; aktiv: boolean };
 type Schule = { id: string; name: string };
@@ -30,6 +31,9 @@ export default function SchuljahrSeite() {
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState('');
   const [hinweis, setHinweis] = useState('');
+  // Angemeldet gewesen, aber die Sitzung ist abgelaufen: dann NICHT die
+  // leeren Formulare zeigen – das sieht aus, als waeren die Daten weg.
+  const [abgemeldet, setAbgemeldet] = useState(false);
 
   const [schuljahre, setSchuljahre] = useState<Schuljahr[]>([]);
   const [schulen, setSchulen] = useState<Schule[]>([]);
@@ -48,21 +52,16 @@ export default function SchuljahrSeite() {
   const [ftSchule, setFtSchule] = useState('');
 
   useEffect(() => {
-    try {
-      const roh = localStorage.getItem(LS_KEY);
-      if (roh) setToken((JSON.parse(roh) as { token?: string }).token || '');
-    } catch { /* keine Sitzung */ }
+    setToken(ladeSitzung()?.token || '');
   }, []);
 
+  // Laeuft der Zugangs-Token ab, verlaengert rufeApi ihn selbst – genau wie
+  // der Kalender. Ausgeloggt wird nur, wenn die Anmeldung wirklich weg ist.
   const api = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
-    const res = await fetch('/api/schuljahr', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, token, ...params }),
-    });
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    if (!res.ok || !data.ok) throw new Error(String(data.error || 'Das hat nicht geklappt.'));
-    return data;
-  }, [token]);
+    const d = await rufeApi('/api/schuljahr', action, params, () => setAbgemeldet(true));
+    setToken(aktuellerToken());   // ggf. erneuerter Token fuer die PDF-Links
+    return d;
+  }, []);
 
   const neuLaden = useCallback(async () => {
     if (!token) { setLaden(false); return; }
@@ -87,15 +86,12 @@ export default function SchuljahrSeite() {
     catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
   }
 
-  if (!token) {
+  if (!token || abgemeldet) {
     return (
       <main style={huelle}>
         <div style={karte}>
           <h1 style={h1}>Schuljahr &amp; Ferien</h1>
-          <p style={{ color: F.soft }}>
-            Bitte zuerst im <a href="/kalender" style={{ color: F.blue }}>Kalender</a> anmelden –
-            diese Seite nutzt dieselbe Anmeldung.
-          </p>
+          <Anmeldehinweis abgelaufen={abgemeldet} />
         </div>
       </main>
     );

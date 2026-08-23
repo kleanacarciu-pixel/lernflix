@@ -9,8 +9,9 @@
 // Nutzt dieselbe Anmeldung wie der Kalender (Sitzung aus dem Browserspeicher).
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
+import Anmeldehinweis from '@/components/Anmeldehinweis';
+import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
 
-const LS_KEY = 'lma_kal_session';
 const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 type Schueler = { user_id: string; name: string; email: string | null };
@@ -65,6 +66,8 @@ export default function VertraegeSeite() {
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState('');
   const [hinweis, setHinweis] = useState('');
+  // Abgelaufene Sitzung: Anmeldehinweis statt leerer Vertragsliste zeigen.
+  const [abgemeldet, setAbgemeldet] = useState(false);
 
   const [schueler, setSchueler] = useState<Schueler[]>([]);
   const [vertraege, setVertraege] = useState<VertragZeile[]>([]);
@@ -93,21 +96,16 @@ export default function VertraegeSeite() {
   const [gekuendigt, setGekuendigt] = useState(false);
 
   useEffect(() => {
-    try {
-      const roh = localStorage.getItem(LS_KEY);
-      if (roh) setToken((JSON.parse(roh) as { token?: string }).token || '');
-    } catch { /* keine Sitzung */ }
+    setToken(ladeSitzung()?.token || '');
   }, []);
 
+  // Laeuft der Zugangs-Token ab, verlaengert rufeApi ihn selbst – genau wie
+  // der Kalender. Ausgeloggt wird nur, wenn die Anmeldung wirklich weg ist.
   const api = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
-    const res = await fetch('/api/vertrag', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, token, ...params }),
-    });
-    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    if (!res.ok || !data.ok) throw new Error(String(data.error || 'Das hat nicht geklappt.'));
-    return data;
-  }, [token]);
+    const d = await rufeApi('/api/vertrag', action, params, () => setAbgemeldet(true));
+    setToken(aktuellerToken());   // ggf. erneuerter Token fuer die PDF-Links
+    return d;
+  }, []);
 
   const neuLaden = useCallback(async () => {
     if (!token) { setLaden(false); return; }
@@ -161,16 +159,13 @@ export default function VertraegeSeite() {
     void kuendigungRechnen(v, zum);
   }
 
-  if (!token) {
+  if (!token || abgemeldet) {
     return (
       <main style={huelle}>
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 20px' }}>
           <div style={karte}>
             <h1 style={h1}>Verträge</h1>
-            <p style={{ color: F.soft }}>
-              Bitte zuerst im <a href="/kalender" style={{ color: F.blue }}>Kalender</a> anmelden –
-              diese Seite nutzt dieselbe Anmeldung.
-            </p>
+            <Anmeldehinweis abgelaufen={abgemeldet} />
           </div>
         </div>
       </main>
