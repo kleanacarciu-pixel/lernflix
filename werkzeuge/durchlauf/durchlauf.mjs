@@ -54,6 +54,13 @@ const daten = {
   vertraege: [], vertrag_zeiten: [], zahlungen: [], appointments: [], fixed_slots: [],
 };
 
+// Mit OHNE_VORLAGEN=1 startet die Datenbank ganz ohne E-Mail-Texte. Dann muss
+// alles trotzdem laufen – die Texte stehen als Standard im Programm.
+if (process.env.OHNE_VORLAGEN === '1') {
+  daten.mahn_vorlagen = [];
+  console.log('  (Datenbank ohne E-Mail-Vorlagen – es gelten die Standardtexte)');
+}
+
 const benutzer = {
   'admin-token': { id: 'u_admin', email: 'lernemitanna@outlook.com' },
   'lea-token': { id: 'u_lea', email: 'eltern@example.de' },

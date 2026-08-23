@@ -5,6 +5,7 @@
 // hier kommen Laden, Speichern und der E-Mail-Versand dazu.
 // =============================================================================
 import { fuelle, alsHtml } from "@/lib/mail-text-kern";
+import { STANDARD_VORLAGEN, standardVorlage } from "@/lib/vorlagen-standard";
 import { service, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { ladeVertrag, rechneVertrag, buchungErlaubt, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
@@ -168,9 +169,18 @@ export type Vorlage = { schluessel: string; betreff: string; text: string };
 // Weiterhin von hier aus nutzbar – die Umsetzung liegt in mail-text-kern.
 export { fuelle };
 
+/**
+ * Alle Vorlagen – aus der Datenbank, ergänzt um die Standardtexte.
+ *
+ * So stehen die Vertrags-E-Mails auch dann zur Verfügung, wenn die passende
+ * SQL-Datei nie ausgeführt wurde. Ein eigener Text in der Datenbank hat immer
+ * Vorrang; gespeichert wird beim ersten Ändern.
+ */
 export async function ladeVorlagen(): Promise<Vorlage[]> {
   const res = await service().from("mahn_vorlagen").select("*").order("schluessel");
-  return (res.data || []) as Vorlage[];
+  const ausDb = (res.data || []) as Vorlage[];
+  const fehlend = STANDARD_VORLAGEN.filter((s) => !ausDb.some((v) => v.schluessel === s.schluessel));
+  return [...ausDb, ...fehlend].sort((a, b) => a.schluessel.localeCompare(b.schluessel));
 }
 
 
@@ -196,10 +206,12 @@ export async function vorlageSenden(
   anhaenge?: MailAnhang[], opt?: { kopieAnAdmin?: boolean },
 ): Promise<{ ok: boolean; error?: string }> {
   const res = await service().from("mahn_vorlagen").select("*").eq("schluessel", schluessel).maybeSingle();
-  const v = res.data as Vorlage | null;
-  // Fehlt die Vorlage, ging KEINE E-Mail raus. Das muss der Aufrufer erfahren,
-  // sonst meldet die Oberfläche einen Versand, den es nie gab.
-  if (!v) return { ok: false, error: `Die E-Mail-Vorlage „${schluessel}" fehlt in der Datenbank.` };
+  // Steht in der Datenbank nichts, greift der Standardtext aus dem Programm.
+  // Erst wenn es auch den nicht gibt, ging wirklich keine E-Mail raus – und
+  // das muss der Aufrufer erfahren, sonst meldet die Oberfläche einen Versand,
+  // den es nie gab.
+  const v = (res.data as Vorlage | null) ?? standardVorlage(schluessel);
+  if (!v) return { ok: false, error: `Für „${schluessel}" gibt es keinen E-Mail-Text.` };
 
   const kopie = opt?.kopieAnAdmin === false || an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL;
   return sendMail(an, fuelle(v.betreff, werte), alsHtml(fuelle(v.text, werte)), undefined,

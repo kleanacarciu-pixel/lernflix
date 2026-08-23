@@ -39,3 +39,20 @@ landet neben dem Skript als `durchlauf-vertrag.pdf`.
 `npm test` läuft ohne Browser und ohne Server. Dieser Durchlauf braucht
 beides und dauert deshalb länger – er gehört in die Hand, nicht in jeden
 Testlauf.
+
+## Ohne E-Mail-Texte in der Datenbank
+
+Mit `OHNE_VORLAGEN=1` startet der Durchlauf mit einer Datenbank ganz ohne
+E-Mail-Vorlagen. Alles muss trotzdem laufen: Die drei Vertrags-Texte stehen
+als Standard in `lib/vorlagen-standard.ts`, die Datenbank darf sie nur
+überschreiben.
+
+```bash
+OHNE_VORLAGEN=1 CRON_SECRET=test-secret node werkzeuge/durchlauf/durchlauf.mjs
+```
+
+## Hinweis zu Playwright
+
+`playwright` ist keine Abhängigkeit des Projekts. Node sucht das Paket vom
+Ort des Skripts aus – liegt es woanders, das Skript in ein Verzeichnis mit
+erreichbarem `node_modules` kopieren oder `NODE_PATH` setzen.

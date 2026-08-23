@@ -155,9 +155,13 @@ export async function POST(req: Request): Promise<Response> {
       if (["vertragEinladung", "vertragErinnerung"].includes(schluessel) && !inhalt.includes("{link}")) {
         return bad("In diesem Text muss {link} vorkommen – sonst kommen die Eltern nicht zum Vertrag.");
       }
-      const r = await sb.from("mahn_vorlagen")
-        .update({ betreff, text: inhalt, geaendert_am: new Date().toISOString() })
-        .eq("schluessel", schluessel);
+      // Anlegen statt nur ändern: Steht der Text bisher nur im Programm
+      // (Standardvorlage), gäbe es sonst nichts zu ändern und das Speichern
+      // liefe ins Leere.
+      const r = await sb.from("mahn_vorlagen").upsert(
+        { schluessel, betreff, text: inhalt, geaendert_am: new Date().toISOString() },
+        { onConflict: "schluessel" },
+      );
       return r.error ? bad(r.error.message, 500) : ok();
     }
 
