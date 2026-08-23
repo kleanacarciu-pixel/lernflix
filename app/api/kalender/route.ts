@@ -10,6 +10,7 @@ import {
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { buchungErlaubtGesamt as buchungErlaubt } from "@/lib/zahlung";
+import { verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau } from "@/lib/stundenkonto-kern";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,16 +44,17 @@ async function setBalance(id: string, patch: Partial<Pick<Profile, "minus_hours"
   await service().from("profiles").update(patch).eq("user_id", id);
 }
 // Einzel-Buchung verrechnen (bei Bestätigung): makeup -> minus -> sonst plus
+// Die Regel selbst steht in lib/stundenkonto-kern.ts und ist dort getestet;
+// hier bleibt nur das Schreiben in die Datenbank.
 async function applyEinzelCounting(p: Profile): Promise<"makeup" | "minus" | "plus"> {
-  if (p.makeup_credits > 0) { await setBalance(p.user_id, { makeup_credits: p.makeup_credits - 1 }); return "makeup"; }
-  if (p.minus_hours > 0) { await setBalance(p.user_id, { minus_hours: p.minus_hours - 1 }); return "minus"; }
-  await setBalance(p.user_id, { plus_hours: p.plus_hours + 1 }); return "plus";
+  const { counted, aenderung } = verrechne(p);
+  await setBalance(p.user_id, aenderung);
+  return counted;
 }
 // Verrechnung rückgängig machen (bei Absage einer Einzel-Buchung)
 async function revertCounting(p: Profile, counted: string | null) {
-  if (counted === "plus") await setBalance(p.user_id, { plus_hours: Math.max(0, p.plus_hours - 1) });
-  else if (counted === "minus") await setBalance(p.user_id, { minus_hours: Math.min(3, p.minus_hours + 1) });
-  else if (counted === "makeup") await setBalance(p.user_id, { makeup_credits: p.makeup_credits + 1 });
+  const aenderung = macheRueckgaengig(p, counted);
+  if (aenderung) await setBalance(p.user_id, aenderung);
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -174,7 +176,7 @@ export async function POST(req: Request): Promise<Response> {
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       { const { error } = await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "einzel", status: "angefragt", mode, dauer_min: dauerMin }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       after(() => sendMail(ADMIN_EMAIL, "Neue Terminanfrage", `${prof.name} möchte am ${prettyDate(date, hour)} eine Stunde (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
-      const preview = prof.makeup_credits > 0 ? "Nachhol-Guthaben wird eingelöst." : prof.minus_hours > 0 ? "Minus-Stunde wird nachgeholt." : "Zählt als Extra-Stunde (Plus).";
+      const preview = verrechnungsVorschau(prof);
       return ok({ message: "Stunde angefragt. Kleana bestätigt sie. " + preview });
     }
     if (action === "cancelMine") {
@@ -187,12 +189,11 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absage) {
         const hu = hoursUntil(date, hour);
-        const credit = hu >= 4 && prof.minus_hours < 3;
-        const cnote = credit ? null : (hu < 4 ? "late" : "overmax");
+        const { gutschrift: credit, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
         await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
-        if (credit) await setBalance(user.id, { minus_hours: prof.minus_hours + 1 });
+        if (aenderung) await setBalance(user.id, aenderung);
         after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
-        return ok({ message: hu >= 4 ? (credit ? "Abgesagt. +1 Minus-Stunde gutgeschrieben." : "Abgesagt. (Minus-Konto bereits voll: 3/3.)") : "Abgesagt. Weniger als 4 Std. vorher – keine Gutschrift." });
+        return ok({ message: absageText });
       }
       return bad("Hier ist kein eigener Termin.");
     }
