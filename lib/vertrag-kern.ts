@@ -176,3 +176,80 @@ export function darfBuchen(
   }
   return { erlaubt: true };
 }
+
+// --- Wochentagswechsel (Abschnitt 5) ----------------------------------------
+
+/** "2027-03-17" -> "2027-03-01" */
+export function monatsErster(iso: string): string {
+  return `${iso.slice(0, 7)}-01`;
+}
+
+/** Ein Tag zurück – für das bis_datum des alten Wochentags. */
+export function tagDavor(iso: string): string {
+  const [j, m, t] = iso.split("-").map(Number);
+  const d = new Date(Date.UTC(j, m - 1, t) - 86_400_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+}
+
+/**
+ * Teilt die Ratenmonate am Stichtag in „schon fällig" und „kommt noch".
+ *
+ * Eine Rate gilt als fällig, wenn ihr Monat vor dem Stichtagsmonat liegt –
+ * oder wenn es der Stichtagsmonat selbst ist und der Stichtag nach dem 10.
+ * liegt (bis dahin war sie zu zahlen). Nur die noch offenen Monate werden
+ * nach einer Vertragsänderung neu berechnet; bereits gezahlte Raten bleiben
+ * unangetastet.
+ */
+export function teileRatenmonate(monate: string[], stichtag: string): { faellig: string[]; verbleibend: string[] } {
+  const stichMonat = monatsErster(stichtag);
+  const stichTagImMonat = Number(stichtag.slice(8, 10));
+  const faellig: string[] = [], verbleibend: string[] = [];
+  for (const m of monate) {
+    const schon = m < stichMonat || (m === stichMonat && stichTagImMonat > 10);
+    (schon ? faellig : verbleibend).push(m);
+  }
+  return { faellig, verbleibend };
+}
+
+export type ZeitZeile = {
+  wochentag: number;
+  uhrzeit?: string;
+  ab_datum?: string | null;
+  bis_datum?: string | null;
+};
+
+/**
+ * Wochentag eines Vertrags wechseln.
+ *
+ * Der alte Wochentag bekommt ein bis_datum (Tag vor dem Wechsel), der neue
+ * ein ab_datum. Die Terminliste setzt sich danach zusammen aus allen alten
+ * Terminen VOR dem Wechseldatum und allen neuen AB dem Wechseldatum.
+ *
+ * Ein zweiter Wochentermin bleibt unberührt.
+ */
+export function wochentagWechseln(zeiten: ZeitZeile[], opt: {
+  alterWochentag: number;
+  neuerWochentag: number;
+  neueUhrzeit?: string;
+  wechseldatum: string;
+}): ZeitZeile[] {
+  const { alterWochentag, neuerWochentag, neueUhrzeit, wechseldatum } = opt;
+  const ende = tagDavor(wechseldatum);
+
+  const angepasst = zeiten.map((z) => {
+    if (z.wochentag !== alterWochentag) return z;
+    // Schon beendete Zeilen nicht erneut abschneiden
+    if (z.bis_datum && z.bis_datum <= ende) return z;
+    return { ...z, bis_datum: ende };
+  });
+
+  const alt = zeiten.find((z) => z.wochentag === alterWochentag);
+  angepasst.push({
+    wochentag: neuerWochentag,
+    uhrzeit: neueUhrzeit ?? alt?.uhrzeit,
+    ab_datum: wechseldatum,
+    bis_datum: null,
+  });
+  return angepasst;
+}

@@ -13,8 +13,11 @@
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
-import { rechneVertrag, ladeVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
-import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
+import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
+import {
+  euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
+  ratenNeuVerteilen,
+} from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink } from "@/lib/vertrag-token";
 import { terminlistePdf, vertragsbestaetigungPdf, textPdf, bankverbindung } from "@/lib/vertrag-dokumente";
@@ -174,6 +177,27 @@ export async function POST(req: Request): Promise<Response> {
     return ok({ bestaetigt: true });
   }
 
+  // ------------------------------------------- eigener Vertrag (angemeldet)
+  if (action === "meinVertrag") {
+    const t = text(body.token, 4000);
+    const user = t ? await userFromToken(t) : null;
+    if (!user) return bad("Bitte einloggen.", 401);
+    const eigener = await laufenderVertrag(user.id);
+    if (!eigener) return ok({ vertrag: null });
+    const v = await vollbild(eigener.id);
+    if (!v) return ok({ vertrag: null });
+    return ok({
+      vertrag: {
+        schuelerName: v.schueler.name, schuljahr: v.schuljahr.name,
+        zeitText: zeitText(v.zeiten), termine: v.rechnung.alleTermine,
+        jahresbetragCent: v.rechnung.jahresbetragCent,
+        zahlweise: v.vertrag.zahlweise, raten: v.rechnung.raten,
+        einmalCent: v.rechnung.einmalCent,
+        bestaetigt: !!v.vertrag.agb_akzeptiert_am,
+      },
+    });
+  }
+
   // ------------------------------------------------------------------- Admin
   const token = text(body.token, 4000);
   if (!token) return bad("Bitte einloggen.", 401);
@@ -263,6 +287,110 @@ export async function POST(req: Request): Promise<Response> {
       return res.ok ? ok() : bad(res.error || "Die E-Mail ließ sich nicht senden.", 500);
     }
 
+    // Wochentag wechseln (Abschnitt 5)
+    case "wochentagWechseln": {
+      const id = text(body.vertrag_id, 40);
+      const alterWochentag = Number(body.alter_wochentag);
+      const neuerWochentag = Number(body.neuer_wochentag);
+      const wechseldatum = text(body.wechseldatum, 10);
+      const neueUhrzeit = text(body.neue_uhrzeit, 8) || undefined;
+
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!Number.isInteger(neuerWochentag) || neuerWochentag < 0 || neuerWochentag > 6) return bad("Bitte einen gültigen Wochentag wählen.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(wechseldatum)) return bad("Bitte ein gültiges Wechseldatum angeben.");
+
+      const vorher = await vollbild(id);
+      if (!vorher) return bad("Vertrag nicht gefunden.", 404);
+      if (!vorher.zeiten.some((z) => z.wochentag === alterWochentag)) {
+        return bad("Dieser Wochentag gehört nicht zu dem Vertrag.");
+      }
+
+      const neueZeiten = wochentagWechseln(
+        vorher.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit, ab_datum: z.ab_datum, bis_datum: z.bis_datum })),
+        { alterWochentag, neuerWochentag, neueUhrzeit, wechseldatum },
+      );
+
+      // Alte Zeile(n) beenden
+      const ende = neueZeiten.find((z) => z.wochentag === alterWochentag && z.bis_datum)?.bis_datum;
+      if (ende) {
+        const zuBeenden = vorher.zeiten.filter((z) => z.wochentag === alterWochentag && (!z.bis_datum || z.bis_datum > ende));
+        for (const z of zuBeenden) {
+          const r = await sb.from("vertrag_zeiten").update({ bis_datum: ende }).eq("id", z.id);
+          if (r.error) return bad(r.error.message, 500);
+        }
+      }
+      // Neue Zeile anlegen
+      const neuZeile = neueZeiten[neueZeiten.length - 1];
+      const ins = await sb.from("vertrag_zeiten").insert({
+        vertrag_id: id, wochentag: neuZeile.wochentag,
+        uhrzeit: neuZeile.uhrzeit || "15:00", ab_datum: wechseldatum,
+      });
+      if (ins.error) return bad(ins.error.message, 500);
+
+      // Neu durchrechnen
+      const nachher = await vollbild(id);
+      if (!nachher) return bad("Neuberechnung fehlgeschlagen.", 500);
+      await sb.from("vertraege")
+        .update({ jahresbetrag: (nachher.rechnung.jahresbetragCent / 100).toFixed(2) })
+        .eq("id", id);
+
+      // Restraten: bereits fällige Raten bleiben, der Rest wird neu verteilt
+      const monate = ratenMonate(nachher.vertrag.vertragsbeginn, nachher.schuljahr.letzter_schultag);
+      const { faellig, verbleibend } = teileRatenmonate(monate, wechseldatum);
+      const alteRateCent = monate.length ? Math.round(euroZuCent(Number(vorher.vertrag.jahresbetrag)) / monate.length) : 0;
+      const bereitsFaelligCent = alteRateCent * faellig.length;
+      const restplan = verbleibend.length
+        ? ratenNeuVerteilen({
+            neuerJahresbetragCent: nachher.rechnung.jahresbetragCent,
+            bereitsFaelligCent, verbleibendeMonate: verbleibend,
+          })
+        : [];
+
+      // Eltern informieren – mit neuer Terminliste im Anhang
+      if (nachher.schueler.email) {
+        const dateien = await anhaenge(nachher);
+        const neueRate = restplan[0]?.betragCent ?? 0;
+        const betragText = nachher.vertrag.zahlweise === "einmal"
+          ? `Neuer Gesamtbetrag: <b>${centFormat(nachher.rechnung.einmalCent)}</b> (Einmalzahlung)`
+          : restplan.length
+            ? `Die restlichen ${restplan.length} Raten betragen jetzt je <b>${centFormat(neueRate)}</b>.`
+            : "Es sind keine weiteren Raten offen.";
+        await sendMail(
+          nachher.schueler.email,
+          `Termin geändert – Schuljahr ${nachher.schuljahr.name}`,
+          `<p>Hallo,</p>
+           <p>der feste Termin für <b>${nachher.schueler.name}</b> wurde geändert.</p>
+           <p><b>Ab ${datumDe(wechseldatum)}:</b> ${WOCHENTAGE[neuerWochentag]}${neuZeile.uhrzeit ? ` ${String(neuZeile.uhrzeit).slice(0, 5)} Uhr` : ""}<br>
+              <b>Termine insgesamt:</b> ${nachher.rechnung.alleTermine.length}<br>
+              <b>Neuer Jahresbetrag:</b> ${centFormat(nachher.rechnung.jahresbetragCent)}</p>
+           <p>${betragText}<br>
+              Bereits gezahlte Raten bleiben unverändert.</p>
+           <p>Die neue Terminliste findest du im Anhang.</p>
+           <p>Liebe Grüße<br>Anna</p>`,
+          undefined,
+          { anhaenge: dateien, kopieAn: ADMIN_EMAIL },
+        );
+      }
+
+      return ok({
+        jahresbetragCent: nachher.rechnung.jahresbetragCent,
+        anzahlTermine: nachher.rechnung.alleTermine.length,
+        bereitsFaelligCent, restraten: restplan,
+      });
+    }
+
+    // Terminliste eines Vertrags fürs Portal (Admin-Sicht)
+    case "terminliste": {
+      const id = text(body.vertrag_id, 40);
+      const v = id ? await vollbild(id) : null;
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      return ok({
+        schuelerName: v.schueler.name, schuljahr: v.schuljahr.name,
+        zeitText: zeitText(v.zeiten), termine: v.rechnung.alleTermine,
+        jahresbetragCent: v.rechnung.jahresbetragCent,
+      });
+    }
+
     default:
       return bad("Unbekannte Aktion.");
   }
@@ -304,9 +432,32 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
 // Terminliste als PDF herunterladen (Portal): /api/vertrag?pdf=<token>
 export async function GET(req: Request): Promise<Response> {
   const url = new URL(req.url);
-  const pruef = pruefeVertragToken(url.searchParams.get("pdf") || "");
-  if (!pruef.ok) return bad("Dieser Link ist nicht gültig.", 403);
-  const v = await vollbild(pruef.vertragId);
+
+  // Zwei Wege: Token aus der E-Mail (?pdf=) oder normale Anmeldung (?sitzung=)
+  let vertragId = "";
+  const pdfToken = url.searchParams.get("pdf");
+  if (pdfToken) {
+    const pruef = pruefeVertragToken(pdfToken);
+    if (!pruef.ok) return bad("Dieser Link ist nicht gültig.", 403);
+    vertragId = pruef.vertragId;
+  } else {
+    const sitzung = url.searchParams.get("sitzung") || "";
+    const user = sitzung ? await userFromToken(sitzung) : null;
+    if (!user) return bad("Bitte einloggen.", 401);
+    const prof = await getProfile(user.id);
+    if (!prof) return bad("Kein Zugang.", 403);
+    // Kleana darf jeden Vertrag oeffnen, Schueler nur den eigenen
+    const gewuenscht = url.searchParams.get("vertrag") || "";
+    if (prof.role === "admin" && gewuenscht) {
+      vertragId = gewuenscht;
+    } else {
+      const eigener = await laufenderVertrag(user.id);
+      if (!eigener) return bad("Für dich ist kein Vertrag hinterlegt.", 404);
+      vertragId = eigener.id;
+    }
+  }
+
+  const v = await vollbild(vertragId);
   if (!v) return bad("Vertrag nicht gefunden.", 404);
 
   const art = url.searchParams.get("art") || "terminliste";
