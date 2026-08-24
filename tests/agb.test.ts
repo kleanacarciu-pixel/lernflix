@@ -223,3 +223,21 @@ describe("Die AGB-PDF enthält den ganzen Wortlaut", async () => {
     }
   });
 });
+
+describe("Das Muster-Widerrufsformular bleibt lesbar", () => {
+  test("(*) wird nicht als Hervorhebung missverstanden", () => {
+    // Zwei (*) in einer Zeile sahen für den Leser wie Anfang und Ende einer
+    // Kursivstellung aus – aus (*) den von mir/uns (*) wurde dabei
+    // ( den von mir/uns ) in Schräglage, die Sternchen verschwanden.
+    const zeile = "Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag";
+    assert.deepEqual(laeufeAus(zeile), [{ text: zeile }]);
+  });
+
+  test("echte Kursivstellung geht weiterhin", () => {
+    assert.deepEqual(laeufeAus("*(Hinweis)*"), [{ text: "(Hinweis)", kursiv: true }]);
+  });
+
+  test("im ganzen Wortlaut steht das Formular unverändert", () => {
+    assert.ok(alsText(AGB_MARKDOWN).includes("(*) den von mir/uns (*) abgeschlossenen Vertrag"));
+  });
+});
