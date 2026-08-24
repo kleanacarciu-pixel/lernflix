@@ -210,6 +210,45 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ anzahl: r.anzahl, summeCent: r.summeCent, verschickt });
     }
 
+    // Eigene Sicherheitskopie für Kleana: alle Verträge samt Ratenplan als
+    // lesbare JSON-Datei zum Herunterladen und selbst Aufbewahren.
+    case "exportAlleDaten": {
+      const [vRes, zRes, pAbRes] = await Promise.all([
+        sb.from("vertraege").select("*").order("erstellt_am", { ascending: false }),
+        sb.from("zahlungen").select("*").order("monat"),
+        sb.from("plusstunden_abrechnungen").select("*").order("erstellt_am", { ascending: false }),
+      ]);
+      const vertraege = (vRes.data || []) as Vertrag[];
+      const zahlungen = (zRes.data || []) as Zahlung[];
+      const pRes = await sb.from("profiles").select("user_id,name,email")
+        .in("user_id", vertraege.map((v) => v.schueler_id).concat(
+          ((pAbRes.data || []) as { schueler_id: string }[]).map((a) => a.schueler_id),
+        ));
+      const profile = (pRes.data || []) as { user_id: string; name: string; email: string | null }[];
+      const nameOf = (id: string) => profile.find((p) => p.user_id === id)?.name || "unbekannt";
+      const emailOf = (id: string) => profile.find((p) => p.user_id === id)?.email || null;
+
+      const vertraegeExport = vertraege.map((v) => ({
+        ...v,
+        schuelerName: nameOf(v.schueler_id),
+        schuelerEmail: emailOf(v.schueler_id),
+        zahlungen: zahlungen.filter((z) => z.vertrag_id === v.id).map((z) => ({
+          monat: z.monat, sollBetrag: z.soll_betrag, bezahltAm: z.bezahlt_am,
+          offenSeit: z.offen_seit, offenBis: z.offen_bis, erinnerungAm: z.erinnerung_am,
+          pausiertAm: z.pausiert_am, status: status(z, heute),
+        })),
+      }));
+      const abrechnungenExport = ((pAbRes.data || []) as { schueler_id: string; anzahl: number; summe: number; faellig_am: string; bezahlt_am: string | null; erstellt_am: string }[])
+        .map((a) => ({ ...a, schuelerName: nameOf(a.schueler_id) }));
+
+      return ok({
+        erstellt_am: new Date().toISOString(),
+        dateiname: `vertraege-zahlungen-${heute}.json`,
+        verträge: vertraegeExport,
+        plusstunden_abrechnungen: abrechnungenExport,
+      });
+    }
+
     default:
       return bad("Unbekannte Aktion.");
   }
