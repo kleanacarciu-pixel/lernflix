@@ -254,11 +254,18 @@ export async function POST(req: Request): Promise<Response> {
     // wird das hier auf dem Server, nicht nur im Formular.
     const pruefung = pruefeUnterzeichnung({
       agb: body.agb, widerruf: body.widerruf, unterschrift: body.unterschrift,
+      eltern: body.eltern,
     });
     if (!pruefung.ok) return bad(pruefung.grund);
 
     const jetzt = new Date().toISOString();
     const up = await sb.from("vertraege").update({
+      // Die Eltern tragen ihre Angaben selbst ein – sie stehen anschließend
+      // so im Vertrag, wie sie sie geschrieben haben.
+      eltern_name: pruefung.eltern.name,
+      eltern_anschrift: pruefung.eltern.anschrift,
+      eltern_email: pruefung.eltern.email || null,
+      eltern_telefon: pruefung.eltern.telefon || null,
       eltern_unterschrift: pruefung.datenUri,
       unterzeichnet_am: jetzt,
       agb_bestaetigt_am: jetzt,
@@ -348,6 +355,10 @@ export async function POST(req: Request): Promise<Response> {
       return ok({
         schueler: profile,
         schuljahre: jahre,
+        // Ohne hinterlegte Unterschrift entsteht jede Vertrags-PDF ohne die
+        // Unterschrift der Anbieterin. Das muss auf der Seite auffallen,
+        // bevor der nächste Vertrag rausgeht.
+        eigeneUnterschrift: !!(await unterschriftAnbieterin()),
         vertraege: vertraege.map((v) => {
           // Nur die aktuell gültigen Zeiten anzeigen (beendete Zeilen weglassen)
           const zeiten = alleZeiten.filter((z) => z.vertrag_id === v.id && !z.bis_datum);
