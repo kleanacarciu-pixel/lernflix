@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Anmeldehinweis from '@/components/Anmeldehinweis';
 import { rufeApi, ladeSitzung } from '@/components/sitzung';
 import { pruefeUnterschrift } from '@/lib/unterschrift-kern';
+import Unterschriftsfeld from '@/components/Unterschriftsfeld';
 
 const F = {
   ink: '#0F172A', soft: '#475569', muted: '#94A3B8', line: '#E2E8F0',
@@ -28,9 +29,6 @@ export default function EinstellungenSeite() {
   const [maxKb, setMaxKb] = useState(500);
   const [tipp, setTipp] = useState('');
   const dateiFeld = useRef<HTMLInputElement>(null);
-  const [schreibName, setSchreibName] = useState('Kleana C');
-  const [entwurf, setEntwurf] = useState<string | null>(null);
-  const leinwand = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => { setToken(ladeSitzung()?.token || ''); }, []);
 
@@ -52,39 +50,6 @@ export default function EinstellungenSeite() {
 
   useEffect(() => { void neuLaden(); }, [neuLaden]);
 
-  /**
-   * Unterschrift aus dem Namen schreiben.
-   *
-   * Gezeichnet wird im Browser mit der Schrift Caveat, die im Projekt liegt
-   * (public/fonts) – nichts wird von Google geladen, damit keine fremden
-   * Server IP-Adressen der Nutzer sehen. Das Ergebnis ist ein PNG mit
-   * durchsichtigem Hintergrund und geht denselben Weg wie ein Foto.
-   */
-  const zeichneEntwurf = useCallback(async () => {
-    const c = leinwand.current;
-    if (!c || !schreibName.trim()) { setEntwurf(null); return; }
-    try { await document.fonts.load('600 96px Caveat'); await document.fonts.ready; } catch { /* Ersatzschrift */ }
-
-    const ctx = c.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.font = '600 96px Caveat, "Segoe Script", cursive';
-    ctx.fillStyle = '#1a2a4a';          // dunkles Tintenblau
-    ctx.textBaseline = 'middle';
-
-    // Leicht schräg stellen – das wirkt wie mit der Hand geschrieben.
-    ctx.save();
-    ctx.translate(24, c.height / 2 + 4);
-    ctx.rotate(-0.045);
-    ctx.fillText(schreibName.trim(), 0, 0);
-    ctx.restore();
-
-    setEntwurf(c.toDataURL('image/png'));
-    // token gehört dazu: vor der Anmeldung zeigt die Seite nur den
-    // Anmeldehinweis – die Zeichenfläche gibt es dann noch gar nicht.
-  }, [schreibName, token]);
-
-  useEffect(() => { void zeichneEntwurf(); }, [zeichneEntwurf]);
 
   async function dateiGewaehlt(datei: File) {
     setFehler(''); setHinweis('');
@@ -202,39 +167,16 @@ export default function EinstellungenSeite() {
             das hier ist der schnelle Weg.
           </p>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 13, fontWeight: 600, color: F.soft, maxWidth: 280 }}>
-            Name für die Unterschrift
-            <input value={schreibName} onChange={(e) => setSchreibName(e.target.value)}
-              style={{
-                font: 'inherit', fontWeight: 400, color: F.ink, padding: '9px 11px',
-                border: `1px solid ${F.line}`, borderRadius: 9, background: F.weiss,
-              }} />
-          </label>
-
-          <div style={{
-            border: `1px solid ${F.line}`, borderRadius: 12, padding: 14,
-            background: '#fff', marginTop: 14, display: 'inline-block',
-          }}>
-            <canvas ref={leinwand} width={520} height={150}
-              style={{ width: 320, height: 92, display: 'block' }} />
-          </div>
-
-          <div style={{ marginTop: 14 }}>
-            <button style={knopf} disabled={!entwurf}
-              onClick={() => {
-                if (!entwurf) return;
-                setFehler(''); setHinweis('');
-                void api('speichern', { unterschrift: entwurf })
-                  .then((d) => {
-                    setUnterschrift(entwurf);
-                    setHinweis(`Unterschrift übernommen (${d.kb} KB). Sie erscheint ab jetzt in jedem Vertrag.`);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  })
-                  .catch((e: Error) => setFehler(e.message));
-              }}>
-              diese Unterschrift übernehmen
-            </button>
-          </div>
+          <Unterschriftsfeld uebernehmen={(bild) => {
+            setFehler(''); setHinweis('');
+            return api('speichern', { unterschrift: bild })
+              .then((d) => {
+                setUnterschrift(bild);
+                setHinweis(`Unterschrift übernommen (${d.kb} KB). Sie erscheint ab jetzt in jedem Vertrag.`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              })
+              .catch((e: Error) => setFehler(e.message));
+          }} />
         </section>
       </div>
     </main>

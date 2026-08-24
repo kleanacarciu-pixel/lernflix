@@ -1,10 +1,28 @@
 // Gemeinsames Layout für die Rechtstext-Seiten (AGB, Widerrufsbelehrung).
-import type { Abschnitt } from '@/lib/vertrag-texte';
+//
+// Bekommt den Wortlaut als Markdown aus lib/agb-text.ts und stellt ihn dar –
+// dieselbe Quelle, aus der auch die PDF entsteht.
+import { bausteine, type Lauf } from '@/lib/agb-kern';
 
-const F = { ink: '#0F172A', soft: '#475569', border: '#E2E8F0', bg: '#fffdf8', weiss: '#fff', teal: '#2BB3C0' };
+const F = {
+  ink: '#0F172A', soft: '#475569', border: '#E2E8F0', bg: '#fffdf8', weiss: '#fff',
+  teal: '#2E7D74', gold: '#C9A96A',
+};
 
-export function Rechtstext({ titel, unterzeile, abschnitte }: {
-  titel: string; unterzeile: string; abschnitte: readonly Abschnitt[];
+function Text({ laeufe }: { laeufe: Lauf[] }) {
+  return (
+    <>
+      {laeufe.map((l, i) => (
+        l.fett ? <strong key={i} style={{ color: F.ink }}>{l.text}</strong>
+          : l.kursiv ? <em key={i}>{l.text}</em>
+          : <span key={i}>{l.text}</span>
+      ))}
+    </>
+  );
+}
+
+export function Rechtstext({ titel, unterzeile, markdown }: {
+  titel: string; unterzeile: string; markdown: string;
 }) {
   return (
     <main style={{
@@ -25,12 +43,39 @@ export function Rechtstext({ titel, unterzeile, abschnitte }: {
           <h1 style={{ fontSize: 32, fontWeight: 800, margin: '6px 0 4px', letterSpacing: '-0.02em' }}>{titel}</h1>
           <p style={{ color: F.soft, margin: '0 0 28px' }}>{unterzeile}</p>
 
-          {abschnitte.map((a) => (
-            <section key={a.titel} style={{ marginBottom: 24 }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 8px' }}>{a.titel}</h2>
-              <p style={{ color: F.soft, lineHeight: 1.75, margin: 0, fontSize: 15 }}>{a.text}</p>
-            </section>
-          ))}
+          {bausteine(markdown).map((b, i) => {
+            switch (b.art) {
+              case 'linie':
+                return <hr key={i} style={{ border: 0, borderTop: `2px solid ${F.gold}`, margin: '30px 0' }} />;
+              case 'ueberschrift':
+                return (
+                  <h2 key={i} style={{ fontSize: 24, fontWeight: 800, margin: '28px 0 12px' }}>{b.text}</h2>
+                );
+              case 'paragraf':
+                return (
+                  <h2 key={i} style={{
+                    fontSize: 18, fontWeight: 700, margin: '30px 0 10px', color: F.teal,
+                    fontFamily: '"Playfair Display", Georgia, serif',
+                  }}>{b.text}</h2>
+                );
+              case 'unterueberschrift':
+                return <h3 key={i} style={{ fontSize: 16, fontWeight: 700, margin: '22px 0 8px' }}>{b.text}</h3>;
+              case 'zitat':
+                return (
+                  <blockquote key={i} style={{
+                    margin: '14px 0', padding: '12px 16px', borderLeft: `3px solid ${F.gold}`,
+                    background: 'rgba(201,169,106,.09)', color: F.ink, fontSize: 15, lineHeight: 1.7,
+                  }}><Text laeufe={b.laeufe} /></blockquote>
+                );
+              default:
+                return (
+                  <p key={i} style={{
+                    color: F.soft, lineHeight: 1.75, margin: '0 0 12px', fontSize: 15,
+                    whiteSpace: 'pre-line',
+                  }}><Text laeufe={b.laeufe} /></p>
+                );
+            }
+          })}
         </article>
       </div>
     </main>

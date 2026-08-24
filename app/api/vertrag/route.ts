@@ -21,16 +21,17 @@ import {
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink, vertragToken } from "@/lib/vertrag-token";
 import {
-  terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, textPdf, bankverbindung,
-  nachhilfevertragPdf,
+  terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, bankverbindung,
+  nachhilfevertragPdf, agbPdf, markdownPdf,
 } from "@/lib/vertrag-dokumente";
 import {
   pruefeUnterzeichnung, istUnterzeichnet, PFLICHT_BESTAETIGUNGEN,
   vertragsstand, pruefeExterneUnterschrift, externerTyp,
 } from "@/lib/unterzeichnung-kern";
-import { AGB_VERTRAG, AGB_STAND, WIDERRUF } from "@/lib/vertrag-texte";
 import { unterschriftBytes, unterschriftAnbieterin } from "@/lib/einstellungen";
 import { ANBIETERIN } from "@/lib/vertrag-pdf-texte";
+import { AGB_MARKDOWN, AGB_STAND } from "@/lib/agb-text";
+import { anlage } from "@/lib/agb-kern";
 import {
   schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
   vorlageSenden, monatName,
@@ -180,7 +181,7 @@ async function vertragPdf(v: Vollbild): Promise<Buffer> {
 async function anhaenge(v: NonNullable<Awaited<ReturnType<typeof vollbild>>>): Promise<MailAnhang[]> {
   const { vertrag, zeiten, schueler, schuljahr, rechnung } = v;
   const [agb, liste, bestaetigung] = await Promise.all([
-    textPdf("Allgemeine Geschäftsbedingungen", `Schuljahresvertrag · Stand ${AGB_STAND}`, AGB_VERTRAG),
+    agbPdf(),
     terminlistePdf({
       schuelerName: schueler.name, schuljahrName: schuljahr.name,
       zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
@@ -217,7 +218,7 @@ async function unterschriftAnhaenge(v: Vollbild): Promise<MailAnhang[]> {
       zeiten: zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
       termine: rechnung.alleTermine,
     }),
-    textPdf("Allgemeine Geschäftsbedingungen", `Schuljahresvertrag · Stand ${AGB_STAND}`, AGB_VERTRAG),
+    agbPdf(),
   ]);
   const jahr = schuljahr.name.replace("/", "-");
   return [
@@ -803,6 +804,23 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   const link = bestaetigungsLink(vertragId, baseUrl);
   const rate = v.rechnung.raten[0]?.betragCent ?? 0;
 
+  // Der fertige Vertrag liegt gleich bei – mit Kleanas Unterschrift, den
+  // Terminen und den AGB. Die Eltern haben damit sofort alles in der Hand,
+  // was sie zum Lesen brauchen; unterschrieben wird danach über den Link.
+  const jahr = v.schuljahr.name.replace("/", "-");
+  const dabei: MailAnhang[] = [
+    { filename: `Nachhilfevertrag-${jahr}.pdf`, content: await vertragPdf(v) },
+    {
+      filename: `Terminliste-${jahr}.pdf`,
+      content: await terminlistePdf({
+        schuelerName: v.schueler.name, schuljahrName: v.schuljahr.name,
+        zeiten: v.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+        termine: v.rechnung.alleTermine,
+      }),
+    },
+    { filename: `AGB-${jahr}.pdf`, content: await agbPdf() },
+  ];
+
   // Text und Betreff kommen aus der Vorlage – änderbar unter
   // „Zahlungen → E-Mail-Vorlagen", ohne dass jemand Programmcode anfasst.
   // Ausdrücklich OHNE Kopie an die Admin-Adresse: siehe der Hinweis oben.
@@ -816,7 +834,7 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
     rate: centFormat(rate),
     einmal: centFormat(v.rechnung.einmalCent),
     link,
-  }, undefined, { kopieAnAdmin: false });
+  }, dabei, { kopieAnAdmin: false });
 
   // Getrennte Nachricht an Kleana – bewusst OHNE Bestätigungslink.
   if (ergebnis.ok) {
@@ -899,10 +917,14 @@ export async function GET(req: Request): Promise<Response> {
     datei = await vertragPdf(v);
     name = `Nachhilfevertrag-${v.schuljahr.name.replace("/", "-")}.pdf`;
   } else if (art === "agb") {
-    datei = await textPdf("Allgemeine Geschäftsbedingungen", `Schuljahresvertrag · Stand ${AGB_STAND}`, AGB_VERTRAG);
+    datei = await agbPdf();
     name = "AGB.pdf";
   } else if (art === "widerruf") {
-    datei = await textPdf("Widerrufsbelehrung", "Schuljahresvertrag", WIDERRUF);
+    datei = await markdownPdf(
+      "Widerrufsbelehrung",
+      `Anlage zu den AGB · Stand ${AGB_STAND}`,
+      [anlage(AGB_MARKDOWN, "Anlage 1"), anlage(AGB_MARKDOWN, "Anlage 2")].join("\n\n---\n\n"),
+    );
     name = "Widerrufsbelehrung.pdf";
   } else if (art === "bestaetigung") {
     datei = await vertragsbestaetigungPdf({

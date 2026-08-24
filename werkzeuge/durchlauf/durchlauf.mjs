@@ -144,6 +144,17 @@ pruef('Einladungs-E-Mail ging an die Familie', !!einladung && einladung.to === '
 pruef('Einladung OHNE Kopie an Kleana', !!einladung && !einladung.bcc);
 const link = (einladung?.html || '').match(/href="([^"]*\/vertrag\/[^"]+)"/)?.[1];
 pruef('Einladung enthält einen anklickbaren Link', !!link, link ? link.slice(0, 52) + '…' : '');
+const einladungsAnhaenge = (einladung?.attachments || []).map((a) => a.filename);
+pruef('Einladung bringt den fertigen Vertrag gleich mit', einladungsAnhaenge.length === 3,
+  einladungsAnhaenge.join(', '));
+pruef('darunter Vertrag, Terminliste und AGB',
+  ['Nachhilfevertrag', 'Terminliste', 'AGB'].every((n) => einladungsAnhaenge.some((d) => d.includes(n))));
+pruef('die AGB im Anhang enthalten Anlage 1 und 2', (() => {
+  const agb = (einladung?.attachments || []).find((a) => a.filename.includes('AGB'));
+  if (!agb) return false;
+  const t = pdfText(Buffer.from(agb.content, 'base64'));
+  return t.includes('Anlage 1: Widerrufsbelehrung') && t.includes('Hiermit widerrufe(n) ich/wir');
+})());
 const adminInfo = mails.find((m) => /Vertrag verschickt:/.test(m.subject || ''));
 pruef('Kleana bekommt eine eigene Nachricht ohne Link',
   !!adminInfo && !(adminInfo.html || '').includes('/vertrag/'));

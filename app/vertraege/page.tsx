@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Anmeldehinweis from '@/components/Anmeldehinweis';
 import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
+import Unterschriftsfeld from '@/components/Unterschriftsfeld';
 
 const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
@@ -117,6 +118,7 @@ export default function VertraegeSeite() {
   // Ist Kleanas eigene Unterschrift hinterlegt? Ohne sie entsteht jeder
   // Vertrag ohne ihre Unterschrift – das darf nicht still passieren.
   const [eigeneUnterschrift, setEigeneUnterschrift] = useState(true);
+  const [schreibeUnterschrift, setSchreibeUnterschrift] = useState(false);
 
   // Formular „neuer Vertrag"
   const [nSchueler, setNSchueler] = useState('');
@@ -297,10 +299,35 @@ export default function VertraegeSeite() {
               Unterschrift – die Eltern unterschreiben dann ein Blatt, auf dem
               nur ihre eigene steht.
             </p>
-            <a href="/einstellungen" style={{
-              display: 'inline-block', background: F.blue, color: '#fff', textDecoration: 'none',
-              fontWeight: 700, padding: '9px 16px', borderRadius: 9, fontSize: 14,
-            }}>Jetzt Unterschrift hinterlegen</a>
+            {!schreibeUnterschrift ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button style={{
+                  font: 'inherit', border: 0, background: F.blue, color: '#fff',
+                  fontWeight: 700, padding: '9px 16px', borderRadius: 9, fontSize: 14, cursor: 'pointer',
+                }} onClick={() => setSchreibeUnterschrift(true)}>
+                  Hier unterschreiben
+                </button>
+                <a href="/einstellungen" style={{
+                  ...knopfKlein, textDecoration: 'none', display: 'inline-block',
+                }}>lieber ein Foto hochladen</a>
+              </div>
+            ) : (
+              <div style={{ marginTop: 4 }}>
+                {/* Derselbe Weg wie in den Einstellungen – nur ohne den Umweg
+                    über eine andere Seite. */}
+                <Unterschriftsfeld
+                  knopfText="diese Unterschrift übernehmen"
+                  uebernehmen={(bild) => tun(
+                    // Gespeichert wird dort, wo die Unterschrift hingehört –
+                    // in den Einstellungen. Nur der Weg dorthin ist kürzer.
+                    () => rufeApi('/api/einstellungen', 'speichern', { unterschrift: bild },
+                      () => setAbgemeldet(true)),
+                    'Unterschrift hinterlegt. Sie steht ab jetzt in jedem Vertrag.',
+                  ).then(() => setSchreibeUnterschrift(false))} />
+                <button style={{ ...knopfKlein, marginTop: 10 }}
+                  onClick={() => setSchreibeUnterschrift(false)}>abbrechen</button>
+              </div>
+            )}
           </div>
         )}
 

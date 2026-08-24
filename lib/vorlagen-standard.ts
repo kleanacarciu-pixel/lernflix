@@ -24,8 +24,9 @@ export const STANDARD_VORLAGEN: StandardVorlage[] = [
     text: [
       "Hallo,",
       "",
-      "hier ist der Vertrag für {name} im Schuljahr {schuljahr}. Ich habe ihn bereits "
-      + "unterschrieben – jetzt fehlt nur noch deine Unterschrift.",
+      "hier ist der Vertrag für {name} im Schuljahr {schuljahr}. Er liegt fertig im "
+      + "Anhang – von mir bereits unterschrieben, zusammen mit der Terminliste fürs "
+      + "ganze Schuljahr und den AGB. Jetzt fehlt nur noch deine Unterschrift.",
       "",
       "Fester Termin: {termin}",
       "Termine im Schuljahr: {anzahl}",
@@ -39,8 +40,8 @@ export const STANDARD_VORLAGEN: StandardVorlage[] = [
       "{link}",
       "",
       "Unterschrieben wird direkt auf der Seite – am Handy mit dem Finger, am Rechner mit "
-      + "der Maus. Danach bekommst du den fertigen Vertrag als PDF, zusammen mit der "
-      + "Terminliste fürs ganze Schuljahr und den AGB. Der Link ist 14 Tage gültig.",
+      + "der Maus. Danach bekommst du den von euch beiden unterschriebenen Vertrag als PDF, "
+      + "zusammen mit der Terminliste und den AGB. Der Link ist 14 Tage gültig.",
       "",
       "Erst nach der Unterschrift lassen sich Stunden buchen und absagen – am besten also "
       + "gleich erledigen, es dauert eine Minute.",

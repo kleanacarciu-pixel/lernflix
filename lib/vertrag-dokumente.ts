@@ -11,6 +11,8 @@
 import PDFDocument from "pdfkit";
 import { datumDe, WOCHENTAGE } from "./schuljahr-kern.ts";
 import { centFormat } from "./vertrag-kern.ts";
+import { AGB_MARKDOWN, AGB_STAND, AGB_TITEL, AGB_UNTERZEILE } from "./agb-text.ts";
+import { bausteine } from "./agb-kern.ts";
 
 export type Bankverbindung = { inhaber: string; iban: string; bank: string };
 
@@ -311,19 +313,102 @@ export async function bescheinigungPdf(dat: BescheinigungPdfDaten): Promise<Buff
 
 // --- AGB --------------------------------------------------------------------
 
-export type Abschnitt = { titel: string; text: string };
+/**
+ * Die AGB als PDF – aus derselben Quelle wie die Seite im Portal.
+ *
+ * Gesetzt im Systemdesign des Vertrags: Times-Bold für die Überschriften,
+ * Teal für die Paragrafen, Gold für die Trennlinien. Der Wortlaut wird
+ * nirgends gekürzt; die Anlagen 1 bis 3 gehören dazu.
+ */
+export async function agbPdf(): Promise<Buffer> {
+  return markdownPdf(AGB_TITEL, AGB_UNTERZEILE, AGB_MARKDOWN);
+}
 
-export async function textPdf(titel: string, unterzeile: string, abschnitte: Abschnitt[]): Promise<Buffer> {
+/**
+ * Ein Rechtstext im Systemdesign des Vertrags – aus demselben Wortlaut,
+ * den auch die Seite im Portal zeigt.
+ */
+export async function markdownPdf(titel: string, unterzeile: string, markdown: string): Promise<Buffer> {
   const d = neuesDokument();
-  kopf(d, titel, unterzeile);
-  for (const a of abschnitte) {
-    d.font("Helvetica-Bold").fontSize(11).fillColor(INK).text(a.titel);
-    d.moveDown(0.2);
-    d.font("Helvetica").fontSize(10).fillColor(GRAU).text(a.text, { align: "left", lineGap: 1.5 });
-    d.moveDown(0.6);
-    d.fillColor(INK);
+  const breite = d.page.width - 2 * RAND;
+
+  // Kopf
+  d.fillColor(FARBEN.teal).font("Helvetica-Bold").fontSize(10.5)
+    .text("LERNE MIT ANNA", { characterSpacing: 0.4 });
+  d.moveDown(0.35);
+  d.fillColor(FARBEN.ink).font("Times-Bold").fontSize(20).text(titel);
+  d.moveDown(0.2);
+  d.fillColor(FARBEN.grau).font("Helvetica").fontSize(11).text(unterzeile);
+  d.moveDown(0.7);
+  goldlinie(d, breite);
+  d.moveDown(0.8);
+
+  for (const b of bausteine(markdown)) {
+    switch (b.art) {
+      case "linie":
+        d.moveDown(0.6); goldlinie(d, breite); d.moveDown(0.8);
+        break;
+      case "ueberschrift":
+        d.moveDown(0.3);
+        d.font("Times-Bold").fontSize(15).fillColor(FARBEN.ink).text(b.text);
+        d.moveDown(0.45);
+        break;
+      case "paragraf":
+        d.moveDown(0.5);
+        d.font("Times-Bold").fontSize(12.5).fillColor(FARBEN.teal).text(b.text);
+        d.moveDown(0.35);
+        break;
+      case "unterueberschrift":
+        d.moveDown(0.35);
+        d.font("Helvetica-Bold").fontSize(10.5).fillColor(FARBEN.ink).text(b.text);
+        d.moveDown(0.3);
+        break;
+      case "zitat":
+        d.moveDown(0.2);
+        laufText(d, b.laeufe, { einzug: 16, farbe: FARBEN.ink, groesse: 9.5 });
+        d.moveDown(0.5);
+        break;
+      default:
+        laufText(d, b.laeufe, { farbe: FARBEN.grau, groesse: 9.5 });
+        d.moveDown(0.45);
+        break;
+    }
   }
   return fertig(d);
+}
+
+function goldlinie(d: PDFKit.PDFDocument, breite: number): void {
+  const y = d.y;
+  d.moveTo(RAND, y).lineTo(RAND + breite, y).strokeColor(FARBEN.gold).lineWidth(1).stroke();
+}
+
+/**
+ * Einen Absatz setzen, in dem einzelne Stellen fett oder kursiv sind.
+ *
+ * pdfkit kann das mit continued: true – wichtig ist nur, den letzten Lauf
+ * ohne continued zu setzen, sonst klebt der nächste Absatz daran.
+ */
+function laufText(
+  d: PDFKit.PDFDocument,
+  laeufe: { text: string; fett?: boolean; kursiv?: boolean }[],
+  opt: { einzug?: number; farbe: string; groesse: number },
+): void {
+  const einzug = opt.einzug ?? 0;
+  const breite = d.page.width - 2 * RAND - einzug;
+  laeufe.forEach((l, i) => {
+    d.font(l.fett ? "Helvetica-Bold" : l.kursiv ? "Helvetica-Oblique" : "Helvetica")
+      .fontSize(opt.groesse)
+      .fillColor(l.fett ? FARBEN.ink : opt.farbe);
+    const weiter = i < laeufe.length - 1;
+    // Nur der erste Lauf bekommt Position und Breite. Gibt man sie auch den
+    // folgenden mit, fängt pdfkit bei jedem Lauf eine neue Zeile an – der
+    // Absatz sähe dann zerrissen aus.
+    if (i === 0) {
+      d.text(l.text, RAND + einzug, d.y, { width: breite, lineGap: 1.6, continued: weiter });
+    } else {
+      d.text(l.text, { lineGap: 1.6, continued: weiter });
+    }
+  });
 }
 
 // --- Nachhilfevertrag (Vertragsabschluss im System) -------------------------
