@@ -179,7 +179,15 @@ export async function POST(req: Request): Promise<Response> {
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
       if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
-      { const { error } = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
+      {
+        // ab_datum = der Tag, den die Eltern beim Buchen angeklickt haben.
+        // Ab genau dann existiert der Termin; fruehere Wochen zeigen ihn nie.
+        // Fehlt die V8-Migration noch, wird ohne das Feld gespeichert (alter
+        // Stand), statt die Buchung platzen zu lassen.
+        let r = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin, ab_datum: date });
+        if (r.error) r = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin });
+        if (r.error) return bad("Speichern fehlgeschlagen: " + r.error.message);
+      }
       after(() => sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
@@ -358,10 +366,14 @@ export async function POST(req: Request): Promise<Response> {
       if (body.fest === true) {
       // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
       { const g = await buchungErlaubt(sid); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
-        const { error } = await service().from("fixed_slots").insert({
+        // Der angeklickte Tag ist der erste Geltungstag des festen Termins.
+        let r = await service().from("fixed_slots").insert({
+          student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin, ab_datum: date,
+        });
+        if (r.error) r = await service().from("fixed_slots").insert({
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
-        if (error) return bad("Eintragen fehlgeschlagen: " + error.message);
+        if (r.error) return bad("Eintragen fehlgeschlagen: " + r.error.message);
         if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
         await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });

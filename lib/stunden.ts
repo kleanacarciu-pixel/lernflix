@@ -109,7 +109,7 @@ export async function syncLessons(force = false): Promise<void> {
 
     const [{ data: adminRow }, fxRes, apRes, ovRes] = await Promise.all([
       sb.from("profiles").select("user_id").eq("role", "admin").limit(1).maybeSingle(),
-      sb.from("fixed_slots").select("student_id,weekday,hour,mode,dauer_min").eq("status", "aktiv"),
+      sb.from("fixed_slots").select("*").eq("status", "aktiv"),
       sb.from("appointments").select("student_id,slot_date,hour,kind,status,mode,dauer_min")
         .gte("slot_date", von).lte("slot_date", bis),
       sb.from("slot_mode_overrides").select("student_id,slot_date,hour,mode")
@@ -145,7 +145,7 @@ export async function syncLessons(force = false): Promise<void> {
         mode: overrides.get(key) ?? grundModus ?? "online",
       });
     };
-    const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number | null }[];
+    const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number | null; ab_datum?: string | null }[];
     // Ist ein Vertrag wegen einer offenen Rate pausiert, ruht der feste
     // Wochentermin – erst zwei Tage nach der Pausierung, damit niemand ohne
     // Vorwarnung vor der Tür steht. Ohne markierte Rate ist die Liste leer.
@@ -155,6 +155,9 @@ export async function syncLessons(force = false): Promise<void> {
       const wd = weekdayOf(date);
       fixe.forEach((f) => {
         if (f.weekday !== wd) return;
+        // Vor dem ersten Geltungstag (dem beim Buchen angeklickten Datum)
+        // gibt es diesen Termin nicht – auch keine Klassenzimmer-Stunde.
+        if (f.ab_datum && date < f.ab_datum) return;
         if (!terminFindetStatt(date, pausiert.get(f.student_id) ?? null)) return;
         merken(f.student_id, date, f.hour, f.mode, Number(f.dauer_min) || 60);
       });
@@ -182,6 +185,25 @@ export async function syncLessons(force = false): Promise<void> {
     }
     if (neu.length) {
       await sb.from("lessons").upsert(neu, { onConflict: "student_id,starts_at", ignoreDuplicates: true });
+    }
+
+    // Beginnt ein fester Termin erst später (ab_datum), dürfen früher
+    // erzeugte künftige Stunden vor diesem Tag nicht stehen bleiben – die
+    // Familie sähe sonst weiter "Nächste Stunde: …" für einen Tag, an dem
+    // der Unterricht noch gar nicht begonnen hat. Entfernt wird nur, was der
+    // Sync selbst aus dem festen Termin erzeugt hätte: gleicher Schüler,
+    // gleiche Startzeit, vor ab_datum – eine dort gebuchte Einzelstunde ist
+    // Kandidat und bleibt unangetastet.
+    for (const f of fixe) {
+      if (!f.ab_datum) continue;
+      for (let i = 0; i <= SYNC_TAGE; i++) {
+        const date = addDaysStr(von, i);
+        if (date >= f.ab_datum || weekdayOf(date) !== f.weekday) continue;
+        if (kandidaten.has(`${f.student_id}|${date}-${Number(f.hour)}`)) continue;
+        const startIso = new Date(berlinInstant(date, Number(f.hour))).toISOString();
+        const vorhanden = existing.get(`${f.student_id}|${startIso}`);
+        if (vorhanden) await sb.from("lessons").delete().eq("id", vorhanden.id);
+      }
     }
 
     // Abgesagte Stunden wieder abräumen (nur exakt passende, künftige Termine)

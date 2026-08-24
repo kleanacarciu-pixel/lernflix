@@ -250,7 +250,7 @@ export function berlinDatum(iso: string): string {
 
 export function tagIntervalle(
   date: string, wd: number,
-  fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null }[],
+  fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
   dayAppts: ApptRow[],
   wblocks: { weekday: number; hour: number; dauer_min?: number }[],
   nameOf: (id: string) => string,
@@ -287,6 +287,10 @@ export function tagIntervalle(
     // Wochen (Juli/August), sobald jemand zurückblätterte – als hätte dort
     // Unterricht stattgefunden.
     if (f.created_at && date < berlinDatum(f.created_at)) return;
+    // Und noch strenger: Der Tag, den die Eltern beim Buchen angeklickt haben
+    // (ab_datum), ist der erste Geltungstag. Bucht Lilly am 24.08. ihren
+    // Donnerstag "ab 03.09.", darf der 27.08. sie nicht zeigen.
+    if (f.ab_datum && date < f.ab_datum) return;
     if (absage(f.student_id, start)) return;
     if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && iv.start === start)) return;
     const dauer = Number(f.dauer_min) || 60;
@@ -302,7 +306,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
 
   // feste Slots + Profile + Ereignisse + Dauer-Blocks parallel laden (schneller)
   const [fxRes, profRes, apptRes, wbRes, ovRes] = await Promise.all([
-    sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min,created_at").in("status", ["aktiv", "angefragt"]),
+    sb.from("fixed_slots").select("*").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").gte("slot_date", from).lte("slot_date", to),
     // "*" statt fester Spalten: dauer_min kommt erst mit der V6-Migration,
@@ -319,7 +323,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const namen = new Map<string, string>();
   ((profRes.data || []) as { user_id: string; name: string }[]).forEach((p) => namen.set(p.user_id, p.name));
   const nameOf = (id: string) => namen.get(id) || "Schüler";
-  const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null }[];
+  const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[];
   const wblocks = (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[];
   const appts = (apptRes.data || []) as ApptRow[];
 
@@ -375,13 +379,13 @@ export async function slotKonflikt(date: string, hour: number, dauerMin: number)
   const sb = service();
   const wd = weekdayOf(date);
   const [fxRes, apRes, wbRes] = await Promise.all([
-    sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min,created_at").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
+    sb.from("fixed_slots").select("*").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", date),
     sb.from("weekly_blocks").select("*").eq("weekday", wd),
   ]);
   const ivs = tagIntervalle(
     date, wd,
-    (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null }[],
+    (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
     (apRes.data || []) as ApptRow[],
     (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[],
     () => "Schüler",
