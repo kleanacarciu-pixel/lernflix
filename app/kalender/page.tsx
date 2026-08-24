@@ -201,6 +201,9 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .ozelle:nth-child(odd){border-top:1px solid #e6eaee}
 .ozelle.frei{cursor:pointer}
 .ozelle.frei:hover{background:#f0fbf8}
+.ozelle.freiAn{background:#c9efe1;border-top-color:#a5dfcb;position:relative}
+.ozelle.freiAn:hover{background:#aee5d2}
+.ozelle.freiWort::after{content:"frei";position:absolute;left:8px;top:3px;font-size:.68rem;font-weight:700;color:#0e7a5a;letter-spacing:.02em;pointer-events:none}
 .ozelle.zu{background:#f6f7f8}
 .ozelle.vorbei{background:#fbfbfc}
 /* Termin-Blöcke im Outlook-Stil: zarte Fläche + kräftige Kante links */
@@ -748,7 +751,13 @@ export default function KalenderPage() {
         {HOURS.map((h) => {
           const sl = d.slots.find((x) => x.hour === h) || { hour: h, state: "closed" };
           const frei = sl.state === "free";
-          const cls = sl.state === "closed" ? " zu" : sl.state === "past" ? " vorbei" : frei ? " frei" : "";
+          // Ist der Filter "frei / buchbar" aktiv, bekommen die freien Zellen
+          // selbst eine kraeftige Farbe (+ das Wort "frei" zur vollen Stunde).
+          // Nur das Belegte auszublenden reichte nicht: uebrig blieb eine
+          // blasse, leere Flaeche, und niemand verstand, was nun frei ist.
+          const zeigeFrei = frei && filterCls === "free";
+          const cls = sl.state === "closed" ? " zu" : sl.state === "past" ? " vorbei"
+            : frei ? " frei" + (zeigeFrei ? " freiAn" + (h % 1 === 0 ? " freiWort" : "") : "") : "";
           return <div key={h} className={"ozelle" + cls} onClick={frei ? () => onSlot(d.date, sl) : undefined} />;
         })}
         {(d.absagen || []).map((ab, i) => {
