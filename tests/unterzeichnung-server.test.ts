@@ -42,6 +42,20 @@ describe("Ohne Unterschrift wird nichts aktiviert", () => {
     }
   });
 
+  test("die Angaben der Eltern kommen aus der geprüften Eingabe", () => {
+    // Nicht aus dem Rohtext des Formulars: gekürzt und geprüft wird im Kern.
+    for (const feld of ["eltern_name", "eltern_anschrift", "eltern_email", "eltern_telefon"]) {
+      assert.ok(block.includes(`${feld}: pruefung.eltern.`), `${feld} wird nicht aus der Prüfung übernommen`);
+    }
+  });
+
+  test("die Vertragsseite meldet, wenn Kleanas Unterschrift fehlt", () => {
+    // Sonst gingen Vertraege raus, auf denen am Ende nur eine Unterschrift steht.
+    assert.match(route, /eigeneUnterschrift: !!\(await unterschriftAnbieterin\(\)\)/);
+    const seite = readFileSync("app/vertraege/page.tsx", "utf8");
+    assert.match(seite, /Deine Unterschrift fehlt/);
+  });
+
   test("der Vertrag wird dabei aktiv und bekommt seinen Zahlungsplan", () => {
     assert.match(block, /status: "aktiv"/);
     assert.match(block, /schreibeZahlungsplan\(/);

@@ -36,14 +36,54 @@ export type Unterzeichnungseingabe = {
   agb?: unknown;
   widerruf?: unknown;
   unterschrift?: unknown;
+  eltern?: unknown;
+};
+
+/** Die Angaben, die im Vertrag stehen – von den Eltern selbst eingetragen. */
+export type Elterndaten = {
+  name: string;
+  anschrift: string;
+  email: string;
+  telefon: string;
 };
 
 export type Unterzeichnungspruefung =
-  | { ok: true; datenUri: string }
+  | { ok: true; datenUri: string; eltern: Elterndaten }
   | { ok: false; grund: string };
 
-/** Prüft, ob unterschrieben werden darf – Häkchen und Bild zusammen. */
+const kurz = (v: unknown, max: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+
+/**
+ * Wer unterschreibt, muss auch dastehen.
+ *
+ * Ein Vertrag ohne Namen und Anschrift des Erziehungsberechtigten ist ein
+ * Vertrag, in dem eine der beiden Seiten fehlt. Die Angaben kommen deshalb
+ * von den Eltern selbst – sie wissen sie am besten – und sind Pflicht.
+ */
+export function pruefeElterndaten(eingabe: unknown): { ok: true; daten: Elterndaten } | { ok: false; grund: string } {
+  const e = (eingabe ?? {}) as Record<string, unknown>;
+  const daten: Elterndaten = {
+    name: kurz(e.name, 120),
+    anschrift: kurz(e.anschrift, 200),
+    email: kurz(e.email, 160),
+    telefon: kurz(e.telefon, 60),
+  };
+  if (daten.name.length < 3) {
+    return { ok: false, grund: "Bitte trage den Namen des Erziehungsberechtigten ein." };
+  }
+  if (daten.anschrift.length < 6) {
+    return { ok: false, grund: "Bitte trage die Anschrift ein (Straße, Hausnummer, PLZ, Ort)." };
+  }
+  if (daten.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(daten.email)) {
+    return { ok: false, grund: "Die E-Mail-Adresse sieht nicht richtig aus." };
+  }
+  return { ok: true, daten };
+}
+
+/** Prüft, ob unterschrieben werden darf – Angaben, Häkchen und Bild zusammen. */
 export function pruefeUnterzeichnung(e: Unterzeichnungseingabe): Unterzeichnungspruefung {
+  const eltern = pruefeElterndaten(e.eltern);
+  if (!eltern.ok) return { ok: false, grund: eltern.grund };
   if (e.agb !== true || e.widerruf !== true) {
     return { ok: false, grund: "Bitte bestätige beide Punkte." };
   }
@@ -52,7 +92,7 @@ export function pruefeUnterzeichnung(e: Unterzeichnungseingabe): Unterzeichnungs
   if (bild.bytes < MIN_UNTERSCHRIFT_BYTES) {
     return { ok: false, grund: "Das Unterschriftsfeld ist noch leer. Bitte unterschreibe mit dem Finger oder der Maus." };
   }
-  return { ok: true, datenUri: bild.datenUri };
+  return { ok: true, datenUri: bild.datenUri, eltern: eltern.daten };
 }
 
 // --- Rückfall: außerhalb des Portals unterschrieben -------------------------

@@ -114,6 +114,9 @@ export default function VertraegeSeite() {
   const [vertraege, setVertraege] = useState<VertragZeile[]>([]);
   const [heute, setHeute] = useState('');
   const [zeigeBeendete, setZeigeBeendete] = useState(false);
+  // Ist Kleanas eigene Unterschrift hinterlegt? Ohne sie entsteht jeder
+  // Vertrag ohne ihre Unterschrift – das darf nicht still passieren.
+  const [eigeneUnterschrift, setEigeneUnterschrift] = useState(true);
 
   // Formular „neuer Vertrag"
   const [nSchueler, setNSchueler] = useState('');
@@ -169,6 +172,7 @@ export default function VertraegeSeite() {
       setSchueler((d.schueler || []) as Schueler[]);
       setVertraege((d.vertraege || []) as VertragZeile[]);
       setHeute(String(d.heute || ''));
+      setEigeneUnterschrift(d.eigeneUnterschrift !== false);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
     } finally { setLaden(false); }
@@ -284,6 +288,21 @@ export default function VertraegeSeite() {
         {fehler && <div style={{ ...box, borderColor: '#f5b5b5', background: '#ffeaea', color: F.warn }}>{fehler}</div>}
         {hinweis && <div style={{ ...box, borderColor: 'rgba(18,122,92,.4)', background: 'rgba(18,122,92,.1)', color: F.gut }}>{hinweis}</div>}
         {laden && <p style={{ color: F.muted }}>Wird geladen …</p>}
+
+        {!laden && !eigeneUnterschrift && (
+          <div style={{ ...box, borderColor: '#e2c48a', background: 'rgba(226,196,138,.16)', color: '#7a5a10' }}>
+            <b>Deine Unterschrift fehlt.</b>
+            <p style={{ margin: '6px 0 10px', fontSize: 14 }}>
+              Solange keine hinterlegt ist, entsteht jeder Vertrag ohne deine
+              Unterschrift – die Eltern unterschreiben dann ein Blatt, auf dem
+              nur ihre eigene steht.
+            </p>
+            <a href="/einstellungen" style={{
+              display: 'inline-block', background: F.blue, color: '#fff', textDecoration: 'none',
+              fontWeight: 700, padding: '9px 16px', borderRadius: 9, fontSize: 14,
+            }}>Jetzt Unterschrift hinterlegen</a>
+          </div>
+        )}
 
         {/* -------------------------------------------------- Bestehende Verträge */}
         <section style={karte}>
@@ -477,8 +496,11 @@ export default function VertraegeSeite() {
                   // Ohne Namen bleibt im Vertrag die Zeile leer, in der steht,
                   // WER ihn eigentlich schließt. Das soll hier auffallen –
                   // nachtragen geht später über „Elterndaten".
-                  + (eName.trim() ? '' : 'ACHTUNG: Ohne Name der Erziehungsberechtigten bleibt diese Zeile im Vertrag leer.\n\n')
-                  + 'Der Vertrag geht danach per E-Mail zur Unterschrift raus.';
+                  // Ohne hinterlegte Unterschrift ginge ein Vertrag raus, auf
+                  // dem am Ende nur die Unterschrift der Eltern steht.
+                  + (eigeneUnterschrift ? '' : 'ACHTUNG: Deine eigene Unterschrift ist nicht hinterlegt. Der Vertrag geht ohne sie raus.\n\n')
+                  + 'Der Vertrag geht danach per E-Mail zur Unterschrift raus.\n'
+                  + 'Name und Anschrift tragen die Eltern beim Unterschreiben selbst ein.';
                 if (confirm(frage)) {
                   setFehler(''); setHinweis('');
                   void (async () => {

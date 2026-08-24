@@ -61,6 +61,11 @@ export default function VertragUnterschreiben() {
   const [haken, setHaken] = useState<Record<string, boolean>>({});
   const [alleTermine, setAlleTermine] = useState(false);
   const [gezeichnet, setGezeichnet] = useState(false);
+  // Die Eltern tragen ihre Angaben selbst ein – sie stehen danach im Vertrag.
+  const [eName, setEName] = useState('');
+  const [eAnschrift, setEAnschrift] = useState('');
+  const [eEmail, setEEmail] = useState('');
+  const [eTelefon, setETelefon] = useState('');
 
   const leinwand = useRef<HTMLCanvasElement>(null);
   const zeichnet = useRef(false);
@@ -80,6 +85,11 @@ export default function VertragUnterschreiben() {
       try {
         const d = (await api('laden')) as unknown as Daten;
         setDaten(d);
+        // Was Anna schon eingetragen hat, steht drin und lässt sich ändern.
+        setEName(d.eltern?.name || '');
+        setEAnschrift(d.eltern?.anschrift || '');
+        setEEmail(d.eltern?.email || '');
+        setETelefon(d.eltern?.telefon || '');
         if (d.schonUnterschrieben) setFertig(true);
       } catch (e) {
         setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
@@ -163,7 +173,8 @@ export default function VertragUnterschreiben() {
   }
 
   const alleGehakt = !!daten && daten.bestaetigungen.every((b) => haken[b.id]);
-  const bereit = alleGehakt && gezeichnet && !sendet;
+  const datenVollstaendig = eName.trim().length >= 3 && eAnschrift.trim().length >= 6;
+  const bereit = datenVollstaendig && alleGehakt && gezeichnet && !sendet;
 
   async function unterschreiben() {
     if (!bereit) return;
@@ -174,6 +185,9 @@ export default function VertragUnterschreiben() {
       await api('unterzeichnen', {
         zahlweise, agb: true, widerruf: true,
         unterschrift: c.toDataURL('image/png'),
+        eltern: {
+          name: eName, anschrift: eAnschrift, email: eEmail, telefon: eTelefon,
+        },
       });
       setFertig(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -237,14 +251,32 @@ export default function VertragUnterschreiben() {
       <section style={karte}>
         <h2 style={h2}>Vertragspartner</h2>
         <Feld titel="Anbieterin" wert={daten.anbieter} />
-        <Feld titel="Erziehungsberechtigte(r)" wert={daten.eltern.name || '— noch nicht hinterlegt —'} />
-        {daten.eltern.anschrift && <Feld titel="Anschrift" wert={daten.eltern.anschrift} />}
-        {(daten.eltern.email || daten.eltern.telefon) && (
-          <Feld titel="E-Mail / Telefon" wert={[daten.eltern.email, daten.eltern.telefon].filter(Boolean).join(' · ')} />
-        )}
         <Feld titel="Kind / Schule" wert={[daten.kind.name, daten.kind.schule].filter(Boolean).join(' · ')} />
-        <p style={{ color: F.muted, fontSize: 13, margin: '10px 0 0' }}>
-          Stimmt etwas nicht? Schreib kurz an{' '}
+
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${F.line}` }}>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Deine Angaben</div>
+          <p style={{ color: F.soft, fontSize: 14, margin: '0 0 14px' }}>
+            So stehst du als Erziehungsberechtigte(r) im Vertrag. Bitte einmal
+            prüfen und ergänzen – der Vertrag wird damit erstellt.
+          </p>
+
+          <Eingabe titel="Name des Erziehungsberechtigten" pflicht wert={eName} setzen={setEName}
+            hinweis="Vor- und Nachname der Person, die den Vertrag schließt" />
+          <Eingabe titel="Anschrift" pflicht wert={eAnschrift} setzen={setEAnschrift}
+            hinweis="Straße und Hausnummer, PLZ, Ort" />
+          <Eingabe titel="E-Mail" wert={eEmail} setzen={setEEmail} art="email" />
+          <Eingabe titel="Telefon" wert={eTelefon} setzen={setETelefon} art="tel" />
+
+          {!datenVollstaendig && (
+            <p style={{ color: '#8a6a20', fontSize: 13, margin: '4px 0 0' }}>
+              Name und Anschrift werden gebraucht – ohne sie fehlt im Vertrag,
+              wer ihn schließt.
+            </p>
+          )}
+        </div>
+
+        <p style={{ color: F.muted, fontSize: 13, margin: '14px 0 0' }}>
+          Stimmt beim Kind, beim Termin oder beim Betrag etwas nicht? Schreib kurz an{' '}
           <a href="mailto:lernemitanna@outlook.com" style={{ color: F.teal }}>lernemitanna@outlook.com</a>,
           dann ändere ich es vor der Unterschrift.
         </p>
@@ -393,7 +425,9 @@ export default function VertragUnterschreiben() {
         </button>
         {!bereit && !sendet && (
           <p style={{ color: F.muted, fontSize: 13, textAlign: 'center', marginTop: 10 }}>
-            {!alleGehakt ? 'Bitte bestätige beide Punkte.' : 'Bitte unterschreibe im Feld.'}
+            {!datenVollstaendig ? 'Bitte trage oben Name und Anschrift ein.'
+              : !alleGehakt ? 'Bitte bestätige beide Punkte.'
+              : 'Bitte unterschreibe im Feld.'}
           </p>
         )}
       </section>
@@ -415,6 +449,27 @@ function Huelle({ children }: { children: React.ReactNode }) {
     }}>
       <div style={{ maxWidth: 620, margin: '0 auto' }}>{children}</div>
     </main>
+  );
+}
+
+function Eingabe({ titel, wert, setzen, pflicht, hinweis, art = 'text' }: {
+  titel: string; wert: string; setzen: (v: string) => void;
+  pflicht?: boolean; hinweis?: string; art?: string;
+}) {
+  return (
+    <label style={{ display: 'block', marginBottom: 12 }}>
+      <span style={{ color: F.teal, fontSize: 12.5, fontWeight: 600 }}>
+        {titel}{pflicht && <span style={{ color: '#8a6a20' }}> *</span>}
+      </span>
+      <input
+        type={art} value={wert} onChange={(e) => setzen(e.target.value)}
+        style={{
+          font: 'inherit', fontSize: 16, color: F.ink, width: '100%', boxSizing: 'border-box',
+          padding: '10px 12px', marginTop: 4, background: F.weiss,
+          border: `1px solid ${pflicht && !wert.trim() ? '#e2c48a' : F.line}`, borderRadius: 10,
+        }} />
+      {hinweis && <span style={{ color: F.muted, fontSize: 12.5 }}>{hinweis}</span>}
+    </label>
   );
 }
 

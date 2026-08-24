@@ -178,12 +178,25 @@ const ohneHaken = await api('/api/vertrag', {
 pruef('auch direkt am Server abgewiesen', ohneHaken.status === 400, ohneHaken.error);
 
 await seite.locator('input[type=checkbox]').nth(1).check();
-pruef('mit beiden Häkchen, aber ohne Unterschrift gesperrt', await knopf.isDisabled());
+pruef('mit beiden Häkchen, aber ohne Angaben gesperrt', await knopf.isDisabled());
+
+// --- die Eltern tragen ihre Angaben selbst ein ---
+const felder = seite.locator('section input[type=text], section input[type=email], section input[type=tel]');
+await felder.nth(0).fill('Maria Muster');
+await felder.nth(1).fill('Beispielweg 3, 80331 München');
+await felder.nth(2).fill('maria@example.de');
+await felder.nth(3).fill('0176 1234567');
+await seite.waitForTimeout(300);
+pruef('ohne Unterschrift weiterhin gesperrt', await knopf.isDisabled());
 
 // =============================================================================
 console.log('\nTEST 5 (Fortsetzung) – Unterschrift auf der Zeichenfläche');
 // =============================================================================
 const c = seite.locator('canvas');
+// Erst ins Bild rollen: die Zeichenflaeche liegt weit unten, und die
+// Mauskoordinaten gelten relativ zum sichtbaren Ausschnitt.
+await c.scrollIntoViewIfNeeded();
+await seite.waitForTimeout(200);
 const box = await c.boundingBox();
 await seite.mouse.move(box.x + 40, box.y + 110);
 await seite.mouse.down();
@@ -227,6 +240,9 @@ const txt = pdfText(pdf);
 const seiten = [...pdf.toString('latin1').matchAll(/\/Type\s*\/Page[^s]/g)].length;
 pruef('genau eine Seite', seiten === 1, `${seiten} Seite(n)`);
 for (const [was, stueck] of [
+  ['Name der Eltern', 'Maria Muster'],
+  ['Anschrift der Eltern', 'Beispielweg 3, 80331 München'],
+  ['E-Mail/Telefon der Eltern', 'maria@example.de'],
   ['Kind', 'Lea Muster'], ['Wochentermin', 'Dienstag 16:00 Uhr'], ['Terminzahl', '38'],
   ['Stundensatz', '45,00 €'], ['Jahresbetrag', '1.710,00 €'], ['Rate', '155,45 €'],
   ['Titel', 'Nachhilfevertrag'], ['Fußzeile', 'lernemitanna.de'],
