@@ -8,6 +8,8 @@ import { service } from "@/lib/kalender";
 import { pruefeUnterschrift, hatUnterschrift } from "@/lib/unterschrift-kern";
 
 export const SCHLUESSEL_UNTERSCHRIFT = "unterschrift_anbieterin";
+// Mit ✕ ausgeblendete Einträge unter "Letzte Absagen" (JSON-Liste von ids)
+export const SCHLUESSEL_ABSAGEN_GESEHEN = "absagen_gesehen";
 
 export async function ladeEinstellung(schluessel: string): Promise<string | null> {
   const res = await service()

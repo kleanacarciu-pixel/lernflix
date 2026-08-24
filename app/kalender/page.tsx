@@ -13,7 +13,7 @@ type Balance = { minus: number; plus: number; nach: number; dates: { minus: stri
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
-type CancRow = { date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
+type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
 
@@ -123,6 +123,10 @@ const CSS = `
 .inbxrow.ca{cursor:default;background:#fbf7f4}
 .inbxrow .ibw{font-weight:700}.inbxrow .ibd{color:var(--muted);font-size:.86rem;flex:1}
 .inbxrow .ibgo{color:var(--teal);font-weight:600;font-size:.85rem}
+.inbxrow.cr{padding:0;cursor:default}
+.inbxrow.cr .ibmain{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;flex:1;min-width:0;padding:11px 13px;background:none;border:0;font:inherit;text-align:left;cursor:pointer}
+.inbxrow.cr .ibweg{align-self:stretch;border:0;border-left:1px solid var(--line);background:none;color:#9aa4ab;font-size:.95rem;padding:0 14px;cursor:pointer;line-height:1}
+.inbxrow.cr .ibweg:hover{color:#c0392b;background:#fdf3f1}
 @media(max-width:700px){
   .deskgrid{display:none}.dayview{display:block}
   .wrap{padding:8px}.hdr h1{font-size:1.25rem}
@@ -454,6 +458,13 @@ export default function KalenderPage() {
     setBusy(false);
     if (d.ok) { showToast(String(d.message || "Erledigt ✓")); void loadWeek(); }
     else info("Hinweis", "", String(d.error || "Fehler."));
+  }
+  // ✕ in „Letzte Absagen“: Zeile sofort ausblenden und „gesehen“ merken.
+  // Bewusst ohne act() – nichts soll neu laden oder blockieren. Schlägt das
+  // Speichern fehl, taucht die Zeile beim nächsten Laden einfach wieder auf.
+  async function absageGesehen(id: string) {
+    setInbox((prev) => (prev ? { ...prev, cancellations: prev.cancellations.filter((c) => c.id !== id) } : prev));
+    await api("absageGesehen", { id });
   }
   function showToast(msg: string) { setToast(msg); window.setTimeout(() => setToast(null), 2800); }
   function info(title: string, msg: string, err = "") {
@@ -929,7 +940,10 @@ export default function KalenderPage() {
             {inbox.cancellations.length > 0 && <>
               <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
               <div className="inbxlist">{inbox.cancellations.map((c, i) => (
-                <button key={i} className="inbxrow" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
+                <div key={c.id || i} className="inbxrow cr">
+                  <button className="ibmain" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.byAnna ? "von dir abgesagt" : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
+                  {c.id && <button className="ibweg" title="Gesehen – aus der Liste nehmen" aria-label={`Absage von ${c.who} ausblenden`} onClick={() => void absageGesehen(c.id!)}>✕</button>}
+                </div>
               ))}</div>
             </>}
           </div>
