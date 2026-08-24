@@ -310,6 +310,9 @@ export default function KalenderPage() {
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
   const [legendOffen, setLegendOffen] = useState(false); // Handy: Farben & Filter eingeklappt
+  const [geloeschte, setGeloeschte] = useState<{ id: string; name: string; deletedAt: string }[] | null>(null);
+  const [geloeschteOffen, setGeloeschteOffen] = useState(false);
+  const [exportLaeuft, setExportLaeuft] = useState(false);
   const [modal, setModal] = useState<ReactNode | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -620,9 +623,9 @@ export default function KalenderPage() {
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
   function confirmRemove(r: OverviewRow) {
-    setModal(<div className="modal"><h2>Schüler entfernen</h2><p>Möchtest du <b>{r.name}</b> wirklich löschen? Zugang und alle Termine werden entfernt. Das kann nicht rückgängig gemacht werden.</p>
+    setModal(<div className="modal"><h2>Schüler entfernen</h2><p>Möchtest du <b>{r.name}</b> wirklich entfernen? Der Zugang wird sofort gesperrt und aus der Übersicht ausgeblendet. Verträge, Zahlungen, Termine und der Klassenzimmer-Verlauf bleiben erhalten – bei Bedarf ist das jederzeit unter „Entfernte Schüler“ wiederherstellbar.</p>
       <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
-        <button className="btn r" onClick={() => act("deleteStudent", { studentId: r.id })}>Endgültig entfernen</button></div></div>);
+        <button className="btn r" onClick={() => act("deleteStudent", { studentId: r.id })}>Entfernen</button></div></div>);
   }
 
   function openRequest(r: ReqRow) {
@@ -669,6 +672,41 @@ export default function KalenderPage() {
       if (d.ok) { await loadWeek(); setModal(null); info("Schüler angelegt ✓", String(d.message || "")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
+  }
+
+  // Datei zum Herunterladen anbieten (Export als eigene Sicherheitskopie)
+  function herunterladen(inhalt: string, dateiname: string, typ: string) {
+    const blob = new Blob([inhalt], { type: typ });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = dateiname; document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
+  }
+  async function kalenderCsvExportieren() {
+    if (exportLaeuft) return;
+    setExportLaeuft(true);
+    const d = await api("exportKalenderCsv", {});
+    setExportLaeuft(false);
+    if (d.ok) { herunterladen(String(d.csv), String(d.dateiname || "kalenderstand.csv"), "text/csv;charset=utf-8"); showToast("Heruntergeladen ✓"); }
+    else showToast(String(d.error || "Export fehlgeschlagen."));
+  }
+  async function geloeschteLaden() {
+    setGeloeschteOffen(!geloeschteOffen);
+    if (geloeschte === null) {
+      const d = await api("deletedStudents", {});
+      if (d.ok) setGeloeschte((d.students as { id: string; name: string; deletedAt: string }[]) || []);
+    }
+  }
+  async function wiederherstellen(id: string, name: string) {
+    if (busy) return;
+    setBusy(true);
+    const d = await api("restoreStudent", { studentId: id });
+    setBusy(false);
+    if (d.ok) {
+      setGeloeschte((alt) => (alt || []).filter((x) => x.id !== id));
+      info("Wiederhergestellt ✓", `${name} kann sich wieder einloggen.\n\nNeues Passwort: ${d.password}\n\nBitte selbst weitergeben – am besten gleich danach vom Schüler ändern lassen (Menü → Passwort ändern).`);
+      void loadWeek();
+    } else showToast(String(d.error || "Fehler."));
   }
 
   // Mini-Monatskalender wie in Outlook (Seitenleiste am PC, Aufklapper am
@@ -824,7 +862,7 @@ export default function KalenderPage() {
 
         {role === "admin" && overview && (
           <div className="overview">
-            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
+            <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" disabled={exportLaeuft} onClick={() => void kalenderCsvExportieren()} title="Eigene Sicherheitskopie: Minus-Stunden, fester Termin und alle Absagen/Nachholtermine als CSV herunterladen">{exportLaeuft ? "… lädt" : "📥 Kalenderstand als CSV"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
               <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
@@ -853,6 +891,19 @@ export default function KalenderPage() {
               ))}
               {overview.length === 0 && <p style={{ color: "#999", margin: "6px 0 0" }}>Noch keine Schüler.</p>}
             </div>
+            <button className="legtoggle" style={{ marginTop: 10 }} onClick={() => void geloeschteLaden()}>Entfernte Schüler {geloeschteOffen ? "▴" : "▾"}</button>
+            {geloeschteOffen && (
+              <div style={{ marginTop: 6 }}>
+                {geloeschte === null && <p style={{ color: "#999", margin: 0 }}>Lädt …</p>}
+                {geloeschte && geloeschte.length === 0 && <p style={{ color: "#999", margin: 0 }}>Keine entfernten Schüler.</p>}
+                {geloeschte && geloeschte.map((g) => (
+                  <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid var(--line)" }}>
+                    <span style={{ flex: 1 }}>{g.name} <span style={{ color: "#999", fontSize: ".82rem" }}>· entfernt am {dm(new Date(g.deletedAt))}</span></span>
+                    <button className="minibtn" onClick={() => void wiederherstellen(g.id, g.name)}>Wiederherstellen</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

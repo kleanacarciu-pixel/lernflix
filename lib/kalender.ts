@@ -65,7 +65,12 @@ export async function signInFlexibel(eingabe: string, password: string) {
   if (eingabe.includes("@")) return signInFamilie(eingabe, password);
   const gesucht = eingabe.trim().toLowerCase();
   if (!gesucht) return null;
-  const { data } = await service().from("profiles").select("user_id,name");
+  // Entfernte (soft-deleted) Konten dürfen sich nicht mehr per Name einloggen.
+  // deleted_at kommt erst mit der Sicherheit-V1-Migration – ohne sie einfach
+  // ohne Filter weiterlaufen (kein Login-Ausfall wegen fehlender Migration).
+  let r = await service().from("profiles").select("user_id,name").is("deleted_at", null);
+  if (r.error) r = await service().from("profiles").select("user_id,name");
+  const { data } = r;
   for (const p of (data || []) as { user_id: string; name: string }[]) {
     const voll = (p.name || "").trim().toLowerCase();
     if (voll !== gesucht && voll.split(/\s+/)[0] !== gesucht) continue;

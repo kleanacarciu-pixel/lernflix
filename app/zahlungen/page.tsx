@@ -88,6 +88,7 @@ export default function ZahlungenSeite() {
   const [offenVorlagen, setOffenVorlagen] = useState(false);
   const [notizFuer, setNotizFuer] = useState<string>('');
   const [notizText, setNotizText] = useState('');
+  const [exportLaeuft, setExportLaeuft] = useState(false);
 
   useEffect(() => {
     setToken(ladeSitzung()?.token || '');
@@ -134,6 +135,23 @@ export default function ZahlungenSeite() {
       await tun(() => api('bezahlt', { zahlung_id: c.id }),
         'Als bezahlt vermerkt – alles wieder freigeschaltet, die Eltern haben eine kurze Nachricht bekommen.');
     }
+  }
+
+  // Eigene Sicherheitskopie für Kleana: alle Verträge samt Ratenplan als
+  // JSON-Datei zum Herunterladen und selbst Aufbewahren.
+  async function alleDatenExportieren() {
+    if (exportLaeuft) return;
+    setExportLaeuft(true);
+    try {
+      const d = await api('exportAlleDaten');
+      const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = String(d.dateiname || 'vertraege-zahlungen.json');
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      setHinweis('Heruntergeladen ✓');
+    } catch (e) { setFehler(e instanceof Error ? e.message : 'Export fehlgeschlagen.'); }
+    finally { setExportLaeuft(false); }
   }
 
   async function vorlagenOeffnen() {
@@ -193,7 +211,10 @@ export default function ZahlungenSeite() {
         <section style={{ ...karte, maxWidth: 1140 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <h2 style={{ ...h2, margin: 0 }}>Übersicht {offeneAnzahl > 0 && <span style={{ ...pille, background: 'rgba(161,42,42,.12)', color: F.warn }}>{offeneAnzahl} offen</span>}</h2>
-            <button style={knopfKlein} onClick={() => void vorlagenOeffnen()}>E-Mail-Texte ändern</button>
+            <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button style={knopfKlein} disabled={exportLaeuft} onClick={() => void alleDatenExportieren()} title="Eigene Sicherheitskopie: alle Verträge und Zahlungen als JSON-Datei herunterladen">{exportLaeuft ? '… lädt' : '📥 Alle Daten (Verträge & Zahlungen)'}</button>
+              <button style={knopfKlein} onClick={() => void vorlagenOeffnen()}>E-Mail-Texte ändern</button>
+            </span>
           </div>
 
           {!zeilen.length && !laden && (

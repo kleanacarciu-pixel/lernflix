@@ -72,8 +72,13 @@ export async function POST(req: Request): Promise<Response> {
       await syncLessons(); // Kalender -> Klassenzimmer synchron halten (gedrosselt, meist sofort fertig)
       const out: Record<string, unknown> = { isTeacher: istLehrerin, myName: profil.name };
       if (istLehrerin) {
-        const { data } = await sb.from("profiles").select("user_id,name")
+        // deleted_at (Sicherheit V1) erst versucht zu filtern, sonst ohne
+        // Filter weiter – bricht nichts, falls die Migration noch fehlt.
+        let studRes = await sb.from("profiles").select("user_id,name")
+          .eq("role", "student").is("deleted_at", null).order("name");
+        if (studRes.error) studRes = await sb.from("profiles").select("user_id,name")
           .eq("role", "student").order("name");
+        const { data } = studRes;
         out.students = ((data || []) as { user_id: string; name: string }[])
           .map((p) => ({ id: p.user_id, name: p.name }));
       }

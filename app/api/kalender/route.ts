@@ -318,13 +318,32 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     if (action === "deleteStudent") {
+      // Bewusst KEIN endgültiges Löschen: Verträge, Zahlungen, Termine und
+      // der Klassenzimmer-Verlauf hängen an diesem Konto (teils mit
+      // "on delete cascade") und wären sonst unwiderruflich weg. Stattdessen
+      // wird das Konto gesperrt (neues Zufalls-Passwort, kein Login mehr
+      // möglich) und aus den Übersichten ausgeblendet – "restoreStudent"
+      // macht das jederzeit rückgängig, alle Daten bleiben unangetastet.
       const sid = String(body.studentId || "");
       if (!sid) return bad("Kein Schüler angegeben.");
       const p = await getProfile(sid);
       if (!p || p.role === "admin") return bad("Nicht erlaubt.");
-      const { error } = await service().auth.admin.deleteUser(sid);
-      if (error) await service().from("profiles").delete().eq("user_id", sid);
-      return ok({ message: `Schüler „${p.name}" entfernt.` });
+      await service().auth.admin.updateUserById(sid, { password: crypto.randomUUID() }).catch(() => null);
+      const { error } = await service().from("profiles").update({ deleted_at: new Date().toISOString() }).eq("user_id", sid);
+      if (error) return bad("Konnte nicht entfernt werden: " + error.message, 500);
+      return ok({ message: `Schüler „${p.name}" entfernt. Verträge, Zahlungen und der Verlauf bleiben erhalten – bei Bedarf kann das Konto wiederhergestellt werden.` });
+    }
+
+    if (action === "restoreStudent") {
+      const sid = String(body.studentId || "");
+      if (!sid) return bad("Kein Schüler angegeben.");
+      const { data: p } = await service().from("profiles").select("name").eq("user_id", sid).maybeSingle();
+      if (!p) return bad("Nicht gefunden.");
+      const neuesPw = crypto.randomUUID().slice(0, 12);
+      await service().auth.admin.updateUserById(sid, { password: neuesPw }).catch(() => null);
+      const { error } = await service().from("profiles").update({ deleted_at: null }).eq("user_id", sid);
+      if (error) return bad("Konnte nicht wiederhergestellt werden: " + error.message, 500);
+      return ok({ message: `Schüler „${p.name}" wiederhergestellt. Neues Passwort: ${neuesPw}`, password: neuesPw });
     }
 
     if (action === "adminBook") {
@@ -529,8 +548,12 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "overview") {
       const sb = service();
-      // "*" statt fester Spalten: teams_link kommt erst mit der V7-Migration
-      const { data: studs } = await sb.from("profiles").select("*").eq("role", "student").order("name");
+      // "*" statt fester Spalten: teams_link kommt erst mit der V7-Migration.
+      // deleted_at (Sicherheit V1) erst versucht zu filtern, sonst ohne Filter
+      // weiter – so bricht nichts, solange die Migration noch nicht lief.
+      let studsRes = await sb.from("profiles").select("*").eq("role", "student").is("deleted_at", null).order("name");
+      if (studsRes.error) studsRes = await sb.from("profiles").select("*").eq("role", "student").order("name");
+      const studs = studsRes.data;
       const { data: fx } = await sb.from("fixed_slots").select("student_id,weekday,hour,mode,dauer_min").eq("status", "aktiv");
       const { data: allAppts } = await sb.from("appointments").select("student_id,slot_date,hour,kind,credited,counted,note,status").order("slot_date", { ascending: false }).limit(2000);
       const apptsByStudent = new Map<string, { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]>();
@@ -558,6 +581,50 @@ export async function POST(req: Request): Promise<Response> {
       // Kleanas eigener Link = Standard für alle ohne eigenen Link
       const teamsDefault = (prof as Profile & { teams_link?: string | null }).teams_link || null;
       return ok({ students: rows, teamsDefault });
+    }
+
+    if (action === "exportKalenderCsv") {
+      // Eigene Sicherheitskopie für Kleana: pro Vertrag/Schüler offene
+      // Minus-Stunden, fester Wochentermin und alle Absagen/Nachholtermine –
+      // dieselben Zahlen wie in der Übersicht oben, nur als CSV zum Behalten.
+      const sb = service();
+      let studsRes = await sb.from("profiles").select("*").eq("role", "student").is("deleted_at", null).order("name");
+      if (studsRes.error) studsRes = await sb.from("profiles").select("*").eq("role", "student").order("name");
+      const studs = studsRes.data || [];
+      const [fxRes, allApptsRes] = await Promise.all([
+        sb.from("fixed_slots").select("student_id,weekday,hour,mode,dauer_min").eq("status", "aktiv"),
+        sb.from("appointments").select("student_id,slot_date,hour,kind,credited,counted,note,status").order("slot_date", { ascending: false }).limit(5000),
+      ]);
+      const apptsByStudent = new Map<string, { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]>();
+      (allApptsRes.data || []).forEach((a: { student_id: string | null; slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }) => {
+        if (!a.student_id) return;
+        const arr = apptsByStudent.get(a.student_id) || []; arr.push(a); apptsByStudent.set(a.student_id, arr);
+      });
+      const fixByStudent = new Map<string, string>();
+      (fxRes.data || []).forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }) => {
+        const m = f.mode === "online" ? " (online)" : f.mode === "vor_ort" ? " (vor Ort)" : "";
+        const d = Number(f.dauer_min) || 60;
+        fixByStudent.set(f.student_id, `${DAY_NAMES[f.weekday]} ${fmtZeit(Number(f.hour))}${d !== 60 ? ` ${d} Min.` : ""}${m}`);
+      });
+      const zelle = (v: string) => `"${v.replace(/"/g, '""')}"`;
+      const zeilen = [["Schüler", "Fester Wochentermin", "Minus-Stunden offen", "Plus-Stunden", "Nachhol-Guthaben offen", "Minus-Termine (Absagen)", "Plus-Termine", "Nachhol-Termine (Kleana-Absagen)"].map(zelle).join(",")];
+      (studs as { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number }[]).forEach((p) => {
+        const d = groupBalanceDates(apptsByStudent.get(p.user_id) || []);
+        zeilen.push([
+          p.name, fixByStudent.get(p.user_id) || "kein fester Termin",
+          String(p.minus_hours), String(p.plus_hours), String(p.makeup_credits),
+          d.minus.join(" | "), d.plus.join(" | "), d.nach.join(" | "),
+        ].map(zelle).join(","));
+      });
+      return ok({ csv: "﻿" + zeilen.join("\r\n"), dateiname: `kalenderstand-${new Date().toISOString().slice(0, 10)}.csv` });
+    }
+
+    if (action === "deletedStudents") {
+      // Entfernte Schüler wieder anzeigbar machen – nichts ist endgültig weg.
+      const r = await service().from("profiles").select("user_id,name,deleted_at")
+        .eq("role", "student").not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+      if (r.error) return ok({ students: [] }); // Migration fehlt noch – einfach leer
+      return ok({ students: (r.data || []).map((p: { user_id: string; name: string; deleted_at: string }) => ({ id: p.user_id, name: p.name, deletedAt: p.deleted_at })) });
     }
 
     if (action === "adjustBalance") {
