@@ -19,6 +19,31 @@ export function dauerOk(min: number): boolean {
 export function feinRasterOk(hour: number): boolean {
   return Number.isFinite(hour) && Math.abs(hour * 60 - Math.round(hour * 60)) < 0.01;
 }
+// Meinen zwei (Komma-)Stunden dieselbe Uhrzeit? Verglichen wird mit einer
+// halben Minute Toleranz: Kommazahl-Stunden wie 09:05 (= 9.0833…) können auf
+// dem Weg Datenbank → Anzeige → Klick winzig abweichen, und ein exakter
+// Vergleich ließe dann z. B. das Freigeben einer Blockierung ins Leere laufen.
+export function gleicheStunde(a: number, b: number): boolean {
+  return Math.abs(a - b) < 1 / 120;
+}
+// Uhrzeit als Minuten-Schlüssel (ganze Minute) – für Vergleichs-Maps, damit
+// Werte aus verschiedenen Tabellen nie an der Gleitkomma-Darstellung scheitern
+export function minutenSchluessel(hour: number | string): number {
+  return Math.round(Number(hour) * 60);
+}
+// Welche Block-Zeilen meint der Klick auf "Freigeben"? Getroffen ist ein
+// Block, dessen Start der geklickten Zeit entspricht (halbe Minute Toleranz)
+// – oder in dessen Zeitraum die geklickte Zeit fällt (falls statt des Starts
+// eine überdeckte Rasterzelle ankommt).
+export function blockTreffer<T extends { hour: number | string; dauer_min?: number | null }>(
+  rows: T[], hour: number,
+): T[] {
+  return rows.filter((r) => {
+    const start = Number(r.hour);
+    const ende = start + (Number(r.dauer_min) || 60) / 60;
+    return gleicheStunde(start, hour) || (hour > start && hour < ende);
+  });
+}
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";
 const APP_URL = process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender";
@@ -257,7 +282,7 @@ export function tagIntervalle(
 ): Intervall[] {
   const ivs: Intervall[] = [];
   const absage = (sid: string, hour: number) =>
-    dayAppts.some((a) => a.kind === "absage" && Number(a.hour) === hour && a.student_id === sid);
+    dayAppts.some((a) => a.kind === "absage" && gleicheStunde(Number(a.hour), hour) && a.student_id === sid);
   // Blöcke: einzelnes Datum mit eigener Dauer; Dauer-Blöcke eine volle Stunde
   dayAppts.filter((a) => a.kind === "block" && a.status !== "abgesagt")
     .forEach((a) => {
@@ -292,7 +317,7 @@ export function tagIntervalle(
     // Donnerstag "ab 03.09.", darf der 27.08. sie nicht zeigen.
     if (f.ab_datum && date < f.ab_datum) return;
     if (absage(f.student_id, start)) return;
-    if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && iv.start === start)) return;
+    if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && gleicheStunde(iv.start, start))) return;
     const dauer = Number(f.dauer_min) || 60;
     ivs.push({ start, ende: start + dauer / 60, t: f.status === "angefragt" ? "req" : "busy", sid: f.student_id, name: nameOf(f.student_id), fixed: true, mode: f.mode ?? null, dauer });
   });
@@ -319,7 +344,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   ]);
   const overrides = new Map<string, string>();
   ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
-    .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${Number(o.hour)}`, o.mode));
+    .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${minutenSchluessel(o.hour)}`, o.mode));
   const namen = new Map<string, string>();
   ((profRes.data || []) as { user_id: string; name: string }[]).forEach((p) => namen.set(p.user_id, p.name));
   const nameOf = (id: string) => namen.get(id) || "Schüler";
@@ -334,7 +359,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
     const slots: SlotOut[] = HOURS.map((hour) => {
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
       const past = hoursUntil(date, hour) <= 0;
-      const anker = ivs.find((iv) => iv.start === hour);
+      const anker = ivs.find((iv) => gleicheStunde(iv.start, hour));
       const deckt = anker || ivs.find((iv) => iv.start < hour && iv.ende > hour);
       if (!deckt) return { hour, state: past ? "past" : "free" };
       const iv = deckt;
@@ -346,7 +371,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         return basis; // Schüler/öffentlich sehen "belegt"
       }
       // Pro-Datum-Umstellung gewinnt über den Grund-Modus des festen Termins
-      const effMode = overrides.get(`${iv.sid}|${date}-${iv.start}`) ?? iv.mode;
+      const effMode = overrides.get(`${iv.sid}|${date}-${minutenSchluessel(iv.start)}`) ?? iv.mode;
       const mine = role === "student" && iv.sid === viewerId;
       if (role === "admin") return { ...basis, state: iv.t, name: iv.name, fixed: iv.fixed, mode: effMode };
       if (mine) return { ...basis, state: iv.t, mine: true, fixed: iv.fixed, mode: effMode };
@@ -361,7 +386,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         .map((a) => {
           const start = Number(a.hour);
           const fx = a.kind === "absage"
-            ? fixe.find((f) => f.weekday === wd && Number(f.hour) === start && f.student_id === a.student_id)
+            ? fixe.find((f) => f.weekday === wd && gleicheStunde(Number(f.hour), start) && f.student_id === a.student_id)
             : undefined;
           const dauer = (a.kind !== "absage" && Number(a.dauer_min)) || (fx && Number(fx.dauer_min)) || 60;
           const name = a.student_id ? nameOf(a.student_id) : (a.note ? a.note.split("|")[0] : "Gast");

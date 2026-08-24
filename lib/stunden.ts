@@ -4,7 +4,7 @@
 // genutzt. NUR serverseitig! (DAILY_API_KEY darf nie im Browser landen.)
 // =============================================================================
 import { createHmac } from "node:crypto";
-import { service, berlinInstant, addDaysStr, weekdayOf } from "@/lib/kalender";
+import { service, berlinInstant, addDaysStr, weekdayOf, minutenSchluessel } from "@/lib/kalender";
 import { pausierteSchueler } from "@/lib/zahlung";
 import { terminFindetStatt } from "@/lib/zahlung-kern";
 
@@ -120,21 +120,24 @@ export async function syncLessons(force = false): Promise<void> {
 
     const overrides = new Map<string, string>();
     ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
-      .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${Number(o.hour)}`, o.mode));
+      .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${minutenSchluessel(o.hour)}`, o.mode));
     const appts = (apRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; status: string; mode: string | null; dauer_min: number | null }[];
     // Absagen = eigene Absage-Zeilen UND abgesagte Einzel-Buchungen; eine
     // spätere Neu-Buchung desselben Slots (bestätigt) hebt die Absage auf
     const absagen = new Set(appts
       .filter((a) => a.kind === "absage" || (a.kind === "einzel" && a.status === "abgesagt"))
-      .map((a) => `${a.student_id}|${a.slot_date}-${Number(a.hour)}`));
+      .map((a) => `${a.student_id}|${a.slot_date}-${minutenSchluessel(a.hour)}`));
     appts.filter((a) => a.kind === "einzel" && a.status === "bestaetigt" && a.student_id)
-      .forEach((a) => absagen.delete(`${a.student_id}|${a.slot_date}-${Number(a.hour)}`));
+      .forEach((a) => absagen.delete(`${a.student_id}|${a.slot_date}-${minutenSchluessel(a.hour)}`));
 
     // Kandidaten einsammeln: feste Termine pro Tag + bestätigte Einzel-Buchungen
     type Kandidat = { studentId: string; startsAt: string; endsAt: string; mode: string };
     const kandidaten = new Map<string, Kandidat>();
+    // Schlüssel überall in ganzen Minuten (minutenSchluessel): die Uhrzeiten
+    // kommen aus verschiedenen Tabellen und dürfen nie an winzigen
+    // Gleitkomma-Abweichungen aneinander vorbeilaufen.
     const merken = (studentId: string, date: string, hour: number, grundModus: string | null, dauerMin: number) => {
-      const key = `${studentId}|${date}-${Number(hour)}`;
+      const key = `${studentId}|${date}-${minutenSchluessel(hour)}`;
       if (absagen.has(key)) return;
       const start = berlinInstant(date, Number(hour));
       if (start < Date.now() - 60 * 60000) return; // Vergangenes nicht mehr anlegen
@@ -199,7 +202,7 @@ export async function syncLessons(force = false): Promise<void> {
       for (let i = 0; i <= SYNC_TAGE; i++) {
         const date = addDaysStr(von, i);
         if (date >= f.ab_datum || weekdayOf(date) !== f.weekday) continue;
-        if (kandidaten.has(`${f.student_id}|${date}-${Number(f.hour)}`)) continue;
+        if (kandidaten.has(`${f.student_id}|${date}-${minutenSchluessel(f.hour)}`)) continue;
         const startIso = new Date(berlinInstant(date, Number(f.hour))).toISOString();
         const vorhanden = existing.get(`${f.student_id}|${startIso}`);
         if (vorhanden) await sb.from("lessons").delete().eq("id", vorhanden.id);
@@ -210,7 +213,8 @@ export async function syncLessons(force = false): Promise<void> {
     for (const key of absagen) {
       const [sid, rest] = key.split("|");
       const dash = rest.lastIndexOf("-");
-      const date = rest.slice(0, dash); const hour = Number(rest.slice(dash + 1));
+      // Der Schlüssel trägt die Uhrzeit in ganzen Minuten
+      const date = rest.slice(0, dash); const hour = Number(rest.slice(dash + 1)) / 60;
       if (!sid || sid === "null" || !date || Number.isNaN(hour)) continue;
       const startIso = new Date(berlinInstant(date, hour)).toISOString();
       const vorhanden = existing.get(`${sid}|${startIso}`);

@@ -5,7 +5,7 @@
 import { NextResponse, after } from "next/server";
 import {
   service, signInFlexibel, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
-  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, DAY_NAMES,
+  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
@@ -21,17 +21,23 @@ export const dynamic = "force-dynamic";
 function bad(msg: string, code = 400) { return NextResponse.json({ ok: false, error: msg }, { status: code }); }
 function ok(data: Record<string, unknown> = {}) { return NextResponse.json({ ok: true, ...data }); }
 
-// Slot-Zustand für eine konkrete Aktion prüfen
+// Slot-Zustand für eine konkrete Aktion prüfen.
+// Die Uhrzeit wird absichtlich NICHT mit .eq("hour", …) in der Datenbank
+// gefiltert: Kommazahl-Stunden (09:05 = 9.0833…) dürfen nie an der exakten
+// Gleitkomma-Darstellung scheitern – gefiltert wird hier mit einer halben
+// Minute Toleranz (gleicheStunde).
 async function inspectSlot(date: string, hour: number) {
   const sb = service();
   const wd = weekdayOf(date);
   const [fxRes, apRes, wbRes] = await Promise.all([
-    sb.from("fixed_slots").select("id,student_id,status,mode").eq("weekday", wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]),
-    sb.from("appointments").select("id,student_id,kind,status,counted,note,mode").eq("slot_date", date).eq("hour", hour),
-    sb.from("weekly_blocks").select("id").eq("weekday", wd).eq("hour", hour),
+    sb.from("fixed_slots").select("id,student_id,status,mode,hour").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
+    sb.from("appointments").select("id,student_id,kind,status,counted,note,mode,hour").eq("slot_date", date),
+    sb.from("weekly_blocks").select("id,hour").eq("weekday", wd),
   ]);
-  const appts = (apRes.data || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null; mode: string | null }[];
-  const fxa = (fxRes.data || []) as { id: string; student_id: string; status: string; mode: string | null }[];
+  const appts = ((apRes.data || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null; mode: string | null; hour: number }[])
+    .filter((a) => gleicheStunde(Number(a.hour), hour));
+  const fxa = ((fxRes.data || []) as { id: string; student_id: string; status: string; mode: string | null; hour: number }[])
+    .filter((f) => gleicheStunde(Number(f.hour), hour));
   return {
     wd,
     block: appts.find((a) => a.kind === "block" && a.status !== "abgesagt") || null,
@@ -39,7 +45,8 @@ async function inspectSlot(date: string, hour: number) {
     absage: appts.find((a) => a.kind === "absage") || null,
     fixedActive: fxa.find((f) => f.status === "aktiv") || null,
     fixedPending: fxa.find((f) => f.status === "angefragt") || null,
-    weeklyBlock: (wbRes.data || []).length > 0,
+    weeklyBlock: ((wbRes.data || []) as { id: string; hour: number }[])
+      .some((w) => gleicheStunde(Number(w.hour), hour)),
   };
 }
 
@@ -177,8 +184,8 @@ export async function POST(req: Request): Promise<Response> {
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
-      const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
-      if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
+      const { data: mine } = await service().from("fixed_slots").select("id,hour").eq("student_id", user.id).eq("weekday", s.wd).in("status", ["aktiv", "angefragt"]);
+      if (((mine || []) as { id: string; hour: number }[]).some((m) => gleicheStunde(Number(m.hour), hour))) return bad("Du hast diesen Slot schon angefragt.");
       {
         // ab_datum = der Tag, den die Eltern beim Buchen angeklickt haben.
         // Ab genau dann existiert der Termin; fruehere Wochen zeigen ihn nie.
@@ -499,14 +506,25 @@ export async function POST(req: Request): Promise<Response> {
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
-      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+        if (error) return bad("Blockieren fehlgeschlagen: " + error.message); }
       const endeMin = Math.round(hour * 60 + dauerMin);
       const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
       return ok({ message: `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
       if (!validSlot) return bad("Ungültiger Slot.");
-      await service().from("appointments").delete().eq("slot_date", date).eq("hour", hour).eq("kind", "block");
+      // Nicht per exakter Uhrzeit löschen: erst die Block-Zeilen des Tages
+      // holen, den gemeinten Block mit Toleranz finden, dann gezielt über die
+      // id löschen – und ehrlich melden, wenn nichts (mehr) zu löschen ist.
+      const { data, error } = await service().from("appointments").select("id,hour,dauer_min,status").eq("slot_date", date).eq("kind", "block");
+      if (error) return bad("Konnte die Blockierung nicht laden: " + error.message);
+      const rows = ((data || []) as { id: string; hour: number; dauer_min: number | null; status: string }[])
+        .filter((r) => r.status !== "abgesagt");
+      const treffer = blockTreffer(rows, hour);
+      if (!treffer.length) return bad("Hier ist keine Blockierung (mehr) – bitte die Seite neu laden.");
+      const { error: de } = await service().from("appointments").delete().in("id", treffer.map((t) => t.id));
+      if (de) return bad("Freigeben fehlgeschlagen: " + de.message);
       return ok({ message: "Slot wieder frei." });
     }
     if (action === "blockWeekly") {
@@ -531,7 +549,15 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "unblockWeekly") {
       if (!validSlot) return bad("Ungültiger Slot.");
-      await service().from("weekly_blocks").delete().eq("weekday", weekdayOf(date)).eq("hour", hour);
+      // Wie beim Einmal-Block: mit Toleranz finden, über die id löschen,
+      // Fehlschläge nicht verschlucken. select("*"): dauer_min gibt es erst
+      // ab der V6-Migration.
+      const { data, error } = await service().from("weekly_blocks").select("*").eq("weekday", weekdayOf(date));
+      if (error) return bad("Konnte die Dauer-Blockierung nicht laden: " + error.message);
+      const treffer = blockTreffer((data || []) as { id: string; hour: number; dauer_min?: number | null }[], hour);
+      if (!treffer.length) return bad("Hier ist keine Dauer-Blockierung (mehr) – bitte die Seite neu laden.");
+      const { error: de } = await service().from("weekly_blocks").delete().in("id", treffer.map((t) => t.id));
+      if (de) return bad("Aufheben fehlgeschlagen: " + de.message);
       return ok({ message: "Dauer-Blockierung aufgehoben." });
     }
     if (action === "createStudent") {
