@@ -122,7 +122,7 @@ export async function POST(req: Request): Promise<Response> {
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
         istSchueler
-          ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv")
+          ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv").order("weekday").order("hour")
           : Promise.resolve({ data: null }),
         // Schüler bekommen ihren Teams-Link als festen Knopf in der Kopfzeile
         istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
@@ -574,7 +574,11 @@ export async function POST(req: Request): Promise<Response> {
         const arr = apptsByStudent.get(a.student_id) || []; arr.push(a); apptsByStudent.set(a.student_id, arr);
       });
       const fixByStudent = new Map<string, string[]>();
-      (fx || []).forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }) => {
+      // In Wochentag-Reihenfolge anzeigen (Di vor Do), nicht in der
+      // zufaelligen Reihenfolge, in der die Termine gebucht wurden.
+      const fxSortiert = ([...(fx || [])] as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }[])
+        .sort((a, b) => a.weekday - b.weekday || Number(a.hour) - Number(b.hour));
+      fxSortiert.forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }) => {
         const arr = fixByStudent.get(f.student_id) || [];
         const m = f.mode === "online" ? " · online" : f.mode === "vor_ort" ? " · vor Ort" : "";
         const d = Number(f.dauer_min) || 60;
