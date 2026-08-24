@@ -11,60 +11,9 @@
 // =============================================================================
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { inflateSync } from "node:zlib";
 import { nachhilfevertragPdf } from "../lib/vertrag-dokumente.ts";
 import { TITEL, FUSSZEILE, ANBIETERIN, WICHTIGSTES } from "../lib/vertrag-pdf-texte.ts";
-
-// --- PDF auslesen -----------------------------------------------------------
-
-/** Alle Inhaltsströme entpacken und aneinanderhängen. */
-function inhalt(pdf: Buffer): string {
-  let out = "";
-  let i = 0;
-  while ((i = pdf.indexOf("stream", i)) >= 0) {
-    let start = i + 6;
-    if (pdf[start] === 0x0d) start++;
-    if (pdf[start] === 0x0a) start++;
-    const ende = pdf.indexOf("endstream", start);
-    if (ende < 0) break;
-    try { out += inflateSync(pdf.subarray(start, ende)).toString("latin1") + "\n"; } catch { /* Bild o. Ä. */ }
-    i = ende + 9;
-  }
-  return out;
-}
-
-/**
- * WinAnsi ist fast Latin-1 – nur die Plätze 0x80 bis 0x9F sind anders belegt.
- * Genau dort liegen das Eurozeichen und die deutschen Anführungszeichen.
- */
-const WINANSI: Record<number, string> = {
-  0x80: "€", 0x82: "‚", 0x84: "„", 0x85: "…", 0x91: "‘", 0x92: "’",
-  0x93: "“", 0x94: "”", 0x96: "–", 0x97: "—",
-};
-
-function ausWinAnsi(hex: string): string {
-  const bytes = Buffer.from(hex, "hex");
-  let s = "";
-  for (const b of bytes) s += WINANSI[b] ?? Buffer.from([b]).toString("latin1");
-  return s;
-}
-
-/**
- * Sichtbarer Text aus einem Inhaltsstrom.
- *
- * pdfkit setzt Text als [<hex> zahl <hex>] TJ – die Zahlen dazwischen sind
- * Feinabstände und gehören NICHT in den Text. Werden sie mitgelesen, meldet
- * die Prüfung „fehlt", obwohl der Satz sauber im Dokument steht.
- */
-function texte(strom: string): string[] {
-  const zeilen: string[] = [];
-  for (const m of strom.matchAll(/\[([\s\S]*?)\]\s*TJ/g)) {
-    let s = "";
-    for (const h of m[1].matchAll(/<([0-9A-Fa-f]*)>/g)) s += ausWinAnsi(h[1]);
-    if (s.trim()) zeilen.push(s);
-  }
-  return zeilen;
-}
+import { inhalt, texte } from "./pdf-lesen.ts";
 
 const beispiel = {
   schuljahrName: "2026/27",
