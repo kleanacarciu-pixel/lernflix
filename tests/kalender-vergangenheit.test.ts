@@ -61,6 +61,37 @@ describe("Untere Grenze: der Tag der Buchung", () => {
   });
 });
 
+describe("Startdatum (ab_datum): der beim Buchen angeklickte Tag", () => {
+  // Lillys Fall: am 24.08. gebucht, angeklickt war "Donnerstag 03.09., 17 Uhr".
+  const lilly = [{
+    student_id: "s2", weekday: 3, hour: 17, status: "aktiv",
+    mode: "vor_ort" as string | null, dauer_min: 60,
+    created_at: "2026-08-24T10:00:00Z", ab_datum: "2026-09-03",
+  }];
+  const maleL = (datum: string) => tagIntervalle(datum, weekdayOf(datum), lilly, [], [], () => "Lilly");
+
+  test("vor dem angeklickten Tag erscheint der Termin nicht", () => {
+    // 27.08. liegt NACH der Buchung, aber VOR dem gewünschten Beginn.
+    assert.equal(maleL("2026-08-27").length, 0, "27.08. dürfte Lilly nicht zeigen");
+  });
+
+  test("ab dem angeklickten Tag erscheint er", () => {
+    for (const donnerstag of ["2026-09-03", "2026-09-10", "2027-05-27"]) {
+      assert.equal(maleL(donnerstag).length, 1, donnerstag);
+    }
+  });
+
+  test("ab_datum gilt zusätzlich zur Buchungsgrenze, nicht statt ihr", () => {
+    // Auch mit ab_datum darf nichts VOR der Buchung erscheinen.
+    assert.equal(maleL("2026-08-20").length, 0);
+  });
+
+  test("ohne ab_datum gilt weiter der Buchungstag (alter Stand)", () => {
+    const alt = [{ ...lilly[0], ab_datum: null as string | null }];
+    assert.equal(tagIntervalle("2026-08-27", 3, alt, [], [], () => "Lilly").length, 1);
+  });
+});
+
 describe("Es war nur die Anzeige – gespeichert wird nichts Vergangenes", () => {
   test("syncLessons legt grundsätzlich nichts Vergangenes an", () => {
     // Die Wache steht im Code: Kandidaten mit Start in der Vergangenheit
@@ -70,14 +101,29 @@ describe("Es war nur die Anzeige – gespeichert wird nichts Vergangenes", () =>
     assert.match(q, /if \(start < Date\.now\(\) - 60 \* 60000\) return; \/\/ Vergangenes nicht mehr anlegen/);
   });
 
-  test("beide Slot-Abfragen der Anzeige laden created_at mit", () => {
-    // Ohne die Spalte griffe die Grenze still nicht mehr (alles optional).
-    const q = readFileSync("lib/kalender.ts", "utf8");
-    const treffer = [...q.matchAll(/from\("fixed_slots"\)\.select\("([^"]+)"\)/g)].map((m) => m[1]);
-    const mitIntervallen = treffer.filter((t) => t.includes("status,mode,dauer_min"));
-    assert.ok(mitIntervallen.length >= 2, "Wochenansicht und Kollisionsprüfung erwartet");
-    for (const t of mitIntervallen) {
-      assert.ok(t.includes("created_at"), `created_at fehlt in select("${t}")`);
-    }
+  test("die Slot-Abfragen laden ALLE Spalten – die Grenzen können nie still wegfallen", () => {
+    // created_at und ab_datum sind in tagIntervalle optional. Lüde eine
+    // Abfrage sie nicht mit, griffen beide Grenzen still nicht mehr.
+    // select("*") macht das unmöglich (und übersteht fehlende Migrationen).
+    const kal = readFileSync("lib/kalender.ts", "utf8");
+    assert.ok([...kal.matchAll(/from\("fixed_slots"\)\.select\("\*"\)/g)].length >= 2,
+      "Wochenansicht und Kollisionsprüfung müssen select(\"*\") nutzen");
+    const stn = readFileSync("lib/stunden.ts", "utf8");
+    assert.ok(/from\("fixed_slots"\)\.select\("\*"\)/.test(stn),
+      "auch die Stunden-Synchronisation muss select(\"*\") nutzen");
+  });
+
+  test("die Stunden-Synchronisation beachtet ab_datum in beide Richtungen", () => {
+    const q = readFileSync("lib/stunden.ts", "utf8");
+    // Nichts anlegen vor dem Geltungstag …
+    assert.match(q, /if \(f\.ab_datum && date < f\.ab_datum\) return;/);
+    // … und frueher erzeugte kuenftige Stunden vor dem Geltungstag abraeumen.
+    assert.match(q, /if \(date >= f\.ab_datum \|\| weekdayOf\(date\) !== f\.weekday\) continue;/);
+  });
+
+  test("beide Buchungswege speichern den angeklickten Tag als ab_datum", () => {
+    const route = readFileSync("app/api/kalender/route.ts", "utf8");
+    assert.equal([...route.matchAll(/ab_datum: date/g)].length, 2,
+      "requestFixed und adminBook(fest) müssen ab_datum mitschreiben");
   });
 });
