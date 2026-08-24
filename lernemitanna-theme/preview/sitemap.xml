@@ -75,4 +75,19 @@
     <lastmod>2026-08-21</lastmod>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://lernemitanna.de/impressum</loc>
+    <lastmod>2026-08-24</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://lernemitanna.de/datenschutz</loc>
+    <lastmod>2026-08-24</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://lernemitanna.de/agb</loc>
+    <lastmod>2026-08-24</lastmod>
+    <priority>0.3</priority>
+  </url>
 </urlset>
