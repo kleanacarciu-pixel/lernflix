@@ -20,16 +20,27 @@ export const maxDuration = 60;
 const ORDNER = "taeglich";
 const AUFBEWAHRUNG_TAGE = 90;
 
-function authorisiert(req: Request): boolean {
-  if (req.headers.get("x-vercel-cron")) return true;
+// Gibt bei Ablehnung den Grund zurück (fürs Protokoll), sonst null.
+function unauthorisiertGrund(req: Request): string | null {
+  if (req.headers.get("x-vercel-cron")) return null;
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return (req.headers.get("authorization") || "") === `Bearer ${secret}`;
+  if (!secret) return "CRON_SECRET ist in Vercel nicht gesetzt";
+  if ((req.headers.get("authorization") || "") === `Bearer ${secret}`) return null;
+  return "weder x-vercel-cron-Kopfzeile noch gültiger CRON_SECRET-Bearer-Token vorhanden";
 }
 
 export async function GET(req: Request): Promise<Response> {
-  if (!authorisiert(req)) {
-    return NextResponse.json({ ok: false, error: "nicht autorisiert" }, { status: 401 });
+  const grund = unauthorisiertGrund(req);
+  if (grund) {
+    // Das darf nicht lautlos bleiben: schlägt die Berechtigung fehl, hat das
+    // Backup noch nie richtig gelaufen – also genauso eine Mail wie bei
+    // einem echten Fehler weiter unten.
+    console.error("[cron/backup] nicht autorisiert:", grund);
+    await sendMail(ADMIN_EMAIL, "Automatisches Backup: Berechtigung fehlgeschlagen",
+      `<p>Die tägliche Datensicherung wurde heute abgelehnt (nicht autorisiert):</p>
+       <p style="color:#a12a2a">${grund}</p>
+       <p>Bitte kurz Bescheid geben, damit das behoben wird.</p>`);
+    return NextResponse.json({ ok: false, error: "nicht autorisiert", grund }, { status: 401 });
   }
 
   try {
