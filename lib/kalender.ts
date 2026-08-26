@@ -209,6 +209,27 @@ export async function sendMail(
     return { ok: false, error: String(e).slice(0, 200) };
   }
 }
+/**
+ * Familien-Mail verschicken und einen Fehlschlag NIE lautlos verschlucken:
+ * Klappt der Versand nicht, wird das geloggt und Kleana bekommt eine
+ * Warnmail, damit sie selbst nachfassen kann. Für Mails an Kleana selbst
+ * unnötig – dort bleibt es beim einfachen sendMail.
+ */
+export async function mailZustellenOderMelden(
+  kontext: string, to: string, subject: string, html: string,
+  opt?: { anhaenge?: MailAnhang[]; kopieAn?: string },
+): Promise<{ ok: boolean; error?: string }> {
+  const r = await sendMail(to, subject, html, undefined, opt);
+  if (!r.ok && to.toLowerCase() !== ADMIN_EMAIL) {
+    console.error(`[mail] ${kontext} an ${to} fehlgeschlagen:`, r.error);
+    await sendMail(ADMIN_EMAIL, "Mail nicht angekommen: " + kontext,
+      `<p>Die Mail „${kontext}“ an <b>${to}</b> konnte nicht gesendet werden:</p>
+       <p style="color:#a12a2a">${r.error}</p>
+       <p>Bitte am besten selbst kurz nachfassen.</p>`);
+  }
+  return r;
+}
+
 function wrapMail(title: string, body: string): string {
   return `<div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
     <div style="background:linear-gradient(135deg,#2BB3C0,#3E7BB6);color:#fff;padding:22px 24px;border-radius:14px 14px 0 0">
