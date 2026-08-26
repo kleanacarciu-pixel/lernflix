@@ -19,7 +19,7 @@
 // =============================================================================
 
 /** Stand laut Dokument – steht auf der Seite und in der PDF. */
-export const AGB_STAND = "21. August 2026";
+export const AGB_STAND = "26. August 2026";
 
 export const AGB_TITEL = "Allgemeine Geschäftsbedingungen (AGB)";
 
@@ -34,7 +34,7 @@ Telefon: +49 (0)176 24700519
 E-Mail: lernemitanna@outlook.com
 Es wird keine Umsatzsteuer ausgewiesen (Kleinunternehmerregelung gemäß § 19 UStG).
 
-Stand: 21. August 2026
+Stand: 26. August 2026
 
 ---
 
@@ -128,7 +128,7 @@ b) **als Einmalzahlung** des gesamten Schuljahresbetrags abzüglich eines Nachla
 
 ## § 8 Kündigung und Endabrechnung
 
-(1) Beide Parteien können den Vertrag mit einer Frist von vier (4) Wochen zum Monatsende kündigen. Die Kündigung bedarf der Textform (E-Mail genügt). Kunden können den Vertrag zudem über die Kündigungsschaltfläche unter termine.lernemitanna.de kündigen.
+(1) Beide Parteien können den Vertrag mit einer Frist von vier (4) Wochen zum Monatsende kündigen. Die Kündigung bedarf der Textform – eine E-Mail oder eine Nachricht (z. B. per WhatsApp) genügt.
 
 (2) Ohne Kündigung endet der Vertrag mit Ablauf des 31. Juli. Eine Fortsetzung für das folgende Schuljahr bedarf einer neuen Vereinbarung nach § 2; die Anbieterin unterbreitet Bestandskunden hierzu rechtzeitig ein Angebot.
 
