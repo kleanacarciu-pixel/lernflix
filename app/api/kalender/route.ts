@@ -23,6 +23,23 @@ export const dynamic = "force-dynamic";
 function bad(msg: string, code = 400) { return NextResponse.json({ ok: false, error: msg }, { status: code }); }
 function ok(data: Record<string, unknown> = {}) { return NextResponse.json({ ok: true, ...data }); }
 
+// Mail an eine Familie/einen Schüler verschicken, ohne die Antwort zu
+// verzögern (per after()). Schlägt der Versand fehl, bekäme Kleana das
+// sonst NIE mit – die App meldet "Mail gesendet", egal ob sie ankam. Deshalb
+// hier: bei einem Fehlschlag zusätzlich eine Warnmail an Kleana selbst.
+function mailZustellenOderMelden(kontext: string, to: string, subject: string, html: string) {
+  return sendMail(to, subject, html).then((r) => {
+    if (!r.ok) {
+      console.error(`[mail] ${kontext} an ${to} fehlgeschlagen:`, r.error);
+      void sendMail(ADMIN_EMAIL, "Mail nicht angekommen: " + kontext,
+        `<p>Die Mail „${kontext}“ an <b>${to}</b> konnte nicht gesendet werden:</p>
+         <p style="color:#a12a2a">${r.error}</p>
+         <p>Bitte am besten selbst kurz nachfassen.</p>`);
+    }
+    return r;
+  });
+}
+
 // Slot-Zustand für eine konkrete Aktion prüfen.
 // Die Uhrzeit wird absichtlich NICHT mit .eq("hour", …) in der Datenbank
 // gefiltert: Kommazahl-Stunden (09:05 = 9.0833…) dürfen nie an der exakten
@@ -162,7 +179,7 @@ export async function POST(req: Request): Promise<Response> {
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist leider schon belegt.");
       { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "angefragt", mode, dauer_min: dauerMin, note: `${name}|${email}` }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       after(() => sendMail(ADMIN_EMAIL, "Neue Probestunden-Anfrage", `${name} (${email}) möchte eine Probestunde am ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
-      after(() => sendMail(email, "Probestunde angefragt", mailTemplates.probeReceived(name, prettyDate(date, hour))));
+      after(() => mailZustellenOderMelden("Probestunde angefragt", email, "Probestunde angefragt", mailTemplates.probeReceived(name, prettyDate(date, hour))));
       return ok({ message: "Probestunde angefragt! Kleana meldet sich per E-Mail bei dir." });
     }
 
@@ -383,7 +400,7 @@ export async function POST(req: Request): Promise<Response> {
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
         if (r.error) return bad("Eintragen fehlgeschlagen: " + r.error.message);
-        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => sendMail(em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
+        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
         await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
       }
@@ -393,7 +410,7 @@ export async function POST(req: Request): Promise<Response> {
           student_id: sid, slot_date: date, hour, kind: "einzel", status: "bestaetigt", mode, dauer_min: dauerMin, counted,
         });
         if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
-      if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => sendMail(em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
+      if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Termin eingetragen", em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
       await syncLessons(true);
       return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
     }
@@ -445,14 +462,14 @@ export async function POST(req: Request): Promise<Response> {
           await service().from("appointments").update({ status: "bestaetigt" }).eq("id", s.booking.id);
           const gname = (s.booking.note || "").split("|")[0] || "";
           const email = (s.booking.note || "").split("|")[1];
-          if (email) { const tl = await teamsLinkFuer(null); after(() => sendMail(email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
+          if (email) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde bestätigt", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
           return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
         }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
         if (sp) counted = await applyEinzelCounting(sp);
         await service().from("appointments").update({ status: "bestaetigt", counted }).eq("id", s.booking.id);
-        if (sp?.email) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
+        if (sp?.email) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Termin bestätigt", em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
         return ok({ message: "Bestätigt. Bestätigungs-Mail gesendet." });
       }
       if (s.fixedPending) {
@@ -461,7 +478,7 @@ export async function POST(req: Request): Promise<Response> {
       { const g = await buchungErlaubt(s.fixedPending.student_id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => sendMail(em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
+        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
         return ok({ message: "Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet." });
       }
       return bad("Keine Anfrage in diesem Slot.");
@@ -472,13 +489,13 @@ export async function POST(req: Request): Promise<Response> {
       if (s.booking && s.booking.status === "angefragt") {
         await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
         const email = s.booking.student_id ? (await getProfile(s.booking.student_id))?.email : (s.booking.note || "").split("|")[1];
-        if (email) { const em = email; after(() => sendMail(em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
+        if (email) { const em = email; after(() => mailZustellenOderMelden("Termin abgesagt", em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
         return ok({ message: "Anfrage abgesagt. Absage-Mail gesendet." });
       }
       if (s.fixedPending) {
         await service().from("fixed_slots").update({ status: "beendet" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email; after(() => sendMail(em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
+        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Anfrage abgesagt", em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
         return ok({ message: "Anfrage abgesagt. Absage-Mail gesendet." });
       }
       return bad("Keine Anfrage in diesem Slot.");
@@ -490,14 +507,14 @@ export async function POST(req: Request): Promise<Response> {
         const sp = await getProfile(s.booking.student_id || "");
         await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
         if (sp) { await revertCounting(sp, s.booking.counted); await setBalance(sp.user_id, { makeup_credits: (await getProfile(sp.user_id))!.makeup_credits + 1 }); }
-        if (sp?.email) { const em = sp.email; after(() => sendMail(em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben + Mail." });
       }
       if (s.fixedActive && !s.absage) {
         const sp = await getProfile(s.fixedActive.student_id);
         await service().from("appointments").insert({ student_id: s.fixedActive.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: false, note: NOTE_ANNA_CANCEL });
         if (sp) await setBalance(sp.user_id, { makeup_credits: sp.makeup_credits + 1 });
-        if (sp?.email) { const em = sp.email; after(() => sendMail(em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (fest)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben (kein Minus) + Mail." });
       }
       return bad("Hier ist kein Termin zum Absagen.");
