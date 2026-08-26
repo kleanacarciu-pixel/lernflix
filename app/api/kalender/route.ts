@@ -5,10 +5,12 @@
 import { NextResponse, after } from "next/server";
 import {
   service, signInFlexibel, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
-  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, DAY_NAMES,
+  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES,
   sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
+import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
+import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { buchungErlaubtGesamt as buchungErlaubt, vorlageSenden } from "@/lib/zahlung";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
@@ -38,17 +40,23 @@ function mailZustellenOderMelden(kontext: string, to: string, subject: string, h
   });
 }
 
-// Slot-Zustand für eine konkrete Aktion prüfen
+// Slot-Zustand für eine konkrete Aktion prüfen.
+// Die Uhrzeit wird absichtlich NICHT mit .eq("hour", …) in der Datenbank
+// gefiltert: Kommazahl-Stunden (09:05 = 9.0833…) dürfen nie an der exakten
+// Gleitkomma-Darstellung scheitern – gefiltert wird hier mit einer halben
+// Minute Toleranz (gleicheStunde).
 async function inspectSlot(date: string, hour: number) {
   const sb = service();
   const wd = weekdayOf(date);
   const [fxRes, apRes, wbRes] = await Promise.all([
-    sb.from("fixed_slots").select("id,student_id,status,mode").eq("weekday", wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]),
-    sb.from("appointments").select("id,student_id,kind,status,counted,note,mode").eq("slot_date", date).eq("hour", hour),
-    sb.from("weekly_blocks").select("id").eq("weekday", wd).eq("hour", hour),
+    sb.from("fixed_slots").select("id,student_id,status,mode,hour").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
+    sb.from("appointments").select("id,student_id,kind,status,counted,note,mode,hour").eq("slot_date", date),
+    sb.from("weekly_blocks").select("id,hour").eq("weekday", wd),
   ]);
-  const appts = (apRes.data || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null; mode: string | null }[];
-  const fxa = (fxRes.data || []) as { id: string; student_id: string; status: string; mode: string | null }[];
+  const appts = ((apRes.data || []) as { id: string; student_id: string | null; kind: string; status: string; counted: string | null; note: string | null; mode: string | null; hour: number }[])
+    .filter((a) => gleicheStunde(Number(a.hour), hour));
+  const fxa = ((fxRes.data || []) as { id: string; student_id: string; status: string; mode: string | null; hour: number }[])
+    .filter((f) => gleicheStunde(Number(f.hour), hour));
   return {
     wd,
     block: appts.find((a) => a.kind === "block" && a.status !== "abgesagt") || null,
@@ -56,7 +64,8 @@ async function inspectSlot(date: string, hour: number) {
     absage: appts.find((a) => a.kind === "absage") || null,
     fixedActive: fxa.find((f) => f.status === "aktiv") || null,
     fixedPending: fxa.find((f) => f.status === "angefragt") || null,
-    weeklyBlock: (wbRes.data || []).length > 0,
+    weeklyBlock: ((wbRes.data || []) as { id: string; hour: number }[])
+      .some((w) => gleicheStunde(Number(w.hour), hour)),
   };
 }
 
@@ -139,7 +148,7 @@ export async function POST(req: Request): Promise<Response> {
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
         istSchueler
-          ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv")
+          ? service().from("fixed_slots").select("weekday,hour,mode,dauer_min").eq("student_id", prof!.user_id).eq("status", "aktiv").order("weekday").order("hour")
           : Promise.resolve({ data: null }),
         // Schüler bekommen ihren Teams-Link als festen Knopf in der Kopfzeile
         istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
@@ -194,9 +203,17 @@ export async function POST(req: Request): Promise<Response> {
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
-      const { data: mine } = await service().from("fixed_slots").select("id").eq("student_id", user.id).eq("weekday", s.wd).eq("hour", hour).in("status", ["aktiv", "angefragt"]);
-      if (mine && mine.length) return bad("Du hast diesen Slot schon angefragt.");
-      { const { error } = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
+      const { data: mine } = await service().from("fixed_slots").select("id,hour").eq("student_id", user.id).eq("weekday", s.wd).in("status", ["aktiv", "angefragt"]);
+      if (((mine || []) as { id: string; hour: number }[]).some((m) => gleicheStunde(Number(m.hour), hour))) return bad("Du hast diesen Slot schon angefragt.");
+      {
+        // ab_datum = der Tag, den die Eltern beim Buchen angeklickt haben.
+        // Ab genau dann existiert der Termin; fruehere Wochen zeigen ihn nie.
+        // Fehlt die V8-Migration noch, wird ohne das Feld gespeichert (alter
+        // Stand), statt die Buchung platzen zu lassen.
+        let r = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin, ab_datum: date });
+        if (r.error) r = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin });
+        if (r.error) return bad("Speichern fehlgeschlagen: " + r.error.message);
+      }
       after(() => sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
@@ -375,10 +392,14 @@ export async function POST(req: Request): Promise<Response> {
       if (body.fest === true) {
       // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
       { const g = await buchungErlaubt(sid); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
-        const { error } = await service().from("fixed_slots").insert({
+        // Der angeklickte Tag ist der erste Geltungstag des festen Termins.
+        let r = await service().from("fixed_slots").insert({
+          student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin, ab_datum: date,
+        });
+        if (r.error) r = await service().from("fixed_slots").insert({
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
-        if (error) return bad("Eintragen fehlgeschlagen: " + error.message);
+        if (r.error) return bad("Eintragen fehlgeschlagen: " + r.error.message);
         if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
         await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
@@ -504,14 +525,25 @@ export async function POST(req: Request): Promise<Response> {
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
-      await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+        if (error) return bad("Blockieren fehlgeschlagen: " + error.message); }
       const endeMin = Math.round(hour * 60 + dauerMin);
       const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
       return ok({ message: `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
       if (!validSlot) return bad("Ungültiger Slot.");
-      await service().from("appointments").delete().eq("slot_date", date).eq("hour", hour).eq("kind", "block");
+      // Nicht per exakter Uhrzeit löschen: erst die Block-Zeilen des Tages
+      // holen, den gemeinten Block mit Toleranz finden, dann gezielt über die
+      // id löschen – und ehrlich melden, wenn nichts (mehr) zu löschen ist.
+      const { data, error } = await service().from("appointments").select("id,hour,dauer_min,status").eq("slot_date", date).eq("kind", "block");
+      if (error) return bad("Konnte die Blockierung nicht laden: " + error.message);
+      const rows = ((data || []) as { id: string; hour: number; dauer_min: number | null; status: string }[])
+        .filter((r) => r.status !== "abgesagt");
+      const treffer = blockTreffer(rows, hour);
+      if (!treffer.length) return bad("Hier ist keine Blockierung (mehr) – bitte die Seite neu laden.");
+      const { error: de } = await service().from("appointments").delete().in("id", treffer.map((t) => t.id));
+      if (de) return bad("Freigeben fehlgeschlagen: " + de.message);
       return ok({ message: "Slot wieder frei." });
     }
     if (action === "blockWeekly") {
@@ -536,7 +568,15 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "unblockWeekly") {
       if (!validSlot) return bad("Ungültiger Slot.");
-      await service().from("weekly_blocks").delete().eq("weekday", weekdayOf(date)).eq("hour", hour);
+      // Wie beim Einmal-Block: mit Toleranz finden, über die id löschen,
+      // Fehlschläge nicht verschlucken. select("*"): dauer_min gibt es erst
+      // ab der V6-Migration.
+      const { data, error } = await service().from("weekly_blocks").select("*").eq("weekday", weekdayOf(date));
+      if (error) return bad("Konnte die Dauer-Blockierung nicht laden: " + error.message);
+      const treffer = blockTreffer((data || []) as { id: string; hour: number; dauer_min?: number | null }[], hour);
+      if (!treffer.length) return bad("Hier ist keine Dauer-Blockierung (mehr) – bitte die Seite neu laden.");
+      const { error: de } = await service().from("weekly_blocks").delete().in("id", treffer.map((t) => t.id));
+      if (de) return bad("Aufheben fehlgeschlagen: " + de.message);
       return ok({ message: "Dauer-Blockierung aufgehoben." });
     }
     if (action === "createStudent") {
@@ -579,7 +619,11 @@ export async function POST(req: Request): Promise<Response> {
         const arr = apptsByStudent.get(a.student_id) || []; arr.push(a); apptsByStudent.set(a.student_id, arr);
       });
       const fixByStudent = new Map<string, string[]>();
-      (fx || []).forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }) => {
+      // In Wochentag-Reihenfolge anzeigen (Di vor Do), nicht in der
+      // zufaelligen Reihenfolge, in der die Termine gebucht wurden.
+      const fxSortiert = ([...(fx || [])] as { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }[])
+        .sort((a, b) => a.weekday - b.weekday || Number(a.hour) - Number(b.hour));
+      fxSortiert.forEach((f: { student_id: string; weekday: number; hour: number; mode: string | null; dauer_min: number }) => {
         const arr = fixByStudent.get(f.student_id) || [];
         const m = f.mode === "online" ? " · online" : f.mode === "vor_ort" ? " · vor Ort" : "";
         const d = Number(f.dauer_min) || 60;
@@ -677,23 +721,40 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "adminInbox") {
       const sb = service();
-      const [pendRes, pfixRes, cancRes, profRes] = await Promise.all([
+      // Absagen: mehr laden als gezeigt wird, denn mit ✕ ausgeblendete
+      // ("gesehene") fallen gleich noch raus
+      const [pendRes, pfixRes, cancRes, profRes, gesehenWert] = await Promise.all([
         sb.from("appointments").select("student_id,slot_date,hour,kind,mode,note").eq("status", "angefragt").order("slot_date"),
         sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "angefragt"),
-        sb.from("appointments").select("student_id,slot_date,hour,credited,note").eq("kind", "absage").order("slot_date", { ascending: false }).limit(15),
+        sb.from("appointments").select("id,student_id,slot_date,hour,credited,note").eq("kind", "absage").order("slot_date", { ascending: false }).limit(60),
         sb.from("profiles").select("user_id,name"),
+        ladeEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN),
       ]);
       const profs = (profRes.data || []) as { user_id: string; name: string }[];
       const nameOf = (id: string | null) => (id ? profs.find((p) => p.user_id === id)?.name : null) || "—";
       const pend = (pendRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; mode: string | null; note: string | null }[];
       const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
-      const canc = (cancRes.data || []) as { student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
+      const canc = (cancRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
       const requests = [
         ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode })),
         ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode })),
       ];
-      const cancellations = canc.map((c) => ({ date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL }));
+      const gesehen = new Set(gesehenListe(gesehenWert));
+      const cancellations = canc
+        .filter((c) => !gesehen.has(c.id))
+        .slice(0, 15)
+        .map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL }));
       return ok({ inbox: { requests, cancellations } });
+    }
+    if (action === "absageGesehen") {
+      // ✕ in der Absagen-Liste: Eintrag nur AUSBLENDEN – an der Absage selbst
+      // (Minus, Verlauf, Kalender) ändert sich nichts
+      const id = String(body.id || "");
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return bad("Nicht gefunden.");
+      const bisher = gesehenListe(await ladeEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN));
+      const gespeichert = await speichereEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN, JSON.stringify(mitGesehen(bisher, id)));
+      if (!gespeichert) return bad("Konnte das nicht speichern – bitte nochmal versuchen.");
+      return ok({});
     }
 
     return bad("Unbekannte Aktion.");

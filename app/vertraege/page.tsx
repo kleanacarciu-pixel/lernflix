@@ -125,7 +125,10 @@ export default function VertraegeSeite() {
   const [nSatz, setNSatz] = useState('45');
   const [nZweitSatz, setNZweitSatz] = useState('');
   const [nZweitesKind, setNZweitesKind] = useState(false);
-  const [nBeginn, setNBeginn] = useState('');   // Tag der ersten Stunde, beliebig
+  // Tag der ersten Stunde – vorbelegt mit heute, von Kleana frei änderbar
+  // (z. B. für Vertraege, die erst zum 1. Oktober beginnen sollen).
+  const [nBeginn, setNBeginn] = useState(() =>
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }));
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
   // Erziehungsberechtigte – stehen so im Vertrag
   const [eName, setEName] = useState('');
@@ -440,7 +443,8 @@ export default function VertraegeSeite() {
               <input style={feld} type="date" value={nBeginn}
                 onChange={(e) => { setNBeginn(e.target.value); setVorschau(null); }} />
               <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
-                beliebiger Tag – die Raten laufen ab diesem Monat
+                beliebiger Tag – die Raten laufen ab diesem Monat.
+                Termine gibt es erst ab dem ersten Schultag des Schuljahres.
               </span>
             </label>
           </div>

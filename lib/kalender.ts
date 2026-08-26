@@ -19,6 +19,31 @@ export function dauerOk(min: number): boolean {
 export function feinRasterOk(hour: number): boolean {
   return Number.isFinite(hour) && Math.abs(hour * 60 - Math.round(hour * 60)) < 0.01;
 }
+// Meinen zwei (Komma-)Stunden dieselbe Uhrzeit? Verglichen wird mit einer
+// halben Minute Toleranz: Kommazahl-Stunden wie 09:05 (= 9.0833…) können auf
+// dem Weg Datenbank → Anzeige → Klick winzig abweichen, und ein exakter
+// Vergleich ließe dann z. B. das Freigeben einer Blockierung ins Leere laufen.
+export function gleicheStunde(a: number, b: number): boolean {
+  return Math.abs(a - b) < 1 / 120;
+}
+// Uhrzeit als Minuten-Schlüssel (ganze Minute) – für Vergleichs-Maps, damit
+// Werte aus verschiedenen Tabellen nie an der Gleitkomma-Darstellung scheitern
+export function minutenSchluessel(hour: number | string): number {
+  return Math.round(Number(hour) * 60);
+}
+// Welche Block-Zeilen meint der Klick auf "Freigeben"? Getroffen ist ein
+// Block, dessen Start der geklickten Zeit entspricht (halbe Minute Toleranz)
+// – oder in dessen Zeitraum die geklickte Zeit fällt (falls statt des Starts
+// eine überdeckte Rasterzelle ankommt).
+export function blockTreffer<T extends { hour: number | string; dauer_min?: number | null }>(
+  rows: T[], hour: number,
+): T[] {
+  return rows.filter((r) => {
+    const start = Number(r.hour);
+    const ende = start + (Number(r.dauer_min) || 60) / 60;
+    return gleicheStunde(start, hour) || (hour > start && hour < ende);
+  });
+}
 export const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MAIL_FROM = process.env.KALENDER_FROM || "Lerne mit Anna <kalender@lernemitanna.de>";
 const APP_URL = process.env.KALENDER_URL || "https://lernflix.lernemitanna.de/kalender";
@@ -243,16 +268,21 @@ type Intervall = {
 
 // Alle Belegungen eines Tages als Intervalle (mit Namen für die Admin-Sicht).
 // absagen = Anker (student|hour), die an diesem Datum abgesagt wurden.
+/** Kalendertag (Europe/Berlin) eines Zeitstempels, z. B. für created_at. */
+export function berlinDatum(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+}
+
 export function tagIntervalle(
   date: string, wd: number,
-  fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[],
+  fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
   dayAppts: ApptRow[],
   wblocks: { weekday: number; hour: number; dauer_min?: number }[],
   nameOf: (id: string) => string,
 ): Intervall[] {
   const ivs: Intervall[] = [];
   const absage = (sid: string, hour: number) =>
-    dayAppts.some((a) => a.kind === "absage" && Number(a.hour) === hour && a.student_id === sid);
+    dayAppts.some((a) => a.kind === "absage" && gleicheStunde(Number(a.hour), hour) && a.student_id === sid);
   // Blöcke: einzelnes Datum mit eigener Dauer; Dauer-Blöcke eine volle Stunde
   dayAppts.filter((a) => a.kind === "block" && a.status !== "abgesagt")
     .forEach((a) => {
@@ -277,8 +307,17 @@ export function tagIntervalle(
   const sortiert = [...fixe.filter((f) => f.weekday === wd)].sort((a) => (a.status === "aktiv" ? -1 : 1));
   sortiert.forEach((f) => {
     const start = Number(f.hour);
+    // Vor dem Tag der Buchung gab es diesen Termin nicht. Ohne diese Grenze
+    // malte die Wochenansicht den festen Termin auch in längst vergangene
+    // Wochen (Juli/August), sobald jemand zurückblätterte – als hätte dort
+    // Unterricht stattgefunden.
+    if (f.created_at && date < berlinDatum(f.created_at)) return;
+    // Und noch strenger: Der Tag, den die Eltern beim Buchen angeklickt haben
+    // (ab_datum), ist der erste Geltungstag. Bucht Lilly am 24.08. ihren
+    // Donnerstag "ab 03.09.", darf der 27.08. sie nicht zeigen.
+    if (f.ab_datum && date < f.ab_datum) return;
     if (absage(f.student_id, start)) return;
-    if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && iv.start === start)) return;
+    if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && gleicheStunde(iv.start, start))) return;
     const dauer = Number(f.dauer_min) || 60;
     ivs.push({ start, ende: start + dauer / 60, t: f.status === "angefragt" ? "req" : "busy", sid: f.student_id, name: nameOf(f.student_id), fixed: true, mode: f.mode ?? null, dauer });
   });
@@ -292,7 +331,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
 
   // feste Slots + Profile + Ereignisse + Dauer-Blocks parallel laden (schneller)
   const [fxRes, profRes, apptRes, wbRes, ovRes] = await Promise.all([
-    sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min").in("status", ["aktiv", "angefragt"]),
+    sb.from("fixed_slots").select("*").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").gte("slot_date", from).lte("slot_date", to),
     // "*" statt fester Spalten: dauer_min kommt erst mit der V6-Migration,
@@ -305,11 +344,11 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   ]);
   const overrides = new Map<string, string>();
   ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
-    .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${Number(o.hour)}`, o.mode));
+    .forEach((o) => overrides.set(`${o.student_id}|${o.slot_date}-${minutenSchluessel(o.hour)}`, o.mode));
   const namen = new Map<string, string>();
   ((profRes.data || []) as { user_id: string; name: string }[]).forEach((p) => namen.set(p.user_id, p.name));
   const nameOf = (id: string) => namen.get(id) || "Schüler";
-  const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[];
+  const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[];
   const wblocks = (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[];
   const appts = (apptRes.data || []) as ApptRow[];
 
@@ -320,7 +359,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
     const slots: SlotOut[] = HOURS.map((hour) => {
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
       const past = hoursUntil(date, hour) <= 0;
-      const anker = ivs.find((iv) => iv.start === hour);
+      const anker = ivs.find((iv) => gleicheStunde(iv.start, hour));
       const deckt = anker || ivs.find((iv) => iv.start < hour && iv.ende > hour);
       if (!deckt) return { hour, state: past ? "past" : "free" };
       const iv = deckt;
@@ -332,7 +371,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         return basis; // Schüler/öffentlich sehen "belegt"
       }
       // Pro-Datum-Umstellung gewinnt über den Grund-Modus des festen Termins
-      const effMode = overrides.get(`${iv.sid}|${date}-${iv.start}`) ?? iv.mode;
+      const effMode = overrides.get(`${iv.sid}|${date}-${minutenSchluessel(iv.start)}`) ?? iv.mode;
       const mine = role === "student" && iv.sid === viewerId;
       if (role === "admin") return { ...basis, state: iv.t, name: iv.name, fixed: iv.fixed, mode: effMode };
       if (mine) return { ...basis, state: iv.t, mine: true, fixed: iv.fixed, mode: effMode };
@@ -347,7 +386,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         .map((a) => {
           const start = Number(a.hour);
           const fx = a.kind === "absage"
-            ? fixe.find((f) => f.weekday === wd && Number(f.hour) === start && f.student_id === a.student_id)
+            ? fixe.find((f) => f.weekday === wd && gleicheStunde(Number(f.hour), start) && f.student_id === a.student_id)
             : undefined;
           const dauer = (a.kind !== "absage" && Number(a.dauer_min)) || (fx && Number(fx.dauer_min)) || 60;
           const name = a.student_id ? nameOf(a.student_id) : (a.note ? a.note.split("|")[0] : "Gast");
@@ -365,13 +404,13 @@ export async function slotKonflikt(date: string, hour: number, dauerMin: number)
   const sb = service();
   const wd = weekdayOf(date);
   const [fxRes, apRes, wbRes] = await Promise.all([
-    sb.from("fixed_slots").select("student_id,weekday,hour,status,mode,dauer_min").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
+    sb.from("fixed_slots").select("*").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", date),
     sb.from("weekly_blocks").select("*").eq("weekday", wd),
   ]);
   const ivs = tagIntervalle(
     date, wd,
-    (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number }[],
+    (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
     (apRes.data || []) as ApptRow[],
     (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[],
     () => "Schüler",
