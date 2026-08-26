@@ -16,7 +16,7 @@
 // Zahlungen laufen per Überweisung; hier wird nichts eingezogen.
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, userFromToken, getProfile, sendMail, ADMIN_EMAIL } from "@/lib/kalender";
+import { service, userFromToken, getProfile, mailZustellenOderMelden, ADMIN_EMAIL } from "@/lib/kalender";
 import { laufenderVertrag, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { plusstundenPdf, bankverbindung } from "@/lib/vertrag-dokumente";
@@ -191,7 +191,8 @@ export async function POST(req: Request): Promise<Response> {
           faelligAm: faellig,
           erstelltAm: heute,
         });
-        const res = await sendMail(
+        const res = await mailZustellenOderMelden(
+          "Abrechnung der Zusatzstunden",
           p.email,
           "Abrechnung der Zusatzstunden",
           `<p>Hallo,</p>
@@ -202,7 +203,6 @@ export async function POST(req: Request): Promise<Response> {
               <b>Fällig bis:</b> ${faellig.slice(8, 10)}.${faellig.slice(5, 7)}.${faellig.slice(0, 4)}</p>
            <p>Die Aufstellung mit allen Terminen und den Überweisungsdaten findest du im Anhang.</p>
            <p>Liebe Grüße<br>Anna</p>`,
-          undefined,
           { anhaenge: [{ filename: "Zusatzstunden.pdf", content: pdf }], kopieAn: ADMIN_EMAIL },
         );
         verschickt = res.ok;

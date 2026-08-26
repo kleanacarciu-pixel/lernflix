@@ -6,7 +6,7 @@ import { NextResponse, after } from "next/server";
 import {
   service, signInFlexibel, refresh, userFromToken, getProfile, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES,
-  sendMail, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
+  sendMail, mailZustellenOderMelden, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
@@ -22,23 +22,6 @@ export const dynamic = "force-dynamic";
 
 function bad(msg: string, code = 400) { return NextResponse.json({ ok: false, error: msg }, { status: code }); }
 function ok(data: Record<string, unknown> = {}) { return NextResponse.json({ ok: true, ...data }); }
-
-// Mail an eine Familie/einen Schüler verschicken, ohne die Antwort zu
-// verzögern (per after()). Schlägt der Versand fehl, bekäme Kleana das
-// sonst NIE mit – die App meldet "Mail gesendet", egal ob sie ankam. Deshalb
-// hier: bei einem Fehlschlag zusätzlich eine Warnmail an Kleana selbst.
-function mailZustellenOderMelden(kontext: string, to: string, subject: string, html: string) {
-  return sendMail(to, subject, html).then((r) => {
-    if (!r.ok) {
-      console.error(`[mail] ${kontext} an ${to} fehlgeschlagen:`, r.error);
-      void sendMail(ADMIN_EMAIL, "Mail nicht angekommen: " + kontext,
-        `<p>Die Mail „${kontext}“ an <b>${to}</b> konnte nicht gesendet werden:</p>
-         <p style="color:#a12a2a">${r.error}</p>
-         <p>Bitte am besten selbst kurz nachfassen.</p>`);
-    }
-    return r;
-  });
-}
 
 // Slot-Zustand für eine konkrete Aktion prüfen.
 // Die Uhrzeit wird absichtlich NICHT mit .eq("hour", …) in der Datenbank

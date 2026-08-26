@@ -6,7 +6,7 @@
 // =============================================================================
 import { fuelle, alsHtml } from "@/lib/mail-text-kern";
 import { STANDARD_VORLAGEN, standardVorlage } from "@/lib/vorlagen-standard";
-import { service, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
+import { service, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { ladeVertrag, rechneVertrag, buchungErlaubt, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { datumDe } from "@/lib/schuljahr-kern";
@@ -214,7 +214,10 @@ export async function vorlageSenden(
   if (!v) return { ok: false, error: `Für „${schluessel}" gibt es keinen E-Mail-Text.` };
 
   const kopie = opt?.kopieAnAdmin === false || an === ADMIN_EMAIL ? undefined : ADMIN_EMAIL;
-  return sendMail(an, fuelle(v.betreff, werte), alsHtml(fuelle(v.text, werte)), undefined,
+  // Fehlschläge nie lautlos verschlucken: geht die Mail an eine Familie und
+  // scheitert, bekommt Kleana automatisch eine Warnmail (zentral geregelt).
+  return mailZustellenOderMelden(fuelle(v.betreff, werte), an,
+    fuelle(v.betreff, werte), alsHtml(fuelle(v.text, werte)),
     { kopieAn: kopie, anhaenge });
 }
 

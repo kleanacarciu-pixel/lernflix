@@ -11,7 +11,7 @@
 //   erneutSenden – Angebots-E-Mail mit frischem Link erneut verschicken
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, userFromToken, getProfile, sendMail, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
+import { service, userFromToken, getProfile, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
 import {
@@ -676,7 +676,8 @@ export async function POST(req: Request): Promise<Response> {
           : restplan.length
             ? `Die restlichen ${restplan.length} Raten betragen jetzt je <b>${centFormat(neueRate)}</b>.`
             : "Es sind keine weiteren Raten offen.";
-        await sendMail(
+        await mailZustellenOderMelden(
+          "Termin geändert",
           nachher.schueler.email,
           `Termin geändert – Schuljahr ${nachher.schuljahr.name}`,
           `<p>Hallo,</p>
@@ -688,7 +689,6 @@ export async function POST(req: Request): Promise<Response> {
               Bereits gezahlte Raten bleiben unverändert.</p>
            <p>Die neue Terminliste findest du im Anhang.</p>
            <p>Liebe Grüße<br>Anna</p>`,
-          undefined,
           { anhaenge: dateien, kopieAn: ADMIN_EMAIL },
         );
       }
