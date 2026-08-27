@@ -75,6 +75,17 @@ import analysisGym13 from "@/lib/quiz/interaktiv/analysis-gym13";
 import geometrieGym13 from "@/lib/quiz/interaktiv/geometrie-gym13";
 import stochastikGym13 from "@/lib/quiz/interaktiv/stochastik-gym13";
 
+import natZahlenRs5 from "@/lib/quiz/interaktiv/nat-zahlen-rs5";
+import rechnenRs5 from "@/lib/quiz/interaktiv/rechnen-rs5";
+import groessenRs5 from "@/lib/quiz/interaktiv/groessen-rs5";
+import flaecheRs5 from "@/lib/quiz/interaktiv/flaeche-rs5";
+import teilbarkeitRs5 from "@/lib/quiz/interaktiv/teilbarkeit-rs5";
+import bruchrechnenRs6 from "@/lib/quiz/interaktiv/bruchrechnen-rs6";
+import dezimalRs6 from "@/lib/quiz/interaktiv/dezimal-rs6";
+import prozentRs6 from "@/lib/quiz/interaktiv/prozent-rs6";
+import ganzeZahlenRs6 from "@/lib/quiz/interaktiv/ganze-zahlen-rs6";
+import flaechenWinkelRs6 from "@/lib/quiz/interaktiv/flaechen-winkel-rs6";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -129,6 +140,18 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 13, "Analysis (Abitur)")]: analysisGym13,
   [themaKey("mathe", "gymnasium", 13, "Analytische Geometrie (Abitur)")]: geometrieGym13,
   [themaKey("mathe", "gymnasium", 13, "Stochastik (Abitur)")]: stochastikGym13,
+
+  [themaKey("mathe", "realschule", 5, "Natürliche Zahlen & Stellenwert")]: natZahlenRs5,
+  [themaKey("mathe", "realschule", 5, "Rechnen mit natürlichen Zahlen")]: rechnenRs5,
+  [themaKey("mathe", "realschule", 5, "Größen & Einheiten")]: groessenRs5,
+  [themaKey("mathe", "realschule", 5, "Umfang & Flächeninhalt (Rechteck)")]: flaecheRs5,
+  [themaKey("mathe", "realschule", 5, "Teilbarkeit & Primzahlen")]: teilbarkeitRs5,
+
+  [themaKey("mathe", "realschule", 6, "Bruchrechnen")]: bruchrechnenRs6,
+  [themaKey("mathe", "realschule", 6, "Dezimalbrüche")]: dezimalRs6,
+  [themaKey("mathe", "realschule", 6, "Prozent — Grundlagen")]: prozentRs6,
+  [themaKey("mathe", "realschule", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenRs6,
+  [themaKey("mathe", "realschule", 6, "Flächen & Winkel")]: flaechenWinkelRs6,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
