@@ -15,8 +15,8 @@ const STOCHASTIK_GYM13: Aufgabe[] = [
     richtig: 0,
     erklaerung: "E = n · p.",
   },
-  { typ: "input", frage: "Würfel: Wie wahrscheinlich ist eine gerade Zahl? (Als gekürzter Bruch.)", loesung: ["1/2", "3/6"], platzhalter: "z. B. 1/2", erklaerung: "3 von 6: 3/6 = 1/2." },
-  { typ: "input", frage: "Wie groß ist die Wahrscheinlichkeit eines sicheren Ereignisses?", loesung: ["1"], platzhalter: "Zahl", erklaerung: "Ein sicheres Ereignis hat P = 1." },
+  { typ: "input", frage: "Würfel: Wie wahrscheinlich ist eine gerade Zahl? (Als Bruch.)", loesung: ["1/2", "3/6"], platzhalter: "z. B. 1/2", erklaerung: "3 von 6: 3/6 = 1/2." },
+  { typ: "input", frage: "Wie groß ist die Wahrscheinlichkeit eines sicheren Ereignisses?", loesung: ["1", "100 %", "100%"], platzhalter: "Zahl", erklaerung: "Ein sicheres Ereignis hat P = 1." },
   { typ: "input", frage: "Wie viele Möglichkeiten gibt es, aus 4 Dingen 2 auszuwählen?", loesung: ["6"], platzhalter: "Zahl", erklaerung: "C(4, 2) = 6." },
   { typ: "input", frage: "Wie groß ist die Gegenwahrscheinlichkeit von P = 1/4? (Als Bruch.)", loesung: ["3/4"], platzhalter: "z. B. 3/4", erklaerung: "1 − 1/4 = 3/4." },
   { typ: "input", frage: "Eine Münze wird 4-mal geworfen. Wie wahrscheinlich ist 4-mal Kopf? (Als Bruch.)", loesung: ["1/16"], platzhalter: "z. B. 1/16", erklaerung: "(1/2)⁴ = 1/16." },
@@ -43,7 +43,7 @@ const STOCHASTIK_GYM13: Aufgabe[] = [
     erklaerung: "P = 0 bedeutet, das Ereignis kann nicht eintreten.",
   },
   { typ: "input", frage: "Urne mit 2 roten und 3 blauen Kugeln. Wie wahrscheinlich ist rot? (Als Bruch.)", loesung: ["2/5"], platzhalter: "z. B. 2/5", erklaerung: "2 von 5: 2/5." },
-  { typ: "input", frage: "Würfel: Wie wahrscheinlich ist eine Zahl größer als 4? (Als gekürzter Bruch.)", loesung: ["1/3", "2/6"], platzhalter: "z. B. 1/3", erklaerung: "5 und 6 sind günstig: 2/6 = 1/3." },
+  { typ: "input", frage: "Würfel: Wie wahrscheinlich ist eine Zahl größer als 4? (Als Bruch.)", loesung: ["1/3", "2/6"], platzhalter: "z. B. 1/3", erklaerung: "5 und 6 sind günstig: 2/6 = 1/3." },
 ];
 
 export default STOCHASTIK_GYM13;
