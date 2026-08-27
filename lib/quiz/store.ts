@@ -135,6 +135,26 @@ import quadratischMs10 from "@/lib/quiz/interaktiv/quadratisch-ms10";
 import trigonometrieMs10 from "@/lib/quiz/interaktiv/trigonometrie-ms10";
 import prozentZinsMs10 from "@/lib/quiz/interaktiv/prozent-zins-ms10";
 import wahrscheinlichkeitMs10 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-ms10";
+import natZahlenHs5 from "@/lib/quiz/interaktiv/nat-zahlen-hs5";
+import grundrechenartenHs5 from "@/lib/quiz/interaktiv/grundrechenarten-hs5";
+import groessenHs5 from "@/lib/quiz/interaktiv/groessen-hs5";
+import flaecheHs5 from "@/lib/quiz/interaktiv/flaeche-hs5";
+import bruchrechnenHs6 from "@/lib/quiz/interaktiv/bruchrechnen-hs6";
+import dezimalzahlenHs6 from "@/lib/quiz/interaktiv/dezimalzahlen-hs6";
+import prozentHs6 from "@/lib/quiz/interaktiv/prozent-hs6";
+import massstabHs6 from "@/lib/quiz/interaktiv/massstab-hs6";
+import prozentrechnungHs7 from "@/lib/quiz/interaktiv/prozentrechnung-hs7";
+import dreisatzHs7 from "@/lib/quiz/interaktiv/dreisatz-hs7";
+import negativeZahlenHs7 from "@/lib/quiz/interaktiv/negative-zahlen-hs7";
+import flaechenHs7 from "@/lib/quiz/interaktiv/flaechen-hs7";
+import zinsrechnungHs8 from "@/lib/quiz/interaktiv/zinsrechnung-hs8";
+import gleichungenHs8 from "@/lib/quiz/interaktiv/gleichungen-hs8";
+import volumenHs8 from "@/lib/quiz/interaktiv/volumen-hs8";
+import zuordnungenHs8 from "@/lib/quiz/interaktiv/zuordnungen-hs8";
+import pythagorasHs9 from "@/lib/quiz/interaktiv/pythagoras-hs9";
+import kreisHs9 from "@/lib/quiz/interaktiv/kreis-hs9";
+import alltagHs9 from "@/lib/quiz/interaktiv/alltag-hs9";
+import datenHs9 from "@/lib/quiz/interaktiv/daten-hs9";
 
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
@@ -262,6 +282,31 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "mittelschule", 10, "Trigonometrie (Einstieg)")]: trigonometrieMs10,
   [themaKey("mathe", "mittelschule", 10, "Prozent & Zins im Alltag")]: prozentZinsMs10,
   [themaKey("mathe", "mittelschule", 10, "Wahrscheinlichkeit")]: wahrscheinlichkeitMs10,
+
+  [themaKey("mathe", "hauptschule", 5, "Natürliche Zahlen")]: natZahlenHs5,
+  [themaKey("mathe", "hauptschule", 5, "Grundrechenarten")]: grundrechenartenHs5,
+  [themaKey("mathe", "hauptschule", 5, "Größen & Einheiten")]: groessenHs5,
+  [themaKey("mathe", "hauptschule", 5, "Umfang & Fläche")]: flaecheHs5,
+
+  [themaKey("mathe", "hauptschule", 6, "Bruchrechnen — Grundlagen")]: bruchrechnenHs6,
+  [themaKey("mathe", "hauptschule", 6, "Dezimalzahlen")]: dezimalzahlenHs6,
+  [themaKey("mathe", "hauptschule", 6, "Prozent — Einstieg")]: prozentHs6,
+  [themaKey("mathe", "hauptschule", 6, "Maßstab & Größen")]: massstabHs6,
+
+  [themaKey("mathe", "hauptschule", 7, "Prozentrechnung")]: prozentrechnungHs7,
+  [themaKey("mathe", "hauptschule", 7, "Dreisatz")]: dreisatzHs7,
+  [themaKey("mathe", "hauptschule", 7, "Negative Zahlen")]: negativeZahlenHs7,
+  [themaKey("mathe", "hauptschule", 7, "Flächenberechnung")]: flaechenHs7,
+
+  [themaKey("mathe", "hauptschule", 8, "Zinsrechnung")]: zinsrechnungHs8,
+  [themaKey("mathe", "hauptschule", 8, "Gleichungen (Einstieg)")]: gleichungenHs8,
+  [themaKey("mathe", "hauptschule", 8, "Volumen (Quader)")]: volumenHs8,
+  [themaKey("mathe", "hauptschule", 8, "Zuordnungen")]: zuordnungenHs8,
+
+  [themaKey("mathe", "hauptschule", 9, "Satz des Pythagoras")]: pythagorasHs9,
+  [themaKey("mathe", "hauptschule", 9, "Kreis: Umfang & Fläche")]: kreisHs9,
+  [themaKey("mathe", "hauptschule", 9, "Rechnen im Alltag")]: alltagHs9,
+  [themaKey("mathe", "hauptschule", 9, "Daten & Diagramme")]: datenHs9,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
