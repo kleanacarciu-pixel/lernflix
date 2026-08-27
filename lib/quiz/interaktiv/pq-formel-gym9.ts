@@ -23,7 +23,7 @@ const PQ_FORMEL_GYM9: Aufgabe[] = [
   { typ: "input", frage: "Löse x² + 2x − 8 = 0. Gib die positive Lösung an.", loesung: ["2"], platzhalter: "Zahl", erklaerung: "Lösungen x = 2 und x = −4 (2 · (−4) = −8, 2 + (−4) = −2)." },
   {
     typ: "luecke",
-    frage: "Die Gleichung x² − 6x + 8 = 0 lösen.",
+    frage: "Die Gleichung x² − 6x + 8 = 0 lösen. (Kleinere Lösung zuerst.)",
     segmente: ["Die Lösungen sind x = ", { luecke: ["2"] }, " und x = ", { luecke: ["4"] }, "."],
     erklaerung: "2 + 4 = 6 und 2 · 4 = 8, also x = 2 und x = 4.",
   },
