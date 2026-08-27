@@ -352,7 +352,16 @@ export async function POST(req: Request): Promise<Response> {
       await service().auth.admin.updateUserById(sid, { password: crypto.randomUUID() }).catch(() => null);
       const { error } = await service().from("profiles").update({ deleted_at: new Date().toISOString() }).eq("user_id", sid);
       if (error) return bad("Konnte nicht entfernt werden: " + error.message, 500);
-      return ok({ message: `Schüler „${p.name}" entfernt. Verträge, Zahlungen und der Verlauf bleiben erhalten – bei Bedarf kann das Konto wiederhergestellt werden.` });
+      // Der Kalender muss sofort frei werden: feste Wochentermine beenden und
+      // künftige Buchungen absagen. Beendet/abgesagt heißt nur ausgeblendet –
+      // die Zeilen selbst bleiben erhalten (nichts wird gelöscht).
+      const heute = new Date().toISOString().slice(0, 10);
+      await service().from("fixed_slots").update({ status: "beendet" })
+        .eq("student_id", sid).in("status", ["aktiv", "angefragt"]);
+      await service().from("appointments").update({ status: "abgesagt" })
+        .eq("student_id", sid).gte("slot_date", heute).in("status", ["angefragt", "bestaetigt"]);
+      await syncLessons(true);
+      return ok({ message: `Schüler „${p.name}" entfernt. Der feste Termin und offene Buchungen sind aus dem Kalender genommen; Verträge, Zahlungen und der Verlauf bleiben erhalten – bei Bedarf kann das Konto wiederhergestellt werden.` });
     }
 
     if (action === "restoreStudent") {
@@ -364,7 +373,7 @@ export async function POST(req: Request): Promise<Response> {
       await service().auth.admin.updateUserById(sid, { password: neuesPw }).catch(() => null);
       const { error } = await service().from("profiles").update({ deleted_at: null }).eq("user_id", sid);
       if (error) return bad("Konnte nicht wiederhergestellt werden: " + error.message, 500);
-      return ok({ message: `Schüler „${p.name}" wiederhergestellt. Neues Passwort: ${neuesPw}`, password: neuesPw });
+      return ok({ message: `Schüler „${p.name}" wiederhergestellt. Neues Passwort: ${neuesPw}\n\nHinweis: Der feste Wochentermin wurde beim Entfernen beendet – bei Bedarf bitte neu eintragen.`, password: neuesPw });
     }
 
     if (action === "adminBook") {
