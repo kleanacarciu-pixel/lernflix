@@ -105,6 +105,36 @@ import expWachstumRs10 from "@/lib/quiz/interaktiv/exp-wachstum-rs10";
 import trigonometrie2Rs10 from "@/lib/quiz/interaktiv/trigonometrie2-rs10";
 import kugelKegelRs10 from "@/lib/quiz/interaktiv/kugel-kegel-rs10";
 import stochastikRs10 from "@/lib/quiz/interaktiv/stochastik-rs10";
+import natZahlenMs5 from "@/lib/quiz/interaktiv/nat-zahlen-ms5";
+import grundrechenartenMs5 from "@/lib/quiz/interaktiv/grundrechenarten-ms5";
+import groessenMs5 from "@/lib/quiz/interaktiv/groessen-ms5";
+import flaecheMs5 from "@/lib/quiz/interaktiv/flaeche-ms5";
+import teilbarkeitMs5 from "@/lib/quiz/interaktiv/teilbarkeit-ms5";
+import bruchrechnenMs6 from "@/lib/quiz/interaktiv/bruchrechnen-ms6";
+import dezimalzahlenMs6 from "@/lib/quiz/interaktiv/dezimalzahlen-ms6";
+import prozentMs6 from "@/lib/quiz/interaktiv/prozent-ms6";
+import massstabMs6 from "@/lib/quiz/interaktiv/massstab-ms6";
+import flaechenKoerperMs6 from "@/lib/quiz/interaktiv/flaechen-koerper-ms6";
+import prozentrechnungMs7 from "@/lib/quiz/interaktiv/prozentrechnung-ms7";
+import dreisatzMs7 from "@/lib/quiz/interaktiv/dreisatz-ms7";
+import negativeZahlenMs7 from "@/lib/quiz/interaktiv/negative-zahlen-ms7";
+import termeGleichungenMs7 from "@/lib/quiz/interaktiv/terme-gleichungen-ms7";
+import flaechenMs7 from "@/lib/quiz/interaktiv/flaechen-ms7";
+import zinsrechnungMs8 from "@/lib/quiz/interaktiv/zinsrechnung-ms8";
+import zuordnungenMs8 from "@/lib/quiz/interaktiv/zuordnungen-ms8";
+import gleichungenMs8 from "@/lib/quiz/interaktiv/gleichungen-ms8";
+import volumenMs8 from "@/lib/quiz/interaktiv/volumen-ms8";
+import wahrscheinlichkeitMs8 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-ms8";
+import pythagorasMs9 from "@/lib/quiz/interaktiv/pythagoras-ms9";
+import kreisMs9 from "@/lib/quiz/interaktiv/kreis-ms9";
+import zinsen2Ms9 from "@/lib/quiz/interaktiv/zinsen2-ms9";
+import oberflaecheVolumenMs9 from "@/lib/quiz/interaktiv/oberflaeche-volumen-ms9";
+import statistikMs9 from "@/lib/quiz/interaktiv/statistik-ms9";
+import lineareFunktionenMs10 from "@/lib/quiz/interaktiv/lineare-funktionen-ms10";
+import quadratischMs10 from "@/lib/quiz/interaktiv/quadratisch-ms10";
+import trigonometrieMs10 from "@/lib/quiz/interaktiv/trigonometrie-ms10";
+import prozentZinsMs10 from "@/lib/quiz/interaktiv/prozent-zins-ms10";
+import wahrscheinlichkeitMs10 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-ms10";
 
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
@@ -196,6 +226,42 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "realschule", 10, "Trigonometrie vertieft")]: trigonometrie2Rs10,
   [themaKey("mathe", "realschule", 10, "Kugel, Kegel, Pyramide")]: kugelKegelRs10,
   [themaKey("mathe", "realschule", 10, "Stochastik")]: stochastikRs10,
+
+  [themaKey("mathe", "mittelschule", 5, "Natürliche Zahlen")]: natZahlenMs5,
+  [themaKey("mathe", "mittelschule", 5, "Grundrechenarten")]: grundrechenartenMs5,
+  [themaKey("mathe", "mittelschule", 5, "Größen & Einheiten")]: groessenMs5,
+  [themaKey("mathe", "mittelschule", 5, "Umfang & Fläche")]: flaecheMs5,
+  [themaKey("mathe", "mittelschule", 5, "Teilbarkeit")]: teilbarkeitMs5,
+
+  [themaKey("mathe", "mittelschule", 6, "Bruchrechnen — Grundlagen")]: bruchrechnenMs6,
+  [themaKey("mathe", "mittelschule", 6, "Dezimalzahlen")]: dezimalzahlenMs6,
+  [themaKey("mathe", "mittelschule", 6, "Prozent — Einstieg")]: prozentMs6,
+  [themaKey("mathe", "mittelschule", 6, "Maßstab & Größen")]: massstabMs6,
+  [themaKey("mathe", "mittelschule", 6, "Flächen & Körper")]: flaechenKoerperMs6,
+
+  [themaKey("mathe", "mittelschule", 7, "Prozentrechnung")]: prozentrechnungMs7,
+  [themaKey("mathe", "mittelschule", 7, "Dreisatz")]: dreisatzMs7,
+  [themaKey("mathe", "mittelschule", 7, "Rechnen mit negativen Zahlen")]: negativeZahlenMs7,
+  [themaKey("mathe", "mittelschule", 7, "Terme & Gleichungen (Einstieg)")]: termeGleichungenMs7,
+  [themaKey("mathe", "mittelschule", 7, "Flächen (Dreieck, Parallelogramm)")]: flaechenMs7,
+
+  [themaKey("mathe", "mittelschule", 8, "Zinsrechnung")]: zinsrechnungMs8,
+  [themaKey("mathe", "mittelschule", 8, "Zuordnungen & Diagramme")]: zuordnungenMs8,
+  [themaKey("mathe", "mittelschule", 8, "Gleichungen lösen")]: gleichungenMs8,
+  [themaKey("mathe", "mittelschule", 8, "Volumen (Quader, Prisma)")]: volumenMs8,
+  [themaKey("mathe", "mittelschule", 8, "Wahrscheinlichkeit (Einstieg)")]: wahrscheinlichkeitMs8,
+
+  [themaKey("mathe", "mittelschule", 9, "Satz des Pythagoras")]: pythagorasMs9,
+  [themaKey("mathe", "mittelschule", 9, "Kreis: Umfang & Fläche")]: kreisMs9,
+  [themaKey("mathe", "mittelschule", 9, "Zinsrechnung vertieft")]: zinsen2Ms9,
+  [themaKey("mathe", "mittelschule", 9, "Oberfläche & Volumen")]: oberflaecheVolumenMs9,
+  [themaKey("mathe", "mittelschule", 9, "Daten & Statistik")]: statistikMs9,
+
+  [themaKey("mathe", "mittelschule", 10, "Lineare Funktionen")]: lineareFunktionenMs10,
+  [themaKey("mathe", "mittelschule", 10, "Quadratische Zusammenhänge")]: quadratischMs10,
+  [themaKey("mathe", "mittelschule", 10, "Trigonometrie (Einstieg)")]: trigonometrieMs10,
+  [themaKey("mathe", "mittelschule", 10, "Prozent & Zins im Alltag")]: prozentZinsMs10,
+  [themaKey("mathe", "mittelschule", 10, "Wahrscheinlichkeit")]: wahrscheinlichkeitMs10,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
