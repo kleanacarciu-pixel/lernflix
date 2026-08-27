@@ -58,7 +58,7 @@ const KREIS_MS9: Aufgabe[] = [
     richtig: 0,
     erklaerung: "d = U : π = 31,4 : 3,14 = 10 cm.",
   },
-  { typ: "input", frage: "Ein Rad hat den Durchmesser 70 cm. Wie weit rollt es bei einer Umdrehung? (π ≈ 3,14; als Kommazahl in cm)", loesung: ["219,8"], einheit: "cm", platzhalter: "z. B. 219,8", erklaerung: "Eine Umdrehung = Umfang: U = 3,14 · 70 = 219,8 cm (ca. 2,20 m)." },
+  { typ: "input", frage: "Ein Rad hat den Durchmesser 70 cm. Wie weit rollt es bei einer Umdrehung? (π ≈ 3,14; als Kommazahl in cm)", loesung: ["219,8", "219,80"], einheit: "cm", platzhalter: "z. B. 219,8", erklaerung: "Eine Umdrehung = Umfang: U = 3,14 · 70 = 219,8 cm (ca. 2,20 m)." },
   {
     typ: "sortieren",
     frage: "Ordne die Kreise nach ihrer Fläche aufsteigend — beginne beim kleinsten: Kreis mit r = 2 cm, Kreis mit d = 2 cm, Kreis mit r = 3 cm, Kreis mit d = 8 cm",
