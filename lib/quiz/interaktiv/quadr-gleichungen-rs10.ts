@@ -29,7 +29,7 @@ const QUADR_GLEICHUNGEN_RS10: Aufgabe[] = [
   },
   {
     typ: "luecke",
-    frage: "Löse x² − 7x + 10 = 0.",
+    frage: "Löse x² − 7x + 10 = 0. (Kleinere Lösung zuerst.)",
     segmente: ["Die Lösungen sind x = ", { luecke: ["2"] }, " und x = ", { luecke: ["5"] }, "."],
     erklaerung: "2 + 5 = 7 und 2 · 5 = 10, also x = 2 und x = 5.",
   },
