@@ -28,8 +28,8 @@ const MILLION_GS4: Aufgabe[] = [
   },
   {
     typ: "luecke",
-    frage: "Die Zahl 630 500.",
-    segmente: ["Hunderttausender: ", { luecke: ["6"] }, ", Tausender: ", { luecke: ["0"] }, "."],
+    frage: "Die Zahl 630 500 in der Stellenwerttafel: Welche Ziffer steht an der jeweiligen Stelle?",
+    segmente: ["Ziffer an der Hunderttausenderstelle: ", { luecke: ["6"] }, ", Ziffer an der Tausenderstelle: ", { luecke: ["0"] }, "."],
     erklaerung: "630 500 = 6 Hunderttausender, 3 Zehntausender, 0 Tausender, 5 Hunderter.",
   },
   {

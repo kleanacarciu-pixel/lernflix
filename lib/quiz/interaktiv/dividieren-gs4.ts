@@ -12,7 +12,7 @@ const DIVIDIEREN_GS4: Aufgabe[] = [
   { typ: "input", frage: "Rechne schriftlich: 455 : 5", loesung: ["91"], platzhalter: "Zahl", erklaerung: "45 : 5 = 9, 5 : 5 = 1 → 91." },
   { typ: "input", frage: "Rechne schriftlich: 812 : 4", loesung: ["203"], platzhalter: "Zahl", erklaerung: "8 : 4 = 2, 1 : 4 geht nicht (0, Rest 1), 12 : 4 = 3 → 203." },
   { typ: "input", frage: "Rechne: 70 : 10", loesung: ["7"], platzhalter: "Zahl", erklaerung: "Geteilt durch 10: eine Null streichen → 7." },
-  { typ: "input", frage: "Rechne: 29 : 4 — wie groß ist der Rest?", loesung: ["1"], platzhalter: "Zahl", erklaerung: "29 : 4 = 7 Rest 1 (denn 7 · 4 = 28)." },
+  { typ: "input", frage: "Rechne: 29 : 4 — wie groß ist der Rest?", loesung: ["1", "Rest 1", "7 Rest 1"], platzhalter: "Zahl", erklaerung: "29 : 4 = 7 Rest 1 (denn 7 · 4 = 28)." },
   {
     typ: "mc",
     frage: "Wie prüfst du, ob 91 : 7 = 13 stimmt?",
@@ -46,7 +46,7 @@ const DIVIDIEREN_GS4: Aufgabe[] = [
   },
   { typ: "input", frage: "6 Freunde teilen sich 90 Sammelkarten gerecht. Wie viele Karten bekommt jeder?", loesung: ["15"], platzhalter: "Zahl", erklaerung: "90 : 6 = 15 Karten." },
   { typ: "input", frage: "Ein Gärtner pflanzt 144 Blumen in Reihen zu je 8 Blumen. Wie viele Reihen werden das?", loesung: ["18"], platzhalter: "Zahl", erklaerung: "144 : 8 = 18 Reihen." },
-  { typ: "input", frage: "252 Schüler fahren mit Bussen zu je 42 Plätzen. Wie viele Busse braucht man?", loesung: ["6"], platzhalter: "Zahl", erklaerung: "252 : 42 = 6 Busse." },
+  { typ: "input", frage: "252 Schüler stellen sich in 6er-Reihen auf. Wie viele Reihen entstehen?", loesung: ["42"], platzhalter: "Zahl", erklaerung: "252 : 6 = 42 Reihen." },
   {
     typ: "sortieren",
     frage: "Ordne die Ergebnisse von klein nach groß: 60 : 5, 80 : 4, 90 : 6, 100 : 10",
