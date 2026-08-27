@@ -11,7 +11,8 @@ import {
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
 import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
-import { buchungErlaubtGesamt as buchungErlaubt, vorlageSenden } from "@/lib/zahlung";
+import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
+import { buchungErlaubt as vertragUnterschrieben } from "@/lib/vertrag";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
   absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS,
@@ -180,8 +181,10 @@ export async function POST(req: Request): Promise<Response> {
 
     // === SCHÜLER-AKTIONEN ===
     if (action === "requestFixed") {
-      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
-      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
+      // Anfragen sind auch OHNE unterschriebenen Vertrag erlaubt (Kleana
+      // sieht beim Bestaetigen einen Hinweis). Nur die Zahlungssperre
+      // (offene Rate, ab Tag 11) blockiert weiterhin.
+      { const z = await zahlungsSperreFuer(user.id); if (z.gesperrt) return bad(z.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       const s = await inspectSlot(date, hour);
@@ -201,8 +204,9 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
     }
     if (action === "bookExtra") {
-      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
-      { const g = await buchungErlaubt(user.id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
+      // Auch hier: fehlende Unterschrift blockiert nicht mehr, nur die
+      // Zahlungssperre (offene Rate).
+      { const z = await zahlungsSperreFuer(user.id); if (z.gesperrt) return bad(z.grund || "Buchung derzeit nicht moeglich.", 403); }
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
@@ -373,8 +377,10 @@ export async function POST(req: Request): Promise<Response> {
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       if (body.fest === true) {
-      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
-      { const g = await buchungErlaubt(sid); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
+        // Fehlende Vertragsunterschrift blockiert Kleana nicht mehr –
+        // sie bekommt nur einen Hinweis in der Erfolgsmeldung.
+        const u = await vertragUnterschrieben(sid);
+        const hinweis = u.erlaubt ? "" : " Hinweis: Der Vertrag ist noch nicht unterschrieben.";
         // Der angeklickte Tag ist der erste Geltungstag des festen Termins.
         let r = await service().from("fixed_slots").insert({
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin, ab_datum: date,
@@ -385,7 +391,7 @@ export async function POST(req: Request): Promise<Response> {
         if (r.error) return bad("Eintragen fehlgeschlagen: " + r.error.message);
         if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
         await syncLessons(true);
-        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.` });
+        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.${hinweis}` });
       }
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       const counted = await applyEinzelCounting(sp);
@@ -457,12 +463,14 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
-      // Schuljahresmodell: ohne bestaetigte AGB keine Buchung (Abschnitt 4)
-      { const g = await buchungErlaubt(s.fixedPending.student_id); if (!g.erlaubt) return bad(g.grund || "Buchung derzeit nicht moeglich.", 403); }
+        // Fehlende Vertragsunterschrift blockiert das Bestaetigen nicht mehr –
+        // Kleana bekommt nur einen Hinweis in der Erfolgsmeldung.
+        const u = await vertragUnterschrieben(s.fixedPending.student_id);
+        const hinweis = u.erlaubt ? "" : " Hinweis: Der Vertrag ist noch nicht unterschrieben.";
         await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
         const sp = await getProfile(s.fixedPending.student_id);
         if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
-        return ok({ message: "Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet." });
+        return ok({ message: `Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet.${hinweis}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
