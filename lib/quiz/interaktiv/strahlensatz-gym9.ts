@@ -9,9 +9,9 @@ const STRAHLENSATZ_GYM9: Aufgabe[] = [
   {
     typ: "mc",
     frage: "Ähnliche Figuren haben …",
-    antworten: ["dieselbe Form, aber verschiedene Größe", "dieselbe Größe", "denselben Flächeninhalt", "nichts gemeinsam"],
+    antworten: ["dieselbe Form (die Größe kann verschieden sein)", "immer dieselbe Größe", "immer denselben Flächeninhalt", "nichts gemeinsam"],
     richtig: 0,
-    erklaerung: "Ähnliche Figuren sehen gleich aus (gleiche Form/Winkel), können aber unterschiedlich groß sein.",
+    erklaerung: "Ähnliche Figuren sehen gleich aus (gleiche Form/Winkel). Die Größe kann verschieden sein — gleich große ähnliche Figuren heißen kongruent.",
   },
   { typ: "input", frage: "Ein Dreieck wird mit dem Faktor 3 vergrößert. Aus einer 4 cm langen Seite werden … cm?", loesung: ["12"], einheit: "cm", platzhalter: "Zahl", erklaerung: "4 · 3 = 12 cm." },
   { typ: "input", frage: "Vergrößerungsfaktor 2: Aus 5 cm werden … cm?", loesung: ["10"], einheit: "cm", platzhalter: "Zahl", erklaerung: "5 · 2 = 10 cm." },

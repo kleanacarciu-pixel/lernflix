@@ -30,7 +30,7 @@ const ELN_GYM12: Aufgabe[] = [
     richtig: 0,
     erklaerung: "eˣ ist für jedes x größer als 0.",
   },
-  { typ: "input", frage: "Wie groß ist die Zahl e ungefähr? (2 Nachkommastellen)", loesung: ["2,72", "2,718", "2,71"], platzhalter: "z. B. 2,72", erklaerung: "e ≈ 2,718…" },
+  { typ: "input", frage: "Wie groß ist die Zahl e ungefähr? (Auf 2 Nachkommastellen gerundet.)", loesung: ["2,72", "2,718"], platzhalter: "z. B. 2,72", erklaerung: "e ≈ 2,71828…, auf zwei Nachkommastellen gerundet 2,72 (die dritte Stelle 8 rundet auf)." },
   {
     typ: "mc",
     frage: "ln ist die Umkehrfunktion von …",

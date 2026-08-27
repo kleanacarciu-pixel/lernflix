@@ -57,7 +57,7 @@ const DEZIMALBRUECHE_GYM6: Aufgabe[] = [
   {
     typ: "mc",
     frage: "Welche Zahl ist größer: 3/4 oder 0,7?",
-    antworten: ["3/4", "0,7", "Sie sind gleich groß", "0,7 ist größer"],
+    antworten: ["3/4", "0,7", "Sie sind gleich groß", "Das lässt sich nicht vergleichen"],
     richtig: 0,
     erklaerung: "3/4 = 0,75, und 0,75 > 0,70.",
   },

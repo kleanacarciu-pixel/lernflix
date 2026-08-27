@@ -38,7 +38,7 @@ const PROZENT_GYM6: Aufgabe[] = [
     frage: "Was ist mehr: 20 % von 50 oder 50 % von 20?",
     antworten: ["Sie sind gleich (beide 10)", "20 % von 50", "50 % von 20", "Das lässt sich nicht sagen"],
     richtig: 0,
-    erklaerung: "20 % von 50 = 10 und 50 % von 20 = 10. Der Prozentwert darf vertauscht werden.",
+    erklaerung: "20 % von 50 = 10 und 50 % von 20 = 10. Prozentsatz und Grundwert dürfen vertauscht werden: p % von G = G % von p.",
   },
   { typ: "input", frage: "Nach einer Erhöhung um 100 % kostet ein Artikel 30 €. Wie viel kostete er vorher?", loesung: ["15"], einheit: "€", platzhalter: "Zahl", erklaerung: "Erhöhung um 100 % = Verdopplung. Der neue Preis (200 %) ist 30 €, der alte (100 %) also 15 €." },
   { typ: "input", frage: "Ein Test hat 40 Aufgaben, du hast 34 richtig. Wie viel Prozent sind das?", loesung: ["85"], einheit: "%", platzhalter: "Zahl", erklaerung: "34 : 40 = 0,85 = 85 %." },
