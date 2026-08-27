@@ -155,6 +155,30 @@ import pythagorasHs9 from "@/lib/quiz/interaktiv/pythagoras-hs9";
 import kreisHs9 from "@/lib/quiz/interaktiv/kreis-hs9";
 import alltagHs9 from "@/lib/quiz/interaktiv/alltag-hs9";
 import datenHs9 from "@/lib/quiz/interaktiv/daten-hs9";
+import zahlen20Gs1 from "@/lib/quiz/interaktiv/zahlen20-gs1";
+import plusminus20Gs1 from "@/lib/quiz/interaktiv/plusminus20-gs1";
+import zerlegenGs1 from "@/lib/quiz/interaktiv/zerlegen-gs1";
+import laengenGs1 from "@/lib/quiz/interaktiv/laengen-gs1";
+import geldGs1 from "@/lib/quiz/interaktiv/geld-gs1";
+import formenGs1 from "@/lib/quiz/interaktiv/formen-gs1";
+import zahlen100Gs2 from "@/lib/quiz/interaktiv/zahlen100-gs2";
+import plusminus100Gs2 from "@/lib/quiz/interaktiv/plusminus100-gs2";
+import einmaleinsGs2 from "@/lib/quiz/interaktiv/einmaleins-gs2";
+import uhrzeitGs2 from "@/lib/quiz/interaktiv/uhrzeit-gs2";
+import laengenGs2 from "@/lib/quiz/interaktiv/laengen-gs2";
+import geldrechnenGs2 from "@/lib/quiz/interaktiv/geldrechnen-gs2";
+import zahlen1000Gs3 from "@/lib/quiz/interaktiv/zahlen1000-gs3";
+import schriftlichGs3 from "@/lib/quiz/interaktiv/schriftlich-gs3";
+import malteilenGs3 from "@/lib/quiz/interaktiv/malteilen-gs3";
+import laengenGewichteGs3 from "@/lib/quiz/interaktiv/laengen-gewichte-gs3";
+import zeitspannenGs3 from "@/lib/quiz/interaktiv/zeitspannen-gs3";
+import geometrieGs3 from "@/lib/quiz/interaktiv/geometrie-gs3";
+import millionGs4 from "@/lib/quiz/interaktiv/million-gs4";
+import multiplizierenGs4 from "@/lib/quiz/interaktiv/multiplizieren-gs4";
+import dividierenGs4 from "@/lib/quiz/interaktiv/dividieren-gs4";
+import umrechnenGs4 from "@/lib/quiz/interaktiv/umrechnen-gs4";
+import sachaufgabenGs4 from "@/lib/quiz/interaktiv/sachaufgaben-gs4";
+import flaecheGs4 from "@/lib/quiz/interaktiv/flaeche-gs4";
 
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
@@ -307,6 +331,34 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "hauptschule", 9, "Kreis: Umfang & Fläche")]: kreisHs9,
   [themaKey("mathe", "hauptschule", 9, "Rechnen im Alltag")]: alltagHs9,
   [themaKey("mathe", "hauptschule", 9, "Daten & Diagramme")]: datenHs9,
+
+  [themaKey("mathe", "grundschule", 1, "Zahlen bis 20")]: zahlen20Gs1,
+  [themaKey("mathe", "grundschule", 1, "Plus & Minus bis 20")]: plusminus20Gs1,
+  [themaKey("mathe", "grundschule", 1, "Zahlen zerlegen")]: zerlegenGs1,
+  [themaKey("mathe", "grundschule", 1, "Längen & Größenvergleich")]: laengenGs1,
+  [themaKey("mathe", "grundschule", 1, "Geld bis 20 Cent/Euro")]: geldGs1,
+  [themaKey("mathe", "grundschule", 1, "Formen & Muster")]: formenGs1,
+
+  [themaKey("mathe", "grundschule", 2, "Zahlen bis 100")]: zahlen100Gs2,
+  [themaKey("mathe", "grundschule", 2, "Addieren & Subtrahieren bis 100")]: plusminus100Gs2,
+  [themaKey("mathe", "grundschule", 2, "Einmaleins")]: einmaleinsGs2,
+  [themaKey("mathe", "grundschule", 2, "Uhrzeit ablesen")]: uhrzeitGs2,
+  [themaKey("mathe", "grundschule", 2, "Längen (m, cm)")]: laengenGs2,
+  [themaKey("mathe", "grundschule", 2, "Geld rechnen")]: geldrechnenGs2,
+
+  [themaKey("mathe", "grundschule", 3, "Zahlen bis 1000")]: zahlen1000Gs3,
+  [themaKey("mathe", "grundschule", 3, "Schriftlich Addieren & Subtrahieren")]: schriftlichGs3,
+  [themaKey("mathe", "grundschule", 3, "Malnehmen & Teilen")]: malteilenGs3,
+  [themaKey("mathe", "grundschule", 3, "Längen & Gewichte")]: laengenGewichteGs3,
+  [themaKey("mathe", "grundschule", 3, "Zeitspannen")]: zeitspannenGs3,
+  [themaKey("mathe", "grundschule", 3, "Geometrie: Formen & Flächen")]: geometrieGs3,
+
+  [themaKey("mathe", "grundschule", 4, "Zahlen bis 1 Million")]: millionGs4,
+  [themaKey("mathe", "grundschule", 4, "Schriftlich Multiplizieren")]: multiplizierenGs4,
+  [themaKey("mathe", "grundschule", 4, "Schriftlich Dividieren")]: dividierenGs4,
+  [themaKey("mathe", "grundschule", 4, "Größen umrechnen")]: umrechnenGs4,
+  [themaKey("mathe", "grundschule", 4, "Sachaufgaben")]: sachaufgabenGs4,
+  [themaKey("mathe", "grundschule", 4, "Umfang & Fläche (Rechteck)")]: flaecheGs4,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
