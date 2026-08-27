@@ -29,7 +29,7 @@ const KREIS_GYM8: Aufgabe[] = [
   {
     typ: "luecke",
     frage: "Vervollständige.",
-    segmente: ["Die Kreiszahl π ist ungefähr ", { luecke: ["3,14"] }, "."],
+    segmente: ["Die Kreiszahl π ist ungefähr ", { luecke: ["3,14", "3,141", "3,1416", "3,14159"] }, "."],
     erklaerung: "π ≈ 3,14 (genauer 3,14159…).",
   },
   { typ: "input", frage: "Ein Kreis hat den Radius 3 cm. Wie groß ist der Umfang? (π ≈ 3,14)", loesung: ["18,84"], einheit: "cm", platzhalter: "Zahl", erklaerung: "U = 2 · 3,14 · 3 = 18,84 cm." },

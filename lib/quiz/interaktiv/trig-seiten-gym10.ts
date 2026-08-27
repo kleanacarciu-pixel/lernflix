@@ -37,7 +37,7 @@ const TRIG_SEITEN_GYM10: Aufgabe[] = [
   {
     typ: "luecke",
     frage: "Besondere Werte.",
-    segmente: ["sin(30°) = ", { luecke: ["0,5"] }, " und cos(60°) = ", { luecke: ["0,5"] }, "."],
+    segmente: ["sin(30°) = ", { luecke: ["0,5", "1/2"] }, " und cos(60°) = ", { luecke: ["0,5", "1/2"] }, "."],
     erklaerung: "Beide besonderen Werte sind 0,5.",
   },
   { typ: "input", frage: "In einem gleichseitigen Dreieck: Wie groß ist jeder Winkel?", loesung: ["60"], einheit: "°", platzhalter: "Zahl", erklaerung: "180° : 3 = 60°." },

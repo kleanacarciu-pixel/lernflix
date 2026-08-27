@@ -75,6 +75,37 @@ import analysisGym13 from "@/lib/quiz/interaktiv/analysis-gym13";
 import geometrieGym13 from "@/lib/quiz/interaktiv/geometrie-gym13";
 import stochastikGym13 from "@/lib/quiz/interaktiv/stochastik-gym13";
 
+import natZahlenRs5 from "@/lib/quiz/interaktiv/nat-zahlen-rs5";
+import rechnenRs5 from "@/lib/quiz/interaktiv/rechnen-rs5";
+import groessenRs5 from "@/lib/quiz/interaktiv/groessen-rs5";
+import flaecheRs5 from "@/lib/quiz/interaktiv/flaeche-rs5";
+import teilbarkeitRs5 from "@/lib/quiz/interaktiv/teilbarkeit-rs5";
+import bruchrechnenRs6 from "@/lib/quiz/interaktiv/bruchrechnen-rs6";
+import dezimalRs6 from "@/lib/quiz/interaktiv/dezimal-rs6";
+import prozentRs6 from "@/lib/quiz/interaktiv/prozent-rs6";
+import ganzeZahlenRs6 from "@/lib/quiz/interaktiv/ganze-zahlen-rs6";
+import flaechenWinkelRs6 from "@/lib/quiz/interaktiv/flaechen-winkel-rs6";
+import prozentZinsRs7 from "@/lib/quiz/interaktiv/prozent-zins-rs7";
+import dreisatzRs7 from "@/lib/quiz/interaktiv/dreisatz-rs7";
+import termeRs7 from "@/lib/quiz/interaktiv/terme-rs7";
+import dreieckeRs7 from "@/lib/quiz/interaktiv/dreiecke-rs7";
+import wahrscheinlichkeitRs7 from "@/lib/quiz/interaktiv/wahrscheinlichkeit-rs7";
+import lineareFunktionenRs8 from "@/lib/quiz/interaktiv/lineare-funktionen-rs8";
+import gleichungssystemeRs8 from "@/lib/quiz/interaktiv/gleichungssysteme-rs8";
+import potenzenWurzelnRs8 from "@/lib/quiz/interaktiv/potenzen-wurzeln-rs8";
+import koerperRs8 from "@/lib/quiz/interaktiv/koerper-rs8";
+import statistikRs8 from "@/lib/quiz/interaktiv/statistik-rs8";
+import pythagorasRs9 from "@/lib/quiz/interaktiv/pythagoras-rs9";
+import trigonometrieRs9 from "@/lib/quiz/interaktiv/trigonometrie-rs9";
+import kreisRs9 from "@/lib/quiz/interaktiv/kreis-rs9";
+import quadrFunktionenRs9 from "@/lib/quiz/interaktiv/quadr-funktionen-rs9";
+import prismaZylinderRs9 from "@/lib/quiz/interaktiv/prisma-zylinder-rs9";
+import quadrGleichungenRs10 from "@/lib/quiz/interaktiv/quadr-gleichungen-rs10";
+import expWachstumRs10 from "@/lib/quiz/interaktiv/exp-wachstum-rs10";
+import trigonometrie2Rs10 from "@/lib/quiz/interaktiv/trigonometrie2-rs10";
+import kugelKegelRs10 from "@/lib/quiz/interaktiv/kugel-kegel-rs10";
+import stochastikRs10 from "@/lib/quiz/interaktiv/stochastik-rs10";
+
 // Interaktive Aufgabensätze. Schlüssel = fach|schulart|klasse|thema(ohne Emoji).
 // Gymnasium Klasse 6 (alle Themen) und Klasse 5 (alle Themen) sind fertig.
 const INTERAKTIV: Record<string, Aufgabe[]> = {
@@ -129,6 +160,42 @@ const INTERAKTIV: Record<string, Aufgabe[]> = {
   [themaKey("mathe", "gymnasium", 13, "Analysis (Abitur)")]: analysisGym13,
   [themaKey("mathe", "gymnasium", 13, "Analytische Geometrie (Abitur)")]: geometrieGym13,
   [themaKey("mathe", "gymnasium", 13, "Stochastik (Abitur)")]: stochastikGym13,
+
+  [themaKey("mathe", "realschule", 5, "Natürliche Zahlen & Stellenwert")]: natZahlenRs5,
+  [themaKey("mathe", "realschule", 5, "Rechnen mit natürlichen Zahlen")]: rechnenRs5,
+  [themaKey("mathe", "realschule", 5, "Größen & Einheiten")]: groessenRs5,
+  [themaKey("mathe", "realschule", 5, "Umfang & Flächeninhalt (Rechteck)")]: flaecheRs5,
+  [themaKey("mathe", "realschule", 5, "Teilbarkeit & Primzahlen")]: teilbarkeitRs5,
+
+  [themaKey("mathe", "realschule", 6, "Bruchrechnen")]: bruchrechnenRs6,
+  [themaKey("mathe", "realschule", 6, "Dezimalbrüche")]: dezimalRs6,
+  [themaKey("mathe", "realschule", 6, "Prozent — Grundlagen")]: prozentRs6,
+  [themaKey("mathe", "realschule", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenRs6,
+  [themaKey("mathe", "realschule", 6, "Flächen & Winkel")]: flaechenWinkelRs6,
+
+  [themaKey("mathe", "realschule", 7, "Prozent- & Zinsrechnung")]: prozentZinsRs7,
+  [themaKey("mathe", "realschule", 7, "Dreisatz & Proportionalität")]: dreisatzRs7,
+  [themaKey("mathe", "realschule", 7, "Terme & Gleichungen")]: termeRs7,
+  [themaKey("mathe", "realschule", 7, "Dreiecke & Flächen")]: dreieckeRs7,
+  [themaKey("mathe", "realschule", 7, "Wahrscheinlichkeit")]: wahrscheinlichkeitRs7,
+
+  [themaKey("mathe", "realschule", 8, "Lineare Funktionen")]: lineareFunktionenRs8,
+  [themaKey("mathe", "realschule", 8, "Gleichungssysteme")]: gleichungssystemeRs8,
+  [themaKey("mathe", "realschule", 8, "Potenzen & Wurzeln")]: potenzenWurzelnRs8,
+  [themaKey("mathe", "realschule", 8, "Körper: Volumen & Oberfläche")]: koerperRs8,
+  [themaKey("mathe", "realschule", 8, "Statistik")]: statistikRs8,
+
+  [themaKey("mathe", "realschule", 9, "Satz des Pythagoras")]: pythagorasRs9,
+  [themaKey("mathe", "realschule", 9, "Trigonometrie (sin, cos, tan)")]: trigonometrieRs9,
+  [themaKey("mathe", "realschule", 9, "Kreis & Kreisteile")]: kreisRs9,
+  [themaKey("mathe", "realschule", 9, "Quadratische Funktionen")]: quadrFunktionenRs9,
+  [themaKey("mathe", "realschule", 9, "Prisma, Zylinder")]: prismaZylinderRs9,
+
+  [themaKey("mathe", "realschule", 10, "Quadratische Gleichungen")]: quadrGleichungenRs10,
+  [themaKey("mathe", "realschule", 10, "Exponentielles Wachstum")]: expWachstumRs10,
+  [themaKey("mathe", "realschule", 10, "Trigonometrie vertieft")]: trigonometrie2Rs10,
+  [themaKey("mathe", "realschule", 10, "Kugel, Kegel, Pyramide")]: kugelKegelRs10,
+  [themaKey("mathe", "realschule", 10, "Stochastik")]: stochastikRs10,
   [themaKey("mathe", "gymnasium", 6, "Bruchrechnen")]: bruchrechnenGym6,
   [themaKey("mathe", "gymnasium", 6, "Dezimalbrüche")]: dezimalbruecheGym6,
   [themaKey("mathe", "gymnasium", 6, "Ganze Zahlen (negativ)")]: ganzeZahlenGym6,
