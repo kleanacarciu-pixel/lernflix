@@ -44,10 +44,10 @@ const EXPONENTIAL_GYM10: Aufgabe[] = [
   { typ: "input", frage: "Gegeben y = 2ˣ. Welchen y-Wert hat der Graph bei x = 10?", loesung: ["1024", "1 024"], platzhalter: "Zahl", erklaerung: "2¹⁰ = 1024." },
   {
     typ: "mc",
-    frage: "Eine Exponentialfunktion wächst …",
+    frage: "Eine wachsende Exponentialfunktion (Basis größer als 1) wächst …",
     antworten: ["immer schneller", "gleichmäßig (linear)", "gar nicht", "immer langsamer"],
     richtig: 0,
-    erklaerung: "Anders als eine Gerade wächst eine Exponentialfunktion immer steiler.",
+    erklaerung: "Anders als eine Gerade wächst eine Exponentialfunktion mit Basis > 1 immer steiler.",
   },
   { typ: "input", frage: "Gegeben y = 4ˣ. Welchen y-Wert hat der Graph bei x = 0,5? (Tipp: 4 hoch 0,5 = √4)", loesung: ["2"], platzhalter: "Zahl", erklaerung: "4^0,5 = √4 = 2." },
 ];

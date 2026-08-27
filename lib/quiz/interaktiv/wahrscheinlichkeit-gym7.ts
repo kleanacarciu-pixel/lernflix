@@ -25,7 +25,7 @@ const WAHRSCHEINLICHKEIT_GYM7: Aufgabe[] = [
   },
   { typ: "input", frage: "In einer Urne sind 3 rote und 2 blaue Kugeln. Wie wahrscheinlich ziehst du rot? (Als Bruch.)", loesung: ["3/5"], platzhalter: "z. B. 3/5", erklaerung: "3 rote von 5 Kugeln insgesamt: 3/5." },
   { typ: "input", frage: "Wie wahrscheinlich würfelst du eine Zahl kleiner als 3 (also 1 oder 2)? (Als gekürzter Bruch.)", loesung: ["1/3", "2/6"], platzhalter: "z. B. 1/3", erklaerung: "2 günstige von 6: 2/6 = 1/3." },
-  { typ: "input", frage: "Wie wahrscheinlich würfelst du mit einem normalen Würfel eine 7?", loesung: ["0"], platzhalter: "Zahl", erklaerung: "Eine 7 gibt es nicht: 0 günstige Ergebnisse, also P = 0." },
+  { typ: "input", frage: "Wie wahrscheinlich würfelst du mit einem normalen Würfel eine 7?", loesung: ["0", "0/6", "0 %"], platzhalter: "Zahl", erklaerung: "Eine 7 gibt es nicht: 0 günstige Ergebnisse, also P = 0." },
   {
     typ: "luecke",
     frage: "Beim Würfel: Wie wahrscheinlich ist eine gerade Zahl?",
@@ -41,7 +41,7 @@ const WAHRSCHEINLICHKEIT_GYM7: Aufgabe[] = [
     erklaerung: "Ein Laplace-Experiment hat lauter gleich wahrscheinliche Ergebnisse (z. B. der faire Würfel).",
   },
   { typ: "input", frage: "In einer Klasse mit 20 Kindern tragen 5 eine Brille. Wie wahrscheinlich ist es, zufällig ein Brillenkind auszuwählen? (Als gekürzter Bruch.)", loesung: ["1/4", "5/20"], platzhalter: "z. B. 1/4", erklaerung: "5 von 20: 5/20 = 1/4." },
-  { typ: "input", frage: "Wie wahrscheinlich würfelst du eine Zahl kleiner oder gleich 6?", loesung: ["1"], platzhalter: "Zahl", erklaerung: "Alle 6 Ergebnisse sind günstig: 6/6 = 1 (sicheres Ereignis)." },
+  { typ: "input", frage: "Wie wahrscheinlich würfelst du eine Zahl kleiner oder gleich 6?", loesung: ["1", "6/6", "100 %", "100%"], platzhalter: "Zahl", erklaerung: "Alle 6 Ergebnisse sind günstig: 6/6 = 1 (sicheres Ereignis)." },
   {
     typ: "mc",
     frage: "Je größer die Wahrscheinlichkeit eines Ereignisses ist, …",

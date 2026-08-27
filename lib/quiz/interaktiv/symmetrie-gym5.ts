@@ -61,9 +61,9 @@ const SYMMETRIE_GYM5: Aufgabe[] = [
   {
     typ: "mc",
     frage: "Welche Figur hat genau 2 Symmetrieachsen?",
-    antworten: ["Rechteck", "Quadrat", "gleichseitiges Dreieck", "Kreis"],
+    antworten: ["Rechteck (das kein Quadrat ist)", "Quadrat", "gleichseitiges Dreieck", "Kreis"],
     richtig: 0,
-    erklaerung: "Das Rechteck hat 2 Achsen. Quadrat 4, gleichseitiges Dreieck 3, Kreis unendlich.",
+    erklaerung: "Ein Rechteck, das kein Quadrat ist, hat genau 2 Achsen. Quadrat 4, gleichseitiges Dreieck 3, Kreis unendlich viele.",
   },
   { typ: "input", frage: "Wie viele Symmetrieachsen hat ein regelmäßiges Fünfeck?", loesung: ["5"], platzhalter: "Zahl", erklaerung: "Ein regelmäßiges Fünfeck hat 5 Symmetrieachsen." },
   {
