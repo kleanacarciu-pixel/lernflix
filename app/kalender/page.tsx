@@ -351,12 +351,19 @@ export default function KalenderPage() {
 
   // API-Aufruf (mit einmaligem Refresh bei 401)
   const api = useCallback(async (action: string, params: Record<string, unknown> = {}): Promise<Record<string, unknown>> => {
+    // Ein Netzwerk-Wackler (Handy!) darf NIE eine unbehandelte Ausnahme
+    // werden – sonst friert z. B. das Login-Fenster still ein. Stattdessen
+    // kommt eine klare Meldung zurück, die die Oberfläche anzeigen kann.
     const call = async (tok?: string) => {
-      const res = await fetch("/api/kalender", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, token: tok, ...params }),
-      });
-      return { status: res.status, data: (await res.json().catch(() => ({}))) as Record<string, unknown> };
+      try {
+        const res = await fetch("/api/kalender", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, token: tok, ...params }),
+        });
+        return { status: res.status, data: (await res.json().catch(() => ({}))) as Record<string, unknown> };
+      } catch {
+        return { status: 0, data: { ok: false, error: "Keine Verbindung – bitte Internet prüfen und noch einmal versuchen." } as Record<string, unknown> };
+      }
     };
     let r = await call(session?.token);
     if (r.status === 401 && session?.refresh && action !== "refresh" && action !== "login") {
@@ -1097,7 +1104,15 @@ function Info({ title, msg, err, onClose }: { title: string; msg: string; err?: 
 }
 function Login({ onLogin, onClose }: { onLogin: (e: string, p: string) => Promise<string>; onClose: () => void }) {
   const [email, setEmail] = useState(""); const [pw, setPw] = useState(""); const [show, setShow] = useState(false); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
-  async function go() { setLoad(true); setErr(await onLogin(email.trim(), pw)); setLoad(false); }
+  // WICHTIG: load in JEDEM Fall zurücksetzen – bleibt eine Ausnahme
+  // unbehandelt, stünde der Knopf sonst für immer auf "…" (eingefroren).
+  async function go() {
+    if (load) return;
+    setLoad(true);
+    try { setErr(await onLogin(email.trim(), pw)); }
+    catch { setErr("Keine Verbindung – bitte Internet prüfen und noch einmal versuchen."); }
+    finally { setLoad(false); }
+  }
   return <div className="modal"><h2>Einloggen</h2><p>Mit deinem Namen und deinem Passwort. (E-Mail geht auch.)</p>
     <label>Name</label><input type="text" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="z. B. Nora" autoComplete="username" />
     <label>Passwort</label>
