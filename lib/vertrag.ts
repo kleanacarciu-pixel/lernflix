@@ -109,6 +109,13 @@ export async function rechneVertrag(opt: {
     stundensatzCent, stundensatzZweitCent, zweitesKind,
   });
 
+  // Enden ALLE Wochentermine früher (Vertrag mit festem Enddatum, z. B. ein
+  // Abiturient), laufen auch die Raten nur bis zu diesem Monat – die Familie
+  // soll nicht bis Juli zahlen, wenn der Unterricht im April endet. Solange
+  // auch nur eine Zeile bis zum Schuljahresende läuft, bleibt alles wie gehabt.
+  const spaetestesEnde = tage.map((t) => t.bis).sort().pop() || schuljahr.letzter_schultag;
+  const ratenEnde = spaetestesEnde < schuljahr.letzter_schultag ? spaetestesEnde : schuljahr.letzter_schultag;
+
   return {
     tage,
     jahresbetragCent: preis.jahresbetragCent,
@@ -116,7 +123,7 @@ export async function rechneVertrag(opt: {
     raten: ratenplan({
       jahresbetragCent: preis.jahresbetragCent,
       vertragsbeginn,
-      letzterSchultag: schuljahr.letzter_schultag,
+      letzterSchultag: ratenEnde,
     }),
     einmalCent: einmalbetragCent(preis.jahresbetragCent),
     alleTermine: tage.flatMap((t) => t.termine).sort(),

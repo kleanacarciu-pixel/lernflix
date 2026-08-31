@@ -107,8 +107,10 @@ async function vertragsansicht(v: Vollbild) {
   return {
     schuelerName: v.schueler.name,
     schuljahr: v.schuljahr.name,
-    zeiten: v.zeiten.filter((z) => !z.bis_datum).map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
-    zeitText: zeitText(v.zeiten.filter((z) => !z.bis_datum)),
+    // Beendete Zeilen ausblenden – ein festes Vertragsende in der Zukunft
+    // (bis_datum, z. B. Abitur) zählt dabei nicht als beendet.
+    zeiten: v.zeiten.filter((z) => !z.bis_datum || z.bis_datum >= heuteIso()).map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+    zeitText: zeitText(v.zeiten.filter((z) => !z.bis_datum || z.bis_datum >= heuteIso())),
     termine: v.rechnung.alleTermine,
     posten: v.rechnung.posten,
     stundensatzCent: euroZuCent(Number(v.vertrag.stundensatz)),
@@ -163,6 +165,11 @@ async function vertragPdf(v: Vollbild): Promise<Buffer> {
     // Immer der erste tatsächliche Termin – bei einem Quereinstieg ist er
     // die wichtigste Angabe des Vertrags, sonst schadet er nicht.
     abDatum: rechnung.alleTermine[0] ?? null,
+    // Festes Vertragsende: nur wenn ALLE Wochentermine vorzeitig enden
+    // (z. B. Abitur) steht der letzte tatsächliche Termin im Vertrag.
+    bisDatum: zeiten.length && zeiten.every((z) => z.bis_datum)
+      ? rechnung.alleTermine[rechnung.alleTermine.length - 1] ?? null
+      : null,
     stundensatzCent: euroZuCent(Number(vertrag.stundensatz)),
     jahresbetragCent: rechnung.jahresbetragCent,
     zahlweise: vertrag.zahlweise,
@@ -339,10 +346,14 @@ export async function POST(req: Request): Promise<Response> {
   switch (action) {
     // Alle Verträge samt Schülernamen – Grundlage der Admin-Seite
     case "liste": {
-      const [vRes, pRes, sjRes] = await Promise.all([
+      const [vRes, pRes, sjRes, schulenRes] = await Promise.all([
         sb.from("vertraege").select("*").order("erstellt_am", { ascending: false }),
         sb.from("profiles").select("user_id,name,email").eq("role", "student").order("name"),
         sb.from("schuljahre").select("id,name,aktiv"),
+        // Schulen mit eigenen Ferien (z. B. internationale Schulen oder ein
+        // Abschlussjahrgang mit früherem Schulende) – fürs Auswahlfeld im
+        // Formular „Neuer Vertrag". Die Wahl bestimmt die Terminliste.
+        sb.from("schulen").select("id,name").order("name"),
       ]);
       const vertraege = (vRes.data || []) as Vertrag[];
       const profile = (pRes.data || []) as { user_id: string; name: string; email: string | null }[];
@@ -356,13 +367,17 @@ export async function POST(req: Request): Promise<Response> {
       return ok({
         schueler: profile,
         schuljahre: jahre,
+        schulen: (schulenRes.data || []) as { id: string; name: string }[],
         // Ohne hinterlegte Unterschrift entsteht jede Vertrags-PDF ohne die
         // Unterschrift der Anbieterin. Das muss auf der Seite auffallen,
         // bevor der nächste Vertrag rausgeht.
         eigeneUnterschrift: !!(await unterschriftAnbieterin()),
         vertraege: vertraege.map((v) => {
-          // Nur die aktuell gültigen Zeiten anzeigen (beendete Zeilen weglassen)
-          const zeiten = alleZeiten.filter((z) => z.vertrag_id === v.id && !z.bis_datum);
+          // Nur die aktuell gültigen Zeiten anzeigen: bereits beendete Zeilen
+          // weglassen – aber ein festes Vertragsende in der Zukunft (bis_datum,
+          // z. B. Abitur) ist keine beendete Zeile, die bleibt sichtbar.
+          const zeiten = alleZeiten.filter((z) => z.vertrag_id === v.id
+            && (!z.bis_datum || z.bis_datum >= heuteIso()));
           return {
             id: v.id,
             schuelerId: v.schueler_id,
@@ -511,10 +526,14 @@ export async function POST(req: Request): Promise<Response> {
       const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10)
         || sj.erster_schultag.slice(0, 10);
       const beginn = monatsErster(start);
+      // Optionales Enddatum (z. B. Abitur): Termine und Raten nur bis dahin.
+      const ende = text(body.unterrichtsende, 10);
+      if (ende && ende < start) return bad("Die letzte Stunde kann nicht vor der ersten liegen.");
+      const bis = ende && ende < sj.letzter_schultag ? ende : null;
 
       const r = await rechneVertrag({
         schuljahr: sj,
-        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start, bis_datum: bis })),
         stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
@@ -547,16 +566,22 @@ export async function POST(req: Request): Promise<Response> {
       const start = text(body.unterrichtsbeginn, 10) || text(body.vertragsbeginn, 10);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) return bad("Bitte ein gültiges Datum für die erste Stunde angeben.");
       const beginn = monatsErster(start);
+      // Optionales Enddatum (z. B. Abitur): Der Vertrag zählt Termine und
+      // Raten nur bis dahin. Leer = bis zum letzten Schultag des Schuljahres.
+      const ende = text(body.unterrichtsende, 10);
+      if (ende && !/^\d{4}-\d{2}-\d{2}$/.test(ende)) return bad("Bitte ein gültiges Datum für die letzte Stunde angeben.");
+      if (ende && ende < start) return bad("Die letzte Stunde kann nicht vor der ersten liegen.");
+      const bis = ende && ende < sj.letzter_schultag ? ende : null;
 
       const r = await rechneVertrag({
         schuljahr: sj,
-        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start })),
+        zeiten: zeiten.map((z) => ({ ...z, ab_datum: start, bis_datum: bis })),
         stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
       });
       if (!r.alleTermine.length) {
-        return bad("Ab diesem Datum gibt es in dem Wochentermin keine Stunden mehr. Bitte Datum oder Wochentag prüfen.");
+        return bad("In diesem Zeitraum gibt es in dem Wochentermin keine Stunden. Bitte Datum oder Wochentag prüfen.");
       }
 
       const vRes = await sb.from("vertraege").insert({
@@ -587,6 +612,8 @@ export async function POST(req: Request): Promise<Response> {
           vertrag_id: vertrag.id, wochentag: z.wochentag, uhrzeit: z.uhrzeit || "15:00",
           // Nur setzen, wenn der Unterricht nicht am Monatsersten beginnt.
           ab_datum: start === beginn ? null : start,
+          // Festes Vertragsende (z. B. Abitur) – null = bis zum Schuljahresende.
+          bis_datum: bis,
         })),
       );
       if (zRes.error) return bad(zRes.error.message, 500);

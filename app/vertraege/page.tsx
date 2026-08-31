@@ -16,6 +16,7 @@ import Unterschriftsfeld from '@/components/Unterschriftsfeld';
 const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
 type Schueler = { user_id: string; name: string; email: string | null };
+type SchuleWahl = { id: string; name: string };
 type Schuljahr = { id: string; name: string; aktiv: boolean };
 type Zeit = { wochentag: number; uhrzeit: string };
 type VertragZeile = {
@@ -112,6 +113,7 @@ export default function VertraegeSeite() {
   const [abgemeldet, setAbgemeldet] = useState(false);
 
   const [schueler, setSchueler] = useState<Schueler[]>([]);
+  const [schulen, setSchulen] = useState<SchuleWahl[]>([]);
   const [vertraege, setVertraege] = useState<VertragZeile[]>([]);
   const [heute, setHeute] = useState('');
   const [zeigeBeendete, setZeigeBeendete] = useState(false);
@@ -122,6 +124,7 @@ export default function VertraegeSeite() {
 
   // Formular „neuer Vertrag"
   const [nSchueler, setNSchueler] = useState('');
+  const [nSchule, setNSchule] = useState('');
   const [nSatz, setNSatz] = useState('45');
   const [nZweitSatz, setNZweitSatz] = useState('');
   const [nZweitesKind, setNZweitesKind] = useState(false);
@@ -129,6 +132,7 @@ export default function VertraegeSeite() {
   // (z. B. für Vertraege, die erst zum 1. Oktober beginnen sollen).
   const [nBeginn, setNBeginn] = useState(() =>
     new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }));
+  const [nEnde, setNEnde] = useState('');
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
   // Erziehungsberechtigte – stehen so im Vertrag
   const [eName, setEName] = useState('');
@@ -177,6 +181,7 @@ export default function VertraegeSeite() {
     try {
       const d = await api('liste');
       setSchueler((d.schueler || []) as Schueler[]);
+      setSchulen((d.schulen || []) as SchuleWahl[]);
       setVertraege((d.vertraege || []) as VertragZeile[]);
       setHeute(String(d.heute || ''));
       setEigeneUnterschrift(d.eigeneUnterschrift !== false);
@@ -273,6 +278,8 @@ export default function VertraegeSeite() {
 
   const felder = () => ({
     schueler_id: nSchueler,
+    schule_id: nSchule || undefined,
+    unterrichtsende: nEnde || undefined,
     zeiten: nZeiten,
     stundensatz: Number(nSatz.replace(',', '.')) || 0,
     stundensatz_zweittermin: nZweitSatz ? Number(nZweitSatz.replace(',', '.')) : undefined,
@@ -504,6 +511,29 @@ export default function VertraegeSeite() {
                 Termine gibt es erst ab dem ersten Schultag des Schuljahres.
               </span>
             </label>
+            <label style={etikett}>Letzte Stunde am (optional)
+              <input style={feld} type="date" value={nEnde}
+                onChange={(e) => { setNEnde(e.target.value); setVorschau(null); }} />
+              <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
+                leer = bis zum Schuljahresende. Für Abiturienten oder befristete
+                Verträge: Termine und Raten laufen nur bis zu diesem Datum.
+              </span>
+            </label>
+            {/* Nur zeigen, wenn es überhaupt Schulen mit eigenen Ferien gibt –
+                sonst bleibt das Formular so schlank wie bisher. */}
+            {schulen.length > 0 && (
+              <label style={etikett}>Schule (Ferien &amp; Schultage)
+                <select style={feld} value={nSchule}
+                  onChange={(e) => { setNSchule(e.target.value); setVorschau(null); }}>
+                  <option value="">Bayern (Standard)</option>
+                  {schulen.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
+                  bestimmt die Terminliste: In den Ferien dieser Schule gibt es
+                  keine Termine. Pflegen unter „Schuljahr &amp; Ferien&#8220;.
+                </span>
+              </label>
+            )}
           </div>
 
           <div style={{ marginTop: 14 }}>
@@ -594,7 +624,7 @@ export default function VertraegeSeite() {
                   void (async () => {
                     try {
                       const d = await api('anlegen', felder());
-                      setVorschau(null);
+                      setVorschau(null); setNSchule(''); setNEnde('');
                       setEName(''); setEAnschrift(''); setEEmail(''); setETelefon('');
                       await neuLaden();          // erst laden, dann melden
                       if (d.mailVerschickt) setHinweis('Vertrag angelegt, Angebot verschickt.');

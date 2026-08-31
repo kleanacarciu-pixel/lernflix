@@ -153,6 +153,17 @@ describe("Die angekreuzte Zahlweise", () => {
     assert.ok(alles.includes("Einmalzahlung von 1.660,00 €"));
   });
 
+  test("ein festes Vertragsende steht neben der Terminzahl", async () => {
+    // Vertrag mit Enddatum (z. B. Abitur): erster und letzter Termin
+    // erscheinen gemeinsam hinter der Anzahl.
+    // Mehrfach-Leerzeichen glätten: der PDF-Leser setzt den Text aus
+    // einzelnen Stücken zusammen, zwischen denen ein Blank entstehen kann.
+    const alles = texte(inhalt(await nachhilfevertragPdf({
+      ...beispiel, abDatum: "2026-09-15", bisDatum: "2027-04-27",
+    }))).join(" ").replace(/\s+/g, " ");
+    assert.ok(alles.includes("(ab 15.09.2026, bis 27.04.2027)"), "Zeitraum fehlt");
+  });
+
   test("vor der Unterschrift ist keine Zahlweise vorangekreuzt", async () => {
     // Der Haken im Kästchen ist der einzige Strich mit Breite 1,3 („1.3 w") –
     // daran lässt er sich im Inhaltsstrom zählen. In der Datenbank steht vor
