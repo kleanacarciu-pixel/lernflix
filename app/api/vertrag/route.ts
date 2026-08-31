@@ -605,7 +605,6 @@ export async function POST(req: Request): Promise<Response> {
       return res.ok ? ok() : bad(res.error || "Die E-Mail ließ sich nicht senden.", 500);
     }
 
-
     // Wochentag wechseln (Abschnitt 5)
     case "wochentagWechseln": {
       const id = text(body.vertrag_id, 40);
