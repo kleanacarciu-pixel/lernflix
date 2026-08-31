@@ -152,4 +152,16 @@ describe("Die angekreuzte Zahlweise", () => {
     assert.ok(alles.includes("11 Monatsraten à 155,45 €"));
     assert.ok(alles.includes("Einmalzahlung von 1.660,00 €"));
   });
+
+  test("vor der Unterschrift ist keine Zahlweise vorangekreuzt", async () => {
+    // Der Haken im Kästchen ist der einzige Strich mit Breite 1,3 („1.3 w") –
+    // daran lässt er sich im Inhaltsstrom zählen. In der Datenbank steht vor
+    // der Unterschrift nur der Vorgabewert „Raten"; die Eltern kreuzen selbst.
+    const haken = (s: string) => [...s.matchAll(/1\.3 w/g)].length;
+    assert.equal(haken(inhalt(await nachhilfevertragPdf(beispiel))), 0,
+      "kein Kästchen darf vorbelegt sein – die Eltern wählen selbst");
+    assert.equal(haken(inhalt(await nachhilfevertragPdf({
+      ...beispiel, unterzeichnetAm: "2026-09-01T10:15:00Z",
+    }))), 1, "nach der Unterschrift muss die gewählte Zahlweise angekreuzt sein");
+  });
 });

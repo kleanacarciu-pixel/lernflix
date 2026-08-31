@@ -547,9 +547,15 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
 
   d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink).text("Zahlweise:", R, d.y);
   d.moveDown(0.25);
-  ankreuzZeile(d, R, dat.zahlweise === "raten",
+  // Vor der Unterschrift bleiben BEIDE Kästchen leer: Die Eltern wählen die
+  // Zahlweise selbst – auf Papier mit dem Stift, online auf der
+  // Vertragsseite. In der Datenbank steht bis dahin nur der Vorgabewert
+  // „Raten", und der wäre sonst schon angekreuzt, ohne dass jemand
+  // gewählt hat. Erst im unterschriebenen Vertrag ist die Wahl amtlich.
+  const zahlweiseGewaehlt = !!(dat.unterzeichnetAm || dat.agbBestaetigtAm);
+  ankreuzZeile(d, R, zahlweiseGewaehlt && dat.zahlweise === "raten",
     `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} (Sep–Jul, fällig 1.–10.)`);
-  ankreuzZeile(d, R, dat.zahlweise === "einmal",
+  ankreuzZeile(d, R, zahlweiseGewaehlt && dat.zahlweise === "einmal",
     `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag – 50 €)`);
   d.moveDown(0.2);
   d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
