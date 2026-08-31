@@ -7,8 +7,7 @@
 // Nutzt dieselbe Anmeldung wie der Kalender.
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
-
-const LS_KEY = 'lma_kal_session';
+import { rufeApi, ladeSitzung, oeffneMitSitzung } from '@/components/sitzung';
 
 const F = {
   ink: '#0F172A', soft: '#475569', muted: '#94A3B8', line: '#E2E8F0',
@@ -56,41 +55,40 @@ export default function TerminlisteSeite() {
   const [bank, setBank] = useState<Bank | null>(null);
 
   useEffect(() => {
-    try {
-      const roh = localStorage.getItem(LS_KEY);
-      if (roh) setToken((JSON.parse(roh) as { token?: string }).token || '');
-      else setLaden(false);
-    } catch { setLaden(false); }
+    const s = ladeSitzung();
+    setToken(s?.token || '');
+    if (!s?.token) setLaden(false);
   }, []);
 
+  // rufeApi verlängert eine abgelaufene Anmeldung im Hintergrund selbst –
+  // vorher lief der Abruf hier ohne diese Verlängerung, und wer die Seite
+  // nach einer Stunde öffnete, sah nur „Bitte einloggen".
   const holen = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/vertrag', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'meinVertrag', token }),
-      });
-      const d = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      if (!res.ok || !d.ok) throw new Error(String(d.error || 'Das hat nicht geklappt.'));
+      const d = await rufeApi('/api/vertrag', 'meinVertrag', {}, () => setToken(''));
       setDaten((d.vertrag as Vertragsdaten) ?? null);
 
       // Zahlungsstand ist nur ein Zusatz – schlägt er fehl, bleibt die Seite nutzbar.
-      const zRes = await fetch('/api/zahlungen', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'meineZahlungen', token }),
-      });
-      const z = (await zRes.json().catch(() => ({}))) as Record<string, unknown>;
-      if (zRes.ok && z.ok) {
+      try {
+        const z = await rufeApi('/api/zahlungen', 'meineZahlungen', {});
         setZahlstand((z.zahlungen || []) as Zahlstand[]);
         setSperre((z.sperre as Sperre | null) ?? null);
         setBank((z.bank as Bank | null) ?? null);
-      }
+      } catch { /* Seite bleibt ohne Zahlungsstand nutzbar */ }
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
+      const m = e instanceof Error ? e.message : 'Fehler beim Laden.';
+      // Nach echter Abmeldung zeigt die Seite den Anmelde-Hinweis, keinen Fehler.
+      if (m !== 'Bitte einloggen.') setFehler(m);
     } finally { setLaden(false); }
   }, [token]);
 
   useEffect(() => { void holen(); }, [holen]);
+
+  const pdfOeffnen = (art: string) => {
+    // Klappt auch das Verlängern nicht mehr, zeigt die Seite den Anmelde-Hinweis.
+    void oeffneMitSitzung(`/api/vertrag?art=${art}`).catch(() => setToken(''));
+  };
 
   if (!token && !laden) return (
     <Huelle>
@@ -245,18 +243,20 @@ export default function TerminlisteSeite() {
 
       <section style={karte}>
         <h2 style={h2}>Dokumente</h2>
+        {/* Der Token kommt erst beim Klick (und wird bei Bedarf verlängert) –
+            fest im Link wäre er nach etwa einer Stunde abgelaufen. */}
         <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
           {daten.bestaetigt && (
-            <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=vertrag`} target="_blank" rel="noopener">Vertrag (PDF)</a>
+            <button style={knopfHell} onClick={() => pdfOeffnen('vertrag')}>Vertrag (PDF)</button>
           )}
-          <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=terminliste`} target="_blank" rel="noopener">Terminliste (PDF)</a>
+          <button style={knopfHell} onClick={() => pdfOeffnen('terminliste')}>Terminliste (PDF)</button>
           {daten.bestaetigt && (
-            <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=bestaetigung`} target="_blank" rel="noopener">Vertragsbestätigung (PDF)</a>
+            <button style={knopfHell} onClick={() => pdfOeffnen('bestaetigung')}>Vertragsbestätigung (PDF)</button>
           )}
           {daten.bestaetigt && (
-            <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=bescheinigung`} target="_blank" rel="noopener">Zahlungsbescheinigung (PDF)</a>
+            <button style={knopfHell} onClick={() => pdfOeffnen('bescheinigung')}>Zahlungsbescheinigung (PDF)</button>
           )}
-          <a style={knopfHell} href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&art=agb`} target="_blank" rel="noopener">AGB (PDF)</a>
+          <button style={knopfHell} onClick={() => pdfOeffnen('agb')}>AGB (PDF)</button>
         </div>
       </section>
     </Huelle>

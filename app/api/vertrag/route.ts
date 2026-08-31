@@ -863,6 +863,28 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   return ergebnis;
 }
 
+/**
+ * Fehler im PDF-Weg landen direkt in einem Browser-Tab. Rohes JSON wirkt dort
+ * wie ein Absturz – stattdessen gibt es eine kleine Seite mit Erklärung und
+ * dem Weg zurück. Die Meldungen sind eigene Texte, kein Nutzereingang.
+ */
+function fehlerSeite(meldung: string, code: number): Response {
+  const html = `<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lerne mit Anna</title></head>
+<body style="margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fffdf8;color:#0f172a;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px">
+<div style="max-width:440px;text-align:center">
+<div style="font-size:40px">📄</div>
+<h1 style="font-size:20px;margin:10px 0 8px">Die Datei ließ sich nicht öffnen</h1>
+<p style="color:#475569;font-size:15px;line-height:1.5;margin:0 0 18px">${meldung}</p>
+<a href="/kalender" style="display:inline-block;background:#2bb3c0;color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:10px">Zurück zum Kalender</a>
+</div></body></html>`;
+  return new Response(html, {
+    status: code,
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
 // Terminliste als PDF herunterladen (Portal): /api/vertrag?pdf=<token>
 export async function GET(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -872,27 +894,27 @@ export async function GET(req: Request): Promise<Response> {
   const pdfToken = url.searchParams.get("pdf");
   if (pdfToken) {
     const pruef = pruefeVertragToken(pdfToken);
-    if (!pruef.ok) return bad("Dieser Link ist nicht gültig.", 403);
+    if (!pruef.ok) return fehlerSeite("Dieser Link ist nicht mehr gültig. Bitte öffne die Seite neu und tippe den Knopf noch einmal an – oder frag Anna nach einem frischen Link.", 403);
     vertragId = pruef.vertragId;
   } else {
     const sitzung = url.searchParams.get("sitzung") || "";
     const user = sitzung ? await userFromToken(sitzung) : null;
-    if (!user) return bad("Bitte einloggen.", 401);
+    if (!user) return fehlerSeite("Die Anmeldung ist inzwischen abgelaufen. Bitte geh zurück zum Kalender, melde dich an und tippe den PDF-Knopf noch einmal an.", 401);
     const prof = await getProfile(user.id);
-    if (!prof) return bad("Kein Zugang.", 403);
+    if (!prof) return fehlerSeite("Für diesen Zugang ist kein Profil hinterlegt.", 403);
     // Kleana darf jeden Vertrag oeffnen, Schueler nur den eigenen
     const gewuenscht = url.searchParams.get("vertrag") || "";
     if (prof.role === "admin" && gewuenscht) {
       vertragId = gewuenscht;
     } else {
       const eigener = await laufenderVertrag(user.id);
-      if (!eigener) return bad("Für dich ist kein Vertrag hinterlegt.", 404);
+      if (!eigener) return fehlerSeite("Für dich ist noch kein Vertrag hinterlegt. Sobald Anna einen anlegt, findest du die Unterlagen hier.", 404);
       vertragId = eigener.id;
     }
   }
 
   const v = await vollbild(vertragId);
-  if (!v) return bad("Vertrag nicht gefunden.", 404);
+  if (!v) return fehlerSeite("Dieser Vertrag wurde nicht gefunden.", 404);
 
   const art = url.searchParams.get("art") || "terminliste";
 
@@ -900,7 +922,7 @@ export async function GET(req: Request): Promise<Response> {
   // oder ein Foto sein und wird deshalb mit ihrem eigenen Typ ausgeliefert.
   if (art === "extern") {
     const typ = externerTyp(v.vertrag.externe_unterschrift);
-    if (!typ) return bad("Für diesen Vertrag ist keine unterschriebene Fassung hinterlegt.", 404);
+    if (!typ) return fehlerSeite("Für diesen Vertrag ist keine unterschriebene Fassung hinterlegt.", 404);
     const roh = v.vertrag.externe_unterschrift as string;
     const bytes = Buffer.from(roh.slice(roh.indexOf(",") + 1), "base64");
     return new Response(new Uint8Array(bytes), {
@@ -938,7 +960,7 @@ export async function GET(req: Request): Promise<Response> {
     name = "Vertragsbestaetigung.pdf";
   } else if (art === "bescheinigung") {
     const dat = await bescheinigungDaten(vertragId);
-    if (!dat) return bad("Keine Daten für die Bescheinigung.", 404);
+    if (!dat) return fehlerSeite("Für diesen Vertrag gibt es noch keine Zahlungsbescheinigung.", 404);
     datei = await bescheinigungPdf({ ...dat, erstelltAm: new Date().toISOString() });
     name = `Zahlungsbescheinigung-${v.schuljahr.name.replace("/", "-")}.pdf`;
   } else {

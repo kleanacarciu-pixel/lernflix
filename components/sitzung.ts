@@ -99,3 +99,56 @@ export async function rufeApi(
 export function aktuellerToken(): string {
   return ladeSitzung()?.token || '';
 }
+
+/** Läuft der Token ab (oder in der nächsten Minute)? Gelesen wird nur die Ablaufzeit. */
+function laeuftBaldAb(token: string): boolean {
+  try {
+    const roh = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const nutzlast = JSON.parse(atob(roh)) as { exp?: number };
+    return !nutzlast.exp || nutzlast.exp * 1000 < Date.now() + 60_000;
+  } catch { return true; }
+}
+
+/**
+ * Frischer Zugangs-Token für PDF-Abrufe.
+ *
+ * Ein fest in einen Link geschriebener Token läuft nach etwa einer Stunde ab –
+ * wer danach klickte, sah nur „Bitte einloggen". Deshalb wird der Token hier
+ * unmittelbar vor dem Abruf geprüft und bei Bedarf verlängert.
+ */
+export async function frischerToken(): Promise<string> {
+  const sitzung = ladeSitzung();
+  if (!sitzung?.token) throw new Error('Bitte einloggen.');
+  if (!laeuftBaldAb(sitzung.token)) return sitzung.token;
+  if (sitzung.refresh) {
+    try {
+      const rf = await anfrage('/api/kalender', { action: 'refresh', refresh: sitzung.refresh });
+      if (rf.data.ok && rf.data.token) {
+        speichereSitzung({ ...sitzung, token: String(rf.data.token), refresh: String(rf.data.refresh) });
+        return String(rf.data.token);
+      }
+    } catch { /* Netzwerkfehler – unten mit dem alten Token versuchen */ }
+  }
+  // Verlängern ging nicht – ob der alte Token noch reicht, entscheidet der Server.
+  return sitzung.token;
+}
+
+/**
+ * PDF-Weg mit Anmeldung in neuem Tab öffnen.
+ *
+ * Das Fenster geht SOFORT auf – nach dem Warten auf den Token würde der
+ * Popup-Blocker eingreifen – und bekommt die Adresse, sobald der frische
+ * Token da ist.
+ */
+export async function oeffneMitSitzung(pfad: string): Promise<void> {
+  const fenster = window.open('', '_blank');
+  try {
+    const token = await frischerToken();
+    const ziel = `${pfad}${pfad.includes('?') ? '&' : '?'}sitzung=${encodeURIComponent(token)}`;
+    if (fenster) fenster.location.href = ziel;
+    else window.open(ziel, '_blank');
+  } catch (e) {
+    fenster?.close();
+    throw e;
+  }
+}
