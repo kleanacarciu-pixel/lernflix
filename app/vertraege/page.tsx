@@ -151,6 +151,8 @@ export default function VertraegeSeite() {
   const [endeFuer, setEndeFuer] = useState<VertragZeile | null>(null);
   const [eTag, setETag] = useState(0);
   const [eZum, setEZum] = useState('');
+  const [waFuer, setWaFuer] = useState<VertragZeile | null>(null);
+  const [waText, setWaText] = useState('');
   const [kuendFuer, setKuendFuer] = useState<VertragZeile | null>(null);
   const [kZum, setKZum] = useState('');
   const [abrechnung, setAbrechnung] = useState<Abrechnung | null>(null);
@@ -214,6 +216,21 @@ export default function VertraegeSeite() {
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Hochladen.');
     } finally { setXLaedt(false); }
+  }
+
+  /**
+   * Unterschriftslink für WhatsApp holen: Der Server erzeugt einen frischen
+   * Link samt fertigem Nachrichtentext. Verschickt wird dabei nichts –
+   * die Nachricht geht erst raus, wenn sie in WhatsApp abgeschickt wird.
+   */
+  async function whatsappOeffnen(v: VertragZeile) {
+    setFehler(''); setHinweis('');
+    try {
+      const d = await api('whatsappLink', { vertrag_id: v.id });
+      setWaText(String(d.nachricht || ''));
+      setWaFuer(v);
+      await neuLaden();   // der Stand springt ggf. auf „eingeladen"
+    } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
   }
 
   const felder = () => ({
@@ -378,6 +395,11 @@ export default function VertraegeSeite() {
                     onClick={() => void tun(() => api('erneutSenden', { vertrag_id: v.id }),
                       'Vertrag erneut zur Unterschrift verschickt.')}>
                     {v.eingeladenAm ? 'nochmal senden' : 'zur Unterschrift senden'}
+                  </button>
+                )}
+                {!v.bestaetigt && v.status !== 'beendet' && (
+                  <button style={knopfKlein} onClick={() => void whatsappOeffnen(v)}>
+                    per WhatsApp senden
                   </button>
                 )}
                 {!v.bestaetigt && v.status !== 'beendet' && (
@@ -709,6 +731,34 @@ export default function VertraegeSeite() {
                 PDF, PNG oder JPG, höchstens 4 MB. Ein Handyfoto reicht, solange
                 die Unterschrift gut lesbar ist.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------- Vertrag per WhatsApp */}
+        {waFuer && (
+          <div style={overlay} onClick={() => setWaFuer(null)}>
+            <div style={{ ...karte, maxWidth: 560, margin: 0, maxHeight: '88vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Vertrag per WhatsApp – {waFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Die Nachricht unten enthält den Unterschriftslink – er ist 14 Tage
+                gültig, die Familie braucht dafür kein Passwort und keine Anmeldung.
+                Tippe auf „In WhatsApp öffnen“, wähle den Chat der Familie und schicke
+                die Nachricht ab. Oder kopiere den Text und füge ihn selbst ein.
+              </p>
+              <textarea readOnly value={waText}
+                style={{ ...feld, width: '100%', minHeight: 190, fontFamily: 'inherit', fontSize: 13 }} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <a style={{ ...knopf, textDecoration: 'none', display: 'inline-block' }}
+                  href={`https://wa.me/?text=${encodeURIComponent(waText)}`}
+                  target="_blank" rel="noopener">In WhatsApp öffnen</a>
+                <button style={knopfKlein}
+                  onClick={() => { void navigator.clipboard?.writeText(waText);
+                    setHinweis('Nachricht kopiert – jetzt in WhatsApp einfügen und abschicken.'); }}>
+                  Text kopieren
+                </button>
+                <button style={knopfKlein} onClick={() => setWaFuer(null)}>schließen</button>
+              </div>
             </div>
           </div>
         )}

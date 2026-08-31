@@ -9,6 +9,7 @@
 //   vorschau     – Beträge durchrechnen, bevor der Vertrag angelegt wird
 //   anlegen      – Vertrag als 'angeboten' speichern und Angebot verschicken
 //   erneutSenden – Angebots-E-Mail mit frischem Link erneut verschicken
+//   whatsappLink – frischen Unterschriftslink samt Nachricht für WhatsApp holen
 // =============================================================================
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
@@ -19,7 +20,7 @@ import {
   ratenNeuVerteilen, monatsErster,
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
-import { pruefeVertragToken, bestaetigungsLink, vertragToken } from "@/lib/vertrag-token";
+import { pruefeVertragToken, bestaetigungsLink, vertragToken, GUELTIG_TAGE } from "@/lib/vertrag-token";
 import {
   terminlistePdf, vertragsbestaetigungPdf, bescheinigungPdf, bankverbindung,
   nachhilfevertragPdf, agbPdf, markdownPdf,
@@ -603,6 +604,47 @@ export async function POST(req: Request): Promise<Response> {
       if (!id) return bad("Kein Vertrag gewählt.");
       const res = await angebotSenden(id, basisUrl(req));
       return res.ok ? ok() : bad(res.error || "Die E-Mail ließ sich nicht senden.", 500);
+    }
+
+    /**
+     * Unterschriftslink für WhatsApp.
+     *
+     * Normalerweise landet der Link nur bei der Familie (siehe der Hinweis an
+     * angebotSenden) – hier holt Kleana ihn bewusst selbst, um ihn per
+     * WhatsApp weiterzugeben, wenn die Familie das so möchte oder die E-Mail
+     * nicht ankommt. Unterschreiben tut trotzdem die Familie: der Link führt
+     * auf dieselbe Bestätigungsseite wie aus der E-Mail. Verschickt wird hier
+     * nichts – der Server liefert nur Link und fertigen Nachrichtentext.
+     */
+    case "whatsappLink": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (istUnterzeichnet(v.vertrag)) return bad("Dieser Vertrag ist bereits unterschrieben.");
+
+      const link = bestaetigungsLink(id, basisUrl(req));
+      // Ab jetzt gilt der Vertrag als „eingeladen" – Erinnerung und Übersicht
+      // hängen an diesem Zeitstempel, egal ob der Link per E-Mail oder
+      // WhatsApp rausgeht.
+      if (!v.vertrag.eingeladen_am) {
+        await service().from("vertraege")
+          .update({ eingeladen_am: new Date().toISOString() }).eq("id", id);
+      }
+      const nachricht = [
+        `Hallo! Hier ist unser Nachhilfevertrag für ${v.schueler.name} zum Unterschreiben:`,
+        "",
+        link,
+        "",
+        "Einfach den Link antippen – kein Passwort und keine Anmeldung nötig. "
+          + "Ihr seht den Vertrag mit allen Terminen und Beträgen und könnt direkt bestätigen.",
+        "",
+        `Der Link ist ${GUELTIG_TAGE} Tage gültig. Bei Fragen meldet euch gern!`,
+        "",
+        "Liebe Grüße",
+        "Anna",
+      ].join("\n");
+      return ok({ link, nachricht });
     }
 
     // Wochentag wechseln (Abschnitt 5)
