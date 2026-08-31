@@ -151,6 +151,8 @@ export default function VertraegeSeite() {
   const [endeFuer, setEndeFuer] = useState<VertragZeile | null>(null);
   const [eTag, setETag] = useState(0);
   const [eZum, setEZum] = useState('');
+  const [waFuer, setWaFuer] = useState<VertragZeile | null>(null);
+  const [waDatei, setWaDatei] = useState<File | null>(null);
   const [kuendFuer, setKuendFuer] = useState<VertragZeile | null>(null);
   const [kZum, setKZum] = useState('');
   const [abrechnung, setAbrechnung] = useState<Abrechnung | null>(null);
@@ -214,6 +216,48 @@ export default function VertraegeSeite() {
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Hochladen.');
     } finally { setXLaedt(false); }
+  }
+
+  /**
+   * Die Vertrags-PDF laden und zum Teilen bereitlegen, damit Kleana sie per
+   * WhatsApp an die Familie schicken kann (ausdrucken, auf Papier
+   * unterschreiben). Geteilt wird NUR die Datei selbst – nie die
+   * Download-Adresse, denn in der steckt der Anmelde-Token.
+   */
+  async function whatsappOeffnen(v: VertragZeile) {
+    setFehler(''); setHinweis(''); setWaDatei(null); setWaFuer(v);
+    try {
+      const r = await fetch(`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=vertrag`);
+      if (!r.ok) throw new Error('Die Vertrags-PDF ließ sich nicht laden.');
+      const blob = await r.blob();
+      setWaDatei(new File([blob], `Nachhilfevertrag-${v.schuljahr.replace('/', '-')}.pdf`, { type: 'application/pdf' }));
+    } catch (e) {
+      setWaFuer(null);
+      setFehler(e instanceof Error ? e.message : 'Fehler.');
+    }
+  }
+
+  function waHerunterladen() {
+    if (!waDatei) return;
+    const url = URL.createObjectURL(waDatei);
+    const a = document.createElement('a');
+    a.href = url; a.download = waDatei.name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // Handy/iPad: das Teilen-Fenster des Geräts, darin WhatsApp wählen.
+  // Geräte ohne Teilen-Funktion (meist der PC) bekommen die Datei stattdessen
+  // als Download – dann in WhatsApp von Hand anhängen.
+  function waTeilen() {
+    if (!waDatei) return;
+    const daten = { files: [waDatei] };
+    if (navigator.canShare?.(daten)) {
+      // Abbrechen im Teilen-Fenster ist kein Fehler – einfach nichts tun.
+      navigator.share(daten).catch(() => {});
+    } else {
+      waHerunterladen();
+      setHinweis('Teilen kann dieses Gerät nicht – die PDF ist heruntergeladen, bitte in WhatsApp als Datei anhängen.');
+    }
   }
 
   const felder = () => ({
@@ -378,6 +422,11 @@ export default function VertraegeSeite() {
                     onClick={() => void tun(() => api('erneutSenden', { vertrag_id: v.id }),
                       'Vertrag erneut zur Unterschrift verschickt.')}>
                     {v.eingeladenAm ? 'nochmal senden' : 'zur Unterschrift senden'}
+                  </button>
+                )}
+                {!v.bestaetigt && v.status !== 'beendet' && (
+                  <button style={knopfKlein} onClick={() => void whatsappOeffnen(v)}>
+                    Vertrag per WhatsApp
                   </button>
                 )}
                 {!v.bestaetigt && v.status !== 'beendet' && (
@@ -709,6 +758,37 @@ export default function VertraegeSeite() {
                 PDF, PNG oder JPG, höchstens 4 MB. Ein Handyfoto reicht, solange
                 die Unterschrift gut lesbar ist.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* ------------------------------------------- Vertrag per WhatsApp */}
+        {waFuer && (
+          <div style={overlay} onClick={() => setWaFuer(null)}>
+            <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Vertrag per WhatsApp – {waFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Schick der Familie die Vertrags-PDF zum Ausdrucken und Unterschreiben.
+                Auf dem Handy: „PDF teilen“ antippen und im Teilen-Fenster WhatsApp
+                mit dem Chat der Familie wählen. Am Computer: „PDF herunterladen“
+                und die Datei in WhatsApp anhängen.
+              </p>
+              <p style={{ color: F.muted, fontSize: 13 }}>
+                Sobald die unterschriebene Fassung zurückkommt (ein gut lesbares Foto
+                reicht), lädst du sie über „auf Papier unterschrieben“ hoch – erst
+                damit wird der Vertrag aktiv.
+              </p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button disabled={!waDatei}
+                  style={waDatei ? knopf : { ...knopf, background: F.line, color: F.muted, cursor: 'wait' }}
+                  onClick={waTeilen}>
+                  {waDatei ? 'PDF teilen – WhatsApp wählen' : 'PDF wird erstellt …'}
+                </button>
+                <button style={knopfKlein} disabled={!waDatei} onClick={waHerunterladen}>
+                  PDF herunterladen
+                </button>
+                <button style={knopfKlein} onClick={() => setWaFuer(null)}>schließen</button>
+              </div>
             </div>
           </div>
         )}
