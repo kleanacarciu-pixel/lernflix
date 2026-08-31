@@ -428,6 +428,8 @@ export type VertragPdfDaten = {
   anzahlTermine: number;
   /** Beginn bei Quereinstieg – nur gesetzt, wenn nicht ab Schuljahresbeginn. */
   abDatum?: string | null;
+  /** Festes Vertragsende (z. B. Abitur) – nur gesetzt, wenn vor dem Schuljahresende. */
+  bisDatum?: string | null;
   stundensatzCent: number;
   jahresbetragCent: number;
   zahlweise: "raten" | "einmal";
@@ -528,9 +530,13 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
     .map((z) => `${WOCHENTAGE[z.wochentag]}${z.uhrzeit ? ` ${String(z.uhrzeit).slice(0, 5)} Uhr` : ""}`)
     .join(" und ");
   zeileMitFeld(d, R, breite, "Fester Wochentermin (Tag / Uhrzeit):", zeitText, "Dauer: 60 Min.", 190);
+  const zeitraum = [
+    dat.abDatum ? `ab ${datumDe(dat.abDatum)}` : "",
+    dat.bisDatum ? `bis ${datumDe(dat.bisDatum)}` : "",
+  ].filter(Boolean).join(", ");
   zeileMitFeld(d, R, breite,
     `Unterrichtstermine im Vertragszeitraum laut Terminliste (Anlage):`,
-    `${dat.anzahlTermine}${dat.abDatum ? ` (ab ${datumDe(dat.abDatum)})` : ""}`, "Termine", 270);
+    `${dat.anzahlTermine}${zeitraum ? ` (${zeitraum})` : ""}`, "Termine", 270);
   d.moveDown(0.15);
   d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
     .text(HINWEIS_FERIEN, R, d.y, { width: breite, lineGap: 0.5 });
