@@ -10,7 +10,7 @@
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
 import Anmeldehinweis from '@/components/Anmeldehinweis';
-import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
+import { rufeApi, ladeSitzung, aktuellerToken, oeffneMitSitzung } from '@/components/sitzung';
 
 
 type Status = 'bezahlt' | 'offen' | 'ueberfaellig' | 'pausiert';
@@ -248,9 +248,13 @@ export default function ZahlungenSeite() {
                           <button style={mini} onClick={() => { setNotizFuer(z.vertragId); setNotizText(z.notiz); }}>
                             {z.automatikPausiert ? 'Automatik wieder an' : 'Automatik aussetzen'}
                           </button>
-                          <a style={{ ...mini, textDecoration: 'none' }}
-                            href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${z.vertragId}&art=bescheinigung`}
-                            target="_blank" rel="noopener">Bescheinigung</a>
+                          {/* Token erst beim Klick holen – fest im Link wäre er
+                              nach einer Stunde abgelaufen („Bitte einloggen"). */}
+                          <button style={mini}
+                            onClick={() => void oeffneMitSitzung(`/api/vertrag?vertrag=${z.vertragId}&art=bescheinigung`)
+                              .catch((e) => setFehler(e instanceof Error ? e.message : 'Fehler.'))}>
+                            Bescheinigung
+                          </button>
                         </div>
                         {z.notiz && <div style={{ color: F.muted, fontSize: 12, marginTop: 2 }}>{z.notiz}</div>}
                       </td>

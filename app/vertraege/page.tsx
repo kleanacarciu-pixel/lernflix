@@ -10,7 +10,7 @@
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
 import Anmeldehinweis from '@/components/Anmeldehinweis';
-import { rufeApi, ladeSitzung, aktuellerToken } from '@/components/sitzung';
+import { rufeApi, ladeSitzung, aktuellerToken, frischerToken, oeffneMitSitzung } from '@/components/sitzung';
 import Unterschriftsfeld from '@/components/Unterschriftsfeld';
 
 const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
@@ -227,7 +227,10 @@ export default function VertraegeSeite() {
   async function whatsappOeffnen(v: VertragZeile) {
     setFehler(''); setHinweis(''); setWaDatei(null); setWaFuer(v);
     try {
-      const r = await fetch(`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=vertrag`);
+      // Frisch geholter Token statt des beim Seitenaufbau gespeicherten –
+      // der wäre nach etwa einer Stunde abgelaufen („Bitte einloggen").
+      const frisch = await frischerToken();
+      const r = await fetch(`/api/vertrag?sitzung=${encodeURIComponent(frisch)}&vertrag=${v.id}&art=vertrag`);
       if (!r.ok) throw new Error('Die Vertrags-PDF ließ sich nicht laden.');
       const blob = await r.blob();
       setWaDatei(new File([blob], `Nachhilfevertrag-${v.schuljahr.replace('/', '-')}.pdf`, { type: 'application/pdf' }));
@@ -235,6 +238,14 @@ export default function VertraegeSeite() {
       setWaFuer(null);
       setFehler(e instanceof Error ? e.message : 'Fehler.');
     }
+  }
+
+  // PDF in neuem Tab öffnen. Der Token wird erst beim Klick geholt und bei
+  // Bedarf verlängert – fest in einen Link geschrieben wäre er nach etwa
+  // einer Stunde abgelaufen, und der Klick endete bei „Bitte einloggen".
+  function pdfOeffnen(query: string) {
+    oeffneMitSitzung(`/api/vertrag?${query}`)
+      .catch((e) => setFehler(e instanceof Error ? e.message : 'Fehler.'));
   }
 
   function waHerunterladen() {
@@ -435,13 +446,11 @@ export default function VertraegeSeite() {
                   </button>
                 )}
                 {v.hatExterneFassung && (
-                  <a style={{ ...knopfKlein, textDecoration: 'none' }}
-                    href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=extern`}
-                    target="_blank" rel="noopener">hochgeladene Fassung</a>
+                  <button style={knopfKlein}
+                    onClick={() => pdfOeffnen(`vertrag=${v.id}&art=extern`)}>hochgeladene Fassung</button>
                 )}
-                <a style={{ ...knopfKlein, textDecoration: 'none' }}
-                  href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=vertrag`}
-                  target="_blank" rel="noopener">Vertrag</a>
+                <button style={knopfKlein}
+                  onClick={() => pdfOeffnen(`vertrag=${v.id}&art=vertrag`)}>Vertrag</button>
                 {(v.status === 'aktiv' || v.status === 'angeboten') && v.zeiten.length > 1 && (
                   <button style={knopfKlein} onClick={() => {
                     setEndeFuer(v); setETag(v.zeiten[v.zeiten.length - 1].wochentag); setEZum('');
@@ -460,9 +469,8 @@ export default function VertraegeSeite() {
                   setElternFuer(v); setEName(v.eltern?.name || ''); setEAnschrift(v.eltern?.anschrift || '');
                   setEEmail(v.eltern?.email || ''); setETelefon(v.eltern?.telefon || '');
                 }}>{v.eltern?.name ? 'Elterndaten' : 'Elterndaten fehlen'}</button>
-                <a style={{ ...knopfKlein, textDecoration: 'none' }}
-                  href={`/api/vertrag?sitzung=${encodeURIComponent(token)}&vertrag=${v.id}&art=terminliste`}
-                  target="_blank" rel="noopener">Terminliste</a>
+                <button style={knopfKlein}
+                  onClick={() => pdfOeffnen(`vertrag=${v.id}&art=terminliste`)}>Terminliste</button>
                 {v.status !== 'beendet' && (
                   <button style={{ ...knopfKlein, color: F.warn }} onClick={() => kuendigungOeffnen(v)}>
                     {v.kuendigungZum ? 'Abrechnung' : 'kündigen'}
