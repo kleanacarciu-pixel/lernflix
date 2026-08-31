@@ -376,6 +376,26 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ message: `Schüler „${p.name}" wiederhergestellt. Neues Passwort: ${neuesPw}\n\nHinweis: Der feste Wochentermin wurde beim Entfernen beendet – bei Bedarf bitte neu eintragen.`, password: neuesPw });
     }
 
+    if (action === "resetPassword") {
+      // Familie hat das Passwort verloren oder kommt nicht mehr hinein:
+      // Kleana erzeugt ein frisches und gibt es selbst weiter (z. B. per
+      // WhatsApp). Einen „Passwort vergessen"-Mailweg gibt es bewusst nicht –
+      // die Familien laufen ohnehin über Kleana.
+      const sid = String(body.studentId || "");
+      if (!sid) return bad("Kein Schüler angegeben.");
+      const p = await getProfile(sid);
+      if (!p || p.role === "admin") return bad("Nicht erlaubt.");
+      // Entfernte Konten sollen gesperrt bleiben – erst wiederherstellen,
+      // dabei entsteht ohnehin ein frisches Passwort.
+      if ((p as { deleted_at?: string | null }).deleted_at) {
+        return bad("Dieses Konto ist entfernt – bitte zuerst unter „Entfernte Schüler“ wiederherstellen.");
+      }
+      const neuesPw = "LMA-" + crypto.randomUUID().slice(0, 8) + "!7";
+      const { error } = await service().auth.admin.updateUserById(sid, { password: neuesPw });
+      if (error) return bad("Konnte das Passwort nicht setzen: " + error.message, 500);
+      return ok({ password: neuesPw, message: `Neues Passwort für ${p.name}: ${neuesPw}` });
+    }
+
     if (action === "adminBook") {
       // Kleana trägt selbst einen Termin für einen Schüler ein – Start im
       // 5-Minuten-Raster (z. B. 8:05), sofort bestätigt (keine Anfrage).
