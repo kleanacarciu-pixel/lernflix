@@ -339,10 +339,14 @@ export async function POST(req: Request): Promise<Response> {
   switch (action) {
     // Alle Verträge samt Schülernamen – Grundlage der Admin-Seite
     case "liste": {
-      const [vRes, pRes, sjRes] = await Promise.all([
+      const [vRes, pRes, sjRes, schulenRes] = await Promise.all([
         sb.from("vertraege").select("*").order("erstellt_am", { ascending: false }),
         sb.from("profiles").select("user_id,name,email").eq("role", "student").order("name"),
         sb.from("schuljahre").select("id,name,aktiv"),
+        // Schulen mit eigenen Ferien (z. B. internationale Schulen oder ein
+        // Abschlussjahrgang mit früherem Schulende) – fürs Auswahlfeld im
+        // Formular „Neuer Vertrag". Die Wahl bestimmt die Terminliste.
+        sb.from("schulen").select("id,name").order("name"),
       ]);
       const vertraege = (vRes.data || []) as Vertrag[];
       const profile = (pRes.data || []) as { user_id: string; name: string; email: string | null }[];
@@ -356,6 +360,7 @@ export async function POST(req: Request): Promise<Response> {
       return ok({
         schueler: profile,
         schuljahre: jahre,
+        schulen: (schulenRes.data || []) as { id: string; name: string }[],
         // Ohne hinterlegte Unterschrift entsteht jede Vertrags-PDF ohne die
         // Unterschrift der Anbieterin. Das muss auf der Seite auffallen,
         // bevor der nächste Vertrag rausgeht.
