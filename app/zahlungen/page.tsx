@@ -29,6 +29,11 @@ type Plus = {
   schuelerId: string; name: string; anzahl: number;
   stundensatzCent: number; summeCent: number; termine: string[]; warnung: boolean;
 };
+/** Gehaltene Stunde vor dem ersten Vertragstermin – zum Übernehmen als Plus. */
+type VorvertragStunde = {
+  schuelerId: string; name: string; datum: string; minuten: number;
+  mode: string | null; dauerMin: number;
+};
 
 const F = {
   ink: '#0F172A', soft: '#475569', muted: '#94A3B8', line: '#E2E8F0',
@@ -84,6 +89,7 @@ export default function ZahlungenSeite() {
   const [monate, setMonate] = useState<string[]>([]);
   const [zeilen, setZeilen] = useState<Zeile[]>([]);
   const [plus, setPlus] = useState<Plus[]>([]);
+  const [vorvertrag, setVorvertrag] = useState<VorvertragStunde[]>([]);
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
   const [offenVorlagen, setOffenVorlagen] = useState(false);
   const [notizFuer, setNotizFuer] = useState<string>('');
@@ -110,6 +116,7 @@ export default function ZahlungenSeite() {
       setMonate((u.monate || []) as string[]);
       setZeilen((u.zeilen || []) as Zeile[]);
       setPlus((p.schueler || []) as Plus[]);
+      setVorvertrag((p.vorvertrag || []) as VorvertragStunde[]);
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
     } finally { setLaden(false); }
@@ -296,6 +303,35 @@ export default function ZahlungenSeite() {
             Stunden über dem festen Wochentermin. Nachhol- und Minusstunden sind bereits
             verrechnet – hier steht nur, was wirklich zusätzlich anfällt.
           </p>
+          {vorvertrag.length > 0 && (
+            <div style={{
+              border: '1px solid rgba(217,154,54,.5)', background: 'rgba(217,154,54,.08)',
+              borderRadius: 10, padding: '12px 14px', marginBottom: 14,
+            }}>
+              <b style={{ fontSize: 15 }}>Gehaltene Stunden vor Vertragsbeginn</b>
+              <p style={{ color: F.soft, fontSize: 13, margin: '4px 0 8px' }}>
+                Diese festen Termine fanden statt, bevor der Vertrag begann – sie stehen
+                nicht in der Terminliste und würden sonst nie berechnet. Übernimm die
+                Stunden, die wirklich stattgefunden haben, als Plusstunde; Termine ohne
+                Unterricht lässt du einfach stehen.
+              </p>
+              {vorvertrag.map((t) => (
+                <div key={`${t.schuelerId}-${t.datum}-${t.minuten}`}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '5px 0' }}>
+                  <span style={{ fontSize: 14 }}>
+                    <b>{t.name}</b> · {t.datum.slice(8, 10)}.{t.datum.slice(5, 7)}.{t.datum.slice(0, 4)},{' '}
+                    {String(Math.floor(t.minuten / 60)).padStart(2, '0')}:{String(t.minuten % 60).padStart(2, '0')} Uhr
+                  </span>
+                  <button style={knopfKlein}
+                    onClick={() => void tun(() => api('vorvertragAlsPlus', {
+                      schueler_id: t.schuelerId, datum: t.datum, minuten: t.minuten,
+                    }), 'Als Plusstunde übernommen.')}>
+                    als Plusstunde übernehmen
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {!plus.length && <p style={{ color: F.muted }}>Zurzeit sind keine Zusatzstunden offen.</p>}
           {plus.map((p) => (
             <div key={p.schuelerId} style={zeile}>

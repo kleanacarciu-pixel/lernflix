@@ -363,6 +363,94 @@ export async function markiereBezahlt(zahlungId: string, heute = heuteIso()): Pr
   return { ok: true };
 }
 
+// --- Stunden vor Vertragsbeginn ---------------------------------------------
+
+export type VorvertragStunde = {
+  schuelerId: string; name: string; datum: string;
+  /** Startzeit in Minuten seit Mitternacht (Europe/Berlin). */
+  minuten: number; mode: string | null; dauerMin: number;
+};
+
+/** Datum und Uhrzeit einer Stunde in Europe/Berlin zerlegen. */
+function berlinTeile(iso: string): { datum: string; minuten: number } {
+  const d = new Date(iso);
+  const datum = d.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+  const [h, m] = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(d).split(":").map(Number);
+  return { datum, minuten: h * 60 + m };
+}
+
+/**
+ * Gehaltene Stunden VOR dem ersten Vertragstermin.
+ *
+ * Beginnt ein Vertrag später im Monat (erste Stunde z. B. am 16.09.), läuft
+ * der feste Wochentermin im Kalender oft schon vorher. Solche Stunden stehen
+ * weder in der Vertrags-Terminliste noch zählen sie als Plus – sie würden
+ * ohne diesen Sammler NIE abgerechnet. Kleana übernimmt sie per Klick als
+ * Plusstunde; bewusst KEIN Automatismus, denn ein fester Termin, der vor
+ * Vertragsbeginn gar nicht stattfand, darf nicht versehentlich in einer
+ * Abrechnung landen.
+ */
+export async function vorvertraglicheStunden(): Promise<VorvertragStunde[]> {
+  const sb = service();
+  const vRes = await sb.from("vertraege")
+    .select("id,schueler_id,vertragsbeginn")
+    .in("status", ["aktiv", "angeboten"]);
+  const vertraege = (vRes.data || []) as { id: string; schueler_id: string; vertragsbeginn: string }[];
+  if (!vertraege.length) return [];
+  const zRes = await sb.from("vertrag_zeiten")
+    .select("vertrag_id,ab_datum").in("vertrag_id", vertraege.map((v) => v.id));
+  const zeiten = (zRes.data || []) as { vertrag_id: string; ab_datum: string | null }[];
+
+  // Fenster je Schüler: ab Vertragsbeginn (Monatserster) bis zum frühesten
+  // Geltungstag der Wochentermine – erst ab dem deckt der Vertrag die
+  // Stunden ab. ab_datum leer heißt: beginnt am Monatsersten, kein Fenster.
+  const fenster = new Map<string, { von: string; bis: string }>();
+  for (const v of vertraege) {
+    const eigene = zeiten.filter((z) => z.vertrag_id === v.id).map((z) => z.ab_datum);
+    if (!eigene.length || eigene.some((a) => !a)) continue;
+    const bis = (eigene as string[]).sort()[0];
+    if (bis <= v.vertragsbeginn) continue;
+    fenster.set(v.schueler_id, { von: v.vertragsbeginn, bis });
+  }
+  if (!fenster.size) return [];
+
+  const ids = [...fenster.keys()];
+  const frueheste = [...fenster.values()].map((f) => f.von).sort()[0];
+  const [lRes, aRes, pRes] = await Promise.all([
+    // Gehaltene Stunden: bereits zu Ende, im Klassenzimmer materialisiert
+    sb.from("lessons").select("student_id,starts_at,ends_at,mode,kind")
+      .in("student_id", ids)
+      .gte("starts_at", `${frueheste}T00:00:00Z`)
+      .lte("ends_at", new Date().toISOString()),
+    // Alles, was schon als Buchung/Absage erfasst ist, zählt nicht doppelt
+    sb.from("appointments").select("student_id,slot_date,hour")
+      .in("student_id", ids).gte("slot_date", frueheste),
+    sb.from("profiles").select("user_id,name").in("user_id", ids),
+  ]);
+  const namen = new Map(((pRes.data || []) as { user_id: string; name: string }[])
+    .map((p) => [p.user_id, p.name]));
+  const erfasst = new Set(((aRes.data || []) as { student_id: string; slot_date: string; hour: number }[])
+    .map((a) => `${a.student_id}|${a.slot_date}|${Math.round(Number(a.hour) * 60)}`));
+
+  const offen: VorvertragStunde[] = [];
+  for (const l of (lRes.data || []) as { student_id: string; starts_at: string; ends_at: string; mode: string | null; kind: string | null }[]) {
+    if (l.kind === "webinar") continue;
+    const f = fenster.get(l.student_id);
+    if (!f) continue;
+    const { datum, minuten } = berlinTeile(l.starts_at);
+    if (datum < f.von || datum >= f.bis) continue;
+    if (erfasst.has(`${l.student_id}|${datum}|${minuten}`)) continue;
+    const dauerMin = Math.max(30, Math.round((Date.parse(l.ends_at) - Date.parse(l.starts_at)) / 60000));
+    offen.push({
+      schuelerId: l.student_id, name: namen.get(l.student_id) || "Schüler/in",
+      datum, minuten, mode: l.mode, dauerMin,
+    });
+  }
+  return offen.sort((a, b) => a.name.localeCompare(b.name) || a.datum.localeCompare(b.datum));
+}
+
 // --- Plusstunden ------------------------------------------------------------
 
 export type OffenePlusstunden = {
