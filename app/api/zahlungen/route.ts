@@ -23,6 +23,7 @@ import { plusstundenPdf, bankverbindung } from "@/lib/vertrag-dokumente";
 import {
   ladeZahlungen, markiereOffen, markiereBezahlt, ladeVorlagen, offenePlusstunden,
   plusstundenAbrechnen, zahlungsSperreFuer, monatName, heuteIso, status,
+  vorvertraglicheStunden,
   type Zahlung,
 } from "@/lib/zahlung";
 import { STATUS_TEXT, termineEntfallenAb } from "@/lib/zahlung-kern";
@@ -166,7 +167,38 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     case "plusstunden":
-      return ok({ schueler: await offenePlusstunden() });
+      return ok({
+        schueler: await offenePlusstunden(),
+        // Gehaltene feste Termine vor dem ersten Vertragstermin – Kleana
+        // übernimmt sie per Klick als Plusstunde (siehe lib/zahlung.ts).
+        vorvertrag: await vorvertraglicheStunden(),
+      });
+
+    case "vorvertragAlsPlus": {
+      const sid = text(body.schueler_id, 40);
+      const datum = text(body.datum, 10);
+      const minuten = Number(body.minuten);
+      if (!sid || !/^\d{4}-\d{2}-\d{2}$/.test(datum) || !Number.isInteger(minuten)) return bad("Ungültige Stunde.");
+      // Nur übernehmen, was der Sammler wirklich als offen kennt – so lässt
+      // sich hier nichts Beliebiges als Plusstunde eintragen.
+      const offene = await vorvertraglicheStunden();
+      const t = offene.find((x) => x.schuelerId === sid && x.datum === datum && x.minuten === minuten);
+      if (!t) return bad("Diese Stunde ist nicht (mehr) offen.");
+      const ins = await sb.from("appointments").insert({
+        student_id: sid, slot_date: datum, hour: minuten / 60, kind: "einzel",
+        status: "bestaetigt", mode: t.mode || "online", dauer_min: t.dauerMin, counted: "plus",
+      });
+      if (ins.error) return bad("Übernehmen fehlgeschlagen: " + ins.error.message, 500);
+      // Plus-Zähler im Kalender nachziehen, damit Anzeige und Abrechnung
+      // dasselbe sagen.
+      const pRes2 = await sb.from("profiles").select("plus_hours").eq("user_id", sid).single();
+      if (!pRes2.error && pRes2.data) {
+        await sb.from("profiles")
+          .update({ plus_hours: Number((pRes2.data as { plus_hours: number }).plus_hours) + 1 })
+          .eq("user_id", sid);
+      }
+      return ok({ message: "Als Plusstunde übernommen." });
+    }
 
     case "plusstundenAbrechnen": {
       const schuelerId = text(body.schueler_id, 40);
