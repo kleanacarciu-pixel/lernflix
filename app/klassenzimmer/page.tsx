@@ -349,10 +349,28 @@ export default function KlassenzimmerPage() {
     else zeige(String(d.error || "Senden fehlgeschlagen."));
   }
 
+  /**
+   * Aufnahme sicher beenden.
+   *
+   * Der Zustand wird SOFORT auf „gestoppt" gesetzt und die Erkennung
+   * losgelöst – nicht erst im onend des Browsers, denn das kommt auf manchen
+   * Geräten verspätet oder gar nicht, und dann hing der Knopf auf
+   * „Aufnahme stoppen" fest, während das Mikrofon weiterlief.
+   */
+  const diktatStoppen = useCallback(() => {
+    const r = erkennungRef.current;
+    erkennungRef.current = null;
+    setDiktiert(false);
+    try { r?.stop(); } catch { /* war schon beendet */ }
+  }, []);
+
+  // Beim Verlassen der Seite darf keine Aufnahme weiterlaufen.
+  useEffect(() => diktatStoppen, [diktatStoppen]);
+
   // Diktieren starten/stoppen: nutzt die Spracherkennung des Browsers
   // (de-DE); der gesprochene Text landet live im Bericht-Feld
   function diktierenToggle() {
-    if (diktiert) { erkennungRef.current?.stop(); return; }
+    if (diktiert) { diktatStoppen(); return; }
     type ErgebnisListe = { length: number; [i: number]: { 0: { transcript: string } } };
     type Erkennung = {
       lang: string; continuous: boolean; interimResults: boolean;
@@ -369,12 +387,16 @@ export default function KlassenzimmerPage() {
     r.interimResults = true;
     const basis = berichtEntwurf.trim();
     r.onresult = (e) => {
+      // Eine losgelöste Erkennung (gestoppt, Seite gewechselt) darf nicht
+      // weiter ins Feld schreiben – manche Browser liefern nach stop() noch
+      // Ergebnisse nach.
+      if (erkennungRef.current !== r) { try { r.stop(); } catch { /* egal */ } return; }
       let text = "";
       for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
       setBerichtEntwurf((basis ? basis + " " : "") + text.trim());
     };
-    r.onend = () => setDiktiert(false);
-    r.onerror = () => setDiktiert(false);
+    r.onend = () => { if (erkennungRef.current === r) { erkennungRef.current = null; setDiktiert(false); } };
+    r.onerror = () => { if (erkennungRef.current === r) { erkennungRef.current = null; setDiktiert(false); } };
     erkennungRef.current = r;
     setDiktiert(true);
     r.start();
@@ -382,6 +404,9 @@ export default function KlassenzimmerPage() {
 
   // KI-Bericht/Quiz erstellen: dauert 10–40 Sekunden, deshalb mit Hinweis
   async function berichtErstellen() {
+    // Läuft noch eine Aufnahme, erst beenden – sonst wäre der Stopp-Knopf
+    // während der KI-Wartezeit gesperrt und das Mikrofon liefe weiter.
+    if (diktiert) diktatStoppen();
     const eingabe = berichtEntwurf.trim();
     if (!eingabe || kiLaeuft) return;
     setKiLaeuft("Der Bericht wird geschrieben … das dauert etwa eine halbe Minute.");
@@ -590,7 +615,7 @@ export default function KlassenzimmerPage() {
                   value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft} />
                 <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                   <button className={"btnG"} style={diktiert ? { background: "#FDEEEC", color: "#C03A31" } : undefined}
-                    disabled={!!kiLaeuft} onClick={diktierenToggle}>{diktiert ? "Aufnahme stoppen" : "Diktieren"}</button>
+                    disabled={!!kiLaeuft && !diktiert} onClick={diktierenToggle}>{diktiert ? "Aufnahme stoppen" : "Diktieren"}</button>
                   <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>Bericht erstellen</button>
                   <button className="btnG" disabled={!!kiLaeuft || berichte.filter((b) => b.art === "bericht").length === 0}
                     title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>Wiederholungs-Quiz</button>
