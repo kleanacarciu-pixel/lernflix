@@ -33,7 +33,9 @@ function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDat
 function dm(d: Date) { return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`; }
 function iso(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function parseIso(s: string) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
-function hoursUntil(dateStr: string, hour: number) { const d = parseIso(dateStr); d.setHours(hour, 0, 0, 0); return (d.getTime() - Date.now()) / 3600000; }
+// In Minuten rechnen: setHours(14.5) würde die halbe Stunde ABSCHNEIDEN und
+// die 4-Stunden-Vorschau bei :30/:15-Terminen um bis zu 45 Minuten verfälschen.
+function hoursUntil(dateStr: string, hour: number) { const d = parseIso(dateStr); d.setHours(0, Math.round(hour * 60), 0, 0); return (d.getTime() - Date.now()) / 3600000; }
 
 const CSS = `
 .kal *{box-sizing:border-box}

@@ -86,6 +86,19 @@ export async function signIn(email: string, password: string) {
 // Login mit Name ODER E-Mail: Kinder loggen sich einfach mit ihrem Namen
 // ein (Vorname reicht, Groß/Klein egal); die E-Mail bleibt für Einladung
 // und Benachrichtigungen. Bei gleichen Namen entscheidet das Passwort.
+/**
+ * Entfernte (soft-deleted) Konten dürfen sich NIE einloggen – auch dann
+ * nicht, wenn das Passwort-Verwürfeln beim Entfernen fehlgeschlagen sein
+ * sollte. Fehlt die Sicherheit-V1-Migration (kein deleted_at), läuft der
+ * Login normal weiter.
+ */
+async function kontoEntfernt(userId: string): Promise<boolean> {
+  const { data, error } = await service().from("profiles")
+    .select("deleted_at").eq("user_id", userId).maybeSingle();
+  if (error) return false;
+  return !!(data as { deleted_at?: string | null } | null)?.deleted_at;
+}
+
 export async function signInFlexibel(eingabe: string, password: string) {
   if (eingabe.includes("@")) return signInFamilie(eingabe, password);
   const gesucht = eingabe.trim().toLowerCase();
@@ -108,9 +121,12 @@ export async function signInFlexibel(eingabe: string, password: string) {
 }
 export async function signInFamilie(email: string, password: string) {
   const direkt = await signIn(email, password);
-  if (direkt) return direkt;
+  // Auch der E-Mail-Weg prüft deleted_at – vorher tat das nur der Name-Weg,
+  // und ein entferntes Konto mit bekanntem Passwort kam noch hinein.
+  if (direkt) return (await kontoEntfernt(direkt.user.id)) ? null : direkt;
   const { data } = await service().from("profiles").select("user_id").eq("email", email);
   for (const p of (data || []) as { user_id: string }[]) {
+    if (await kontoEntfernt(p.user_id)) continue;
     const { data: u } = await service().auth.admin.getUserById(p.user_id);
     const authMail = u?.user?.email;
     if (!authMail || authMail === email) continue; // schon probiert
@@ -381,7 +397,13 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
       const past = hoursUntil(date, hour) <= 0;
       const anker = ivs.find((iv) => gleicheStunde(iv.start, hour));
-      const deckt = anker || ivs.find((iv) => iv.start < hour && iv.ende > hour);
+      const deckt = anker
+        || ivs.find((iv) => iv.start < hour && iv.ende > hour)
+        // Kurze Zeiträume mit krummem Beginn (z. B. Block 16:15–16:20)
+        // berühren keinen Rasterpunkt – sie gehören in die Zelle, in der sie
+        // beginnen. Ohne diesen Griff wären sie unsichtbar und (bei
+        // Blockierungen) nie wieder freizugeben.
+        || ivs.find((iv) => iv.start > hour && iv.start < hour + 0.5);
       if (!deckt) return { hour, state: past ? "past" : "free" };
       const iv = deckt;
       const basis: SlotOut = { hour, state: "busy", dauer: iv.dauer };
