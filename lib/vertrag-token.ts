@@ -14,6 +14,10 @@ export const GUELTIG_TAGE = 14;
 
 function signatur(vertragId: string, ablauf: number): string {
   const geheim = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  // Ohne Geheimnis NIE signieren: Mit leerem Schlüssel könnte jeder gültige
+  // Links errechnen. Lieber laut scheitern (pruefeVertragToken fängt das ab
+  // und meldet „ungültig") als leise unsicher weiterlaufen.
+  if (!geheim) throw new Error("SUPABASE_SERVICE_ROLE_KEY fehlt – Vertragslinks sind ohne Geheimnis nicht möglich.");
   return createHmac("sha256", geheim).update(`vertrag:${vertragId}:${ablauf}`).digest("hex").slice(0, 32);
 }
 
@@ -37,7 +41,9 @@ export function pruefeVertragToken(token: string, jetzt = Date.now()): TokenPrue
 
   // Signatur zuerst prüfen – erst danach über den Ablauf reden, damit ein
   // gefälschter Token nicht als „nur abgelaufen" durchgeht.
-  const soll = Buffer.from(signatur(vertragId, ablauf));
+  let soll: Buffer;
+  try { soll = Buffer.from(signatur(vertragId, ablauf)); }
+  catch { return { ok: false, grund: "ungueltig" }; }   // fehlendes Geheimnis: fail closed
   const ist = Buffer.from(sig);
   if (soll.length !== ist.length || !timingSafeEqual(soll, ist)) return { ok: false, grund: "ungueltig" };
 

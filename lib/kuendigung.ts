@@ -72,10 +72,16 @@ export async function abrechnungsbild(
     schuleId: vertrag.schule_id,
   });
 
-  // Jeden Termin mit dem Satz seines Wochentags versehen.
-  const satzJeWochentag = new Map(r.posten.map((p) => [p.wochentag, p.satzCent]));
+  // Jeden Termin mit dem Satz seines Wochentags UND Zeitraums versehen: ein
+  // Wochentag kann ZWEI Posten haben (ermäßigt, solange der Familienpreis
+  // galt, danach regulär). Eine Map nur je Wochentag verlor den ermäßigten
+  // Satz – die Endabrechnung bewertete Familienpreis-Stunden dann zu teuer.
+  const satzFuer = (wochentag: number, datum: string): number => {
+    const p = r.posten.find((x) => x.wochentag === wochentag && datum >= x.von && datum <= x.bis);
+    return p?.satzCent ?? satzCent;
+  };
   const termine: Vertragstermin[] = r.tage.flatMap((t) =>
-    t.termine.map((d) => ({ datum: d, satzCent: satzJeWochentag.get(t.wochentag) ?? satzCent })),
+    t.termine.map((d) => ({ datum: d, satzCent: satzFuer(t.wochentag, d) })),
   ).sort((a, b) => a.datum.localeCompare(b.datum));
 
   // Absagen und noch nicht abgerechnete Zusatzstunden dieses Schülers

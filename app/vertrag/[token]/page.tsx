@@ -12,8 +12,8 @@
 // =============================================================================
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
-
-const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+// Gemeinsame Anzeige-Helfer aus dem Kern statt einer eigenen Kopie je Seite.
+import { WOCHENTAGE, datumDe } from '@/lib/schuljahr-kern';
 
 const F = {
   ink: '#0F172A', soft: '#475569', muted: '#94A3B8', line: '#E2E8F0',
@@ -41,7 +41,6 @@ type Daten = {
 };
 
 const eur = (c: number) => (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const datumDe = (iso: string) => { const [j, m, t] = iso.split('-'); return `${t}.${m}.${j}`; };
 const monatName = (iso: string) => {
   const [j, m] = iso.split('-');
   return `${['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][Number(m) - 1]} ${j}`;

@@ -12,8 +12,8 @@ import { useCallback, useEffect, useState } from 'react';
 import Anmeldehinweis from '@/components/Anmeldehinweis';
 import { rufeApi, ladeSitzung, aktuellerToken, frischerToken, oeffneMitSitzung } from '@/components/sitzung';
 import Unterschriftsfeld from '@/components/Unterschriftsfeld';
-
-const WOCHENTAGE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+// Gemeinsame Anzeige-Helfer aus dem Kern statt einer dritten Kopie je Seite.
+import { WOCHENTAGE, datumDe } from '@/lib/schuljahr-kern';
 
 type Schueler = { user_id: string; name: string; email: string | null };
 type SchuleWahl = { id: string; name: string };
@@ -63,7 +63,6 @@ const F = {
 };
 
 const eur = (c: number) => (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const datumDe = (iso: string) => { const [j, m, t] = iso.split('-'); return t ? `${t}.${m}.${j}` : iso; };
 const monatName = (iso: string) => {
   const [j, m] = iso.split('-');
   return `${['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][Number(m) - 1]} ${j}`;
@@ -91,8 +90,12 @@ function seitTagen(iso: string | null, heute: string): number | null {
   // Nur die Kalendertage vergleichen. Mit der Uhrzeit käme bei einer
   // Einladung um 18 Uhr ein Tag zu wenig heraus – gezählt wird aber so,
   // wie ein Mensch zählt: vom 17. bis zum 23. sind es sechs Tage.
+  // Der Kalendertag des Zeitstempels wird in Europe/Berlin bestimmt: das
+  // rohe iso.slice(0,10) war der UTC-Tag, und eine Einladung um 0:30 Uhr
+  // zählte damit vom Vortag – „seit X Tagen" lag dann einen Tag zu hoch.
+  const isoTag = new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' });
   const tage = Math.round(
-    (Date.parse(`${heute}T00:00:00Z`) - Date.parse(`${iso.slice(0, 10)}T00:00:00Z`)) / 86_400_000,
+    (Date.parse(`${heute}T00:00:00Z`) - Date.parse(`${isoTag}T00:00:00Z`)) / 86_400_000,
   );
   return tage >= 0 ? tage : 0;
 }
@@ -140,6 +143,14 @@ export default function VertraegeSeite() {
   const [eEmail, setEEmail] = useState('');
   const [eTelefon, setETelefon] = useState('');
   const [elternFuer, setElternFuer] = useState<VertragZeile | null>(null);
+  // Eigene Felder fürs Elterndaten-Fenster eines BESTEHENDEN Vertrags.
+  // Vorher teilte es sich die eName/…-Felder mit dem Formular „Neuer
+  // Vertrag" – ein Blick in fremde Elterndaten überschrieb dort still die
+  // gerade eingetippten Angaben der neuen Familie.
+  const [oName, setOName] = useState('');
+  const [oAnschrift, setOAnschrift] = useState('');
+  const [oEmail, setOEmail] = useState('');
+  const [oTelefon, setOTelefon] = useState('');
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
   // Rückfall: auf Papier unterschrieben
   const [externFuer, setExternFuer] = useState<VertragZeile | null>(null);
@@ -305,9 +316,12 @@ export default function VertraegeSeite() {
     if (!token || !vollstaendig || vorschau) return;
     const t = setTimeout(() => { void vorschauHolen(); }, 300);
     return () => clearTimeout(t);
-    // vorschauHolen haengt an den Formularfeldern; die stehen alle in vollstaendig.
+    // vorschauHolen haengt an den Formularfeldern. nEnde und nSchule stehen
+    // MIT in der Liste: Ohne sie konnte ein noch laufender Abruf die
+    // Vorschau fuer das alte Enddatum bzw. die alte Schule anzeigen, waehrend
+    // „anlegen" schon die neuen Werte schickte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, vollstaendig, vorschau, nSchueler, nBeginn, nSatz, nZweitSatz, nZweitesKind, nZeiten]);
+  }, [token, vollstaendig, vorschau, nSchueler, nBeginn, nEnde, nSchule, nSatz, nZweitSatz, nZweitesKind, nZeiten]);
 
   async function kuendigungRechnen(v: VertragZeile, zum: string) {
     setFehler('');
@@ -473,8 +487,8 @@ export default function VertraegeSeite() {
                   }}>Termin wechseln</button>
                 )}
                 <button style={knopfKlein} onClick={() => {
-                  setElternFuer(v); setEName(v.eltern?.name || ''); setEAnschrift(v.eltern?.anschrift || '');
-                  setEEmail(v.eltern?.email || ''); setETelefon(v.eltern?.telefon || '');
+                  setElternFuer(v); setOName(v.eltern?.name || ''); setOAnschrift(v.eltern?.anschrift || '');
+                  setOEmail(v.eltern?.email || ''); setOTelefon(v.eltern?.telefon || '');
                 }}>{v.eltern?.name ? 'Elterndaten' : 'Elterndaten fehlen'}</button>
                 <button style={knopfKlein}
                   onClick={() => pdfOeffnen(`vertrag=${v.id}&art=terminliste`)}>Terminliste</button>
@@ -624,7 +638,10 @@ export default function VertraegeSeite() {
                   void (async () => {
                     try {
                       const d = await api('anlegen', felder());
-                      setVorschau(null); setNSchule(''); setNEnde('');
+                      // Auch den Schüler zurücksetzen: sonst holte der
+                      // Automatik-Effekt sofort wieder eine Vorschau und der
+                      // Anlegen-Knopf stand für denselben Schüler erneut bereit.
+                      setVorschau(null); setNSchueler(''); setNSchule(''); setNEnde('');
                       setEName(''); setEAnschrift(''); setEEmail(''); setETelefon('');
                       await neuLaden();          // erst laden, dann melden
                       if (d.mailVerschickt) setHinweis('Vertrag angelegt, Angebot verschickt.');
@@ -729,23 +746,23 @@ export default function VertraegeSeite() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
                 <label style={etikett}>Name
-                  <input style={feld} value={eName} onChange={(e) => setEName(e.target.value)} />
+                  <input style={feld} value={oName} onChange={(e) => setOName(e.target.value)} />
                 </label>
                 <label style={etikett}>Anschrift
-                  <input style={feld} value={eAnschrift} onChange={(e) => setEAnschrift(e.target.value)} />
+                  <input style={feld} value={oAnschrift} onChange={(e) => setOAnschrift(e.target.value)} />
                 </label>
                 <label style={etikett}>E-Mail
-                  <input style={feld} value={eEmail} onChange={(e) => setEEmail(e.target.value)} />
+                  <input style={feld} value={oEmail} onChange={(e) => setOEmail(e.target.value)} />
                 </label>
                 <label style={etikett}>Telefon
-                  <input style={feld} value={eTelefon} onChange={(e) => setETelefon(e.target.value)} />
+                  <input style={feld} value={oTelefon} onChange={(e) => setOTelefon(e.target.value)} />
                 </label>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
                 <button style={knopf} onClick={() => { const v = elternFuer; setElternFuer(null);
                   void tun(() => api('elternSpeichern', {
-                    vertrag_id: v.id, eltern_name: eName, eltern_anschrift: eAnschrift,
-                    eltern_email: eEmail, eltern_telefon: eTelefon,
+                    vertrag_id: v.id, eltern_name: oName, eltern_anschrift: oAnschrift,
+                    eltern_email: oEmail, eltern_telefon: oTelefon,
                   }), 'Elterndaten gespeichert.'); }}>speichern</button>
                 <button style={knopfKlein} onClick={() => setElternFuer(null)}>abbrechen</button>
               </div>

@@ -16,7 +16,7 @@ import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
 import {
   euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
-  ratenNeuVerteilen, monatsErster,
+  ratenNeuVerteilen, monatsErster, tagDavor, type Ratenplan,
 } from "@/lib/vertrag-kern";
 import { WOCHENTAGE, datumDe } from "@/lib/schuljahr-kern";
 import { pruefeVertragToken, bestaetigungsLink, vertragToken } from "@/lib/vertrag-token";
@@ -34,7 +34,7 @@ import { AGB_MARKDOWN, AGB_STAND } from "@/lib/agb-text";
 import { anlage } from "@/lib/agb-kern";
 import {
   schreibeZahlungsplan, aktualisiereRestraten, bescheinigungDaten, heuteIso,
-  vorlageSenden, monatName,
+  vorlageSenden, monatName, ladeZahlungen,
 } from "@/lib/zahlung";
 import {
   abrechnungsbild, abrechnungsText, kuendigen, kuendigungZuruecknehmen,
@@ -96,6 +96,43 @@ async function vollbild(vertragId: string) {
 }
 
 type Vollbild = NonNullable<Awaited<ReturnType<typeof vollbild>>>;
+
+/**
+ * Raten nach einer Vertragsänderung (Wochentagswechsel, Terminende) neu
+ * verteilen. Drei Fehler der alten Inline-Rechnung sind hier behoben:
+ *
+ * - Der Ratenzeitraum endet am festen Vertragsende (wenn alle Wochentermine
+ *   vorzeitig enden, z. B. Abitur), sonst am letzten Schultag – vorher
+ *   entstanden nach einer Änderung neue Raten für Monate NACH dem Ende.
+ * - „Bereits fällig" ist die Summe der tatsächlich geschriebenen Raten der
+ *   fälligen Monate. Die frühere Rückrechnung (alter Jahresbetrag geteilt
+ *   durch Monate) stimmte ab der zweiten Änderung im Jahr nicht mehr.
+ * - Einmalzahler haben keine Raten – ihr Zahlungsplan (eine Zeile) wird
+ *   nicht mehr mit Monatsraten überschrieben.
+ */
+async function restratenAnpassen(v: Vollbild, stichtag: string): Promise<{ bereitsFaelligCent: number; restplan: Ratenplan }> {
+  if (v.vertrag.zahlweise === "einmal") return { bereitsFaelligCent: 0, restplan: [] };
+  const enden = v.zeiten.map((z) => z.bis_datum);
+  const vertragsEnde = enden.length && enden.every(Boolean)
+    ? ([...enden] as string[]).sort().pop()! : null;
+  const planEnde = vertragsEnde && vertragsEnde < v.schuljahr.letzter_schultag
+    ? vertragsEnde : v.schuljahr.letzter_schultag;
+  const monate = ratenMonate(v.vertrag.vertragsbeginn, planEnde);
+  const { faellig, verbleibend } = teileRatenmonate(monate, stichtag);
+  const zRows = await ladeZahlungen(v.vertrag.id);
+  const faelligSet = new Set(faellig);
+  const bereitsFaelligCent = zRows
+    .filter((z) => faelligSet.has(z.monat))
+    .reduce((s, z) => s + euroZuCent(Number(z.soll_betrag)), 0);
+  const restplan = verbleibend.length
+    ? ratenNeuVerteilen({
+        neuerJahresbetragCent: v.rechnung.jahresbetragCent,
+        bereitsFaelligCent, verbleibendeMonate: verbleibend,
+      })
+    : [];
+  if (restplan.length) await aktualisiereRestraten(v.vertrag.id, restplan);
+  return { bereitsFaelligCent, restplan };
+}
 
 /**
  * Alles, was die Vertragsseite im Portal anzeigt.
@@ -239,6 +276,17 @@ export async function POST(req: Request): Promise<Response> {
   let body: Record<string, unknown> = {};
   try { const r = await req.json(); if (r && typeof r === "object") body = r as Record<string, unknown>; } catch { /* {} */ }
   const action = text(body.action, 40);
+  try {
+    return await vertragAktion(req, body, action);
+  } catch (e) {
+    // Laut statt roh: geworfene Fehler (z. B. Ferien ließen sich nicht laden)
+    // kommen als lesbare Meldung an, nicht als leere 500er-Seite.
+    console.error("vertrag-Aktion fehlgeschlagen:", action, e);
+    return bad(e instanceof Error ? e.message : "Unerwarteter Fehler.", 500);
+  }
+}
+
+async function vertragAktion(req: Request, body: Record<string, unknown>, action: string): Promise<Response> {
   const sb = service();
 
   // ---------------------------------------------------------------- öffentlich
@@ -256,6 +304,12 @@ export async function POST(req: Request): Promise<Response> {
 
     // --- unterzeichnen ---
     if (istUnterzeichnet(v.vertrag)) return ok({ schonUnterschrieben: true });
+    // Nur ein offenes Angebot lässt sich unterschreiben. Ein gekündigter oder
+    // beendeter Vertrag darf über den alten E-Mail-Link nicht wieder
+    // aufleben – vorher setzte die Unterschrift ihn kommentarlos auf „aktiv".
+    if (v.vertrag.status !== "angeboten") {
+      return bad("Dieses Angebot ist nicht mehr gültig. Bitte melde dich kurz bei Anna – sie schickt dir bei Bedarf ein neues.", 409);
+    }
 
     const zahlweise = text(body.zahlweise, 10) === "einmal" ? "einmal" : "raten";
     // Beide Häkchen und ein echtes Unterschriftsbild sind Pflicht – geprüft
@@ -283,8 +337,16 @@ export async function POST(req: Request): Promise<Response> {
       zahlweise,
       status: "aktiv",
       jahresbetrag: (v.rechnung.jahresbetragCent / 100).toFixed(2),
-    }).eq("id", v.vertrag.id).is("unterzeichnet_am", null).select().single();
-    if (up.error || !up.data) return bad("Die Unterschrift ließ sich nicht speichern.", 500);
+    }).eq("id", v.vertrag.id).eq("status", "angeboten").is("unterzeichnet_am", null).select().maybeSingle();
+    if (up.error) return bad("Die Unterschrift ließ sich nicht speichern: " + up.error.message, 500);
+    if (!up.data) {
+      // Kein Treffer heißt: Ein zweiter Klick kam der ersten Antwort zuvor
+      // (oder der Status hat sich gerade geändert). Frisch nachsehen – wer
+      // eben erfolgreich unterschrieben hat, bekommt KEINE Fehlermeldung.
+      const jetztStand = await ladeVertrag(v.vertrag.id);
+      if (jetztStand && istUnterzeichnet(jetztStand.vertrag)) return ok({ schonUnterschrieben: true });
+      return bad("Die Unterschrift ließ sich nicht speichern – bitte die Seite neu laden und noch einmal versuchen.", 500);
+    }
 
     // Zahlungsplan anlegen – ab jetzt taucht der Vertrag in der Zahlungsübersicht auf.
     await schreibeZahlungsplan(v.vertrag.id);
@@ -583,6 +645,14 @@ export async function POST(req: Request): Promise<Response> {
       if (!r.alleTermine.length) {
         return bad("In diesem Zeitraum gibt es in dem Wochentermin keine Stunden. Bitte Datum oder Wochentag prüfen.");
       }
+      // Uhrzeiten VOR dem Anlegen prüfen: Scheiterte der Zeiten-Insert erst
+      // nach dem Vertrags-Insert, blieb ein leerer „laufender" Vertrag übrig,
+      // der jeden weiteren Versuch am Unique-Index scheitern ließ.
+      for (const z of zeiten) {
+        if (z.uhrzeit && !/^\d{1,2}:\d{2}$/.test(String(z.uhrzeit))) {
+          return bad("Bitte eine gültige Uhrzeit für den Wochentermin angeben (z. B. 15:00).");
+        }
+      }
 
       const vRes = await sb.from("vertraege").insert({
         schueler_id: schuelerId, schuljahr_id: sj.id, schule_id: text(body.schule_id, 40) || null,
@@ -616,7 +686,12 @@ export async function POST(req: Request): Promise<Response> {
           bis_datum: bis,
         })),
       );
-      if (zRes.error) return bad(zRes.error.message, 500);
+      if (zRes.error) {
+        // Kein Vertrag ohne Zeiten stehen lassen – sonst blockiert die leere
+        // Hülle über den Unique-Index jeden weiteren Anlege-Versuch.
+        await sb.from("vertraege").delete().eq("id", vertrag.id);
+        return bad("Die Wochentermine ließen sich nicht speichern: " + zRes.error.message, 500);
+      }
 
       // Ehrlich zurueckmelden, ob das Angebot wirklich rausging: ohne
       // hinterlegte E-Mail-Adresse wird der Vertrag zwar angelegt, die
@@ -655,20 +730,28 @@ export async function POST(req: Request): Promise<Response> {
         { alterWochentag, neuerWochentag, neueUhrzeit, wechseldatum },
       );
 
-      // Alte Zeile(n) beenden
-      const ende = neueZeiten.find((z) => z.wochentag === alterWochentag && z.bis_datum)?.bis_datum;
-      if (ende) {
+      // Alte Zeile(n) beenden – der Schnitt ist IMMER der Tag vor dem
+      // Wechseldatum. Das frühere find() über neueZeiten konnte bei einem
+      // zweiten Wechsel desselben Wochentags eine längst beendete
+      // historische Zeile erwischen und die aktive rückwirkend abschneiden.
+      const ende = tagDavor(wechseldatum);
+      {
         const zuBeenden = vorher.zeiten.filter((z) => z.wochentag === alterWochentag && (!z.bis_datum || z.bis_datum > ende));
         for (const z of zuBeenden) {
           const r = await sb.from("vertrag_zeiten").update({ bis_datum: ende }).eq("id", z.id);
           if (r.error) return bad(r.error.message, 500);
         }
       }
-      // Neue Zeile anlegen
+      // Neue Zeile anlegen. Ein festes Vertragsende (alle Zeilen enden
+      // vorzeitig, z. B. Abitur) wandert mit auf den neuen Wochentag –
+      // sonst liefe der Vertrag auf dem neuen Tag bis zum Schuljahresende.
+      const altesVertragsEnde = vorher.zeiten.length && vorher.zeiten.every((z) => z.bis_datum)
+        ? ([...vorher.zeiten].map((z) => z.bis_datum as string).sort().pop() ?? null) : null;
       const neuZeile = neueZeiten[neueZeiten.length - 1];
       const ins = await sb.from("vertrag_zeiten").insert({
         vertrag_id: id, wochentag: neuZeile.wochentag,
         uhrzeit: neuZeile.uhrzeit || "15:00", ab_datum: wechseldatum,
+        bis_datum: altesVertragsEnde && altesVertragsEnde >= wechseldatum ? altesVertragsEnde : null,
       });
       if (ins.error) return bad(ins.error.message, 500);
 
@@ -679,20 +762,8 @@ export async function POST(req: Request): Promise<Response> {
         .update({ jahresbetrag: (nachher.rechnung.jahresbetragCent / 100).toFixed(2) })
         .eq("id", id);
 
-      // Restraten: bereits fällige Raten bleiben, der Rest wird neu verteilt
-      const monate = ratenMonate(nachher.vertrag.vertragsbeginn, nachher.schuljahr.letzter_schultag);
-      const { faellig, verbleibend } = teileRatenmonate(monate, wechseldatum);
-      const alteRateCent = monate.length ? Math.round(euroZuCent(Number(vorher.vertrag.jahresbetrag)) / monate.length) : 0;
-      const bereitsFaelligCent = alteRateCent * faellig.length;
-      const restplan = verbleibend.length
-        ? ratenNeuVerteilen({
-            neuerJahresbetragCent: nachher.rechnung.jahresbetragCent,
-            bereitsFaelligCent, verbleibendeMonate: verbleibend,
-          })
-        : [];
-
-      // Nur die noch offenen Monate anpassen; gezahlte Raten bleiben stehen.
-      if (restplan.length) await aktualisiereRestraten(id, restplan);
+      // Restraten: bereits fällige Raten bleiben, der Rest wird neu verteilt.
+      const { bereitsFaelligCent, restplan } = await restratenAnpassen(nachher, wechseldatum);
 
       // Eltern informieren – mit neuer Terminliste im Anhang
       if (nachher.schueler.email) {
@@ -758,18 +829,7 @@ export async function POST(req: Request): Promise<Response> {
         .eq("id", id);
 
       // Restraten neu verteilen – bereits fällige bleiben unverändert.
-      const monate = ratenMonate(nachher.vertrag.vertragsbeginn, nachher.schuljahr.letzter_schultag);
-      const { faellig, verbleibend } = teileRatenmonate(monate, zum);
-      const alteRateCent = monate.length
-        ? Math.round(euroZuCent(Number(vorher.vertrag.jahresbetrag)) / monate.length) : 0;
-      const bereitsFaelligCent = alteRateCent * faellig.length;
-      const restplan = verbleibend.length
-        ? ratenNeuVerteilen({
-            neuerJahresbetragCent: nachher.rechnung.jahresbetragCent,
-            bereitsFaelligCent, verbleibendeMonate: verbleibend,
-          })
-        : [];
-      if (restplan.length) await aktualisiereRestraten(id, restplan);
+      const { bereitsFaelligCent, restplan } = await restratenAnpassen(nachher, zum);
 
       // Eltern informieren – Text kommt aus der editierbaren Vorlage.
       if (nachher.schueler.email) {

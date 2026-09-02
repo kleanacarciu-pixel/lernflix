@@ -4,6 +4,7 @@
 // =============================================================================
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile } from "@/lib/kalender";
+import { cacheLeeren } from "@/lib/schuljahr";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +29,13 @@ export async function POST(req: Request): Promise<Response> {
   if (!prof || prof.role !== "admin") return bad("Nur Kleana darf das.", 403);
 
   const sb = service();
+
+  // Jede Änderung an Schuljahren/Schulen/freien Tagen leert den
+  // Stammdaten-Cache der Termin-Engine – sonst rechnete eine direkt danach
+  // geöffnete Vertrags-Vorschau bis zu 60 s mit dem alten Stand. (Auf einer
+  // ANDEREN Server-Instanz begrenzt weiterhin die 60-s-Lebensdauer des
+  // Caches die mögliche Verzögerung.)
+  if (action !== "laden") cacheLeeren();
 
   switch (action) {
     // ---------------------------------------------------------------- laden
