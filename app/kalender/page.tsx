@@ -45,7 +45,7 @@ const CSS = `
 .nurmobil{display:none}
 .legtoggle{display:none}
 .ovcards{display:none}
-.rechtsfuss{text-align:center;padding:20px 0 6px;color:var(--muted);font-size:.78rem}
+.rechtsfuss{text-align:center;padding:20px 0 calc(6px + env(safe-area-inset-bottom));color:var(--muted);font-size:.78rem}
 .rechtsfuss a{color:var(--muted);text-decoration:underline}
 .hdr{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap}
 .hdr h1{font-size:1.55rem}
@@ -97,8 +97,8 @@ const CSS = `
 .wk small{color:var(--muted)}
 .wk.on{background:rgba(43,179,192,.12);border-color:var(--teal);color:#127a5c;font-weight:600}
 .calwrap{flex:1 1 auto;min-width:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.deskgrid{overflow-x:auto}
-.otblwrap{overflow-x:auto}
+.deskgrid{overflow-x:auto;overscroll-behavior-x:contain}
+.otblwrap{overflow-x:auto;overscroll-behavior-x:contain}
 .kloading{display:flex;align-items:center;justify-content:center;gap:12px;padding:70px 20px;color:var(--muted);font-weight:600}
 .kspin{width:22px;height:22px;border:3px solid rgba(43,179,192,.25);border-top-color:var(--teal);border-radius:50%;display:inline-block;animation:kspin .8s linear infinite}
 @keyframes kspin{to{transform:rotate(360deg)}}
@@ -108,7 +108,7 @@ const CSS = `
 .htip .tt b{color:#8fe3d8;font-weight:600}
 .htip:hover .tt{display:block}
 .dayview{display:none;padding:12px 14px 16px}
-.daychips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.daychips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;overscroll-behavior-x:contain}
 .daychip{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;font:inherit;font-size:.8rem;font-weight:700;min-width:54px;color:var(--ink)}
 .daychip small{display:block;color:var(--muted);font-weight:500;font-size:.72rem;margin-top:2px}
 .daychip.on{background:rgba(43,179,192,.14);border-color:var(--teal);color:#127a5c}
@@ -169,7 +169,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .cell.closed{background:#f4f4f4;cursor:default;color:#ccc}.cell.past{opacity:.45;cursor:default}
 .cell.free:hover,.cell.mine:hover,.cell.req:hover,.cell.busy:hover,.cell.blk:hover{outline:2px solid var(--teal);outline-offset:-2px}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
-.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:88dvh;overflow-y:auto}
+.modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:88dvh;overflow-y:auto;overscroll-behavior:contain}
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
 .modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px;color:var(--ink)}
 .modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
@@ -181,8 +181,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .col{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .acts .btn,.col .btn{flex:1}
 .err{color:#b4491f;font-weight:600;font-size:.9rem;margin-top:8px}
-.saving{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:7px 15px;border-radius:999px;font-size:.82rem;font-weight:600;z-index:40;box-shadow:0 8px 22px rgba(0,0,0,.22)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#127a5c;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.9rem;box-shadow:0 12px 32px rgba(0,0,0,.28);z-index:40;max-width:90vw;text-align:center}
+.saving{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:7px 15px;border-radius:999px;font-size:.82rem;font-weight:600;z-index:40;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#127a5c;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;font-size:.9rem;box-shadow:0 12px 32px rgba(0,0,0,.28);z-index:40;max-width:90vw;text-align:center}
 @keyframes kalpop{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .toast{animation:kalpop .18s ease-out}
 .lessonbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -425,6 +425,16 @@ export default function KalenderPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (ready) loadWeek();
   }, [ready, loadWeek]);
+
+  // Offenes Fenster: Die Seite dahinter darf auf dem Handy nicht mitscrollen.
+  // Ohne die Sperre wischte man im Fenster und der Kalender dahinter
+  // wanderte mit – nach dem Schließen stand man irgendwo anders.
+  useEffect(() => {
+    if (!modal) return;
+    const alt = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = alt; };
+  }, [modal]);
 
   // Immer aktuell, ohne manuelles Neuladen – auch als installierte App:
   // Das System friert die App im Hintergrund ein, und beim Aufwachen kommt

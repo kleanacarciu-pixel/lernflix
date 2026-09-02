@@ -15,6 +15,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#FFFFFF",
+  // Als installierte App bis in die Geräteränder zeichnen (Kerbe/Home-Balken);
+  // die festen Elemente halten per safe-area-inset Abstand.
+  viewportFit: "cover",
 };
 
 export default function StundeLayout({ children }: { children: React.ReactNode }) {
