@@ -8,6 +8,8 @@
 // =============================================================================
 import { useCallback, useEffect, useState } from 'react';
 import { rufeApi, ladeSitzung, oeffneMitSitzung } from '@/components/sitzung';
+// Gemeinsame Anzeige-Helfer aus dem Kern statt einer eigenen Kopie je Seite.
+import { datumDe } from '@/lib/schuljahr-kern';
 
 const F = {
   ink: '#0F172A', soft: '#475569', muted: '#94A3B8', line: '#E2E8F0',
@@ -30,12 +32,13 @@ type Vertragsdaten = {
 };
 
 const eur = (c: number) => (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const datumDe = (iso: string) => { const [j, m, t] = iso.split('-'); return `${t}.${m}.${j}`; };
 const monatName = (iso: string) => {
   const [j, m] = iso.split('-');
   return `${['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'][Number(m) - 1]} ${j}`;
 };
-const heute = () => new Date().toISOString().slice(0, 10);
+// Europe/Berlin statt UTC: Um 0:30 Uhr zeigte die UTC-Variante noch den
+// Vortag und zaehlte die gestrige Stunde als offen.
+const heute = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' });
 
 const ZAHL_FARBE: Record<ZahlStatus, string> = {
   bezahlt: '#127a5c', offen: '#8a6a20', ueberfaellig: '#c2410c', pausiert: '#a12a2a',
@@ -65,22 +68,28 @@ export default function TerminlisteSeite() {
   // nach einer Stunde öffnete, sah nur „Bitte einloggen".
   const holen = useCallback(async () => {
     if (!token) return;
-    try {
-      const d = await rufeApi('/api/vertrag', 'meinVertrag', {}, () => setToken(''));
-      setDaten((d.vertrag as Vertragsdaten) ?? null);
-
-      // Zahlungsstand ist nur ein Zusatz – schlägt er fehl, bleibt die Seite nutzbar.
-      try {
-        const z = await rufeApi('/api/zahlungen', 'meineZahlungen', {});
-        setZahlstand((z.zahlungen || []) as Zahlstand[]);
-        setSperre((z.sperre as Sperre | null) ?? null);
-        setBank((z.bank as Bank | null) ?? null);
-      } catch { /* Seite bleibt ohne Zahlungsstand nutzbar */ }
-    } catch (e) {
-      const m = e instanceof Error ? e.message : 'Fehler beim Laden.';
+    // Beide Abrufe parallel: der Zahlungsstand hängt nicht von der
+    // Vertragsantwort ab – nacheinander machte die Seite auf dem Handy
+    // unnötig lange den Eindruck, sie lade noch.
+    const [vErg, zErg] = await Promise.allSettled([
+      rufeApi('/api/vertrag', 'meinVertrag', {}, () => setToken('')),
+      rufeApi('/api/zahlungen', 'meineZahlungen', {}),
+    ]);
+    if (vErg.status === 'fulfilled') {
+      setDaten((vErg.value.vertrag as Vertragsdaten) ?? null);
+    } else {
+      const m = vErg.reason instanceof Error ? vErg.reason.message : 'Fehler beim Laden.';
       // Nach echter Abmeldung zeigt die Seite den Anmelde-Hinweis, keinen Fehler.
       if (m !== 'Bitte einloggen.') setFehler(m);
-    } finally { setLaden(false); }
+    }
+    // Zahlungsstand ist nur ein Zusatz – schlägt er fehl, bleibt die Seite nutzbar.
+    if (zErg.status === 'fulfilled') {
+      const z = zErg.value;
+      setZahlstand((z.zahlungen || []) as Zahlstand[]);
+      setSperre((z.sperre as Sperre | null) ?? null);
+      setBank((z.bank as Bank | null) ?? null);
+    }
+    setLaden(false);
   }, [token]);
 
   useEffect(() => { void holen(); }, [holen]);

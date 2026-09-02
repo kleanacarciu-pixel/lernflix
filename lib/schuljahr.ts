@@ -41,6 +41,11 @@ async function stammdaten(schuljahrId: string): Promise<Eintrag | null> {
     sb.from("unterrichtsfreie_tage").select("datum_von,datum_bis,ist_feiertag,schule_id,bezeichnung").eq("schuljahr_id", schuljahrId),
   ]);
   if (sjRes.error || !sjRes.data) return null;
+  // Scheitert die Ferien-Abfrage, dürfen die Termine NICHT ohne Ferien
+  // gerechnet (und 60 s lang gecacht) werden – ein Vertrag bekäme sonst
+  // still zu viele Termine und einen zu hohen Jahresbetrag. Lieber laut
+  // scheitern; die Aufrufer melden dann einen Fehler statt falscher Zahlen.
+  if (ftRes.error) throw new Error("Ferien und Feiertage ließen sich nicht laden: " + ftRes.error.message);
 
   const eintrag: Eintrag = {
     zeit: Date.now(),

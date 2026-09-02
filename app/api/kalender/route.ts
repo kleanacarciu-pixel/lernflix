@@ -45,7 +45,10 @@ async function inspectSlot(date: string, hour: number) {
     wd,
     block: appts.find((a) => a.kind === "block" && a.status !== "abgesagt") || null,
     booking: appts.find((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt") || null,
-    absage: appts.find((a) => a.kind === "absage") || null,
+    // Absagen gehören zu EINEM Schüler: eine alte Absage des Vorbesitzers
+    // dieses Slots darf den heutigen Inhaber nicht blockieren. Deshalb wird
+    // hier gezielt gefragt, nicht pauschal die erste Absage genommen.
+    absageVon: (sid: string) => appts.some((a) => a.kind === "absage" && a.student_id === sid),
     fixedActive: fxa.find((f) => f.status === "aktiv") || null,
     fixedPending: fxa.find((f) => f.status === "angefragt") || null,
     weeklyBlock: ((wbRes.data || []) as { id: string; hour: number }[])
@@ -153,14 +156,25 @@ export async function POST(req: Request): Promise<Response> {
       return ok(out);
     }
     if (action === "requestProbe") {
-      const name = String(body.name || "").trim();
-      const email = String(body.email || "").trim().toLowerCase();
+      // Öffentliches Formular ohne Login – Eingaben gehören gezähmt:
+      // '|' trennt in der Notiz Name und E-Mail (ein '|' im Namen würde die
+      // Empfänger-Adresse verschieben), und der Name landet in E-Mails,
+      // darf also kein HTML einschleusen.
+      const name = String(body.name || "").trim().replace(/[|<>]/g, "/").slice(0, 80);
+      const email = String(body.email || "").trim().toLowerCase().slice(0, 160);
       const pSchluss = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? (weekdayOf(date) < 5 ? 20 : 19) : 0;
       if (!pSchluss || !feinRasterOk(hour) || hour < 8 || hour + dauerMin / 60 > pSchluss) return bad("Ungültiger Slot.");
       if (!name || !email) return bad("Bitte Name und E-Mail angeben.");
+      if (!/^[^\s|@]+@[^\s|@]+\.[^\s|@]+$/.test(email)) return bad("Bitte eine gültige E-Mail-Adresse angeben.");
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist leider schon belegt.");
+      // Bremse gegen Missbrauch: pro E-Mail-Adresse höchstens drei offene
+      // Anfragen – mehr braucht kein echter Interessent, und niemand kann
+      // fremde Postfächer mit Bestätigungs-Mails fluten.
+      { const { data: offene } = await service().from("appointments")
+          .select("id").eq("kind", "probe").eq("status", "angefragt").like("note", `%|${email}`);
+        if ((offene || []).length >= 3) return bad("Für diese E-Mail-Adresse liegen schon mehrere offene Anfragen vor. Kleana meldet sich bei dir."); }
       { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "angefragt", mode, dauer_min: dauerMin, note: `${name}|${email}` }); if (error) return bad("Speichern fehlgeschlagen: " + error.message); }
       after(() => sendMail(ADMIN_EMAIL, "Neue Probestunden-Anfrage", `${name} (${email}) möchte eine Probestunde am ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
       after(() => mailZustellenOderMelden("Probestunde angefragt", email, "Probestunde angefragt", mailTemplates.probeReceived(name, prettyDate(date, hour))));
@@ -220,11 +234,17 @@ export async function POST(req: Request): Promise<Response> {
       if (!validSlot) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.student_id === user.id) {
+        // Nach Stundenbeginn ist nichts mehr abzusagen – sonst käme die
+        // Verrechnung (Gutschrift/Plus) einer bereits gehaltenen Stunde
+        // zurück und die Stunde wäre praktisch gratis.
+        if (hoursUntil(date, hour) <= 0) {
+          return bad("Diese Stunde hat schon begonnen oder ist vorbei – absagen geht jetzt nicht mehr. Bei Fragen melde dich bei Anna.");
+        }
         await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
         await revertCounting(prof, s.booking.counted);
         return ok({ message: "Deine gebuchte Stunde wurde abgesagt." });
       }
-      if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absage) {
+      if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absageVon(user.id)) {
         const hu = hoursUntil(date, hour);
 
         // Bei vollem Stundenkonto verfaellt die Stunde ersatzlos. Das darf
@@ -275,7 +295,7 @@ export async function POST(req: Request): Promise<Response> {
       if (isAdmin && typeof body.studentId === "string" && body.studentId) sid = body.studentId;
       const s = await inspectSlot(date, hour);
       const eigene = (s.booking && s.booking.status !== "abgesagt" && s.booking.student_id === sid)
-        || (s.fixedActive && s.fixedActive.student_id === sid && !s.absage);
+        || (s.fixedActive && s.fixedActive.student_id === sid && !s.absageVon(sid));
       if (!eigene) return bad("Hier ist keine eigene Stunde.");
       { const { error } = await service().from("slot_mode_overrides")
           .upsert({ student_id: sid, slot_date: date, hour, mode }, { onConflict: "student_id,slot_date,hour" });
@@ -406,6 +426,14 @@ export async function POST(req: Request): Promise<Response> {
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       if (body.fest === true) {
+        // slotKonflikt sieht diesen Tag – aber ein fester Termin, dessen
+        // HEUTIGE Stunde abgesagt ist, taucht dort nicht auf. Deshalb hier
+        // zusätzlich direkt prüfen, sonst entstünden zwei feste Termine auf
+        // demselben Wochenslot, die ab nächster Woche kollidieren.
+        const belegt = await inspectSlot(date, hour);
+        if (belegt.fixedActive) {
+          return bad(`Auf diesem Wochenslot liegt schon ein fester Termin (${(await getProfile(belegt.fixedActive.student_id))?.name || "anderer Schüler"}).`);
+        }
         // Fehlende Vertragsunterschrift blockiert Kleana nicht mehr –
         // sie bekommt nur einen Hinweis in der Erfolgsmeldung.
         const u = await vertragUnterschrieben(sid);
@@ -524,13 +552,23 @@ export async function POST(req: Request): Promise<Response> {
       if (!validSlot) return bad("Ungültiger Slot.");
       const s = await inspectSlot(date, hour);
       if (s.booking) {
-        const sp = await getProfile(s.booking.student_id || "");
         await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
+        // Probestunde eines Gasts (ohne Konto): Die E-Mail steckt in der
+        // Notiz. Vorher ging hier KEINE Mail raus, obwohl die Meldung es
+        // versprach – der Gast stand dann vor abgesagter Stunde da.
+        if (s.booking.kind === "probe" && !s.booking.student_id) {
+          const gmail = (s.booking.note || "").split("|")[1] || "";
+          if (gmail) { after(() => mailZustellenOderMelden("Probestunde abgesagt (Gast)", gmail, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+          return ok({ message: gmail
+            ? "Probestunde abgesagt. Der Gast bekommt eine Mail."
+            : "Probestunde abgesagt. Achtung: keine Gast-E-Mail hinterlegt – bitte selbst Bescheid geben." });
+        }
+        const sp = await getProfile(s.booking.student_id || "");
         if (sp) { await revertCounting(sp, s.booking.counted); await setBalance(sp.user_id, { makeup_credits: (await getProfile(sp.user_id))!.makeup_credits + 1 }); }
         if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben + Mail." });
       }
-      if (s.fixedActive && !s.absage) {
+      if (s.fixedActive && !s.absageVon(s.fixedActive.student_id)) {
         const sp = await getProfile(s.fixedActive.student_id);
         await service().from("appointments").insert({ student_id: s.fixedActive.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: false, note: NOTE_ANNA_CANCEL });
         if (sp) await setBalance(sp.user_id, { makeup_credits: sp.makeup_credits + 1 });

@@ -7,7 +7,7 @@
 import { fuelle, alsHtml } from "@/lib/mail-text-kern";
 import { STANDARD_VORLAGEN, standardVorlage } from "@/lib/vorlagen-standard";
 import { service, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
-import { ladeVertrag, rechneVertrag, buchungErlaubt, type Vertrag } from "@/lib/vertrag";
+import { ladeVertrag, rechneVertrag, buchungErlaubt, laufenderVertrag, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { datumDe } from "@/lib/schuljahr-kern";
 import type { Schuljahr } from "@/lib/schuljahr";
@@ -96,12 +96,13 @@ export async function ladeZahlungen(vertragId: string): Promise<Zahlung[]> {
 export async function zahlungsSperreFuer(schuelerId: string): Promise<{
   gesperrt: boolean; grund?: string; regelterminAusgesetzt: boolean; pausiertAm: string | null;
 }> {
-  const sb = service();
-  const vRes = await sb.from("vertraege").select("id")
-    .eq("schueler_id", schuelerId).in("status", ["angeboten", "aktiv"]).maybeSingle();
-  if (vRes.error || !vRes.data) return { gesperrt: false, regelterminAusgesetzt: false, pausiertAm: null };
+  // laufenderVertrag statt eigener maybeSingle-Abfrage: am Schuljahreswechsel
+  // existieren kurz ZWEI laufende Verträge, und maybeSingle ließ die Sperre
+  // dann still ins Leere laufen (fail open).
+  const vertrag = await laufenderVertrag(schuelerId);
+  if (!vertrag) return { gesperrt: false, regelterminAusgesetzt: false, pausiertAm: null };
 
-  const zahlungen = await ladeZahlungen((vRes.data as { id: string }).id);
+  const zahlungen = await ladeZahlungen(vertrag.id);
   const s = zahlungsSperre(zahlungen, heuteIso());
   const pausiert = zahlungen.map((z) => z.pausiert_am).filter(Boolean).sort().pop() || null;
   return { ...s, pausiertAm: s.regelterminAusgesetzt ? pausiert : null };

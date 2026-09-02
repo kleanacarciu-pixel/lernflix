@@ -6,7 +6,7 @@
 // Jahresbetrag, Ratenplan und Einmalbetrag.
 // =============================================================================
 import { service } from "@/lib/kalender";
-import { berechneTermine, type Schuljahr } from "@/lib/schuljahr";
+import { berechneTermine, aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import {
   berechneJahresbetrag, ratenplan, einmalbetragCent, euroZuCent, centFormat,
   ZWEIT_ABSCHLAG_CENT, darfBuchen, type Ratenplan, type Zahlweise, type TerminTag, type Posten,
@@ -149,8 +149,17 @@ export async function laufenderVertrag(schuelerId: string): Promise<Vertrag | nu
     .from("vertraege").select("*")
     .eq("schueler_id", schuelerId)
     .in("status", ["angeboten", "aktiv"])
-    .maybeSingle();
-  return res.error ? null : ((res.data as Vertrag | null) ?? null);
+    .order("erstellt_am", { ascending: false });
+  if (res.error) return null;
+  const alle = (res.data || []) as Vertrag[];
+  if (alle.length <= 1) return alle[0] ?? null;
+  // Am Schuljahreswechsel kann es kurz ZWEI laufende Verträge geben (der
+  // alte noch aktiv, der neue schon angeboten – der Unique-Index gilt nur je
+  // Schuljahr). Früher scheiterte maybeSingle() daran und alles lief „ohne
+  // Vertrag" weiter: Buchungs-Wächter und Portalansicht fielen still aus.
+  // Jetzt zählt der Vertrag des AKTIVEN Schuljahres, sonst der neueste.
+  const aktiv = await aktivesSchuljahr().catch(() => null);
+  return (aktiv && alle.find((v) => v.schuljahr_id === aktiv.id)) || alle[0];
 }
 
 /**

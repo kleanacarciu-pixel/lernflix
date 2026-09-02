@@ -230,6 +230,8 @@ export default function KlassenzimmerPage() {
   const [offenerBericht, setOffenerBericht] = useState<string | null>(null);
   // Diktieren (Spracheingabe des Browsers) für den Stundenbericht
   const [diktiert, setDiktiert] = useState(false);
+  // Startfehler (Server/Netz) – bewusst getrennt vom „nicht eingeloggt"-Fall
+  const [startFehler, setStartFehler] = useState("");
   const erkennungRef = useRef<{ stop: () => void } | null>(null);
 
   const zeige = useCallback((msg: string) => {
@@ -269,6 +271,9 @@ export default function KlassenzimmerPage() {
       if (!s?.token) { setBereit(true); return; }
       const d = await api("bootstrap");
       if (d.status === 401) { setBereit(true); return; }
+      // Ein Server- oder Netzwerkfehler ist KEIN fehlender Login: Wer
+      // eingeloggt ist, soll den echten Grund lesen statt „Bitte einloggen".
+      if (!d.ok) { setStartFehler(String(d.error || "Das Klassenzimmer ist gerade nicht erreichbar – bitte gleich noch einmal versuchen.")); setBereit(true); return; }
       if (d.ok) {
         setEingeloggt(true);
         setIstLehrerin(d.isTeacher === true);
@@ -293,27 +298,37 @@ export default function KlassenzimmerPage() {
   const zielParam = useCallback((): Record<string, unknown> =>
     istLehrerin && schuelerId && schuelerId !== "selbst" ? { studentId: schuelerId } : {}, [istLehrerin, schuelerId]);
 
+  // Spiegel der aktuellen Schüler-Auswahl: Eine langsame Antwort für den
+  // VORHERIGEN Schüler darf nicht die Daten des gerade gewählten
+  // überschreiben – sonst liest Kleana Chat A unter dem Namen von B.
+  const schuelerIdRef = useRef(schuelerId);
+  useEffect(() => { schuelerIdRef.current = schuelerId; }, [schuelerId]);
+
   // ---- Tab-Daten laden -----------------------------------------------------
   const lade = useCallback(async (welcherTab: Tab) => {
-    if (!schuelerId) return;
+    // Lernmaterial gilt für alle – es braucht keinen gewählten Schüler
+    // (wichtig, solange noch kein Schüler angelegt ist).
+    if (!schuelerId && welcherTab !== "material") return;
+    const sid = schuelerId;
+    const aktuell = () => schuelerIdRef.current === sid;
     if (welcherTab === "chat") {
       const d = await api("messages", zielParam());
-      if (d.ok) {
+      if (d.ok && aktuell()) {
         setNachrichten((d.messages as Nachricht[]) || []);
         setNextLesson((d.nextLesson as NextLesson) || null);
       }
     }
     if (welcherTab === "dateien") {
       const d = await api("files", zielParam());
-      if (d.ok) setDateien((d.files as Datei[]) || []);
+      if (d.ok && aktuell()) setDateien((d.files as Datei[]) || []);
     }
     if (welcherTab === "berichte") {
       const d = await api("berichte", zielParam());
-      if (d.ok) setBerichte((d.reports as Bericht[]) || []);
+      if (d.ok && aktuell()) setBerichte((d.reports as Bericht[]) || []);
     }
     if (welcherTab === "stunden") {
       const d = await api("lessons", zielParam());
-      if (d.ok) setStunden({ upcoming: (d.upcoming as Stunde[]) || [], past: (d.past as Stunde[]) || [] });
+      if (d.ok && aktuell()) setStunden({ upcoming: (d.upcoming as Stunde[]) || [], past: (d.past as Stunde[]) || [] });
     }
     if (welcherTab === "material") {
       const d = await api("material");
@@ -324,7 +339,8 @@ export default function KlassenzimmerPage() {
   // Beim Tab- oder Schülerwechsel laden; Chat zusätzlich alle 5 s auffrischen.
   // Während der Live-Stunde pausieren (die Tabs sind dann ausgeblendet).
   useEffect(() => {
-    if (!eingeloggt || !schuelerId || liveId) return;
+    if (!eingeloggt || liveId) return;
+    if (!schuelerId && tab !== "material") return;
     // lade ist async – setState passiert erst nach dem await
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void lade(tab);
@@ -454,23 +470,35 @@ export default function KlassenzimmerPage() {
     if (d?.ok) void lade("chat");
     else zeige(String(d?.error || "Hochladen fehlgeschlagen."));
   }
+  // Das Fenster SOFORT öffnen und die Adresse nachreichen: window.open nach
+  // einem await steht außerhalb der Tipp-Geste, und Safari (iPhone/iPad)
+  // verschluckt es dann stumm – es passierte einfach nichts.
+  async function signierterLinkOeffnen(hole: () => Promise<Record<string, unknown>>) {
+    const fenster = window.open("", "_blank");
+    const d = await hole();
+    if (d.ok && typeof d.url === "string") {
+      if (fenster) fenster.location.href = d.url;
+      else window.open(d.url, "_blank");
+    } else {
+      fenster?.close();
+      zeige(String(d.error || "Datei konnte nicht geöffnet werden."));
+    }
+  }
   async function chatAnhangOeffnen(messageId: string) {
-    const d = await api("chatFileUrl", { ...zielParam(), messageId });
-    if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
-    else zeige(String(d.error || "Datei konnte nicht geöffnet werden."));
+    await signierterLinkOeffnen(() => api("chatFileUrl", { ...zielParam(), messageId }));
   }
 
   async function dateiOeffnen(id: string) {
-    const d = await api("fileUrl", { ...zielParam(), fileId: id });
-    if (d.ok && typeof d.url === "string") window.open(d.url, "_blank");
-    else zeige(String(d.error || "Datei konnte nicht geöffnet werden."));
+    await signierterLinkOeffnen(() => api("fileUrl", { ...zielParam(), fileId: id }));
   }
 
   async function dateiLoeschen(id: string, name: string) {
     if (!window.confirm(`„${name}“ wirklich löschen?`)) return;
     const d = await api("deleteFile", { fileId: id });
     zeige(d.ok ? "Datei gelöscht." : String(d.error || "Löschen fehlgeschlagen."));
-    void lade("dateien");
+    // Die Liste auffrischen, aus der gelöscht wurde – sonst blieb eine im
+    // Material-Tab gelöschte Datei bis zum Tab-Wechsel sichtbar stehen.
+    void lade(tab === "material" ? "material" : "dateien");
   }
 
   async function hochladen(datei: File, ziel: "schueler" | "material") {
@@ -500,6 +528,16 @@ export default function KlassenzimmerPage() {
   if (!bereit) {
     return (<div className="kz"><style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="status"><div style={{ fontSize: "2rem" }}>🐙</div><p className="muted">Dein Klassenzimmer wird geöffnet …</p></div></div>);
+  }
+  if (!eingeloggt && startFehler) {
+    return (<div className="kz"><style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="status">
+        <div style={{ fontSize: "2rem" }}>🐙</div>
+        <h2 style={{ margin: 0 }}>Das hat gerade nicht geklappt</h2>
+        <p className="muted" style={{ maxWidth: 420 }}>{startFehler}</p>
+        <button className="btnA" onClick={() => window.location.reload()}>Noch einmal versuchen</button>
+        <div className="rechtsfuss"><a href="/datenschutz">Datenschutz</a> · <a href="/impressum">Impressum</a></div>
+      </div></div>);
   }
   if (!eingeloggt) {
     return (<div className="kz"><style dangerouslySetInnerHTML={{ __html: CSS }} />
@@ -611,8 +649,12 @@ export default function KlassenzimmerPage() {
                   Schreib in ein paar Stichpunkten, was ihr in der Stunde gemacht habt — die KI macht daraus
                   einen schönen Bericht mit Erklärung, Beispielen und Hausaufgaben für {schuelerName}.
                 </p>
+                {/* Während der Aufnahme gesperrt: Die Spracherkennung baut das
+                    Feld bei jedem Ergebnis neu auf und würde zwischendurch
+                    Getipptes stillschweigend überschreiben. */}
                 <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen: Kürzen und Erweitern geübt, klappt schon gut. Bei Textaufgaben noch unsicher. Klasse 6.“`}
-                  value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft} />
+                  value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft || diktiert}
+                  title={diktiert ? "Erst die Aufnahme stoppen, dann tippen." : undefined} />
                 <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                   <button className={"btnG"} style={diktiert ? { background: "#FDEEEC", color: "#C03A31" } : undefined}
                     disabled={!!kiLaeuft && !diktiert} onClick={diktierenToggle}>{diktiert ? "Aufnahme stoppen" : "Diktieren"}</button>

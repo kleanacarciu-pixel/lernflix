@@ -30,6 +30,18 @@ function ok(data: Record<string, unknown> = {}) {
 }
 const istUuid = (s: unknown): s is string => typeof s === "string" && /^[0-9a-f-]{36}$/i.test(s);
 
+// „Nächste Stunde" für die Kopfzeile: Der Chat fragt alle 5 Sekunden nach,
+// die nächste Stunde ändert sich aber selten. 60 Sekunden Cache pro Schüler
+// (pro Server-Instanz) sparen tausende überflüssige Datenbank-Abfragen.
+const naechsteStundeCache = new Map<string, { bis: number; wert: Awaited<ReturnType<typeof nextLessonFor>> }>();
+async function naechsteStundeGecached(sid: string) {
+  const c = naechsteStundeCache.get(sid);
+  if (c && c.bis > Date.now()) return c.wert;
+  const wert = await nextLessonFor(sid);
+  naechsteStundeCache.set(sid, { bis: Date.now() + 60_000, wert });
+  return wert;
+}
+
 export async function POST(req: Request): Promise<Response> {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -99,7 +111,13 @@ export async function POST(req: Request): Promise<Response> {
       });
     }
 
-    if (!zielSchueler) return fehler("Bitte zuerst einen Schüler wählen.");
+    // Diese Aktionen brauchen KEINEN gewählten Schüler: Sie prüfen ihre
+    // Berechtigung selbst (Datei-Besitz bzw. nur Lehrerin) oder tragen ihr
+    // Ziel im eigenen Feld (upload mit studentId='alle'). Der pauschale
+    // Wächter hier machte vorher das Löschen von Dateien und das Hochladen
+    // von „Lernmaterial für alle" komplett unbenutzbar.
+    const ohneSchuelerErlaubt = ["upload", "fileUrl", "chatFileUrl", "deleteFile"].includes(action);
+    if (!zielSchueler && !ohneSchuelerErlaubt) return fehler("Bitte zuerst einen Schüler wählen.");
 
     // ======================= CHAT ===========================================
     if (action === "messages") {
@@ -121,7 +139,7 @@ export async function POST(req: Request): Promise<Response> {
           sender: namen.get(m.sender_id) || "Unbekannt", mine: m.sender_id === user.id,
           datei: m.datei_name || null,
         })),
-        nextLesson: await nextLessonFor(zielSchueler), // für die Kopfzeile gleich mitliefern
+        nextLesson: await naechsteStundeGecached(zielSchueler), // für die Kopfzeile gleich mitliefern
       });
     }
 
@@ -333,6 +351,19 @@ export async function POST(req: Request): Promise<Response> {
 
     // ======================= AUFGABEN / PUNKTE ==============================
     if (action === "exercises") {
+      // Punktestand über ALLE Belohnungen: mit .limit(200) würde der Stand
+      // eines fleißigen Schülers irgendwann optisch schrumpfen, sobald alte
+      // Zeilen aus dem Fenster fallen. Deshalb seitenweise komplett zählen;
+      // Sticker und Anzeige brauchen weiterhin nur die neuesten.
+      let punkte = 0;
+      for (let von = 0; ; von += 1000) {
+        const { data: seite, error } = await sb.from("student_rewards").select("points")
+          .eq("user_id", zielSchueler).range(von, von + 999);
+        if (error) break;
+        const zeilen = (seite || []) as { points: number }[];
+        punkte += zeilen.reduce((s, r) => s + Number(r.points || 0), 0);
+        if (zeilen.length < 1000) break;
+      }
       const [{ data: rws }, { data: ans }] = await Promise.all([
         sb.from("student_rewards").select("points,sticker")
           .eq("user_id", zielSchueler).order("created_at", { ascending: false }).limit(200),
@@ -342,7 +373,7 @@ export async function POST(req: Request): Promise<Response> {
       ]);
       const belohnungen = (rws || []) as { points: number; sticker: string | null }[];
       return ok({
-        points: belohnungen.reduce((s, r) => s + r.points, 0),
+        points: punkte,
         stickers: belohnungen.filter((r) => r.sticker).map((r) => r.sticker).slice(0, 24),
         recent: ((ans || []) as unknown as { answer: string; is_correct: boolean | null; answered_at: string; lesson_exercises: { question: string } | null }[])
           .map((a) => ({ question: a.lesson_exercises?.question || "Aufgabe", answer: a.answer, is_correct: a.is_correct, answered_at: a.answered_at })),
