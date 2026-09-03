@@ -82,6 +82,14 @@ describe("Der Vertrag steht vollständig in der PDF", async () => {
     }
   });
 
+  test("die Bankverbindung steht im Vertrag", () => {
+    // Die Eltern sollen die Kontodaten zum Überweisen nicht in E-Mails
+    // suchen müssen. Ohne gesetzte Umgebungsvariablen erscheinen die
+    // Vorgabewerte – geprüft wird, dass die Zeile überhaupt gedruckt wird.
+    assert.ok(alles.includes('Bankverbindung:'), 'Bankverbindungs-Zeile fehlt');
+    assert.ok(alles.includes('IBAN'), 'IBAN-Beschriftung fehlt');
+  });
+
   test("kein Zeichen ist im Zeichensatz verloren gegangen", () => {
     // ✓, □ und − stehen NICHT im WinAnsi-Zeichensatz der eingebauten
     // Schriften. Landeten sie im Text, käme Unsinn heraus.

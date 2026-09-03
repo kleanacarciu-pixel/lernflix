@@ -566,6 +566,14 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
   d.moveDown(0.2);
   d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
     .text(zahlungshinweis(dat.kind.name.split(" ")[0], dat.schuljahrName), R, d.y, { width: breite });
+  // Die Bankverbindung gehört IN den Vertrag – die Eltern sollen zum
+  // Überweisen nicht in E-Mails suchen müssen.
+  {
+    const b = bankverbindung();
+    d.moveDown(0.1);
+    d.font("Helvetica-Bold").fontSize(8).fillColor(FARBEN.ink)
+      .text(`Bankverbindung: ${b.inhaber} · IBAN ${b.iban}${b.bank ? ` · ${b.bank}` : ""}`, R, d.y, { width: breite });
+  }
 
   // --- 3. Das Wichtigste ---
   abschnitt(d, 3, "Das Wichtigste auf einen Blick");
