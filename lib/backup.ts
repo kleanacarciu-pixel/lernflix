@@ -14,7 +14,19 @@ export const BACKUP_TABLEN = [
   "schuljahre", "schulen", "unterrichtsfreie_tage",
   "vertraege", "vertrag_zeiten", "zahlungen", "mahn_vorlagen", "plusstunden_abrechnungen",
   "admin_einstellungen",
+  // Content-Engine (Quiz-Themen und erzeugte Pakete)
+  "topics", "content_log",
 ] as const;
+
+// Sortierspalte je Tabelle: Die Seiten-Abfragen (range) brauchen eine feste
+// Reihenfolge – ohne ORDER BY darf die Datenbank jede Seite anders sortieren,
+// und bei Tabellen über 1000 Zeilen fehlten dann still Zeilen oder kamen
+// doppelt. Standard ist "id"; abweichende Schlüssel stehen hier.
+const SORTIERSPALTE: Record<string, string> = {
+  profiles: "user_id",
+  mahn_vorlagen: "schluessel",
+  admin_einstellungen: "schluessel",
+};
 
 const SEITE = 1000;
 
@@ -23,13 +35,19 @@ const SEITE = 1000;
 async function ladeTabelle(name: string): Promise<unknown[]> {
   const sb = service();
   const alle: unknown[] = [];
+  const sortierung = SORTIERSPALTE[name] || "id";
   let von = 0;
   for (;;) {
-    const { data, error } = await sb.from(name).select("*").range(von, von + SEITE - 1);
+    const { data, error } = await sb.from(name).select("*")
+      .order(sortierung, { ascending: true })
+      .range(von, von + SEITE - 1);
     if (error) {
-      // Tabelle gibt es (noch) nicht auf diesem Stand – kein Abbruch, nur
-      // ohne diese Tabelle weitermachen.
-      return alle;
+      // NUR eine fehlende Tabelle ist harmlos (Migration noch nicht
+      // ausgeführt) – jede andere Störung muss die Sicherung laut scheitern
+      // lassen. Vorher wurde JEDER Fehler verschluckt: Das Backup meldete
+      // „ok", enthielt die Tabelle aber leer oder halb.
+      if (error.code === "42P01" || /does not exist/i.test(error.message)) return alle;
+      throw new Error(`Tabelle „${name}" ließ sich nicht sichern: ${error.message}`);
     }
     alle.push(...(data || []));
     if (!data || data.length < SEITE) break;

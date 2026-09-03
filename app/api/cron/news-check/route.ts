@@ -12,11 +12,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Vercel Cron darf die Route ohne Auth aufrufen via x-vercel-cron header.
-// Manuelle Aufrufe brauchen den Geheim-Token.
+// NUR der geheime Bearer-Token zählt: Die x-vercel-cron-Kopfzeile kann jeder
+// von außen mitschicken. Vercels eigene Cron-Aufrufe tragen den
+// CRON_SECRET-Bearer, sobald der in den Projektvariablen gesetzt ist.
 function authorisiert(req: Request): boolean {
-  const cronHeader = req.headers.get("x-vercel-cron");
-  if (cronHeader) return true;
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   const auth = req.headers.get("authorization") || "";

@@ -11,7 +11,7 @@
 //   erneutSenden – Angebots-E-Mail mit frischem Link erneut verschicken
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, userFromToken, getProfile, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
+import { service, userFromToken, getProfile, profilEntfernt, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
 import {
@@ -377,6 +377,7 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
     const t = text(body.token, 4000);
     const user = t ? await userFromToken(t) : null;
     if (!user) return bad("Bitte einloggen.", 401);
+    if (profilEntfernt(await getProfile(user.id))) return bad("Kein Zugang.", 403);
     const eigener = await laufenderVertrag(user.id);
     if (!eigener) return ok({ vertrag: null });
     const v = await vollbild(eigener.id);
@@ -579,6 +580,13 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       if (!sj) return bad("Es ist kein Schuljahr aktiv. Bitte zuerst unter /schuljahr eines aktiv setzen.");
       const zeiten = (Array.isArray(body.zeiten) ? body.zeiten : []) as { wochentag: number; uhrzeit?: string }[];
       if (!zeiten.length) return bad("Bitte mindestens einen Wochentermin angeben.");
+      // Wochentag prüfen, bevor gerechnet wird: Ein Wert außerhalb 0–6 fände
+      // schlicht keine Termine, und aus „undefined" würde still NaN.
+      for (const z of zeiten) {
+        if (!Number.isInteger(z.wochentag) || z.wochentag < 0 || z.wochentag > 6) {
+          return bad("Bitte einen gültigen Wochentag wählen.");
+        }
+      }
       const satzCent = euroZuCent(Number(body.stundensatz) || 0);
       const zweitCent = body.stundensatz_zweittermin != null
         ? euroZuCent(Number(body.stundensatz_zweittermin))
@@ -590,6 +598,7 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       const beginn = monatsErster(start);
       // Optionales Enddatum (z. B. Abitur): Termine und Raten nur bis dahin.
       const ende = text(body.unterrichtsende, 10);
+      if (ende && !/^\d{4}-\d{2}-\d{2}$/.test(ende)) return bad("Bitte ein gültiges Datum für die letzte Stunde angeben.");
       if (ende && ende < start) return bad("Die letzte Stunde kann nicht vor der ersten liegen.");
       const bis = ende && ende < sj.letzter_schultag ? ende : null;
 
@@ -616,6 +625,14 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       const zeiten = (Array.isArray(body.zeiten) ? body.zeiten : []) as { wochentag: number; uhrzeit?: string }[];
       if (!schuelerId) return bad("Bitte eine Schülerin bzw. einen Schüler wählen.");
       if (!zeiten.length) return bad("Bitte mindestens einen Wochentermin angeben.");
+      // Wochentag VOR dem Anlegen prüfen (wie die Uhrzeit weiter unten):
+      // Ein Wert außerhalb 0–6 fände keine Termine bzw. platzte erst am
+      // Datenbank-Check – dann mit halb angelegtem Vertrag.
+      for (const z of zeiten) {
+        if (!Number.isInteger(z.wochentag) || z.wochentag < 0 || z.wochentag > 6) {
+          return bad("Bitte einen gültigen Wochentag wählen.");
+        }
+      }
 
       const satzCent = euroZuCent(Number(body.stundensatz) || 0);
       if (satzCent <= 0) return bad("Bitte einen Stundensatz angeben.");
@@ -895,17 +912,21 @@ async function angebotSenden(vertragId: string, baseUrl: string): Promise<{ ok: 
   // Terminen und den AGB. Die Eltern haben damit sofort alles in der Hand,
   // was sie zum Lesen brauchen; unterschrieben wird danach über den Link.
   const jahr = v.schuljahr.name.replace("/", "-");
+  // Die drei PDFs hängen nicht voneinander ab – parallel erzeugt statt
+  // nacheinander, damit der Klick auf „Angebot senden" nicht unnötig wartet.
+  const [vertragInhalt, terminInhalt, agbInhalt] = await Promise.all([
+    vertragPdf(v),
+    terminlistePdf({
+      schuelerName: v.schueler.name, schuljahrName: v.schuljahr.name,
+      zeiten: v.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
+      termine: v.rechnung.alleTermine,
+    }),
+    agbPdf(),
+  ]);
   const dabei: MailAnhang[] = [
-    { filename: `Nachhilfevertrag-${jahr}.pdf`, content: await vertragPdf(v) },
-    {
-      filename: `Terminliste-${jahr}.pdf`,
-      content: await terminlistePdf({
-        schuelerName: v.schueler.name, schuljahrName: v.schuljahr.name,
-        zeiten: v.zeiten.map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
-        termine: v.rechnung.alleTermine,
-      }),
-    },
-    { filename: `AGB-${jahr}.pdf`, content: await agbPdf() },
+    { filename: `Nachhilfevertrag-${jahr}.pdf`, content: vertragInhalt },
+    { filename: `Terminliste-${jahr}.pdf`, content: terminInhalt },
+    { filename: `AGB-${jahr}.pdf`, content: agbInhalt },
   ];
 
   // Text und Betreff kommen aus der Vorlage – änderbar unter

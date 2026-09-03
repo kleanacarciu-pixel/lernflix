@@ -11,7 +11,7 @@
 // nur über kurzlebige signierte Links gelesen.
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, userFromToken, getProfile } from "@/lib/kalender";
+import { service, userFromToken, getProfile, profilEntfernt } from "@/lib/kalender";
 import { nextLessonFor, syncLessons } from "@/lib/stunden";
 import { kiBereit, kiText, BERICHT_SYSTEM, QUIZ_SYSTEM } from "@/lib/ki";
 
@@ -68,7 +68,7 @@ export async function POST(req: Request): Promise<Response> {
     const user = token ? await userFromToken(token) : null;
     if (!user) return fehler("Bitte melde dich zuerst an.", 401);
     const profil = await getProfile(user.id);
-    if (!profil) return fehler("Kein Zugang – bitte Kleana kontaktieren.", 403);
+    if (!profil || profilEntfernt(profil)) return fehler("Kein Zugang – bitte Kleana kontaktieren.", 403);
     const istLehrerin = profil.role === "admin";
     const sb = service();
 

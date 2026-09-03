@@ -142,16 +142,20 @@ export async function ladeVertrag(vertragId: string): Promise<{ vertrag: Vertrag
   return { vertrag: vRes.data as Vertrag, zeiten: (zRes.data || []) as VertragZeit[] };
 }
 
-/** Laufender Vertrag eines Schülers (angeboten oder aktiv), sonst null. */
-export async function laufenderVertrag(schuelerId: string): Promise<Vertrag | null> {
+/** ALLE laufenden Verträge eines Schülers (angeboten oder aktiv), neueste zuerst. */
+export async function laufendeVertraege(schuelerId: string): Promise<Vertrag[]> {
   const sb = service();
   const res = await sb
     .from("vertraege").select("*")
     .eq("schueler_id", schuelerId)
     .in("status", ["angeboten", "aktiv"])
     .order("erstellt_am", { ascending: false });
-  if (res.error) return null;
-  const alle = (res.data || []) as Vertrag[];
+  return res.error ? [] : ((res.data || []) as Vertrag[]);
+}
+
+/** Laufender Vertrag eines Schülers (angeboten oder aktiv), sonst null. */
+export async function laufenderVertrag(schuelerId: string): Promise<Vertrag | null> {
+  const alle = await laufendeVertraege(schuelerId);
   if (alle.length <= 1) return alle[0] ?? null;
   // Am Schuljahreswechsel kann es kurz ZWEI laufende Verträge geben (der
   // alte noch aktiv, der neue schon angeboten – der Unique-Index gilt nur je

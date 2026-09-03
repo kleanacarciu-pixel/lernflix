@@ -71,19 +71,27 @@ export async function rufeApi(
     if (r.status === 401) {
       let rstatus = 0;
       let rd: Record<string, unknown> = {};
+      let netzfehler = false;
       try {
         const rf = await anfrage('/api/kalender', { action: 'refresh', refresh: aktuell.refresh });
         rstatus = rf.status; rd = rf.data;
-      } catch { /* Netzwerkfehler – Sitzung NICHT verwerfen */ }
+      } catch { netzfehler = true; /* Netzwerkfehler – Sitzung NICHT verwerfen */ }
 
       if (rd.ok && rd.token) {
         speichereSitzung({ ...aktuell, token: String(rd.token), refresh: String(rd.refresh) });
         r = await anfrage(pfad, { action, token: String(rd.token), ...params });
-      } else if (rstatus === 401) {
-        // Nur ein echtes Ablaufen führt zum Ausloggen.
+      } else if (rstatus === 401 || rstatus === 403) {
+        // Nur ein echtes Ablaufen (oder gesperrtes Konto) führt zum Ausloggen.
         speichereSitzung(null);
         beiAbmeldung?.();
         throw new Error('Bitte einloggen.');
+      } else {
+        // Verlängern scheiterte am Netz oder am Server, NICHT an der Sitzung.
+        // Vorher fiel der Ablauf hier bis zur 401-Prüfung unten durch und
+        // meldete ab – im Funkloch flog man damit grundlos aus der Anmeldung.
+        throw new Error(netzfehler
+          ? 'Keine Verbindung – bitte noch einmal versuchen.'
+          : 'Die Anmeldung ließ sich gerade nicht verlängern – bitte noch einmal versuchen.');
       }
     }
   }

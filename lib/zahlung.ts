@@ -6,10 +6,10 @@
 // =============================================================================
 import { fuelle, alsHtml } from "@/lib/mail-text-kern";
 import { STANDARD_VORLAGEN, standardVorlage } from "@/lib/vorlagen-standard";
-import { service, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
-import { ladeVertrag, rechneVertrag, buchungErlaubt, laufenderVertrag, type Vertrag } from "@/lib/vertrag";
+import { service, mailZustellenOderMelden, berlinDatum, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
+import { ladeVertrag, rechneVertrag, buchungErlaubt, laufendeVertraege, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
-import { datumDe } from "@/lib/schuljahr-kern";
+import { datumDe, wochentagVon } from "@/lib/schuljahr-kern";
 import type { Schuljahr } from "@/lib/schuljahr";
 import {
   status, faelligeAktionen, zahlungsSperre, terminFindetStatt, pausierungAb,
@@ -96,16 +96,24 @@ export async function ladeZahlungen(vertragId: string): Promise<Zahlung[]> {
 export async function zahlungsSperreFuer(schuelerId: string): Promise<{
   gesperrt: boolean; grund?: string; regelterminAusgesetzt: boolean; pausiertAm: string | null;
 }> {
-  // laufenderVertrag statt eigener maybeSingle-Abfrage: am Schuljahreswechsel
-  // existieren kurz ZWEI laufende Verträge, und maybeSingle ließ die Sperre
-  // dann still ins Leere laufen (fail open).
-  const vertrag = await laufenderVertrag(schuelerId);
-  if (!vertrag) return { gesperrt: false, regelterminAusgesetzt: false, pausiertAm: null };
+  // ALLE laufenden Verträge prüfen, nicht nur den „bevorzugten": Am
+  // Schuljahreswechsel existieren kurz zwei (alter aktiv, neuer angeboten) –
+  // eine offene Rate aus dem ALTEN Vertrag muss weiter sperren, auch wenn
+  // der neue schon der bevorzugte ist.
+  const vertraege = await laufendeVertraege(schuelerId);
+  if (!vertraege.length) return { gesperrt: false, regelterminAusgesetzt: false, pausiertAm: null };
 
-  const zahlungen = await ladeZahlungen(vertrag.id);
-  const s = zahlungsSperre(zahlungen, heuteIso());
-  const pausiert = zahlungen.map((z) => z.pausiert_am).filter(Boolean).sort().pop() || null;
-  return { ...s, pausiertAm: s.regelterminAusgesetzt ? pausiert : null };
+  const heute = heuteIso();
+  let ausgesetzt: { gesperrt: boolean; grund?: string; regelterminAusgesetzt: boolean; pausiertAm: string | null } | null = null;
+  for (const vertrag of vertraege) {
+    const zahlungen = await ladeZahlungen(vertrag.id);
+    const s = zahlungsSperre(zahlungen, heute);
+    const pausiert = zahlungen.map((z) => z.pausiert_am).filter(Boolean).sort().pop() || null;
+    const voll = { ...s, pausiertAm: s.regelterminAusgesetzt ? pausiert : null };
+    if (voll.gesperrt) return voll;
+    if (voll.regelterminAusgesetzt && !ausgesetzt) ausgesetzt = voll;
+  }
+  return ausgesetzt ?? { gesperrt: false, regelterminAusgesetzt: false, pausiertAm: null };
 }
 
 /**
@@ -375,11 +383,10 @@ export type VorvertragStunde = {
 /** Datum und Uhrzeit einer Stunde in Europe/Berlin zerlegen. */
 function berlinTeile(iso: string): { datum: string; minuten: number } {
   const d = new Date(iso);
-  const datum = d.toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
   const [h, m] = new Intl.DateTimeFormat("de-DE", {
     timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
   }).format(d).split(":").map(Number);
-  return { datum, minuten: h * 60 + m };
+  return { datum: berlinDatum(iso), minuten: h * 60 + m };
 }
 
 /**
@@ -401,24 +408,39 @@ export async function vorvertraglicheStunden(): Promise<VorvertragStunde[]> {
   const vertraege = (vRes.data || []) as { id: string; schueler_id: string; vertragsbeginn: string }[];
   if (!vertraege.length) return [];
   const zRes = await sb.from("vertrag_zeiten")
-    .select("vertrag_id,ab_datum").in("vertrag_id", vertraege.map((v) => v.id));
-  const zeiten = (zRes.data || []) as { vertrag_id: string; ab_datum: string | null }[];
+    .select("vertrag_id,wochentag,ab_datum").in("vertrag_id", vertraege.map((v) => v.id));
+  const zeiten = (zRes.data || []) as { vertrag_id: string; wochentag: number; ab_datum: string | null }[];
 
-  // Fenster je Schüler: ab Vertragsbeginn (Monatserster) bis zum frühesten
-  // Geltungstag der Wochentermine – erst ab dem deckt der Vertrag die
-  // Stunden ab. ab_datum leer heißt: beginnt am Monatsersten, kein Fenster.
-  const fenster = new Map<string, { von: string; bis: string }>();
+  // Fenster je VERTRAG, nicht je Schüler (zwei laufende Verträge am
+  // Schuljahreswechsel überschrieben sich sonst gegenseitig). Eine Stunde am
+  // Tag D zählt für einen Vertrag als vorvertraglich, wenn
+  //   1. D im Fenster [vertragsbeginn, spätester Geltungstag) liegt und
+  //   2. KEIN Wochentermin desselben Wochentags sie schon abdeckt (abgedeckt
+  //      ab dessen ab_datum bzw. ab Vertragsbeginn, wenn keins gesetzt ist).
+  // So zählen auch Stunden an fremden Wochentagen (Lillys Mittwoch vor ihrem
+  // Montagstermin) und die Lücke zwischen zwei verschieden startenden
+  // Wochenterminen – aber nie eine Stunde, die die Terminliste schon enthält.
+  type Fenster = { von: string; bis: string; startJeWochentag: Map<number, string> };
+  const fensterJeSchueler = new Map<string, Fenster[]>();
   for (const v of vertraege) {
-    const eigene = zeiten.filter((z) => z.vertrag_id === v.id).map((z) => z.ab_datum);
-    if (!eigene.length || eigene.some((a) => !a)) continue;
-    const bis = (eigene as string[]).sort()[0];
+    const eigene = zeiten.filter((z) => z.vertrag_id === v.id);
+    if (!eigene.length) continue;
+    const startJeWochentag = new Map<number, string>();
+    for (const z of eigene) {
+      const start = z.ab_datum || v.vertragsbeginn;
+      const bisher = startJeWochentag.get(z.wochentag);
+      if (!bisher || start < bisher) startJeWochentag.set(z.wochentag, start);
+    }
+    const bis = [...startJeWochentag.values()].sort().pop()!;
     if (bis <= v.vertragsbeginn) continue;
-    fenster.set(v.schueler_id, { von: v.vertragsbeginn, bis });
+    const arr = fensterJeSchueler.get(v.schueler_id) || [];
+    arr.push({ von: v.vertragsbeginn, bis, startJeWochentag });
+    fensterJeSchueler.set(v.schueler_id, arr);
   }
-  if (!fenster.size) return [];
+  if (!fensterJeSchueler.size) return [];
 
-  const ids = [...fenster.keys()];
-  const frueheste = [...fenster.values()].map((f) => f.von).sort()[0];
+  const ids = [...fensterJeSchueler.keys()];
+  const frueheste = [...fensterJeSchueler.values()].flat().map((f) => f.von).sort()[0];
   const [lRes, aRes, pRes] = await Promise.all([
     // Gehaltene Stunden: bereits zu Ende, im Klassenzimmer materialisiert
     sb.from("lessons").select("student_id,starts_at,ends_at,mode,kind")
@@ -438,10 +460,14 @@ export async function vorvertraglicheStunden(): Promise<VorvertragStunde[]> {
   const offen: VorvertragStunde[] = [];
   for (const l of (lRes.data || []) as { student_id: string; starts_at: string; ends_at: string; mode: string | null; kind: string | null }[]) {
     if (l.kind === "webinar") continue;
-    const f = fenster.get(l.student_id);
-    if (!f) continue;
     const { datum, minuten } = berlinTeile(l.starts_at);
-    if (datum < f.von || datum >= f.bis) continue;
+    const wd = wochentagVon(datum);
+    const passt = (fensterJeSchueler.get(l.student_id) || []).some((f) => {
+      if (datum < f.von || datum >= f.bis) return false;
+      const deckungAb = f.startJeWochentag.get(wd);
+      return !deckungAb || datum < deckungAb;
+    });
+    if (!passt) continue;
     if (erfasst.has(`${l.student_id}|${datum}|${minuten}`)) continue;
     const dauerMin = Math.max(30, Math.round((Date.parse(l.ends_at) - Date.parse(l.starts_at)) / 60000));
     offen.push({

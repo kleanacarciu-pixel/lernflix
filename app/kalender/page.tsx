@@ -35,7 +35,20 @@ function iso(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pa
 function parseIso(s: string) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
 // In Minuten rechnen: setHours(14.5) würde die halbe Stunde ABSCHNEIDEN und
 // die 4-Stunden-Vorschau bei :30/:15-Terminen um bis zu 45 Minuten verfälschen.
-function hoursUntil(dateStr: string, hour: number) { const d = parseIso(dateStr); d.setHours(0, Math.round(hour * 60), 0, 0); return (d.getTime() - Date.now()) / 3600000; }
+// Und in BERLIN-Zeit rechnen, nicht in der Gerätezeit: Der Server bewertet
+// Absagen nach der Uhr in München – ein Handy im Urlaub (andere Zeitzone)
+// zeigte sonst „noch absagbar", der Server lehnte dann ab. Die Rechnung ist
+// dieselbe wie serverseitig in lib/kalender.ts (berlinInstant): erst den
+// UTC-Moment der Berliner Wandzeit bestimmen, dann mit Date.now() vergleichen.
+// (Kopiert statt importiert – lib/kalender.ts ist Server-Code mit Datenbank.)
+function hoursUntil(dateStr: string, hour: number) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const guess = Date.UTC(y, m - 1, d, 0, 0, 0) + hour * 3600000;
+  const g = new Date(guess);
+  const asUTC = new Date(g.toLocaleString("en-US", { timeZone: "UTC" })).getTime();
+  const asBerlin = new Date(g.toLocaleString("en-US", { timeZone: "Europe/Berlin" })).getTime();
+  return (guess - (asBerlin - asUTC) - Date.now()) / 3600000;
+}
 
 const CSS = `
 .kal *{box-sizing:border-box}
