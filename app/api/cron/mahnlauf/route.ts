@@ -28,10 +28,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Vercel Cron ruft die Route mit x-vercel-cron auf; manuelle Aufrufe brauchen
-// den Geheim-Token aus CRON_SECRET.
+// NUR der geheime Bearer-Token zählt: Die x-vercel-cron-Kopfzeile kann jeder
+// von außen mitschicken (und ein Fremder könnte damit z. B. den Mahnlauf mit
+// erfundenem ?datum auslösen). Vercels eigene Cron-Aufrufe tragen den
+// CRON_SECRET-Bearer, sobald der in den Projektvariablen gesetzt ist.
 function authorisiert(req: Request): boolean {
-  if (req.headers.get("x-vercel-cron")) return true;
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
   return (req.headers.get("authorization") || "") === `Bearer ${secret}`;

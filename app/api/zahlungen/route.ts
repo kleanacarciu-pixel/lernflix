@@ -16,7 +16,7 @@
 // Zahlungen laufen per Überweisung; hier wird nichts eingezogen.
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, userFromToken, getProfile, mailZustellenOderMelden, ADMIN_EMAIL } from "@/lib/kalender";
+import { service, userFromToken, getProfile, profilEntfernt, mailZustellenOderMelden, ADMIN_EMAIL } from "@/lib/kalender";
 import { laufenderVertrag, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { plusstundenPdf, bankverbindung } from "@/lib/vertrag-dokumente";
@@ -48,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
   const user = await userFromToken(token);
   if (!user) return bad("Bitte einloggen.", 401);
   const prof = await getProfile(user.id);
-  if (!prof) return bad("Kein Zugang.", 403);
+  if (!prof || profilEntfernt(prof)) return bad("Kein Zugang.", 403);
 
   // ------------------------------------------------ eigene Sicht (Portal)
   if (action === "meineZahlungen") {
@@ -166,13 +166,16 @@ export async function POST(req: Request): Promise<Response> {
       return r.error ? bad(r.error.message, 500) : ok();
     }
 
-    case "plusstunden":
-      return ok({
-        schueler: await offenePlusstunden(),
+    case "plusstunden": {
+      // Beide Listen hängen nicht voneinander ab – parallel laden.
+      const [schueler, vorvertrag] = await Promise.all([
+        offenePlusstunden(),
         // Gehaltene feste Termine vor dem ersten Vertragstermin – Kleana
         // übernimmt sie per Klick als Plusstunde (siehe lib/zahlung.ts).
-        vorvertrag: await vorvertraglicheStunden(),
-      });
+        vorvertraglicheStunden(),
+      ]);
+      return ok({ schueler, vorvertrag });
+    }
 
     case "vorvertragAlsPlus": {
       const sid = text(body.schueler_id, 40);
@@ -186,18 +189,27 @@ export async function POST(req: Request): Promise<Response> {
       if (!t) return bad("Diese Stunde ist nicht (mehr) offen.");
       const ins = await sb.from("appointments").insert({
         student_id: sid, slot_date: datum, hour: minuten / 60, kind: "einzel",
-        status: "bestaetigt", mode: t.mode || "online", dauer_min: t.dauerMin, counted: "plus",
+        // Die Dauer stammt aus dem Klassenzimmer (Ende minus Anfang) – blieb
+        // eine Stunde dort versehentlich offen, stünden hier viele Stunden.
+        // Mehr als 5 Zeitstunden hält niemand am Stück: darüber kappen.
+        status: "bestaetigt", mode: t.mode || "online", dauer_min: Math.min(t.dauerMin, 300), counted: "plus",
       });
       if (ins.error) return bad("Übernehmen fehlgeschlagen: " + ins.error.message, 500);
       // Plus-Zähler im Kalender nachziehen, damit Anzeige und Abrechnung
-      // dasselbe sagen.
+      // dasselbe sagen. Klappt DAS nicht, muss Kleana es erfahren – die
+      // Stunde steht dann zwar in der Abrechnung, aber der Zähler im
+      // Kalender hinkt hinterher.
       const pRes2 = await sb.from("profiles").select("plus_hours").eq("user_id", sid).single();
+      let zaehlerOk = false;
       if (!pRes2.error && pRes2.data) {
-        await sb.from("profiles")
+        const up = await sb.from("profiles")
           .update({ plus_hours: Number((pRes2.data as { plus_hours: number }).plus_hours) + 1 })
           .eq("user_id", sid);
+        zaehlerOk = !up.error;
       }
-      return ok({ message: "Als Plusstunde übernommen." });
+      return ok({ message: zaehlerOk
+        ? "Als Plusstunde übernommen."
+        : "Als Plusstunde übernommen – aber der Plus-Zähler im Kalender ließ sich nicht erhöhen. Bitte dort einmal mit „+“ nachziehen." });
     }
 
     case "plusstundenAbrechnen": {

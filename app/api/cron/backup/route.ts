@@ -21,25 +21,30 @@ const ORDNER = "taeglich";
 const AUFBEWAHRUNG_TAGE = 90;
 
 // Gibt bei Ablehnung den Grund zurück (fürs Protokoll), sonst null.
+// NUR der geheime Bearer-Token zählt: Die x-vercel-cron-Kopfzeile kann jeder
+// von außen mitschicken – Vercels eigene Cron-Aufrufe tragen ohnehin den
+// CRON_SECRET-Bearer, sobald der in den Projektvariablen gesetzt ist.
 function unauthorisiertGrund(req: Request): string | null {
-  if (req.headers.get("x-vercel-cron")) return null;
   const secret = process.env.CRON_SECRET;
   if (!secret) return "CRON_SECRET ist in Vercel nicht gesetzt";
   if ((req.headers.get("authorization") || "") === `Bearer ${secret}`) return null;
-  return "weder x-vercel-cron-Kopfzeile noch gültiger CRON_SECRET-Bearer-Token vorhanden";
+  return "kein gültiger CRON_SECRET-Bearer-Token";
 }
 
 export async function GET(req: Request): Promise<Response> {
   const grund = unauthorisiertGrund(req);
   if (grund) {
-    // Das darf nicht lautlos bleiben: schlägt die Berechtigung fehl, hat das
-    // Backup noch nie richtig gelaufen – also genauso eine Mail wie bei
-    // einem echten Fehler weiter unten.
     console.error("[cron/backup] nicht autorisiert:", grund);
-    await sendMail(ADMIN_EMAIL, "Automatisches Backup: Berechtigung fehlgeschlagen",
-      `<p>Die tägliche Datensicherung wurde heute abgelehnt (nicht autorisiert):</p>
-       <p style="color:#a12a2a">${grund}</p>
-       <p>Bitte kurz Bescheid geben, damit das behoben wird.</p>`);
+    // Eine Mail gibt es nur, wenn die eigene Einrichtung kaputt ist (fehlendes
+    // CRON_SECRET) – dann liefe das Backup nie. Anonyme Aufrufe von außen
+    // dürfen dagegen KEINE Mail auslösen, sonst könnte jeder Fremde Kleanas
+    // Postfach fluten.
+    if (grund.includes("nicht gesetzt")) {
+      await sendMail(ADMIN_EMAIL, "Automatisches Backup: Berechtigung fehlgeschlagen",
+        `<p>Die tägliche Datensicherung wurde heute abgelehnt (nicht autorisiert):</p>
+         <p style="color:#a12a2a">${grund}</p>
+         <p>Bitte kurz Bescheid geben, damit das behoben wird.</p>`);
+    }
     return NextResponse.json({ ok: false, error: "nicht autorisiert", grund }, { status: 401 });
   }
 

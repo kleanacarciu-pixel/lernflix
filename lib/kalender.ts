@@ -149,6 +149,15 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   const { data } = await service().from("profiles").select("*").eq("user_id", userId).maybeSingle();
   return (data as Profile) || null;
 }
+// Entfernte Konten: Kleana sperrt beim „Entfernen" nur das Passwort – ein noch
+// eingeloggtes Gerät behält aber seinen Token samt Refresh-Token. Deshalb muss
+// JEDER Sitzungs-Pfad zusätzlich prüfen, ob das Konto entfernt wurde. (Nur für
+// die Sitzung des Aufrufers gedacht; Admin-Aktionen auf entfernte Schüler,
+// z. B. Wiederherstellen, laufen bewusst weiter über getProfile direkt.
+// Das private kontoEntfernt(userId) oben ist der Login-Zwilling dazu.)
+export function profilEntfernt(p: Profile | null): boolean {
+  return !!p && !!(p as Profile & { deleted_at?: string | null }).deleted_at;
+}
 
 // --- Datum / Zeit (Europe/Berlin-bewusst, ohne externe Lib) -----------------
 const pad = (n: number) => String(n).padStart(2, "0");

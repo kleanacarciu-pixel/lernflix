@@ -72,7 +72,10 @@ export default function SchuljahrSeite() {
       setSchuljahre(sj);
       setSchulen((d.schulen || []) as Schule[]);
       setFreieTage((d.freieTage || []) as FreierTag[]);
-      setGewaehlt((g) => g || sj.find((s) => s.aktiv)?.id || sj[0]?.id || '');
+      // Auswahl behalten, solange es das Schuljahr noch gibt – wurde das
+      // gewählte gerade gelöscht, zeigte die Seite sonst dauerhaft „leere"
+      // Listen zu einer Id, die nirgendwo mehr existiert.
+      setGewaehlt((g) => (g && sj.some((s) => s.id === g) ? g : sj.find((s) => s.aktiv)?.id || sj[0]?.id || ''));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
     } finally { setLaden(false); }

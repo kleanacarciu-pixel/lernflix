@@ -41,13 +41,22 @@ async function mitRefresh(anfrage: (tok: string) => Promise<Response>): Promise<
   if (!session?.token) return null;
   let res = await anfrage(session.token).catch(() => null);
   if (res && res.status === 401 && session.refresh) {
+    // Rücksicht auf andere Tabs (wie in components/sitzung.ts): Hat der
+    // Kalender nebenan schon verlängert, dessen frischen Token nehmen –
+    // wer stattdessen mit dem ALTEN Refresh-Token verlängert, loggt bei
+    // Supabase beide Tabs aus.
+    const aktuell = ladeSession() ?? session;
+    if (aktuell.token && aktuell.token !== session.token) {
+      res = await anfrage(aktuell.token).catch(() => null);
+      if (res && res.status !== 401) return res;
+    }
     const rf = await fetch("/api/kalender", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "refresh", refresh: session.refresh }),
+      body: JSON.stringify({ action: "refresh", refresh: aktuell.refresh }),
     }).catch(() => null);
     const rd = (await rf?.json().catch(() => ({}))) as Record<string, unknown> | undefined;
     if (rd?.ok && typeof rd.token === "string") {
-      speichereSession({ ...session, token: rd.token, refresh: String(rd.refresh) });
+      speichereSession({ ...aktuell, token: rd.token, refresh: String(rd.refresh) });
       res = await anfrage(rd.token).catch(() => null);
     }
   }
