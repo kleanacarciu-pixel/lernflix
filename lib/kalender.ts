@@ -333,7 +333,9 @@ export function tagIntervalle(
   dayAppts.filter((a) => a.kind === "block" && a.status !== "abgesagt")
     .forEach((a) => {
       const dauer = Number(a.dauer_min) || 60;
-      ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: "", fixed: false, mode: null, dauer });
+      // Privater Titel (z. B. „Arzt") in der Notiz: landet unten NUR in der
+      // Admin-Sicht – Schüler und Öffentlichkeit sehen weiterhin „belegt".
+      ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: a.note || "", fixed: false, mode: null, dauer });
     });
   wblocks.filter((w) => w.weekday === wd)
     .forEach((w) => {
@@ -419,8 +421,8 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
       if (!anker) { basis.cont = true; basis.anchor = iv.start; }
       // Rollen-Sicht
       if (iv.t === "block") {
-        if (role === "admin") return { ...basis, state: "block", weekly: iv.weekly };
-        return basis; // Schüler/öffentlich sehen "belegt"
+        if (role === "admin") return { ...basis, state: "block", weekly: iv.weekly, ...(iv.name ? { name: iv.name } : {}) };
+        return basis; // Schüler/öffentlich sehen "belegt" – NIE den privaten Titel
       }
       // Pro-Datum-Umstellung gewinnt über den Grund-Modus des festen Termins
       const effMode = overrides.get(`${iv.sid}|${date}-${minutenSchluessel(iv.start)}`) ?? iv.mode;

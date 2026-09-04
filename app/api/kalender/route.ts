@@ -13,6 +13,7 @@ import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } fro
 import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
 import { buchungErlaubt as vertragUnterschrieben } from "@/lib/vertrag";
+import { aboSpeichern, aboEntfernen, pushAnKleana, type PushAbo } from "@/lib/push";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
   absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS,
@@ -762,15 +763,22 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "block") {
       // Blockieren minutengenau: Start im 5-Minuten-Raster, Dauer ab 5 Min.
+      // Optional mit privatem Titel (z. B. „Arzt"): Den sieht NUR Kleana –
+      // Schüler und Öffentlichkeit sehen weiterhin bloß „belegt". So braucht
+      // sie keinen zweiten Kalender für eigene Termine, und die
+      // Termin-Erinnerungen wissen auch von diesen Terminen.
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
+      const titel = String(body.titel || "").trim().replace(/[<>|]/g, "/").slice(0, 60) || null;
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
-      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin });
+      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin, note: titel });
         if (error) return bad("Blockieren fehlgeschlagen: " + error.message); }
       const endeMin = Math.round(hour * 60 + dauerMin);
       const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
-      return ok({ message: `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
+      return ok({ message: titel
+        ? `Eingetragen: „${titel}“ ${fmtZeit(hour)}–${ende}. Nur du siehst den Titel – alle anderen sehen „belegt“.`
+        : `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
       if (!validSlot) return bad("Ungültiger Slot.");
@@ -1005,6 +1013,33 @@ export async function POST(req: Request): Promise<Response> {
       const gespeichert = await speichereEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN, JSON.stringify(mitGesehen(bisher, id)));
       if (!gespeichert) return bad("Konnte das nicht speichern – bitte nochmal versuchen.");
       return ok({});
+    }
+
+    // ---- Termin-Erinnerungen (Web Push, nur für Kleana) --------------------
+    if (action === "pushAn") {
+      const abo = body.abo as PushAbo | undefined;
+      if (!abo || typeof abo.endpoint !== "string" || typeof abo.keys?.p256dh !== "string" || typeof abo.keys?.auth !== "string") {
+        return bad("Die Geräte-Anmeldung kam unvollständig an – bitte noch einmal versuchen.");
+      }
+      if (!(await aboSpeichern({ endpoint: abo.endpoint, keys: { p256dh: abo.keys.p256dh, auth: abo.keys.auth } }))) {
+        return bad("Konnte das Gerät nicht speichern – bitte noch einmal versuchen.", 500);
+      }
+      // Direkt eine Probe-Nachricht: So sieht Kleana sofort, ob alles klappt
+      // (und ob VAPID_PRIVATE_KEY in Vercel gesetzt ist).
+      const probe = await pushAnKleana("🔔 Erinnerungen sind an!", "Du bekommst jetzt ca. 15 Minuten vor jedem Termin eine Nachricht auf dieses Gerät.");
+      return ok({ message: probe.gesendet
+        ? "Erinnerungen aktiviert – die Probe-Nachricht müsste gerade angekommen sein."
+        : `Gerät gespeichert, aber die Probe-Nachricht kam nicht durch: ${probe.fehler || "unbekannter Grund"}` });
+    }
+    if (action === "pushAus") {
+      const endpoint = String(body.endpoint || "");
+      if (!endpoint) return bad("Kein Gerät angegeben.");
+      await aboEntfernen(endpoint);
+      return ok({ message: "Erinnerungen für dieses Gerät ausgeschaltet." });
+    }
+    if (action === "pushTest") {
+      const r = await pushAnKleana("🔔 Probe-Erinnerung", "So sehen deine Termin-Erinnerungen aus.");
+      return r.gesendet ? ok({ message: `Probe-Nachricht an ${r.gesendet} Gerät(e) gesendet.` }) : bad(r.fehler || "Versand fehlgeschlagen.");
     }
 
     return bad("Unbekannte Aktion.");

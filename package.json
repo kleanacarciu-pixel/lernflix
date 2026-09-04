@@ -18,7 +18,8 @@
     "pdfkit": "^0.19.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "stripe": "^22.1.1"
+    "stripe": "^22.1.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -26,6 +27,7 @@
     "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "sharp": "^0.35.3",
