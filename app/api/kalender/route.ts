@@ -251,9 +251,20 @@ export async function POST(req: Request): Promise<Response> {
         if (hoursUntil(date, hour) <= 0) {
           return bad("Diese Stunde hat schon begonnen oder ist vorbei – absagen geht jetzt nicht mehr. Bei Fragen melde dich bei Anna.");
         }
-        { const { error } = await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
+        { const { error } = await service().from("appointments").update({
+            status: "abgesagt", counted: null,
+            // WANN storniert wurde, stand bisher nirgendwo – Kleana konnte
+            // eine Absage später nicht mehr nachvollziehen. Der Zeitpunkt
+            // wandert in die Notiz; belegte Notizen (Probestunden tragen dort
+            // Name|E-Mail) bleiben unangetastet.
+            ...(s.booking.note ? {} : { note: `storno:${new Date().toISOString()}` }),
+          }).eq("id", s.booking.id);
           if (error) return bad("Absagen fehlgeschlagen: " + error.message); }
         await revertCounting(prof, s.booking.counted);
+        // Kleana erfuhr von solchen Absagen bisher NICHTS: Anders als beim
+        // festen Wochentermin ging keine Mail raus, und in der Absagen-Liste
+        // tauchte die Stunde auch nicht auf (die kennt nur „absage"-Zeilen).
+        after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat die gebuchte Stunde am ${prettyDate(date, hour)} abgesagt (Einzeltermin – eine Verrechnung wurde zurückgenommen, falls es eine gab).`));
         return ok({ message: "Deine gebuchte Stunde wurde abgesagt." });
       }
       if (s.fixedActive && s.fixedActive.student_id === user.id && !s.absageVon(user.id)) {
@@ -867,10 +878,15 @@ export async function POST(req: Request): Promise<Response> {
       const sb = service();
       // Absagen: mehr laden als gezeigt wird, denn mit ✕ ausgeblendete
       // ("gesehene") fallen gleich noch raus
-      const [pendRes, pfixRes, cancRes, profRes, gesehenWert] = await Promise.all([
+      const [pendRes, pfixRes, cancRes, stornoRes, profRes, gesehenWert] = await Promise.all([
         sb.from("appointments").select("student_id,slot_date,hour,kind,mode,note").eq("status", "angefragt").order("slot_date"),
         sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "angefragt"),
         sb.from("appointments").select("id,student_id,slot_date,hour,credited,note").eq("kind", "absage").order("slot_date", { ascending: false }).limit(60),
+        // Stornierte EINZEL-Buchungen: Die kennen keine „absage"-Zeile und
+        // fehlten deshalb komplett in dieser Liste – Kleana erfuhr von der
+        // Absage einer gebuchten Stunde schlicht nichts. Der Zeitpunkt steckt
+        // seit dem Storno-Vermerk in der Notiz.
+        sb.from("appointments").select("id,student_id,slot_date,hour,note").eq("kind", "einzel").eq("status", "abgesagt").like("note", "storno:%").order("slot_date", { ascending: false }).limit(30),
         sb.from("profiles").select("user_id,name"),
         ladeEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN),
       ]);
@@ -879,15 +895,19 @@ export async function POST(req: Request): Promise<Response> {
       const pend = (pendRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; mode: string | null; note: string | null }[];
       const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
       const canc = (cancRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
+      const storni = (stornoRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; note: string | null }[];
       const requests = [
         ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode })),
         ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode })),
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
-      const cancellations = canc
+      const cancellations = [
+        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, einzel: false, wann: null as string | null })),
+        ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null })),
+      ]
+        .sort((a, b) => b.date.localeCompare(a.date))
         .filter((c) => !gesehen.has(c.id))
-        .slice(0, 15)
-        .map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL }));
+        .slice(0, 15);
       return ok({ inbox: { requests, cancellations } });
     }
     if (action === "absageGesehen") {
