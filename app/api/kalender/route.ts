@@ -450,7 +450,14 @@ export async function POST(req: Request): Promise<Response> {
       const sid = String(body.studentId || "");
       const sp = await getProfile(sid);
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
-      if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
+      const nachtrag = body.nachtrag === true;
+      if (nachtrag && body.fest === true) return bad("Nachtragen geht nur für einzelne Stunden, nicht für feste Termine.");
+      // Beim NACHTRAGEN gilt die Belegt-Prüfung nicht: Die Stunde hat in
+      // Wirklichkeit stattgefunden – was der Kalender für diesen vergangenen
+      // Zeitpunkt geplant hatte (fremder fester Termin, Blockierung), weiß
+      // Kleana besser als das System. Genau diese Lücken sind der Grund fürs
+      // Nachtragen. Ein Doppel-Schutz je Schüler folgt weiter unten.
+      if (!nachtrag && await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist belegt.");
       if (body.fest === true) {
         // slotKonflikt sieht diesen Tag – aber ein fester Termin, dessen
         // HEUTIGE Stunde abgesagt ist, taucht dort nicht auf. Deshalb hier
@@ -482,12 +489,21 @@ export async function POST(req: Request): Promise<Response> {
       // eine „Termin eingetragen"-Mail zu einer längst gehaltenen Stunde
       // würde die Eltern nur verwirren. Verrechnet wird wie üblich
       // (Nachhol-Guthaben → Minus → sonst Plus).
-      const nachtrag = body.nachtrag === true;
       if (nachtrag) {
         const her = hoursUntil(date, hour);
         if (her > 0) return bad("Zum Nachtragen bitte ein vergangenes Datum wählen – künftige Stunden trägst du ganz normal im Kalender ein.");
         // Tippfehler-Bremse (falsches Jahr): höchstens ein halbes Jahr zurück.
         if (her < -185 * 24) return bad("Das Datum liegt mehr als ein halbes Jahr zurück – bitte prüfen.");
+        // Doppel-Schutz: dieselbe Stunde desselben Schülers nicht zweimal
+        // erfassen (auch nicht überlappend, z. B. 17:00–18:00 und 17:30).
+        const { data: schon, error: se } = await service().from("appointments")
+          .select("hour,dauer_min,status,kind").eq("student_id", sid).eq("slot_date", date);
+        if (se) return bad("Konnte den Tag nicht prüfen: " + se.message);
+        const doppelt = ((schon || []) as { hour: number; dauer_min: number | null; status: string; kind: string }[])
+          .some((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt"
+            && Number(a.hour) < hour + dauerMin / 60
+            && Number(a.hour) + (Number(a.dauer_min) || 60) / 60 > hour);
+        if (doppelt) return bad(`Um diese Uhrzeit ist an dem Tag für ${sp.name} schon eine Stunde erfasst – sie zählt bereits, nichts doppelt eintragen.`);
       } else if (hoursUntil(date, hour) <= 0) {
         return bad("Dieser Termin liegt in der Vergangenheit. Zum Erfassen einer bereits gehaltenen Stunde nutze „Stunde nachtragen“ auf der Zahlungen-Seite.");
       }
