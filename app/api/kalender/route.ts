@@ -771,9 +771,10 @@ export async function POST(req: Request): Promise<Response> {
       const titel = String(body.titel || "").trim().replace(/[<>|]/g, "/").slice(0, 60) || null;
       // Erinnerungs-Vorlauf in Minuten, frei wählbar je Termin (nur mit Titel
       // sinnvoll; 0 = keine Erinnerung, nichts gewählt = Standard 15 Min.).
-      // Gespeichert im sonst ungenutzten counted-Feld als „vl:<Minuten>" –
-      // die Verrechnungslogik liest counted nur bei Einzel-Buchungen, nie
-      // bei Blocks.
+      // Gespeichert HINTER dem Titel in der Notiz als „|vl:<Minuten>" – das
+      // Trennzeichen | kann im Titel nicht vorkommen (wird oben ersetzt).
+      // NICHT ins counted-Feld: dort erlaubt die Datenbank per Check nur die
+      // Verrechnungswerte (Kleanas erster Versuch scheiterte genau daran).
       const vlRoh = Number(body.vorlaufMin);
       const vorlauf = titel && Number.isFinite(vlRoh) && [0, 5, 15, 30, 60, 120, 1440].includes(vlRoh) ? vlRoh : null;
       const s = await inspectSlot(date, hour);
@@ -781,7 +782,7 @@ export async function POST(req: Request): Promise<Response> {
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
       { const { error } = await service().from("appointments").insert({
           student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin,
-          note: titel, counted: vorlauf === null ? null : `vl:${vorlauf}`,
+          note: titel ? (vorlauf === null ? titel : `${titel}|vl:${vorlauf}`) : null,
         });
         if (error) return bad("Blockieren fehlgeschlagen: " + error.message); }
       const endeMin = Math.round(hour * 60 + dauerMin);
