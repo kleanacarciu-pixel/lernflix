@@ -525,8 +525,15 @@ export async function POST(req: Request): Promise<Response> {
           const zaehlt = doppelt.counted === "plus" ? "sie zählt bereits als Plusstunde"
             : doppelt.counted === "makeup" ? "sie wurde bereits mit einem Nachhol-Guthaben verrechnet"
             : doppelt.counted === "minus" ? "sie hat bereits eine offene Minus-Stunde ausgeglichen"
-            : "sie ist bestätigt, wurde aber nie verrechnet – bitte melde dich kurz bei Claude, dann klären wir diesen alten Eintrag";
-          return bad(`Um ${um} Uhr ist an dem Tag für ${sp.name} schon eine Stunde erfasst – ${zaehlt}. Nichts doppelt eintragen.`);
+            : "sie ist bestätigt, wurde aber nie verrechnet";
+          // Zählt der Treffer NICHT als Plus, bietet die Seite Kleana das
+          // Umstellen an (Lillys 1.9.: ein handgesetztes Minus schluckte die
+          // Stunde, die eigentlich vor Vertragsbeginn lag und Plus sein muss).
+          return NextResponse.json({
+            ok: false,
+            error: `Um ${um} Uhr ist an dem Tag für ${sp.name} schon eine Stunde erfasst – ${zaehlt}. Nichts doppelt eintragen.`,
+            alsPlusMoeglich: doppelt.counted !== "plus",
+          }, { status: 409 });
         }
       } else if (hoursUntil(date, hour) <= 0) {
         return bad("Dieser Termin liegt in der Vergangenheit. Zum Erfassen einer bereits gehaltenen Stunde nutze „Stunde nachtragen“ auf der Zahlungen-Seite.");
@@ -546,6 +553,39 @@ export async function POST(req: Request): Promise<Response> {
       if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Termin eingetragen", em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
       await syncLessons(true);
       return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
+    }
+
+    if (action === "stundeAlsPlus") {
+      // Verrechnung einer bereits erfassten, GEHALTENEN Stunde nachträglich
+      // auf Plus umstellen. Anlass: Lillys Stunde vor Vertragsbeginn wurde
+      // beim Bestätigen von einem handgesetzten Minus „geschluckt" – vor dem
+      // Vertragsbeginn kann es aber gar keine echte Minus-Gutschrift geben,
+      // solche Stunden gehören als Plus abgerechnet. Nur rückwirkend; das
+      // früher eingelöste Guthaben wird bewusst NICHT zurückgegeben (war es
+      // doch echt, zieht Kleana es in der Übersicht mit „+" selbst nach).
+      if (!validSlot) return bad("Ungültiger Slot.");
+      const sid = String(body.studentId || "");
+      const sp = await getProfile(sid);
+      if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
+      if (hoursUntil(date, hour) > 0) return bad("Das geht nur für bereits gehaltene (vergangene) Stunden.");
+      const { data, error } = await service().from("appointments")
+        .select("id,hour,dauer_min,counted").eq("student_id", sid).eq("slot_date", date)
+        .eq("kind", "einzel").eq("status", "bestaetigt");
+      if (error) return bad("Konnte die Stunde nicht laden: " + error.message);
+      const treffer = ((data || []) as { id: string; hour: number; dauer_min: number | null; counted: string | null }[])
+        .find((a) => Number(a.hour) < hour + dauerMin / 60 && Number(a.hour) + (Number(a.dauer_min) || 60) / 60 > hour);
+      if (!treffer) return bad("Diese Stunde ist nicht (mehr) als bestätigt erfasst – bitte die Seite neu laden.");
+      if (treffer.counted === "plus") return ok({ message: "Diese Stunde zählt bereits als Plusstunde – nichts zu tun." });
+      const alt = treffer.counted;
+      { const { error: ue } = await service().from("appointments").update({ counted: "plus" }).eq("id", treffer.id);
+        if (ue) return bad("Umstellen fehlgeschlagen: " + ue.message); }
+      const kontoOk = await setBalance(sid, { plus_hours: sp.plus_hours + 1 });
+      const hinweisAlt = alt === "minus"
+        ? " Die damals verrechnete Minus-Gutschrift kommt dabei nicht zurück – war sie doch echt, erhöhe Minus in der Übersicht mit „+“."
+        : alt === "makeup"
+          ? " Das damals eingelöste Nachhol-Guthaben kommt dabei nicht zurück – war es doch echt, erhöhe Nachholen in der Übersicht mit „+“."
+          : "";
+      return ok({ message: `Die Stunde am ${prettyDate(date, hour)} zählt jetzt als Plusstunde und steht unter „Zusatzstunden“ zum Abrechnen.${kontoOk ? "" : " ACHTUNG: Der Plus-Zähler ließ sich nicht erhöhen – bitte in der Übersicht mit „+“ nachziehen."}${hinweisAlt}` });
     }
 
     if (action === "createCall") {

@@ -98,7 +98,11 @@ export async function rufeApi(
 
   if (r.status === 401) { beiAbmeldung?.(); throw new Error('Bitte einloggen.'); }
   if (r.status >= 400 || !r.data.ok) {
-    throw new Error(String(r.data.error || 'Das hat nicht geklappt.'));
+    const fehler = new Error(String(r.data.error || 'Das hat nicht geklappt.'));
+    // Manche Fehlerantworten tragen Zusatzfelder (z. B. „darf ich das
+    // stattdessen so lösen?"-Angebote) – die Seiten lesen sie hier heraus.
+    (fehler as Error & { antwort?: Record<string, unknown> }).antwort = r.data;
+    throw fehler;
   }
   return r.data;
 }
