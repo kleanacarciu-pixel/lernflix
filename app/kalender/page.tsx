@@ -637,7 +637,7 @@ export default function KalenderPage() {
             ✏️ Termin für Schüler eintragen
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
-            onClose={() => setModal(null)} onSubmit={(vonMin, d, titel) => act("block", { date, hour: vonMin / 60, dauerMin: d, titel })} />); }}>
+            onClose={() => setModal(null)} onSubmit={(vonMin, d, titel, vorlaufMin) => act("block", { date, hour: vonMin / 60, dauerMin: d, titel, vorlaufMin })} />); }}>
             ⛔ Blockieren / eigener Termin (nur dieses Datum)
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin} wochentag={DAYS[wd]}
@@ -1304,12 +1304,13 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
 // sie sieht den Titel, alle anderen sehen nur „belegt".
 function BlockWahl({ when, startHour, schlussMin, wochentag, onSubmit, onClose }: {
   when: string; startHour: number; schlussMin: number; wochentag?: string;
-  onSubmit: (vonMin: number, dauerMin: number, titel: string) => void; onClose: () => void;
+  onSubmit: (vonMin: number, dauerMin: number, titel: string, vorlaufMin: number) => void; onClose: () => void;
 }) {
   const startMin = Math.round(startHour * 60);
   const [von, setVon] = useState(minZuZeit(startMin));
   const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const [titel, setTitel] = useState("");
+  const [vorlauf, setVorlauf] = useState(15);
   const fehler = zeitFehler(von, bis, schlussMin);
   return <div className="modal"><h2>{wochentag ? `⛔ Jeden ${wochentag} blockieren` : "⛔ Blockieren / eigener Termin"}</h2><p>{when}</p>
     <div className="okbox">{wochentag
@@ -1324,9 +1325,24 @@ function BlockWahl({ when, startHour, schlussMin, wochentag, onSubmit, onClose }
           style={{ display: "block", width: "100%", marginTop: 4, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, font: "inherit", boxSizing: "border-box" }} />
       </label>
     )}
+    {!wochentag && titel.trim() && (
+      <label style={{ display: "block", marginTop: 10 }}>
+        <span style={{ fontSize: ".85rem", color: "var(--muted)" }}>Erinnerung aufs Handy:</span>
+        <select value={vorlauf} onChange={(e) => setVorlauf(Number(e.target.value))}
+          style={{ display: "block", width: "100%", marginTop: 4, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, font: "inherit", boxSizing: "border-box", background: "#fff" }}>
+          <option value={15}>15 Minuten vorher (Standard)</option>
+          <option value={5}>5 Minuten vorher</option>
+          <option value={30}>30 Minuten vorher</option>
+          <option value={60}>1 Stunde vorher</option>
+          <option value={120}>2 Stunden vorher</option>
+          <option value={1440}>1 Tag vorher</option>
+          <option value={0}>keine Erinnerung</option>
+        </select>
+      </label>
+    )}
     {fehler && <div className="err">{fehler}</div>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), titel.trim())}>{wochentag ? "Dauerhaft blockieren" : titel.trim() ? "Termin eintragen" : "Blockieren"}</button></div></div>;
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), titel.trim(), vorlauf)}>{wochentag ? "Dauerhaft blockieren" : titel.trim() ? "Termin eintragen" : "Blockieren"}</button></div></div>;
 }
 function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
   title: string; startHour: number; schlussMin: number;

@@ -769,15 +769,31 @@ export async function POST(req: Request): Promise<Response> {
       // Termin-Erinnerungen wissen auch von diesen Terminen.
       if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
       const titel = String(body.titel || "").trim().replace(/[<>|]/g, "/").slice(0, 60) || null;
+      // Erinnerungs-Vorlauf in Minuten, frei wählbar je Termin (nur mit Titel
+      // sinnvoll; 0 = keine Erinnerung, nichts gewählt = Standard 15 Min.).
+      // Gespeichert im sonst ungenutzten counted-Feld als „vl:<Minuten>" –
+      // die Verrechnungslogik liest counted nur bei Einzel-Buchungen, nie
+      // bei Blocks.
+      const vlRoh = Number(body.vorlaufMin);
+      const vorlauf = titel && Number.isFinite(vlRoh) && [0, 5, 15, 30, 60, 120, 1440].includes(vlRoh) ? vlRoh : null;
       const s = await inspectSlot(date, hour);
       if (s.block || s.weeklyBlock) return ok({ message: "Bereits geblockt." });
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Zeitraum ist belegt – kann nicht geblockt werden.");
-      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin, note: titel });
+      { const { error } = await service().from("appointments").insert({
+          student_id: null, slot_date: date, hour, kind: "block", status: "bestaetigt", dauer_min: dauerMin,
+          note: titel, counted: vorlauf === null ? null : `vl:${vorlauf}`,
+        });
         if (error) return bad("Blockieren fehlgeschlagen: " + error.message); }
       const endeMin = Math.round(hour * 60 + dauerMin);
       const ende = `${String(Math.floor(endeMin / 60)).padStart(2, "0")}:${String(endeMin % 60).padStart(2, "0")}`;
+      const vlText = vorlauf === 0 ? "Ohne Erinnerung."
+        : vorlauf === 1440 ? "Erinnerung 1 Tag vorher."
+        : vorlauf === 120 ? "Erinnerung 2 Stunden vorher."
+        : vorlauf === 60 ? "Erinnerung 1 Stunde vorher."
+        : vorlauf ? `Erinnerung ${vorlauf} Minuten vorher.`
+        : "Erinnerung ca. 15 Minuten vorher.";
       return ok({ message: titel
-        ? `Eingetragen: „${titel}“ ${fmtZeit(hour)}–${ende}. Nur du siehst den Titel – alle anderen sehen „belegt“.`
+        ? `Eingetragen: „${titel}“ ${fmtZeit(hour)}–${ende}. Nur du siehst den Titel – alle anderen sehen „belegt“. ${vlText}`
         : `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
     if (action === "unblock") {
