@@ -76,9 +76,11 @@ export function macheRueckgaengig(k: Konto, counted: string | null): Aenderung |
 export type Absagebewertung = {
   /** Bekommt der Schüler eine Minus-Stunde gutgeschrieben? */
   gutschrift: boolean;
+  /** Wurde die Absage direkt mit einer offenen Plusstunde verrechnet? */
+  plusVerrechnet: boolean;
   /** Vermerk auf der Absage-Zeile: null bei Gutschrift, sonst der Grund. */
-  note: null | "late" | "overmax";
-  /** Änderung am Konto – null, wenn es nichts gutzuschreiben gibt. */
+  note: null | "late" | "overmax" | "plusverrechnet";
+  /** Änderung am Konto – null, wenn es nichts zu verrechnen gibt. */
   aenderung: Aenderung | null;
   /** Rückmeldung an den Schüler. */
   text: string;
@@ -87,10 +89,25 @@ export type Absagebewertung = {
 /**
  * Absage eines festen Termins durch den Schüler (Vier-Stunden-Regel).
  *
+ * Kleanas Regel: Plus- und Minus-Stunden gehören zusammen. Stehen bei einer
+ * rechtzeitigen Absage noch offene Plusstunden (gehaltene, unabgerechnete
+ * Extra-Stunden), gilt eine davon sofort als Ersatz der abgesagten Stunde –
+ * die Familie zahlt sie nicht extra, und es entsteht KEIN Minus. Erst ohne
+ * offene Plusstunden gibt es die Minus-Gutschrift (bis MAX_MINUS).
+ * Nachhol-Guthaben (Kleanas eigene Absagen) bleiben davon unberührt – die
+ * schuldet sie der Familie in jedem Fall.
+ *
  * @param stundenBisTermin Stunden bis zum Termin; negativ heißt vorbei.
  */
 export function bewerteAbsage(k: Konto, stundenBisTermin: number): Absagebewertung {
   const rechtzeitig = stundenBisTermin >= ABSAGE_FRIST_STUNDEN;
+  if (rechtzeitig && k.plus_hours > 0) {
+    return {
+      gutschrift: false, plusVerrechnet: true, note: "plusverrechnet",
+      aenderung: { plus_hours: k.plus_hours - 1 },
+      text: "Abgesagt. Die Stunde wurde direkt mit einer offenen Zusatzstunde (Plus) verrechnet – nichts nachzuholen, nichts extra zu zahlen.",
+    };
+  }
   const gutschrift = rechtzeitig && k.minus_hours < MAX_MINUS;
   const note = gutschrift ? null : (!rechtzeitig ? "late" : "overmax");
 
@@ -101,7 +118,7 @@ export function bewerteAbsage(k: Konto, stundenBisTermin: number): Absagebewertu
     : `Abgesagt. Weniger als ${ABSAGE_FRIST_STUNDEN} Std. vorher – keine Gutschrift.`;
 
   return {
-    gutschrift, note, text,
+    gutschrift, plusVerrechnet: false, note, text,
     aenderung: gutschrift ? { minus_hours: k.minus_hours + 1 } : null,
   };
 }
@@ -136,6 +153,12 @@ export type Absagevorschau = {
  */
 export function absageVorschau(k: Konto, stundenBisTermin: number): Absagevorschau {
   const b = bewerteAbsage(k, stundenBisTermin);
+  if (b.plusVerrechnet) {
+    return {
+      gutschrift: false, bestaetigungNoetig: false, grund: null,
+      text: "Wird direkt mit einer offenen Zusatzstunde (Plus) verrechnet – nichts nachzuholen, nichts extra zu zahlen.",
+    };
+  }
   if (b.gutschrift) {
     const frei = freieGutschriften(k) - 1;
     return {

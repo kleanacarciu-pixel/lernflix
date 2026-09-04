@@ -13,7 +13,7 @@ type Balance = { minus: number; plus: number; nach: number; dates: { minus: stri
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
-type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; einzel?: boolean; wann?: string | null };
+type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; plusVerr?: boolean; einzel?: boolean; wann?: string | null };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
 
@@ -549,7 +549,7 @@ export default function KalenderPage() {
         const istOnline = s.mode === "online";
         setModal(<div className="modal"><h2>Dein Termin</h2><p>{when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
           {(() => {
-            const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: 0, makeup_credits: 0 }, hu);
+            const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: balance?.plus ?? 0, makeup_credits: 0 }, hu);
             return v.gutschrift
               ? <div className="okbox">{v.text}</div>
               : <div className="warn"><b>{v.text}</b></div>;
@@ -559,7 +559,7 @@ export default function KalenderPage() {
               {istOnline ? "🏫 Diese Stunde vor Ort machen" : "💻 Diese Stunde online machen"}
             </button>
             {(() => {
-              const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: 0, makeup_credits: 0 }, hu);
+              const v = absageVorschau({ minus_hours: balance?.minus ?? 0, plus_hours: balance?.plus ?? 0, makeup_credits: 0 }, hu);
               // Verfaellt die Stunde, muss der Verfall ausdruecklich bestaetigt
               // werden – der Server laesst die Absage sonst nicht durch.
               const beschriftung = v.gutschrift ? "Diesen Termin absagen"
@@ -993,6 +993,7 @@ export default function KalenderPage() {
                 <div key={c.id || i} className="inbxrow cr">
                   <button className="ibmain" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.byAnna ? "von dir abgesagt"
                     : c.einzel ? `gebuchte Stunde storniert${c.wann ? ` (am ${new Date(c.wann).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr)` : ""}`
+                    : c.plusVerr ? "Absage (mit Plusstunde verrechnet)"
                     : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
                   {c.id && <button className="ibweg" title="Gesehen – aus der Liste nehmen" aria-label={`Absage von ${c.who} ausblenden`} onClick={() => void absageGesehen(c.id!)}>✕</button>}
                 </div>

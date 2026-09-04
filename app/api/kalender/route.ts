@@ -291,13 +291,28 @@ export async function POST(req: Request): Promise<Response> {
           );
         }
 
-        const { gutschrift: credit, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
+        const { gutschrift: credit, plusVerrechnet, note: cnote, aenderung, text: absageText } = bewerteAbsage(prof, hu);
         // Erst die Absage-Zeile, DANN das Konto: scheitert das Speichern der
         // Absage, darf keine Gutschrift entstehen (der Termin stünde sonst
         // weiter im Kalender, das Konto wäre aber schon verändert).
         { const { error } = await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
           if (error) return bad("Absagen fehlgeschlagen: " + error.message); }
         const kontoOk = aenderung ? await setBalance(user.id, aenderung) : true;
+        if (plusVerrechnet) {
+          // Auch die KONKRETE Plusstunde aus der Abrechnung nehmen: die
+          // älteste offene wird zur Ersatzstunde der Absage (counted „minus")
+          // – sonst stünde sie unter „Zusatzstunden" weiter zum Abrechnen,
+          // obwohl der Zähler schon herunterging.
+          const { data: aelteste } = await service().from("appointments")
+            .select("id").eq("student_id", user.id).eq("counted", "plus")
+            .eq("status", "bestaetigt").is("abrechnung_id", null)
+            .order("slot_date", { ascending: true }).limit(1);
+          const ziel = (aelteste || [])[0] as { id: string } | undefined;
+          if (ziel) {
+            const { error: ue } = await service().from("appointments").update({ counted: "minus" }).eq("id", ziel.id);
+            if (ue) console.error("Plusstunde ließ sich nicht als verrechnet markieren:", ue.message);
+          }
+        }
 
         // Frühwarnung: mit dieser Gutschrift ist nur noch eine frei.
         const danach = { ...prof, ...(aenderung ?? {}) };
@@ -311,7 +326,9 @@ export async function POST(req: Request): Promise<Response> {
           }));
         }
 
-        after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
+        after(() => sendMail(ADMIN_EMAIL, "Schüler-Absage", `${prof.name} hat den Termin ${prettyDate(date, hour)} abgesagt${
+          plusVerrechnet ? " (direkt mit einer offenen Plusstunde verrechnet – kein Minus, eine Zusatzstunde weniger in der Abrechnung)"
+          : credit ? " (>4 Std. → Minus-Stunde gutgeschrieben)" : " (<4 Std. → keine Gutschrift)"}.`));
         return ok({
           message: kontoOk ? absageText
             : absageText + " ACHTUNG: Die Gutschrift konnte nicht gespeichert werden – bitte melde dich kurz bei Anna.",
@@ -955,8 +972,8 @@ export async function POST(req: Request): Promise<Response> {
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
       const cancellations = [
-        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, einzel: false, wann: null as string | null })),
-        ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null })),
+        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, plusVerr: c.note === "plusverrechnet", einzel: false, wann: null as string | null })),
+        ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, plusVerr: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null })),
       ]
         .sort((a, b) => b.date.localeCompare(a.date))
         .filter((c) => !gesehen.has(c.id))
