@@ -634,7 +634,7 @@ export default function KalenderPage() {
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
             startHour={startZelle} schlussMin={schlussMin} api={api} onClose={() => setModal(null)}
             onSubmit={(sid, m, vonMin, d, fest) => act("adminBook", { date, hour: vonMin / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
-            📅 Termin für Schüler eintragen
+            ✏️ Termin für Schüler eintragen
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
             onClose={() => setModal(null)} onSubmit={(vonMin, d, titel) => act("block", { date, hour: vonMin / 60, dauerMin: d, titel })} />); }}>
@@ -923,7 +923,7 @@ export default function KalenderPage() {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="wrap">
         <div className="hdr">
-          <h1>📅 Terminkalender</h1>
+          <h1>Terminkalender</h1>
           <div className="sp">
             <a className="back nurdesk" href="https://lernemitanna.de">← lernemitanna.de</a>
             <a className="btn g sm applink nurdesk" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
@@ -981,7 +981,7 @@ export default function KalenderPage() {
             <b style={{ marginRight: 4 }}>Schuljahr:</b>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/vertraege">📄 Verträge</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
-            <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">📅 Schuljahr &amp; Ferien</a>
+            <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
           </div>
         )}
 
@@ -1276,7 +1276,7 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const fehler = zeitFehler(von, bis, schlussMin);
-  return <div className="modal"><h2>📅 Termin eintragen</h2>
+  return <div className="modal"><h2>✏️ Termin eintragen</h2>
     <label>Für welchen Schüler?</label>
     <select value={sid} onChange={(e) => setSid(e.target.value)} style={{ width: "100%" }}>
       {liste.map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
