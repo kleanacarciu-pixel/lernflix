@@ -166,7 +166,27 @@ export default function ZahlungenSeite() {
       setHinweis(String(d.message || 'Stunde nachgetragen.'));
       setNtDatum('');
       await neuLaden();
-    } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+    } catch (e) {
+      const meldung = e instanceof Error ? e.message : 'Fehler.';
+      // Die Stunde ist schon erfasst, zählt aber nicht als Plus (z. B. weil
+      // ein handgesetztes Minus sie damals „geschluckt" hat)? Dann bietet
+      // der Server das Umstellen an – Kleana entscheidet per Rückfrage.
+      const antwort = (e as Error & { antwort?: { alsPlusMoeglich?: boolean } }).antwort;
+      if (antwort?.alsPlusMoeglich && confirm(
+        `${meldung}\n\nSoll diese Stunde stattdessen als PLUSSTUNDE zählen `
+        + `(z. B. weil sie vor dem Vertragsbeginn lag und abgerechnet werden soll)?`)) {
+        try {
+          const u = await rufeApi('/api/kalender', 'stundeAlsPlus', {
+            studentId: ntSid, date: ntDatum, hour: (h || 0) + (m || 0) / 60, dauerMin: ntDauer,
+          }, () => setAbgemeldet(true));
+          setHinweis(String(u.message || 'Auf Plusstunde umgestellt.'));
+          setNtDatum('');
+          await neuLaden();
+        } catch (e2) { setFehler(e2 instanceof Error ? e2.message : 'Fehler.'); }
+      } else {
+        setFehler(meldung);
+      }
+    }
     finally { setNtLaeuft(false); }
   }
 
