@@ -13,7 +13,7 @@
 // admin_einstellungen verhindert Doppelte über die 5-Minuten-Läufe hinweg.
 // =============================================================================
 import { NextResponse } from "next/server";
-import { service, berlinInstant, fmtZeit } from "@/lib/kalender";
+import { service, berlinInstant, fmtZeit, addDaysStr } from "@/lib/kalender";
 import { pushAnKleana, pushKonfiguriert } from "@/lib/push";
 import { ladeEinstellung, speichereEinstellung } from "@/lib/einstellungen";
 
@@ -51,10 +51,11 @@ export async function GET(req: Request): Promise<Response> {
       sb.from("lessons").select("id,title,starts_at,mode,student_id,kind")
         .gte("starts_at", new Date(jetzt).toISOString()).lt("starts_at", bisIso),
       // Private Termine: Blockierungen MIT Titel (Blocks ohne Titel sind
-      // reine Sperren – dafür braucht niemand eine Erinnerung).
-      sb.from("appointments").select("id,slot_date,hour,note,dauer_min")
+      // reine Sperren – dafür braucht niemand eine Erinnerung). Zwei Tage
+      // voraus laden, damit auch „1 Tag vorher"-Erinnerungen greifen.
+      sb.from("appointments").select("id,slot_date,hour,note,dauer_min,counted")
         .eq("kind", "block").neq("status", "abgesagt").not("note", "is", null)
-        .eq("slot_date", heute),
+        .gte("slot_date", heute).lte("slot_date", addDaysStr(heute, 2)),
       sb.from("profiles").select("user_id,name"),
       ladeEinstellung(SCHLUESSEL_ERINNERT),
     ]);
@@ -80,12 +81,23 @@ export async function GET(req: Request): Promise<Response> {
       faellig.push({ schluessel: key, titel: "🔔 Gleich ist Unterricht", text: `${berlinUhr(l.starts_at)} Uhr: ${wer}${wie}` });
     }
 
-    for (const b of (bRes.data || []) as { id: string; slot_date: string; hour: number; note: string | null; dauer_min: number | null }[]) {
+    for (const b of (bRes.data || []) as { id: string; slot_date: string; hour: number; note: string | null; dauer_min: number | null; counted: string | null }[]) {
+      // Vorlauf je Termin: Kleana wählt ihn beim Eintragen (counted „vl:30"
+      // = 30 Minuten vorher, „vl:0" = gar keine Erinnerung). Ohne Wahl gilt
+      // der Standard von ~15 Minuten.
+      const vl = /^vl:(\d+)$/.exec(b.counted || "");
+      const vorlaufMin = vl ? Number(vl[1]) : 15;
+      if (vorlaufMin === 0) continue;
       const start = berlinInstant(b.slot_date, Number(b.hour));
-      if (start < jetzt || start >= jetzt + VORLAUF_MS) continue;
+      // Fällig, sobald der Erinnerungszeitpunkt erreicht ist und der Termin
+      // noch nicht begonnen hat. Wird ein Termin erst NACH diesem Zeitpunkt
+      // eingetragen (z. B. „1 Tag vorher" für morgen früh), kommt die
+      // Erinnerung beim nächsten Lauf einmalig sofort.
+      if (jetzt < start - vorlaufMin * 60_000 || jetzt >= start) continue;
       const key = `b:${b.id}`;
       if (schon.has(key)) continue;
-      faellig.push({ schluessel: key, titel: "🔔 Dein Termin", text: `${fmtZeit(Number(b.hour))} Uhr: ${b.note}` });
+      const tag = b.slot_date === heute ? "" : `${b.slot_date.slice(8, 10)}.${b.slot_date.slice(5, 7)}. um `;
+      faellig.push({ schluessel: key, titel: "🔔 Dein Termin", text: `${tag}${fmtZeit(Number(b.hour))} Uhr: ${b.note}` });
     }
 
     let gesendet = 0;
