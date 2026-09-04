@@ -9,7 +9,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
-  verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
+  verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
   absageVorschau, warntVorLimit, freieGutschriften,
   MAX_MINUS, ABSAGE_FRIST_STUNDEN, WARNUNG_AB_MINUS,
   type Konto,
@@ -70,6 +70,18 @@ describe("Kleanas Regel (Sept. 2026): Plus und Minus gehören zusammen", () => {
     assert.equal(v.bestaetigungNoetig, false);
     assert.equal(v.grund, null);
     assert.match(v.text, /Zusatzstunde/);
+  });
+
+  test("Kleanas eigene Absage: offene Plusstunde geht vor Nachhol-Guthaben", () => {
+    const r = bewerteAnnaAbsage(k({ plus_hours: 2, makeup_credits: 1 }));
+    assert.equal(r.plusVerrechnet, true);
+    assert.deepEqual(r.aenderung, { plus_hours: 1 });
+  });
+
+  test("Kleanas Absage ohne offene Plusstunden: Nachhol-Guthaben wie bisher", () => {
+    const r = bewerteAnnaAbsage(k({ plus_hours: 0, makeup_credits: 1 }));
+    assert.equal(r.plusVerrechnet, false);
+    assert.deepEqual(r.aenderung, { makeup_credits: 2 });
   });
 });
 

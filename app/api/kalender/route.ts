@@ -14,7 +14,7 @@ import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
 import { buchungErlaubt as vertragUnterschrieben } from "@/lib/vertrag";
 import {
-  verrechne, macheRueckgaengig, bewerteAbsage, verrechnungsVorschau,
+  verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
   absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS,
 } from "@/lib/stundenkonto-kern";
 
@@ -86,6 +86,21 @@ async function applyEinzelCounting(p: Profile): Promise<"makeup" | "minus" | "pl
 async function revertCounting(p: Profile, counted: string | null) {
   const aenderung = macheRueckgaengig(p, counted);
   if (aenderung) await setBalance(p.user_id, aenderung);
+}
+// Kleanas Regel: Wird eine Absage mit einer offenen Plusstunde verrechnet,
+// muss auch die KONKRETE Stunde aus der Abrechnung verschwinden – die älteste
+// offene wird zur Ersatzstunde umgewidmet (counted „minus" bei Familien-
+// Absagen, „makeup" bei Kleanas eigenen). Sonst stünde sie unter
+// „Zusatzstunden" weiter zum Abrechnen, obwohl der Zähler schon herunterging.
+async function aeltestePlusstundeVerrechnen(studentId: string, als: "minus" | "makeup"): Promise<void> {
+  const { data } = await service().from("appointments")
+    .select("id").eq("student_id", studentId).eq("counted", "plus")
+    .eq("status", "bestaetigt").is("abrechnung_id", null)
+    .order("slot_date", { ascending: true }).limit(1);
+  const ziel = (data || [])[0] as { id: string } | undefined;
+  if (!ziel) return;
+  const { error } = await service().from("appointments").update({ counted: als }).eq("id", ziel.id);
+  if (error) console.error("Plusstunde ließ sich nicht als verrechnet markieren:", error.message);
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -298,21 +313,7 @@ export async function POST(req: Request): Promise<Response> {
         { const { error } = await service().from("appointments").insert({ student_id: user.id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: credit, note: cnote });
           if (error) return bad("Absagen fehlgeschlagen: " + error.message); }
         const kontoOk = aenderung ? await setBalance(user.id, aenderung) : true;
-        if (plusVerrechnet) {
-          // Auch die KONKRETE Plusstunde aus der Abrechnung nehmen: die
-          // älteste offene wird zur Ersatzstunde der Absage (counted „minus")
-          // – sonst stünde sie unter „Zusatzstunden" weiter zum Abrechnen,
-          // obwohl der Zähler schon herunterging.
-          const { data: aelteste } = await service().from("appointments")
-            .select("id").eq("student_id", user.id).eq("counted", "plus")
-            .eq("status", "bestaetigt").is("abrechnung_id", null)
-            .order("slot_date", { ascending: true }).limit(1);
-          const ziel = (aelteste || [])[0] as { id: string } | undefined;
-          if (ziel) {
-            const { error: ue } = await service().from("appointments").update({ counted: "minus" }).eq("id", ziel.id);
-            if (ue) console.error("Plusstunde ließ sich nicht als verrechnet markieren:", ue.message);
-          }
-        }
+        if (plusVerrechnet) await aeltestePlusstundeVerrechnen(user.id, "minus");
 
         // Frühwarnung: mit dieser Gutschrift ist nur noch eine frei.
         const danach = { ...prof, ...(aenderung ?? {}) };
@@ -719,17 +720,23 @@ export async function POST(req: Request): Promise<Response> {
             : "Probestunde abgesagt. Achtung: keine Gast-E-Mail hinterlegt – bitte selbst Bescheid geben." });
         }
         const sp = await getProfile(s.booking.student_id || "");
+        let mitPlusVerrechnet = false;
         if (sp) {
-          // Verrechnung zurücknehmen UND Nachhol-Guthaben geben – in EINEM
-          // Schreibvorgang. Vorher wurde das Profil zwischendurch neu geladen
-          // und mit „!" behauptet, es sei sicher da: War es das einmal nicht,
-          // stürzte die Aktion nach halb geschriebenem Konto ab.
-          const aenderung = macheRueckgaengig(sp, s.booking.counted);
-          const basis = aenderung?.makeup_credits ?? sp.makeup_credits;
-          await setBalance(sp.user_id, { ...(aenderung ?? {}), makeup_credits: basis + 1 });
+          // Verrechnung zurücknehmen UND Kleanas Absage bewerten – in EINEM
+          // Schreibvorgang. Kleanas Regel: Steht (nach der Rücknahme) noch
+          // eine offene Plusstunde, gilt sie als die geschuldete Ersatzstunde
+          // – kein Nachhol-Guthaben nötig. Sonst wie bisher Nachholen +1.
+          const revert = macheRueckgaengig(sp, s.booking.counted);
+          const zwischen = { ...sp, ...(revert ?? {}) };
+          const anna = bewerteAnnaAbsage(zwischen);
+          mitPlusVerrechnet = anna.plusVerrechnet;
+          await setBalance(sp.user_id, { ...(revert ?? {}), ...anna.aenderung });
+          if (anna.plusVerrechnet) await aeltestePlusstundeVerrechnen(sp.user_id, "makeup");
         }
         if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
-        return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben + Mail." });
+        return ok({ message: mitPlusVerrechnet
+          ? "Abgesagt. Die ausgefallene Stunde wurde direkt mit einer offenen Zusatzstunde verrechnet (kein Nachhol-Guthaben nötig). Mail gesendet."
+          : "Abgesagt. Schüler bekommt Nachhol-Guthaben + Mail." });
       }
       if (s.fixedActive && !s.absageVon(s.fixedActive.student_id)) {
         const sp = await getProfile(s.fixedActive.student_id);
@@ -738,9 +745,18 @@ export async function POST(req: Request): Promise<Response> {
         // schon verbucht.
         { const { error } = await service().from("appointments").insert({ student_id: s.fixedActive.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: false, note: NOTE_ANNA_CANCEL });
           if (error) return bad("Absagen fehlgeschlagen: " + error.message); }
-        if (sp) await setBalance(sp.user_id, { makeup_credits: sp.makeup_credits + 1 });
+        let mitPlusVerrechnet = false;
+        if (sp) {
+          // Kleanas Regel wie oben: offene Plusstunde geht vor Nachhol-Guthaben.
+          const anna = bewerteAnnaAbsage(sp);
+          mitPlusVerrechnet = anna.plusVerrechnet;
+          await setBalance(sp.user_id, anna.aenderung);
+          if (anna.plusVerrechnet) await aeltestePlusstundeVerrechnen(sp.user_id, "makeup");
+        }
         if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (fest)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
-        return ok({ message: "Abgesagt. Schüler bekommt Nachhol-Guthaben (kein Minus) + Mail." });
+        return ok({ message: mitPlusVerrechnet
+          ? "Abgesagt. Die ausgefallene Stunde wurde direkt mit einer offenen Zusatzstunde verrechnet (kein Nachhol-Guthaben nötig). Mail gesendet."
+          : "Abgesagt. Schüler bekommt Nachhol-Guthaben (kein Minus) + Mail." });
       }
       return bad("Hier ist kein Termin zum Absagen.");
     }
