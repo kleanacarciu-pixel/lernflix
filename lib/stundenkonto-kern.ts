@@ -123,6 +123,19 @@ export function bewerteAbsage(k: Konto, stundenBisTermin: number): Absagebewertu
   };
 }
 
+/**
+ * Absage durch KLEANA (Anna). Kleanas Regel, gleiche Logik wie bei den
+ * Minus-Stunden: Stehen offene Plusstunden (gehaltene, unabgerechnete
+ * Extra-Stunden), gilt eine davon sofort als die geschuldete Nachholstunde –
+ * die Familie zahlt sie nicht extra, und es entsteht KEIN Nachhol-Guthaben.
+ * Erst ohne offene Plusstunden wird wie bisher ein Nachhol-Guthaben
+ * gutgeschrieben (das Kleana der Familie in jedem Fall schuldet).
+ */
+export function bewerteAnnaAbsage(k: Konto): { plusVerrechnet: boolean; aenderung: Aenderung } {
+  if (k.plus_hours > 0) return { plusVerrechnet: true, aenderung: { plus_hours: k.plus_hours - 1 } };
+  return { plusVerrechnet: false, aenderung: { makeup_credits: k.makeup_credits + 1 } };
+}
+
 // --- Vorwarnungen -----------------------------------------------------------
 
 /** Ist das Konto so voll, dass vorgewarnt werden sollte? */
