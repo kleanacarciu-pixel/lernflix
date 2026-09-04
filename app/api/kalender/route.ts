@@ -507,14 +507,27 @@ export async function POST(req: Request): Promise<Response> {
         if (her < -185 * 24) return bad("Das Datum liegt mehr als ein halbes Jahr zurück – bitte prüfen.");
         // Doppel-Schutz: dieselbe Stunde desselben Schülers nicht zweimal
         // erfassen (auch nicht überlappend, z. B. 17:00–18:00 und 17:30).
+        // Die Meldung sagt dabei GENAU, was gefunden wurde – „schon erfasst"
+        // allein half Kleana nicht weiter, wenn der alte Eintrag nirgendwo
+        // sichtbar war (z. B. eine nie beantwortete Anfrage von früher).
         const { data: schon, error: se } = await service().from("appointments")
-          .select("hour,dauer_min,status,kind").eq("student_id", sid).eq("slot_date", date);
+          .select("hour,dauer_min,status,kind,counted").eq("student_id", sid).eq("slot_date", date);
         if (se) return bad("Konnte den Tag nicht prüfen: " + se.message);
-        const doppelt = ((schon || []) as { hour: number; dauer_min: number | null; status: string; kind: string }[])
-          .some((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt"
+        const doppelt = ((schon || []) as { hour: number; dauer_min: number | null; status: string; kind: string; counted: string | null }[])
+          .find((a) => (a.kind === "einzel" || a.kind === "probe") && a.status !== "abgesagt"
             && Number(a.hour) < hour + dauerMin / 60
             && Number(a.hour) + (Number(a.dauer_min) || 60) / 60 > hour);
-        if (doppelt) return bad(`Um diese Uhrzeit ist an dem Tag für ${sp.name} schon eine Stunde erfasst – sie zählt bereits, nichts doppelt eintragen.`);
+        if (doppelt) {
+          const um = fmtZeit(Number(doppelt.hour));
+          if (doppelt.status === "angefragt") {
+            return bad(`Für ${sp.name} liegt an dem Tag um ${um} Uhr noch eine UNBEANTWORTETE Anfrage – die zählt bisher nicht. Bitte im Kalender in dieser Woche bestätigen (dann wird sie verrechnet) oder ablehnen und die Stunde danach hier nachtragen.`);
+          }
+          const zaehlt = doppelt.counted === "plus" ? "sie zählt bereits als Plusstunde"
+            : doppelt.counted === "makeup" ? "sie wurde bereits mit einem Nachhol-Guthaben verrechnet"
+            : doppelt.counted === "minus" ? "sie hat bereits eine offene Minus-Stunde ausgeglichen"
+            : "sie ist bestätigt, wurde aber nie verrechnet – bitte melde dich kurz bei Claude, dann klären wir diesen alten Eintrag";
+          return bad(`Um ${um} Uhr ist an dem Tag für ${sp.name} schon eine Stunde erfasst – ${zaehlt}. Nichts doppelt eintragen.`);
+        }
       } else if (hoursUntil(date, hour) <= 0) {
         return bad("Dieser Termin liegt in der Vergangenheit. Zum Erfassen einer bereits gehaltenen Stunde nutze „Stunde nachtragen“ auf der Zahlungen-Seite.");
       }
