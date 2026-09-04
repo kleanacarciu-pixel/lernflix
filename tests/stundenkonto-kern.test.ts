@@ -25,6 +25,54 @@ describe("Grenzwerte unverändert", () => {
   });
 });
 
+describe("Kleanas Regel (Sept. 2026): Plus und Minus gehören zusammen", () => {
+  // Auf Kleanas ausdrückliche Ansage: Offene Plusstunden (gehaltene, noch
+  // nicht abgerechnete Extra-Stunden) und Minus-Stunden verrechnen sich
+  // IMMER direkt – egal in welcher Reihenfolge sie entstehen. Nur die
+  // Nachholstunden (ihre eigenen Absagen) bleiben davon getrennt.
+  test("rechtzeitige Absage mit offener Plusstunde: Plus −1, KEIN Minus", () => {
+    const r = bewerteAbsage(k({ plus_hours: 2 }), 24);
+    assert.equal(r.plusVerrechnet, true);
+    assert.equal(r.gutschrift, false);
+    assert.equal(r.note, "plusverrechnet");
+    assert.deepEqual(r.aenderung, { plus_hours: 1 });
+    assert.match(r.text, /Zusatzstunde/);
+  });
+
+  test("die Plus-Verrechnung geht der Minus-Gutschrift vor", () => {
+    const r = bewerteAbsage(k({ plus_hours: 1, minus_hours: 1 }), 24);
+    assert.equal(r.plusVerrechnet, true);
+    assert.deepEqual(r.aenderung, { plus_hours: 0 });
+  });
+
+  test("auch bei vollem Minus-Konto rettet eine offene Plusstunde die Absage", () => {
+    const r = bewerteAbsage(k({ plus_hours: 1, minus_hours: MAX_MINUS }), 24);
+    assert.equal(r.plusVerrechnet, true);
+    assert.equal(r.note, "plusverrechnet");
+  });
+
+  test("zu späte Absage verfällt trotzdem – die Plusstunde bleibt abrechenbar", () => {
+    const r = bewerteAbsage(k({ plus_hours: 2 }), 1);
+    assert.equal(r.plusVerrechnet, false);
+    assert.equal(r.note, "late");
+    assert.equal(r.aenderung, null);
+  });
+
+  test("ohne offene Plusstunden gilt alles wie bisher (Minus-Gutschrift)", () => {
+    const r = bewerteAbsage(k({ plus_hours: 0, minus_hours: 1 }), 24);
+    assert.equal(r.plusVerrechnet, false);
+    assert.equal(r.gutschrift, true);
+    assert.deepEqual(r.aenderung, { minus_hours: 2 });
+  });
+
+  test("die Vorschau kündigt die Verrechnung an – ohne Verfall-Warnung", () => {
+    const v = absageVorschau(k({ plus_hours: 1, minus_hours: MAX_MINUS }), 24);
+    assert.equal(v.bestaetigungNoetig, false);
+    assert.equal(v.grund, null);
+    assert.match(v.text, /Zusatzstunde/);
+  });
+});
+
 describe("Verrechnung einer Einzelstunde: Nachhol → Minus → Plus", () => {
   test("Nachhol-Guthaben zuerst", () => {
     const r = verrechne(k({ makeup_credits: 2, minus_hours: 1, plus_hours: 0 }));
