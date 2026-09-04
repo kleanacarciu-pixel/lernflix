@@ -53,7 +53,7 @@ export async function GET(req: Request): Promise<Response> {
       // Private Termine: Blockierungen MIT Titel (Blocks ohne Titel sind
       // reine Sperren – dafür braucht niemand eine Erinnerung). Zwei Tage
       // voraus laden, damit auch „1 Tag vorher"-Erinnerungen greifen.
-      sb.from("appointments").select("id,slot_date,hour,note,dauer_min,counted")
+      sb.from("appointments").select("id,slot_date,hour,note,dauer_min")
         .eq("kind", "block").neq("status", "abgesagt").not("note", "is", null)
         .gte("slot_date", heute).lte("slot_date", addDaysStr(heute, 2)),
       sb.from("profiles").select("user_id,name"),
@@ -81,11 +81,12 @@ export async function GET(req: Request): Promise<Response> {
       faellig.push({ schluessel: key, titel: "🔔 Gleich ist Unterricht", text: `${berlinUhr(l.starts_at)} Uhr: ${wer}${wie}` });
     }
 
-    for (const b of (bRes.data || []) as { id: string; slot_date: string; hour: number; note: string | null; dauer_min: number | null; counted: string | null }[]) {
-      // Vorlauf je Termin: Kleana wählt ihn beim Eintragen (counted „vl:30"
-      // = 30 Minuten vorher, „vl:0" = gar keine Erinnerung). Ohne Wahl gilt
+    for (const b of (bRes.data || []) as { id: string; slot_date: string; hour: number; note: string | null; dauer_min: number | null }[]) {
+      // Titel und Vorlauf stecken zusammen in der Notiz („Arzt|vl:30" =
+      // 30 Minuten vorher, „|vl:0" = gar keine Erinnerung). Ohne Wahl gilt
       // der Standard von ~15 Minuten.
-      const vl = /^vl:(\d+)$/.exec(b.counted || "");
+      const titelText = (b.note || "").split("|")[0];
+      const vl = /\|vl:(\d+)$/.exec(b.note || "");
       const vorlaufMin = vl ? Number(vl[1]) : 15;
       if (vorlaufMin === 0) continue;
       const start = berlinInstant(b.slot_date, Number(b.hour));
@@ -97,7 +98,7 @@ export async function GET(req: Request): Promise<Response> {
       const key = `b:${b.id}`;
       if (schon.has(key)) continue;
       const tag = b.slot_date === heute ? "" : `${b.slot_date.slice(8, 10)}.${b.slot_date.slice(5, 7)}. um `;
-      faellig.push({ schluessel: key, titel: "🔔 Dein Termin", text: `${tag}${fmtZeit(Number(b.hour))} Uhr: ${b.note}` });
+      faellig.push({ schluessel: key, titel: "🔔 Dein Termin", text: `${tag}${fmtZeit(Number(b.hour))} Uhr: ${titelText}` });
     }
 
     let gesendet = 0;

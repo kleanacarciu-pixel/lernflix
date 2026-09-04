@@ -335,7 +335,9 @@ export function tagIntervalle(
       const dauer = Number(a.dauer_min) || 60;
       // Privater Titel (z. B. „Arzt") in der Notiz: landet unten NUR in der
       // Admin-Sicht – Schüler und Öffentlichkeit sehen weiterhin „belegt".
-      ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: a.note || "", fixed: false, mode: null, dauer });
+      // Hinter dem | steht ggf. der Erinnerungs-Vorlauf („Arzt|vl:60") – der
+      // gehört nicht in die Anzeige.
+      ivs.push({ start: Number(a.hour), ende: Number(a.hour) + dauer / 60, t: "block", sid: "", name: (a.note || "").split("|")[0], fixed: false, mode: null, dauer });
     });
   wblocks.filter((w) => w.weekday === wd)
     .forEach((w) => {
