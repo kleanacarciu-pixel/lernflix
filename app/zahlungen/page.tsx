@@ -92,6 +92,15 @@ export default function ZahlungenSeite() {
   const [vorvertrag, setVorvertrag] = useState<VorvertragStunde[]>([]);
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
   const [offenVorlagen, setOffenVorlagen] = useState(false);
+  // Nachtragen einer bereits gehaltenen Stunde (z. B. vor Vertragsbeginn):
+  // Schülerliste kommt aus dem Kalender, das Formular steht bei Zusatzstunden.
+  const [alleSchueler, setAlleSchueler] = useState<{ id: string; name: string }[]>([]);
+  const [ntSid, setNtSid] = useState('');
+  const [ntDatum, setNtDatum] = useState('');
+  const [ntZeit, setNtZeit] = useState('17:00');
+  const [ntDauer, setNtDauer] = useState(60);
+  const [ntMode, setNtMode] = useState<'vor_ort' | 'online'>('vor_ort');
+  const [ntLaeuft, setNtLaeuft] = useState(false);
   const [notizFuer, setNotizFuer] = useState<string>('');
   const [notizText, setNotizText] = useState('');
   const [exportLaeuft, setExportLaeuft] = useState(false);
@@ -112,11 +121,17 @@ export default function ZahlungenSeite() {
     if (!token) { setLaden(false); return; }
     setLaden(true); setFehler('');
     try {
-      const [u, p] = await Promise.all([api('uebersicht'), api('plusstunden')]);
+      const [u, p, k] = await Promise.all([
+        api('uebersicht'), api('plusstunden'),
+        // Schülerliste fürs Nachtragen – dieselbe Übersicht wie im Kalender.
+        rufeApi('/api/kalender', 'overview', {}, () => setAbgemeldet(true)),
+      ]);
       setMonate((u.monate || []) as string[]);
       setZeilen((u.zeilen || []) as Zeile[]);
       setPlus((p.schueler || []) as Plus[]);
       setVorvertrag((p.vorvertrag || []) as VorvertragStunde[]);
+      setAlleSchueler(((k.students || []) as { id: string; name: string }[])
+        .map((s) => ({ id: s.id, name: s.name })));
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Laden.');
     } finally { setLaden(false); }
@@ -128,6 +143,22 @@ export default function ZahlungenSeite() {
     setFehler(''); setHinweis('');
     try { await fn(); setHinweis(erfolg); await neuLaden(); }
     catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+  }
+
+  async function stundeNachtragen() {
+    if (!ntSid || !ntDatum) { setFehler('Bitte Schüler/in und Datum wählen.'); return; }
+    const [h, m] = ntZeit.split(':').map(Number);
+    setNtLaeuft(true); setFehler(''); setHinweis('');
+    try {
+      const d = await rufeApi('/api/kalender', 'adminBook', {
+        studentId: ntSid, date: ntDatum, hour: (h || 0) + (m || 0) / 60,
+        mode: ntMode, dauerMin: ntDauer, nachtrag: true,
+      }, () => setAbgemeldet(true));
+      setHinweis(String(d.message || 'Stunde nachgetragen.'));
+      setNtDatum('');
+      await neuLaden();
+    } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+    finally { setNtLaeuft(false); }
   }
 
   async function umschalten(z: Zeile, c: Zelle) {
@@ -303,6 +334,36 @@ export default function ZahlungenSeite() {
             Stunden über dem festen Wochentermin. Nachhol- und Minusstunden sind bereits
             verrechnet – hier steht nur, was wirklich zusätzlich anfällt.
           </p>
+          <details style={{ border: `1px solid ${F.line}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600, color: F.blue }}>➕ Gehaltene Stunde nachtragen</summary>
+            <p style={{ color: F.soft, fontSize: 13, margin: '8px 0 10px' }}>
+              Für Stunden, die schon stattgefunden haben, aber nie im Kalender standen
+              (z. B. vor dem Vertragsbeginn). Sie wird wie üblich verrechnet – ohne
+              offenes Guthaben oder Minus zählt sie als Plusstunde und steht danach
+              hier zum Abrechnen. Die Familie bekommt dabei <b>keine</b> E-Mail.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={ntSid} onChange={(e) => setNtSid(e.target.value)} style={feld}>
+                <option value="">Schüler/in wählen …</option>
+                {alleSchueler.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              <input type="date" value={ntDatum} max={new Date().toLocaleDateString('en-CA')}
+                onChange={(e) => setNtDatum(e.target.value)} style={feld} />
+              <input type="time" value={ntZeit} step={300}
+                onChange={(e) => setNtZeit(e.target.value)} style={feld} />
+              <select value={ntDauer} onChange={(e) => setNtDauer(Number(e.target.value))} style={feld}>
+                {[30, 45, 60, 90, 120].map((d) => <option key={d} value={d}>{d} Min.</option>)}
+              </select>
+              <select value={ntMode} onChange={(e) => setNtMode(e.target.value as 'vor_ort' | 'online')} style={feld}>
+                <option value="vor_ort">vor Ort</option>
+                <option value="online">online</option>
+              </select>
+              <button style={{ ...knopf, ...(ntLaeuft ? { opacity: .6, cursor: 'wait' } : {}) }}
+                disabled={ntLaeuft} onClick={() => void stundeNachtragen()}>
+                {ntLaeuft ? '… trägt ein' : 'nachtragen'}
+              </button>
+            </div>
+          </details>
           {vorvertrag.length > 0 && (
             <div style={{
               border: '1px solid rgba(217,154,54,.5)', background: 'rgba(217,154,54,.08)',
@@ -338,12 +399,24 @@ export default function ZahlungenSeite() {
               <div>
                 <b>{p.name}</b>
                 {p.warnung && <span style={{ ...pille, background: 'rgba(217,154,54,.18)', color: '#8a6a20' }}>Zwischenabrechnung sinnvoll</span>}
-                <div style={{ color: F.soft, fontSize: 14 }}>
-                  {p.anzahl} Stunden × {eur(p.stundensatzCent)} = <b>{eur(p.summeCent)}</b>
+                {p.stundensatzCent ? (
+                  <div style={{ color: F.soft, fontSize: 14 }}>
+                    {p.anzahl} Stunden × {eur(p.stundensatzCent)} = <b>{eur(p.summeCent)}</b>
+                  </div>
+                ) : (
+                  // Ohne laufenden Vertrag kennt das System keinen Stundensatz –
+                  // eine 0-€-Abrechnung an die Eltern wäre falsch, also klar
+                  // sagen, was fehlt, statt eines einladenden blauen Knopfs.
+                  <div style={{ color: '#8a6a20', fontSize: 14 }}>
+                    {p.anzahl} {p.anzahl === 1 ? 'Stunde' : 'Stunden'} offen – <b>kein Stundensatz hinterlegt</b> (kein
+                    laufender Vertrag). Zum Abrechnen zuerst einen Vertrag anlegen.
+                  </div>
+                )}
+                <div style={{ color: F.muted, fontSize: 12 }}>
+                  {p.termine.map((t) => `${t.slice(8, 10)}.${t.slice(5, 7)}.${t.slice(0, 4)}`).join(' · ')}
                 </div>
-                <div style={{ color: F.muted, fontSize: 12 }}>{p.termine.join(' · ')}</div>
               </div>
-              <button style={knopf}
+              <button style={{ ...knopf, ...(p.stundensatzCent ? {} : { background: F.line, color: F.muted, cursor: 'not-allowed' }) }}
                 disabled={!p.stundensatzCent}
                 onClick={() => { if (confirm(`${p.anzahl} Zusatzstunden für ${p.name} über ${eur(p.summeCent)} abrechnen und die Aufstellung per Mail schicken?`)) void tun(() => api('plusstundenAbrechnen', { schueler_id: p.schuelerId }), 'Abrechnung angelegt und verschickt.'); }}>
                 abrechnen

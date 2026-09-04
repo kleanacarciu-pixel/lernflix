@@ -529,7 +529,9 @@ export async function plusstundenAbrechnen(schuelerId: string, heute = heuteIso(
   const alle = await offenePlusstunden();
   const eintrag = alle.find((x) => x.schuelerId === schuelerId);
   if (!eintrag || !eintrag.anzahl) return { ok: false, error: "Keine offenen Plusstunden." };
-  if (!eintrag.stundensatzCent) return { ok: false, error: "Für diesen Schüler ist kein Stundensatz hinterlegt." };
+  if (!eintrag.stundensatzCent) {
+    return { ok: false, error: "Für diesen Schüler ist kein Stundensatz hinterlegt (kein laufender Vertrag) – eine Abrechnung über 0 € wäre falsch. Bitte zuerst einen Vertrag anlegen." };
+  }
 
   const faellig = new Date(Date.UTC(
     Number(heute.slice(0, 4)), Number(heute.slice(5, 7)) - 1, Number(heute.slice(8, 10)) + 14,
