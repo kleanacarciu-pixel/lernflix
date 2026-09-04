@@ -109,6 +109,15 @@ export default function ZahlungenSeite() {
     setToken(ladeSitzung()?.token || '');
   }, []);
 
+  // Erfolgsmeldungen nach ein paar Sekunden ausblenden – sie schweben als
+  // Kärtchen am unteren Rand und sollen nicht dauerhaft dort kleben.
+  // Fehler bleiben stehen, bis die nächste Aktion sie ersetzt.
+  useEffect(() => {
+    if (!hinweis) return;
+    const t = setTimeout(() => setHinweis(''), 8000);
+    return () => clearTimeout(t);
+  }, [hinweis]);
+
   // Laeuft der Zugangs-Token ab, verlaengert rufeApi ihn selbst – genau wie
   // der Kalender. Ausgeloggt wird nur, wenn die Anmeldung wirklich weg ist.
   const api = useCallback(async (action: string, params: Record<string, unknown> = {}) => {
@@ -230,6 +239,22 @@ export default function ZahlungenSeite() {
 
         {fehler && <div style={{ ...box, borderColor: '#f5b5b5', background: '#ffeaea', color: F.warn }}>{fehler}</div>}
         {hinweis && <div style={{ ...box, borderColor: 'rgba(18,122,92,.4)', background: 'rgba(18,122,92,.1)', color: F.gut }}>{hinweis}</div>}
+        {/* Dieselbe Meldung schwebt zusätzlich am unteren Rand: Die Knöpfe für
+            Zusatzstunden und Nachtragen stehen weit unten – eine Antwort, die
+            nur ganz oben erscheint, sieht dort aus wie „nichts passiert". */}
+        {(fehler || hinweis) && (
+          <div role="status" style={{
+            position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+            bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 60,
+            maxWidth: 'min(92vw, 560px)', padding: '11px 16px', borderRadius: 12,
+            boxShadow: '0 10px 28px rgba(15,23,42,.22)', fontWeight: 600, fontSize: 14,
+            background: fehler ? '#ffeaea' : '#127a5c',
+            color: fehler ? F.warn : '#fff',
+            border: fehler ? '1px solid #f5b5b5' : 0,
+          }}>
+            {fehler || hinweis}
+          </div>
+        )}
         {laden && <p style={{ color: F.muted }}>Wird geladen …</p>}
 
         {/* --------------------------------------------------------- Anleitung */}
