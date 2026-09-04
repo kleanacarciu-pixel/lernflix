@@ -8,6 +8,7 @@ type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[] };
 import {
   MAX_MINUS, WARNUNG_AB_MINUS, absageVorschau, freieGutschriften,
 } from "@/lib/stundenkonto-kern";
+import { VAPID_PUBLIC_KEY, vapidAlsBytes } from "@/lib/push-kern";
 
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
@@ -499,6 +500,51 @@ export default function KalenderPage() {
     await api("absageGesehen", { id });
   }
   function showToast(msg: string) { setToast(msg); window.setTimeout(() => setToast(null), 2800); }
+
+  // ---- Termin-Erinnerungen (Web Push, nur Kleana) ----
+  // "an"/"aus" = Zustand dieses Geräts; null = kein Admin oder der Browser
+  // kann kein Web Push (dann erscheint der Knopf gar nicht erst).
+  const [pushStatus, setPushStatus] = useState<"an" | "aus" | null>(null);
+  useEffect(() => {
+    let aktiv = true;
+    (async () => {
+      let neu: "an" | "aus" | null = null;
+      if (session?.role === "admin" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window) {
+        try {
+          const reg = await navigator.serviceWorker.register("/sw.js");
+          const abo = await reg.pushManager.getSubscription();
+          neu = abo ? "an" : "aus";
+        } catch { neu = null; }
+      }
+      if (aktiv) setPushStatus(neu);
+    })();
+    return () => { aktiv = false; };
+  }, [session]);
+  async function erinnerungenAn() {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      const erlaubnis = await Notification.requestPermission();
+      if (erlaubnis !== "granted") {
+        info("Erinnerungen", "", "Benachrichtigungen wurden nicht erlaubt. Bitte in den Einstellungen des Browsers bzw. der installierten App zulassen und noch einmal auf 🔔 tippen.");
+        return;
+      }
+      const abo = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidAlsBytes(VAPID_PUBLIC_KEY) });
+      const d = await api("pushAn", { abo: abo.toJSON() });
+      if (d.ok) { setPushStatus("an"); showToast(String(d.message || "Erinnerungen aktiviert.")); }
+      else info("Erinnerungen", "", String(d.error || "Das hat nicht geklappt."));
+    } catch (e) {
+      info("Erinnerungen", "", e instanceof Error ? e.message : "Das hat nicht geklappt – bitte noch einmal versuchen.");
+    }
+  }
+  async function erinnerungenAus() {
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      const abo = await reg.pushManager.getSubscription();
+      if (abo) { await api("pushAus", { endpoint: abo.endpoint }); await abo.unsubscribe(); }
+      setPushStatus("aus");
+      showToast("Erinnerungen für dieses Gerät ausgeschaltet.");
+    } catch { setPushStatus("aus"); }
+  }
   function info(title: string, msg: string, err = "") {
     setModal(<Info title={title} msg={msg} err={err} onClose={() => setModal(null)} />);
   }
@@ -591,8 +637,8 @@ export default function KalenderPage() {
             📅 Termin für Schüler eintragen
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
-            onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("block", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
-            ⛔ Blockieren (nur dieses Datum)
+            onClose={() => setModal(null)} onSubmit={(vonMin, d, titel) => act("block", { date, hour: vonMin / 60, dauerMin: d, titel })} />); }}>
+            ⛔ Blockieren / eigener Termin (nur dieses Datum)
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin} wochentag={DAYS[wd]}
             onClose={() => setModal(null)} onSubmit={(vonMin, d) => act("blockWeekly", { date, hour: vonMin / 60, dauerMin: d })} />); }}>
@@ -604,8 +650,10 @@ export default function KalenderPage() {
     }
     if (s.state === "block") {
       const wd = (parseIso(date).getDay() + 6) % 7;
-      setModal(<div className="modal"><h2>Geblockter Slot</h2><p>{when}</p>
-        <p>{s.weekly ? `Dauerhaft geblockt – jeden ${DAYS[wd]}.` : "Nur an diesem Datum geblockt."}</p>
+      setModal(<div className="modal"><h2>{s.name ? `🔒 ${s.name}` : "Geblockter Slot"}</h2><p>{when}</p>
+        <p>{s.weekly ? `Dauerhaft geblockt – jeden ${DAYS[wd]}.` : s.name
+          ? "Dein privater Termin – die Familien sehen hier nur „belegt“."
+          : "Nur an diesem Datum geblockt."}</p>
         <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Abbrechen</button>
           <button className="btn p" onClick={() => act(s.weekly ? "unblockWeekly" : "unblock", { date, hour: s.hour })}>{s.weekly ? "Dauerhaft freigeben" : "Freigeben"}</button></div></div>);
       return;
@@ -880,7 +928,15 @@ export default function KalenderPage() {
             <a className="back nurdesk" href="https://lernemitanna.de">← lernemitanna.de</a>
             <a className="btn g sm applink nurdesk" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
             {session
-              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a><span className="who nurdesk">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm nurdesk" onClick={openPassword}>Passwort</button><button className="btn g sm nurdesk" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
+              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a>{session.role === "admin" && pushStatus && (
+                  <button className="btn g sm"
+                    title={pushStatus === "an"
+                      ? "Termin-Erinnerungen sind AN: ca. 15 Minuten vor jedem Termin kommt eine Nachricht auf dieses Gerät. Tippen zum Ausschalten."
+                      : "Termin-Erinnerungen einschalten: ca. 15 Minuten vor jedem Termin eine Nachricht auf dieses Gerät."}
+                    onClick={() => void (pushStatus === "an" ? erinnerungenAus() : erinnerungenAn())}>
+                    {pushStatus === "an" ? "🔔 an" : "🔕 aus"}
+                  </button>
+                )}<span className="who nurdesk">{session.name} · {session.role === "admin" ? "Kleana" : "Schüler"}</span><button className="btn g sm nurdesk" onClick={openPassword}>Passwort</button><button className="btn g sm nurdesk" onClick={() => { saveSession(null); setBalance(null); setOverview(null); }}>Abmelden</button></>
               : <button className="btn p sm" onClick={openLogin}>Einloggen</button>}
             <button className="btn g sm nurmobil" aria-label="Menü öffnen" onClick={openMobilMenu}>☰</button>
           </div>
@@ -1079,7 +1135,7 @@ function cellView(s: Slot, role: string): { cls: string; label: string } {
     const cls = s.state === "block" ? "blk" : s.mine ? "mine" : s.state === "req" ? (role === "admin" || s.mine ? "req" : "busy") : "busy";
     return { cls, label: "⋯" };
   }
-  if (s.state === "block") return { cls: "blk", label: role === "admin" ? "Geblockt" : "Belegt" };
+  if (s.state === "block") return { cls: "blk", label: role === "admin" ? (s.name ? `🔒 ${s.name}` : "Geblockt") : "Belegt" };
   const e = modeEmoji(s.mode);
   if (s.state === "req") {
     if (role === "admin") return { cls: "req", label: `${e ? e + " " : ""}${s.name || ""} (Anfrage)` };
@@ -1242,23 +1298,35 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
     </div></div>;
 }
 // Blockieren minutengenau (z. B. 16:15–16:20 für eigene Arbeit sperren);
-// mit wochentag = dauerhaft jede Woche, sonst nur dieses Datum
+// mit wochentag = dauerhaft jede Woche, sonst nur dieses Datum.
+// Beim Einzel-Datum darf ein privater Titel dazu (z. B. „Arzt"): Kleana
+// trägt so eigene Termine direkt hier ein statt in einem zweiten Kalender –
+// sie sieht den Titel, alle anderen sehen nur „belegt".
 function BlockWahl({ when, startHour, schlussMin, wochentag, onSubmit, onClose }: {
   when: string; startHour: number; schlussMin: number; wochentag?: string;
-  onSubmit: (vonMin: number, dauerMin: number) => void; onClose: () => void;
+  onSubmit: (vonMin: number, dauerMin: number, titel: string) => void; onClose: () => void;
 }) {
   const startMin = Math.round(startHour * 60);
   const [von, setVon] = useState(minZuZeit(startMin));
   const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
+  const [titel, setTitel] = useState("");
   const fehler = zeitFehler(von, bis, schlussMin);
-  return <div className="modal"><h2>{wochentag ? `⛔ Jeden ${wochentag} blockieren` : "⛔ Blockieren"}</h2><p>{when}</p>
+  return <div className="modal"><h2>{wochentag ? `⛔ Jeden ${wochentag} blockieren` : "⛔ Blockieren / eigener Termin"}</h2><p>{when}</p>
     <div className="okbox">{wochentag
       ? `Gilt ab jetzt jede Woche am ${wochentag} – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen.`
-      : "Für eigene Arbeit sperren – Schüler sehen den Zeitraum als „belegt“ und können nicht buchen."}</div>
+      : "Für eigene Arbeit oder private Termine sperren – Schüler sehen den Zeitraum nur als „belegt“ und können nicht buchen."}</div>
     <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    {!wochentag && (
+      <label style={{ display: "block", marginTop: 10 }}>
+        <span style={{ fontSize: ".85rem", color: "var(--muted)" }}>Titel (optional – sehen nur Sie, z. B. „Arzt“). Mit Titel gibt es auch die Termin-Erinnerung.</span>
+        <input value={titel} maxLength={60} placeholder="z. B. Arzt"
+          onChange={(e) => setTitel(e.target.value)}
+          style={{ display: "block", width: "100%", marginTop: 4, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, font: "inherit", boxSizing: "border-box" }} />
+      </label>
+    )}
     {fehler && <div className="err">{fehler}</div>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
-      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))}>{wochentag ? "Dauerhaft blockieren" : "Blockieren"}</button></div></div>;
+      <button className="btn p" disabled={!!fehler} onClick={() => onSubmit(zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), titel.trim())}>{wochentag ? "Dauerhaft blockieren" : titel.trim() ? "Termin eintragen" : "Blockieren"}</button></div></div>;
 }
 function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
   title: string; startHour: number; schlussMin: number;
