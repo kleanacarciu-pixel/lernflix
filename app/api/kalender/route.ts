@@ -476,12 +476,33 @@ export async function POST(req: Request): Promise<Response> {
         await syncLessons(true);
         return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.${hinweis}` });
       }
-      if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
+      // Nachtragen: Eine GEHALTENE Stunde aus der Vergangenheit erfassen
+      // (z. B. Lillys Stunden vor Vertragsbeginn, die nie im Kalender
+      // standen). Nur für Kleana, nur rückwirkend, ohne Bestätigungs-Mail –
+      // eine „Termin eingetragen"-Mail zu einer längst gehaltenen Stunde
+      // würde die Eltern nur verwirren. Verrechnet wird wie üblich
+      // (Nachhol-Guthaben → Minus → sonst Plus).
+      const nachtrag = body.nachtrag === true;
+      if (nachtrag) {
+        const her = hoursUntil(date, hour);
+        if (her > 0) return bad("Zum Nachtragen bitte ein vergangenes Datum wählen – künftige Stunden trägst du ganz normal im Kalender ein.");
+        // Tippfehler-Bremse (falsches Jahr): höchstens ein halbes Jahr zurück.
+        if (her < -185 * 24) return bad("Das Datum liegt mehr als ein halbes Jahr zurück – bitte prüfen.");
+      } else if (hoursUntil(date, hour) <= 0) {
+        return bad("Dieser Termin liegt in der Vergangenheit. Zum Erfassen einer bereits gehaltenen Stunde nutze „Stunde nachtragen“ auf der Zahlungen-Seite.");
+      }
       const counted = await applyEinzelCounting(sp);
       { const { error } = await service().from("appointments").insert({
           student_id: sid, slot_date: date, hour, kind: "einzel", status: "bestaetigt", mode, dauer_min: dauerMin, counted,
         });
         if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
+      if (nachtrag) {
+        const wie = counted === "plus" ? "als Plusstunde gezählt – sie steht jetzt unter „Zusatzstunden“ zum Abrechnen"
+          : counted === "makeup" ? "mit einem offenen Nachhol-Guthaben verrechnet"
+          : "mit einer offenen Minus-Stunde verrechnet";
+        await syncLessons(true);
+        return ok({ message: `Stunde für ${sp.name} am ${prettyDate(date, hour)} nachgetragen und ${wie}. (Keine Mail an die Familie.)` });
+      }
       if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Termin eingetragen", em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
       await syncLessons(true);
       return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
