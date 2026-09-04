@@ -309,7 +309,7 @@ export default function LernplanPage() {
       </div>,
       // STEP 1 – Stundenplan Tabelle (Klick)
       <div key={1}>
-        <div style={{fontSize:"52px", textAlign:"center", marginBottom:"1rem"}}>📅</div>
+        <div style={{fontSize:"52px", textAlign:"center", marginBottom:"1rem"}}>📋</div>
         <h2 style={{fontSize:"28px", fontWeight:"700", color:t.text, textAlign:"center", marginBottom:".5rem"}}>Deine Schulwoche</h2>
         <p style={{fontSize:"16px", color:t.text2, textAlign:"center", marginBottom:"1.5rem"}}>Tipp einfach an – kein langes Schreiben!</p>
         {form.stundenplan.map((day,i) => (
@@ -454,7 +454,7 @@ export default function LernplanPage() {
           </div>
         )}
 
-        <h2 style={{fontSize:"22px", fontWeight:"700", color:t.text, margin:"1.25rem 0 1rem"}}>📅 Dein Wochenplan</h2>
+        <h2 style={{fontSize:"22px", fontWeight:"700", color:t.text, margin:"1.25rem 0 1rem"}}>📋 Dein Wochenplan</h2>
         <div style={{display:"flex", gap:"7px", marginBottom:"1rem", overflowX:"auto", paddingBottom:"4px"}}>
           {tageKeys.map((tag,i)=><button key={tag} onClick={()=>setPlanTag(i)} style={{padding:"10px 18px", borderRadius:"20px", border:`2px solid ${planTag===i?t.primary:t.border}`, background:planTag===i?t.primary:t.surface, color:planTag===i?"#fff":t.text2, fontSize:"16px", fontWeight:planTag===i?"700":"400", cursor:"pointer", whiteSpace:"nowrap", flexShrink:0}}>{tag}</button>)}
         </div>
