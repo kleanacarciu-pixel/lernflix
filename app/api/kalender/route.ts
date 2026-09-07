@@ -724,6 +724,10 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "adminCancel") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      // „Ohne Mail": für versehentlich eingetragene Termine – der Termin wird
+      // ganz normal abgesagt (inkl. Guthaben-Rückbuchung), nur die
+      // Benachrichtigung an die Familie unterbleibt bewusst.
+      const ohneMail = body.ohneMail === true;
       const s = await inspectSlot(date, hour);
       if (s.booking) {
         { const { error } = await service().from("appointments").update({ status: "abgesagt", counted: null }).eq("id", s.booking.id);
@@ -733,8 +737,10 @@ export async function POST(req: Request): Promise<Response> {
         // versprach – der Gast stand dann vor abgesagter Stunde da.
         if (s.booking.kind === "probe" && !s.booking.student_id) {
           const gmail = (s.booking.note || "").split("|")[1] || "";
-          if (gmail) { after(() => mailZustellenOderMelden("Probestunde abgesagt (Gast)", gmail, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
-          return ok({ message: gmail
+          if (gmail && !ohneMail) { after(() => mailZustellenOderMelden("Probestunde abgesagt (Gast)", gmail, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+          return ok({ message: ohneMail
+            ? "Probestunde abgesagt. Wie gewünscht KEINE Mail an den Gast gesendet."
+            : gmail
             ? "Probestunde abgesagt. Der Gast bekommt eine Mail."
             : "Probestunde abgesagt. Achtung: keine Gast-E-Mail hinterlegt – bitte selbst Bescheid geben." });
         }
@@ -749,12 +755,14 @@ export async function POST(req: Request): Promise<Response> {
         // Plus-Verrechnung) gibt es weiterhin, wenn Kleana eine Stunde des
         // FESTEN Termins absagt – dort ist die Stunde über den Vertrag bezahlt.
         if (sp) await revertCounting(sp, s.booking.counted);
-        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+        if (sp?.email && !ohneMail) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         const rueck = s.booking.counted === "makeup" ? "Das eingelöste Nachhol-Guthaben ist wieder gutgeschrieben – die Familie kann neu buchen."
           : s.booking.counted === "minus" ? "Die verrechnete Minus-Stunde ist wieder offen – die Familie kann neu buchen."
           : s.booking.counted === "plus" ? "Die Extra-Stunde wird nicht berechnet."
           : "";
-        return ok({ message: `Abgesagt.${rueck ? " " + rueck : ""}${sp?.email
+        return ok({ message: `Abgesagt.${rueck ? " " + rueck : ""}${ohneMail
+          ? " Wie gewünscht KEINE Mail gesendet."
+          : sp?.email
           ? " Mail gesendet."
           : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
@@ -776,10 +784,12 @@ export async function POST(req: Request): Promise<Response> {
           await setBalance(sp.user_id, anna.aenderung);
           if (anna.plusVerrechnet && offeneZeile) await plusZeileVerrechnen(offeneZeile.id, "makeup");
         }
-        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (fest)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
+        if (sp?.email && !ohneMail) { const em = sp.email; after(() => mailZustellenOderMelden("Termin verschoben (fest)", em, "Termin verschoben", mailTemplates.annaCancel(prettyDate(date, hour)))); }
         return ok({ message: `${mitPlusVerrechnet
           ? "Abgesagt. Die ausgefallene Stunde wurde direkt mit einer offenen Zusatzstunde verrechnet (kein Nachhol-Guthaben nötig)."
-          : "Abgesagt. Schüler bekommt Nachhol-Guthaben (kein Minus)."}${sp?.email
+          : "Abgesagt. Schüler bekommt Nachhol-Guthaben (kein Minus)."}${ohneMail
+          ? " Wie gewünscht KEINE Mail gesendet."
+          : sp?.email
           ? " Mail gesendet."
           : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
