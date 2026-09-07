@@ -26,8 +26,10 @@ type Zeile = {
 };
 type Vorlage = { schluessel: string; betreff: string; text: string };
 type Plus = {
-  schuelerId: string; name: string; anzahl: number;
-  stundensatzCent: number; summeCent: number; termine: string[]; warnung: boolean;
+  schuelerId: string; name: string; anzahl: number; stundenGesamt: number;
+  stundensatzCent: number; summeCent: number; termine: string[];
+  posten?: { datum: string; dauerMin: number; betragCent: number }[];
+  warnung: boolean;
 };
 /** Gehaltene Stunde vor dem ersten Vertragstermin – zum Übernehmen als Plus. */
 type VorvertragStunde = {
@@ -446,7 +448,7 @@ export default function ZahlungenSeite() {
                 {p.warnung && <span style={{ ...pille, background: 'rgba(217,154,54,.18)', color: '#8a6a20' }}>Zwischenabrechnung sinnvoll</span>}
                 {p.stundensatzCent ? (
                   <div style={{ color: F.soft, fontSize: 14 }}>
-                    {p.anzahl} Stunden × {eur(p.stundensatzCent)} = <b>{eur(p.summeCent)}</b>
+                    {(p.stundenGesamt ?? p.anzahl).toLocaleString('de-DE')} Stunden × {eur(p.stundensatzCent)} = <b>{eur(p.summeCent)}</b>
                   </div>
                 ) : (
                   // Ohne laufenden Vertrag kennt das System keinen Stundensatz –
@@ -458,12 +460,23 @@ export default function ZahlungenSeite() {
                   </div>
                 )}
                 <div style={{ color: F.muted, fontSize: 12 }}>
-                  {p.termine.map((t) => `${t.slice(8, 10)}.${t.slice(5, 7)}.${t.slice(0, 4)}`).join(' · ')}
+                  {(p.posten ?? p.termine.map((t) => ({ datum: t, dauerMin: 60 })))
+                    .map((x) => `${x.datum.slice(8, 10)}.${x.datum.slice(5, 7)}.${x.datum.slice(0, 4)}${x.dauerMin !== 60 ? ` (${x.dauerMin} Min.)` : ''}`)
+                    .join(' · ')}
                 </div>
               </div>
               <button style={{ ...knopf, ...(p.stundensatzCent ? {} : { background: F.line, color: F.muted, cursor: 'not-allowed' }) }}
                 disabled={!p.stundensatzCent}
-                onClick={() => { if (confirm(`${p.anzahl} Zusatzstunden für ${p.name} über ${eur(p.summeCent)} abrechnen und die Aufstellung per Mail schicken?`)) void tun(() => api('plusstundenAbrechnen', { schueler_id: p.schuelerId }), 'Abrechnung angelegt und verschickt.'); }}>
+                onClick={() => { if (confirm(`${p.anzahl} Zusatzstunden für ${p.name} über ${eur(p.summeCent)} abrechnen und die Aufstellung per Mail schicken?`)) void (async () => {
+                  setFehler(''); setHinweis('');
+                  try {
+                    const d = await api('plusstundenAbrechnen', { schueler_id: p.schuelerId });
+                    // Die Meldung kommt vom Server – sie sagt ehrlich, ob die
+                    // Mail wirklich raus ist und ob der Zähler nachzog.
+                    setHinweis(String(d.message || 'Abrechnung angelegt.'));
+                    await neuLaden();
+                  } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+                })(); }}>
                 abrechnen
               </button>
             </div>

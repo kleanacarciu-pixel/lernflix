@@ -10,7 +10,7 @@ import { service, mailZustellenOderMelden, berlinDatum, ADMIN_EMAIL, type MailAn
 import { ladeVertrag, rechneVertrag, buchungErlaubt, laufendeVertraege, type Vertrag } from "@/lib/vertrag";
 import { euroZuCent, centFormat } from "@/lib/vertrag-kern";
 import { datumDe, wochentagVon } from "@/lib/schuljahr-kern";
-import type { Schuljahr } from "@/lib/schuljahr";
+import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import {
   status, faelligeAktionen, zahlungsSperre, terminFindetStatt, pausierungAb,
   giltAlsBezahlt, bezahltAm, istBankCheckTag,
@@ -481,8 +481,15 @@ export async function vorvertraglicheStunden(): Promise<VorvertragStunde[]> {
 // --- Plusstunden ------------------------------------------------------------
 
 export type OffenePlusstunden = {
-  schuelerId: string; name: string; anzahl: number;
-  stundensatzCent: number; summeCent: number; termine: string[];
+  schuelerId: string; name: string;
+  /** Anzahl der Termine (Zeilen) – so zählt auch der Plus-Zähler im Kalender. */
+  anzahl: number;
+  /** Zeitstunden gesamt – eine 90-Minuten-Stunde zählt hier 1,5. */
+  stundenGesamt: number;
+  stundensatzCent: number; summeCent: number;
+  termine: string[];
+  /** Je Termin: Datum, Dauer und Betrag (Satz × Dauer) – für PDF und Anzeige. */
+  posten: { datum: string; dauerMin: number; betragCent: number }[];
   vertragId: string | null; warnung: boolean;
 };
 
@@ -490,31 +497,46 @@ export type OffenePlusstunden = {
 export async function offenePlusstunden(): Promise<OffenePlusstunden[]> {
   const sb = service();
   const aRes = await sb.from("appointments")
-    .select("id,student_id,slot_date")
+    .select("id,student_id,slot_date,dauer_min")
     .eq("counted", "plus").eq("status", "bestaetigt").is("abrechnung_id", null)
     .order("slot_date");
-  const termine = (aRes.data || []) as { id: string; student_id: string; slot_date: string }[];
+  const termine = (aRes.data || []) as { id: string; student_id: string; slot_date: string; dauer_min: number | null }[];
   if (!termine.length) return [];
 
   const ids = [...new Set(termine.map((t) => t.student_id))];
-  const [pRes, vRes] = await Promise.all([
+  const [pRes, vRes, aktiv] = await Promise.all([
     sb.from("profiles").select("user_id,name").in("user_id", ids),
-    sb.from("vertraege").select("id,schueler_id,stundensatz").in("schueler_id", ids).in("status", ["aktiv", "angeboten"]),
+    sb.from("vertraege").select("id,schueler_id,schuljahr_id,stundensatz").in("schueler_id", ids)
+      .in("status", ["aktiv", "angeboten"]).order("erstellt_am", { ascending: false }),
+    aktivesSchuljahr().catch(() => null),
   ]);
   const profile = (pRes.data || []) as { user_id: string; name: string }[];
-  const vertraege = (vRes.data || []) as { id: string; schueler_id: string; stundensatz: number }[];
+  const vertraege = (vRes.data || []) as { id: string; schueler_id: string; schuljahr_id: string; stundensatz: number }[];
 
   return ids.map((id) => {
     const eigene = termine.filter((t) => t.student_id === id);
-    const v = vertraege.find((x) => x.schueler_id === id);
+    // Am Schuljahreswechsel gibt es kurz zwei laufende Verträge – der Satz
+    // kommt dann vom Vertrag des AKTIVEN Schuljahres, sonst vom neuesten
+    // (dieselbe Vorrang-Regel wie überall im Vertragssystem).
+    const eigeneVertraege = vertraege.filter((x) => x.schueler_id === id);
+    const v = (aktiv && eigeneVertraege.find((x) => x.schuljahr_id === aktiv.id)) || eigeneVertraege[0];
     const satz = v ? euroZuCent(Number(v.stundensatz)) : 0;
+    // Nach echter Dauer abrechnen: Eine 90-Minuten-Stunde kostet 1,5 × Satz –
+    // vorher zählte jede Stunde pauschal wie 60 Minuten.
+    const posten = eigene.map((t) => {
+      const dauerMin = Number(t.dauer_min) || 60;
+      return { datum: t.slot_date, dauerMin, betragCent: Math.round((satz * dauerMin) / 60) };
+    });
+    const stundenGesamt = Math.round(posten.reduce((s, p) => s + p.dauerMin, 0) / 60 * 100) / 100;
     return {
       schuelerId: id,
       name: profile.find((p) => p.user_id === id)?.name || "Schüler/in",
       anzahl: eigene.length,
+      stundenGesamt,
       stundensatzCent: satz,
-      summeCent: satz * eigene.length,
+      summeCent: posten.reduce((s, p) => s + p.betragCent, 0),
       termine: eigene.map((t) => t.slot_date),
+      posten,
       vertragId: v?.id ?? null,
       warnung: eigene.length >= 5,   // ab fünf offenen Stunden: Zwischenabrechnung möglich
     };
@@ -523,7 +545,10 @@ export async function offenePlusstunden(): Promise<OffenePlusstunden[]> {
 
 /** Offene Plusstunden eines Schülers abrechnen: Abrechnung anlegen und zuordnen. */
 export async function plusstundenAbrechnen(schuelerId: string, heute = heuteIso()): Promise<{
-  ok: boolean; abrechnungId?: string; anzahl?: number; summeCent?: number; termine?: string[]; error?: string;
+  ok: boolean; abrechnungId?: string; anzahl?: number; summeCent?: number;
+  stundensatzCent?: number; termine?: string[];
+  posten?: { datum: string; dauerMin: number; betragCent: number }[];
+  zaehlerOk?: boolean; error?: string;
 }> {
   const sb = service();
   const alle = await offenePlusstunden();
@@ -551,7 +576,22 @@ export async function plusstundenAbrechnen(schuelerId: string, heute = heuteIso(
     .eq("student_id", schuelerId).eq("counted", "plus").eq("status", "bestaetigt").is("abrechnung_id", null);
   if (zu.error) return { ok: false, error: zu.error.message };
 
-  return { ok: true, abrechnungId, anzahl: eintrag.anzahl, summeCent: eintrag.summeCent, termine: eintrag.termine };
+  // Der Plus-Zähler im Kalender muss mit heruntergezählt werden – sonst
+  // behauptet er nach der Abrechnung weiter „offene" Plusstunden, und die
+  // Verrechnungsregel würde spätere Absagen mit längst bezahlten Stunden
+  // verrechnen (die Familie verlöre ihre berechtigte Gutschrift).
+  let zaehlerOk = false;
+  const pRes = await sb.from("profiles").select("plus_hours").eq("user_id", schuelerId).single();
+  if (!pRes.error && pRes.data) {
+    const neu = Math.max(0, Number((pRes.data as { plus_hours: number }).plus_hours) - eintrag.anzahl);
+    const up = await sb.from("profiles").update({ plus_hours: neu }).eq("user_id", schuelerId);
+    zaehlerOk = !up.error;
+  }
+
+  return {
+    ok: true, abrechnungId, anzahl: eintrag.anzahl, summeCent: eintrag.summeCent,
+    stundensatzCent: eintrag.stundensatzCent, termine: eintrag.termine, posten: eintrag.posten, zaehlerOk,
+  };
 }
 
 // --- Jahresbescheinigung ----------------------------------------------------

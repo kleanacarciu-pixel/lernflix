@@ -356,7 +356,9 @@ describe("Absage bei vollem Konto wird serverseitig abgelehnt", () => {
   const route = readFileSync("app/api/kalender/route.ts", "utf8");
 
   test("ohne ausdrückliche Bestätigung bricht die Absage ab", () => {
-    const i = route.indexOf('const vorschau = absageVorschau(prof, hu);');
+    // kontoFuerAbsage = prof, ggf. mit Plus 0, wenn keine echte offene
+    // Plus-Terminzeile existiert (Zähler-Drift-Absicherung).
+    const i = route.indexOf('const vorschau = absageVorschau(kontoFuerAbsage, hu);');
     assert.ok(i > 0, "Die Vorschau muss vor der Absage stehen");
     const block = route.slice(i, i + 500);
     assert.match(block, /vorschau\.grund === "kontoVoll"/);
