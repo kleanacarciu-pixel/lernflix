@@ -230,7 +230,11 @@ export async function POST(req: Request): Promise<Response> {
         const pdf = await plusstundenPdf({
           schuelerName: p.name,
           termine: r.termine || [],
-          stundensatzCent: r.anzahl ? Math.round((r.summeCent || 0) / r.anzahl) : 0,
+          // Minutengenaue Posten: die PDF zeigt je Termin Dauer und Betrag,
+          // und der Stundensatz ist der ECHTE aus dem Vertrag (vorher stand
+          // hier ein Durchschnitt, der bei 90-Minuten-Stunden krumm würde).
+          posten: r.posten,
+          stundensatzCent: r.stundensatzCent || 0,
           summeCent: r.summeCent || 0,
           faelligAm: faellig,
           erstelltAm: heute,
@@ -251,7 +255,16 @@ export async function POST(req: Request): Promise<Response> {
         );
         verschickt = res.ok;
       }
-      return ok({ anzahl: r.anzahl, summeCent: r.summeCent, verschickt });
+      // Ehrliche Rückmeldung statt pauschalem Erfolgstext: ohne E-Mail (oder
+      // bei Versandfehler) muss Kleana wissen, dass sie selbst schicken muss –
+      // und ein hängen gebliebener Plus-Zähler soll nicht still bleiben.
+      return ok({
+        anzahl: r.anzahl, summeCent: r.summeCent, verschickt,
+        message: `Abrechnung über ${centFormat(r.summeCent || 0)} angelegt`
+          + (verschickt ? " und per Mail verschickt." : " – ABER die Mail ging nicht raus"
+            + (p?.email ? " (Versandfehler)" : " (keine E-Mail hinterlegt)") + ". Bitte selbst schicken.")
+          + (r.zaehlerOk ? "" : " ACHTUNG: Der Plus-Zähler im Kalender ließ sich nicht senken – bitte dort mit „−“ nachziehen."),
+      });
     }
 
     // Eigene Sicherheitskopie für Kleana: alle Verträge samt Ratenplan als

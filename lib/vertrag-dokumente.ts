@@ -224,6 +224,9 @@ function unterschriftsfeld(d: PDFKit.PDFDocument, bild: Buffer | null): void {
 export type PlusstundenDaten = {
   schuelerName: string;
   termine: string[];
+  /** Je Termin mit Dauer und Betrag – dann rechnet die PDF minutengenau
+   *  (90 Min. = 1,5 × Satz). Ohne Posten gilt die alte Pauschale je Termin. */
+  posten?: { datum: string; dauerMin: number; betragCent: number }[];
   stundensatzCent: number;
   summeCent: number;
   faelligAm: string;      // ISO
@@ -244,8 +247,12 @@ export async function plusstundenPdf(dat: PlusstundenDaten): Promise<Buffer> {
 
   d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Abgerechnete Stunden");
   d.moveDown(0.3);
-  for (const t of dat.termine) zeile(d, datumDe(t), centFormat(dat.stundensatzCent));
-  zeile(d, `${dat.termine.length} Zusatzstunden gesamt`, centFormat(dat.summeCent), true);
+  const posten = dat.posten
+    ?? dat.termine.map((datum) => ({ datum, dauerMin: 60, betragCent: dat.stundensatzCent }));
+  for (const p of posten) {
+    zeile(d, `${datumDe(p.datum)}${p.dauerMin !== 60 ? ` (${p.dauerMin} Min.)` : ""}`, centFormat(p.betragCent));
+  }
+  zeile(d, `${posten.length} Zusatzstunden gesamt (Stundensatz ${centFormat(dat.stundensatzCent)})`, centFormat(dat.summeCent), true);
   d.moveDown(0.8);
 
   d.font("Helvetica-Bold").fontSize(12).fillColor(INK).text("Zahlung");
