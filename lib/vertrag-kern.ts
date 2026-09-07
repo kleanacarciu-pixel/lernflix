@@ -326,11 +326,15 @@ export function wochentagWechseln(zeiten: ZeitZeile[], opt: {
   const { alterWochentag, neuerWochentag, neueUhrzeit, wechseldatum } = opt;
   const ende = tagDavor(wechseldatum);
 
-  const angepasst = zeiten.map((z) => {
-    if (z.wochentag !== alterWochentag) return z;
+  const angepasst = zeiten.flatMap((z) => {
+    if (z.wochentag !== alterWochentag) return [z];
     // Schon beendete Zeilen nicht erneut abschneiden
-    if (z.bis_datum && z.bis_datum <= ende) return z;
-    return { ...z, bis_datum: ende };
+    if (z.bis_datum && z.bis_datum <= ende) return [z];
+    // Zeile, die erst NACH dem Schnitt begonnen hätte (z. B. Vertrag startet
+    // erst in ein paar Tagen): ersatzlos durch die neue ersetzen – ein Ende
+    // vor dem Anfang wäre unsinnig, und die Datenbank lehnt es ab.
+    if (z.ab_datum && z.ab_datum > ende) return [];
+    return [{ ...z, bis_datum: ende }];
   });
 
   const alt = zeiten.find((z) => z.wochentag === alterWochentag);

@@ -755,7 +755,12 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       {
         const zuBeenden = vorher.zeiten.filter((z) => z.wochentag === alterWochentag && (!z.bis_datum || z.bis_datum > ende));
         for (const z of zuBeenden) {
-          const r = await sb.from("vertrag_zeiten").update({ bis_datum: ende }).eq("id", z.id);
+          // Zeile, die am Schnitt-Tag noch gar nicht begonnen hatte (Vertrag
+          // startet erst später): löschen statt beenden – ein bis_datum vor
+          // dem ab_datum lehnt die Datenbank ab (vertrag_zeit_zeitraum).
+          const r = z.ab_datum && z.ab_datum > ende
+            ? await sb.from("vertrag_zeiten").delete().eq("id", z.id)
+            : await sb.from("vertrag_zeiten").update({ bis_datum: ende }).eq("id", z.id);
           if (r.error) return bad(r.error.message, 500);
         }
       }
@@ -835,7 +840,11 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       }
 
       for (const z of offene.filter((z) => z.wochentag === wochentag)) {
-        const r = await sb.from("vertrag_zeiten").update({ bis_datum: zum }).eq("id", z.id);
+        // Gleiche Falle wie beim Wochentagswechsel: eine Zeile, die zum
+        // Enddatum noch gar nicht begonnen hätte, wird gelöscht statt beendet.
+        const r = z.ab_datum && z.ab_datum > zum
+          ? await sb.from("vertrag_zeiten").delete().eq("id", z.id)
+          : await sb.from("vertrag_zeiten").update({ bis_datum: zum }).eq("id", z.id);
         if (r.error) return bad(r.error.message, 500);
       }
 

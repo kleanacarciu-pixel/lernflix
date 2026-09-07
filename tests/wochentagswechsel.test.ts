@@ -99,6 +99,20 @@ describe("Wochentag wechseln", () => {
     assert.equal(neu[1].uhrzeit, "17:30");
   });
 
+  test("noch nicht begonnene Zeile wird ersetzt statt beendet (Vertrag startet erst später)", () => {
+    // Kleanas Fall (Sophie): Vertrag beginnt erst am 18.09., der Wechsel wird
+    // schon am 07.09. eingetragen. Die alte Zeile darf kein Ende VOR ihrem
+    // Anfang bekommen (Datenbank-Check vertrag_zeit_zeitraum) – sie entfällt.
+    const kuenftig = [{ wochentag: 4, uhrzeit: "16:30", ab_datum: "2026-09-18" }];
+    const neu = wochentagWechseln(kuenftig, {
+      alterWochentag: 4, neuerWochentag: 2, wechseldatum: "2026-09-07",
+    });
+    assert.equal(neu.length, 1, "die alte Zeile entfällt ersatzlos");
+    assert.equal(neu[0].wochentag, 2);
+    assert.equal(neu[0].uhrzeit, "16:30");
+    assert.equal(neu[0].ab_datum, "2026-09-07");
+  });
+
   test("ein zweiter Wochentermin bleibt unberührt", () => {
     const zwei = [{ wochentag: 1, uhrzeit: "16:00" }, { wochentag: 4, uhrzeit: "14:00" }];
     const neu = wochentagWechseln(zwei, { alterWochentag: 1, neuerWochentag: 3, wechseldatum: "2027-01-11" });
