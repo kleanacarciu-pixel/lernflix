@@ -670,9 +670,10 @@ export default function KalenderPage() {
     }
     if (s.state === "busy") {
       setModal(<div className="modal"><h2>Termin von {s.name}</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
-        <div className="okbox">„Absagen“ gibt {s.name} Nachhol-Guthaben (kein Minus) + Mail.</div>
+        <div className="okbox">„Absagen“ verrechnet fair (Guthaben/Plus) + Mail an die Familie. „Ohne Mail“ macht dasselbe, aber still – für versehentlich eingetragene Termine.</div>
         <div className="col">
-          <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Diese Stunde absagen</button>
+          <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Diese Stunde absagen (mit Mail)</button>
+          <button className="btn g" onClick={() => act("adminCancel", { date, hour: s.hour, ohneMail: true })}>Absagen OHNE Mail (aus Versehen eingetragen)</button>
           {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
           <button className="btn g" onClick={() => setModal(null)}>Zurück</button>
         </div></div>);
