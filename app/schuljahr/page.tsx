@@ -177,6 +177,18 @@ export default function SchuljahrSeite() {
               await api('schuleSpeichern', { name: schuleName }); setSchuleName('');
             }, 'Schule angelegt.')}>Anlegen</button>
           </div>
+          {/* Ein Klick statt Abtippen: Schule + alle Ferien 2026/27 auf einmal.
+              Die Meldung kommt vom Server (wie viel neu war), daher ohne tun(). */}
+          <div style={{ marginTop: 12 }}>
+            <button style={knopfKlein} onClick={async () => {
+              setFehler(''); setHinweis('');
+              try {
+                const d = await api('stGeorgesPaket');
+                setHinweis(String(d.message || "St. George's eingerichtet."));
+                await neuLaden();
+              } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+            }}>St. George&apos;s + Ferien 2026/27 automatisch eintragen</button>
+          </div>
         </section>
 
         {/* --------------------------------------------- Unterrichtsfreie Tage */}
