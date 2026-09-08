@@ -131,6 +131,59 @@ export async function POST(req: Request): Promise<Response> {
       return ok({ eintrag: res.data });
     }
 
+    // ------------------------------------------- St.-George's-Paket (1 Klick)
+    // Legt die Schule „St. George's" samt ihrer Ferien 2026/27 in einem Rutsch
+    // an – die Zeiten stammen aus dem offiziellen Academic Calendar 2026-27
+    // der Schule (mit Kleana am 08.09.2026 Tag für Tag abgeglichen).
+    // Mehrfach klickbar: Vorhandenes wird erkannt und nicht doppelt angelegt.
+    case "stGeorgesPaket": {
+      const FERIEN = [
+        { bezeichnung: "Herbstferien St. George's", von: "2026-10-26", bis: "2026-11-01" },
+        { bezeichnung: "Weihnachtsferien St. George's", von: "2026-12-19", bis: "2027-01-10" },
+        { bezeichnung: "Faschingsferien St. George's", von: "2027-02-08", bis: "2027-02-12" },
+        { bezeichnung: "Osterferien St. George's", von: "2027-03-22", bis: "2027-04-02" },
+        { bezeichnung: "Pfingstferien St. George's", von: "2027-05-24", bis: "2027-05-28" },
+        { bezeichnung: "Sommerferien St. George's", von: "2027-07-17", bis: "2027-08-31" },
+      ];
+      // Das passende Schuljahr über die Daten finden (nicht über den Namen,
+      // damit die Schreibweise „2026/27" vs. „2026/2027" keine Rolle spielt).
+      const sjRes = await sb.from("schuljahre").select("id,name,erster_schultag,letzter_schultag");
+      if (sjRes.error) return bad(sjRes.error.message, 500);
+      const sjListe = (sjRes.data || []) as { id: string; name: string; erster_schultag: string; letzter_schultag: string }[];
+      const sj = sjListe.find((s) => s.erster_schultag <= "2026-10-26" && s.letzter_schultag >= "2026-10-26");
+      if (!sj) return bad("Bitte zuerst das Schuljahr 2026/27 anlegen – die Ferien gehören dort hinein.");
+
+      // Schule holen oder anlegen – erkannt wird sie am Namensteil „george",
+      // falls Kleana sie schon (anders geschrieben) angelegt hat.
+      const scRes = await sb.from("schulen").select("id,name");
+      if (scRes.error) return bad(scRes.error.message, 500);
+      let schuleId = ((scRes.data || []) as { id: string; name: string }[])
+        .find((s) => s.name.toLowerCase().includes("george"))?.id || "";
+      if (!schuleId) {
+        const neu = await sb.from("schulen").insert({ name: "St. George's" }).select("id").single();
+        if (neu.error) return bad(neu.error.message, 500);
+        schuleId = (neu.data as { id: string }).id;
+      }
+
+      const daRes = await sb.from("unterrichtsfreie_tage").select("bezeichnung")
+        .eq("schuljahr_id", sj.id).eq("schule_id", schuleId);
+      if (daRes.error) return bad(daRes.error.message, 500);
+      const schon = new Set(((daRes.data || []) as { bezeichnung: string }[]).map((f) => f.bezeichnung));
+      let neu = 0;
+      for (const f of FERIEN) {
+        if (schon.has(f.bezeichnung)) continue;
+        const ins = await sb.from("unterrichtsfreie_tage").insert({
+          schuljahr_id: sj.id, schule_id: schuleId, bezeichnung: f.bezeichnung,
+          datum_von: f.von, datum_bis: f.bis, ist_feiertag: false,
+        });
+        if (ins.error) return bad(ins.error.message, 500);
+        neu++;
+      }
+      return ok({ message: neu
+        ? `St. George's eingerichtet: ${neu} Ferienzeit(en) für ${sj.name} eingetragen${schon.size ? `, ${schon.size} waren schon da` : ""}.`
+        : `Alles schon da – St. George's hat bereits ${schon.size} Ferienzeiten für ${sj.name}.` });
+    }
+
     case "freiLoeschen": {
       const id = text(body.id, 40);
       if (!id) return bad("Kein Eintrag gewählt.");
