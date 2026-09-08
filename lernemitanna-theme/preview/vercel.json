@@ -11,6 +11,18 @@
       "destination": "/#referenzen"
     },
     {
+      "source": "/zertifikate",
+      "destination": "/ueber-lma#zertifikate"
+    },
+    {
+      "source": "/zertifikate.html",
+      "destination": "/ueber-lma#zertifikate"
+    },
+    {
+      "source": "/qualifikationen",
+      "destination": "/ueber-lma#zertifikate"
+    },
+    {
       "source": "/kontakt.html",
       "destination": "/kontakt"
     },
