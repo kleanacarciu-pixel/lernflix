@@ -194,6 +194,23 @@ export async function POST(req: Request): Promise<Response> {
       if (!mode) return bad("Bitte online oder vor Ort wählen.");
       if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
       if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist leider schon belegt.");
+      // Kleanas Regel: Die kostenlose Probestunde ist NUR zum ersten
+      // Kennenlernen. Wer schon einen Schüler-Zugang hat (von Kleana
+      // eingeladen), bucht angemeldet – und bekommt hier keine Probestunde.
+      // Vergleich in JS statt per Datenbank-Filter: ilike würde %-Zeichen in
+      // der Eingabe als Platzhalter deuten, und die Schüler-Liste ist klein.
+      {
+        let zeilen: { email?: string | null; deleted_at?: string | null }[] = [];
+        const r = await service().from("profiles").select("email,deleted_at");
+        if (!r.error) zeilen = (r.data || []) as typeof zeilen;
+        else {
+          // Ohne Sicherheit-V1-Migration gibt es kein deleted_at – dann ohne.
+          const r2 = await service().from("profiles").select("email");
+          zeilen = (r2.data || []) as typeof zeilen;
+        }
+        const hatZugang = zeilen.some((p) => !p.deleted_at && (p.email || "").trim().toLowerCase() === email);
+        if (hatZugang) return bad("Diese E-Mail-Adresse gehört schon zu einem Schüler-Zugang bei Anna. Die kostenlose Probestunde ist nur zum ersten Kennenlernen – bitte melde dich im Kalender an, dann kannst du deine Termine direkt buchen.");
+      }
       // Bremse gegen Missbrauch: pro E-Mail-Adresse höchstens drei offene
       // Anfragen – mehr braucht kein echter Interessent, und niemand kann
       // fremde Postfächer mit Bestätigungs-Mails fluten.
