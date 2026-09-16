@@ -708,9 +708,15 @@ export async function POST(req: Request): Promise<Response> {
         const hinweis = u.erlaubt ? "" : " Hinweis: Der Vertrag ist noch nicht unterschrieben.";
         { const { error } = await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", s.fixedPending.id);
           if (error) return bad("Bestätigen fehlgeschlagen: " + error.message); }
+        // Beginnt der Termin erst später (die Familie hat z. B. „ab 07.10."
+        // angefragt), gehört das in Mail und Meldung – sonst wirken beide,
+        // als ginge es schon diese Woche los.
+        const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+        const abDatum = s.fixedPending.ab_datum && s.fixedPending.ab_datum > heute ? s.fixedPending.ab_datum : null;
+        const abText = abDatum ? `, ab ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : "";
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich)`, md, tl))); }
-        return ok({ message: `Fester Termin bestätigt – ab jetzt jede Woche. Mail gesendet.${hinweis}` });
+        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl))); }
+        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
@@ -1042,7 +1048,9 @@ export async function POST(req: Request): Promise<Response> {
       // ("gesehene") fallen gleich noch raus
       const [pendRes, pfixRes, cancRes, stornoRes, profRes, gesehenWert] = await Promise.all([
         sb.from("appointments").select("student_id,slot_date,hour,kind,mode,note").eq("status", "angefragt").order("slot_date"),
-        sb.from("fixed_slots").select("student_id,weekday,hour,mode").eq("status", "angefragt"),
+        // "*" statt fester Spalten: ab_datum (Wunsch-Starttag der Familie)
+        // kommt erst mit der V8-Migration – ohne sie darf nichts fehlschlagen.
+        sb.from("fixed_slots").select("*").eq("status", "angefragt"),
         sb.from("appointments").select("id,student_id,slot_date,hour,credited,note").eq("kind", "absage").order("slot_date", { ascending: false }).limit(60),
         // Stornierte EINZEL-Buchungen: Die kennen keine „absage"-Zeile und
         // fehlten deshalb komplett in dieser Liste – Kleana erfuhr von der
@@ -1055,12 +1063,15 @@ export async function POST(req: Request): Promise<Response> {
       const profs = (profRes.data || []) as { user_id: string; name: string }[];
       const nameOf = (id: string | null) => (id ? profs.find((p) => p.user_id === id)?.name : null) || "—";
       const pend = (pendRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; mode: string | null; note: string | null }[];
-      const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null }[];
+      const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; ab_datum?: string | null }[];
       const canc = (cancRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
       const storni = (stornoRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; note: string | null }[];
       const requests = [
         ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode })),
-        ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode })),
+        // ab = Wunsch-Starttag der Familie (z. B. „ab 07.10."). Ohne ihn zeigte
+        // die Liste nur „jeden Mi" und das Bestätigungs-Fenster sprang zum
+        // NÄCHSTEN Mittwoch – Kleana sah ein anderes Datum als in der Mail.
+        ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode, ab: f.ab_datum || null })),
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
       const cancellations = [

@@ -13,7 +13,7 @@ import { VAPID_PUBLIC_KEY, vapidAlsBytes } from "@/lib/push-kern";
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
-type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
+type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null; ab?: string | null };
 type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; plusVerr?: boolean; einzel?: boolean; wann?: string | null };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
@@ -741,14 +741,18 @@ export default function KalenderPage() {
   }
 
   function openRequest(r: ReqRow) {
-    const date = r.date || nextWeekdayDate(r.weekday ?? 0);
+    // Fester Termin: Die Familie hat einen konkreten Starttag angeklickt
+    // (r.ab, z. B. „ab 07.10."). Liegt er in der Zukunft, ist ER der Termin –
+    // vorher sprang das Fenster zum NÄCHSTEN Wochentag und zeigte damit ein
+    // anderes Datum als die Anfrage-Mail.
+    const date = r.date || (r.ab && r.ab > today ? r.ab : nextWeekdayDate(r.weekday ?? 0));
     const hour = r.hour;
     const dt = parseIso(date);
     const when = `${DAYS[(dt.getDay() + 6) % 7]} ${dm(dt)} um ${fmtZeit(hour)}`;
     const kindLbl = r.kind === "fix" ? "Fester wöchentlicher Termin" : r.kind === "probe" ? "Probestunde" : "Extra-/Nachholstunde";
     jumpTo(date);
     setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{r.who}</b> · {when}</p><p style={{ margin: "0 0 8px" }}>{kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</p>
-      {r.kind === "fix" ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
+      {r.kind === "fix" ? <div className="okbox">Wird ab <b>{DAYS[(dt.getDay() + 6) % 7]} {dm(dt)}</b> <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
       <div className="col">
         <button className="btn p" onClick={() => act("adminConfirm", { date, hour })}>Bestätigen &amp; Mail</button>
         <button className="btn r" onClick={() => act("adminReject", { date, hour })}>Absagen &amp; Mail</button>
@@ -1039,7 +1043,8 @@ export default function KalenderPage() {
             <h3>Offene Anfragen (alle Daten)</h3>
             {inbox.requests.length === 0 ? <p style={{ color: "#999", margin: "6px 0 0" }}>Keine offenen Anfragen.</p> :
               <div className="inbxlist">{inbox.requests.map((r, i) => {
-                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${fmtZeit(r.hour)}` : `jeden ${DAYS[r.weekday ?? 0]} ${fmtZeit(r.hour)}`;
+                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${fmtZeit(r.hour)}`
+                  : `jeden ${DAYS[r.weekday ?? 0]} ${fmtZeit(r.hour)}${r.ab && r.ab > today ? ` (ab ${dm(parseIso(r.ab))})` : ""}`;
                 const kindLbl = r.kind === "fix" ? "fester Termin" : r.kind === "probe" ? "Probestunde" : "Extra-Stunde";
                 return <button key={i} className="inbxrow" onClick={() => openRequest(r)}>
                   <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">bestätigen ›</span></button>;
