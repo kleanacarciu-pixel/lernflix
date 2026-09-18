@@ -5,7 +5,7 @@
 import { NextResponse, after } from "next/server";
 import {
   service, signInFlexibel, refresh, userFromToken, getProfile, profilEntfernt, buildWeek, balanceDates, groupBalanceDates,
-  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES,
+  weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   sendMail, mailZustellenOderMelden, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
@@ -105,6 +105,49 @@ async function aeltesteOffenePlusstunde(studentId: string): Promise<{ id: string
 async function plusZeileVerrechnen(zeileId: string, als: "minus" | "makeup"): Promise<void> {
   const { error } = await service().from("appointments").update({ counted: als }).eq("id", zeileId);
   if (error) console.error("Plusstunde ließ sich nicht als verrechnet markieren:", error.message);
+}
+
+/**
+ * Kollidiert ein FESTER Wochentermin mit schon gebuchten Einzel-/Probestunden
+ * in den kommenden Wochen? slotKonflikt sieht nur den EINEN angeklickten Tag –
+ * Selmas Probestunde am 21.09. blieb deshalb unbemerkt, als Leonies fester
+ * Montagstermin bestätigt wurde, und beide Familien erwarteten dieselbe Zeit.
+ * Geprüft werden die nächsten 10 Wochen; zurück kommen Datum + Name.
+ */
+async function festeTerminKollisionen(weekday: number, hour: number, dauerMin: number, abDatum: string): Promise<{ datumDe: string; wer: string }[]> {
+  const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+  const von = abDatum > heute ? abDatum : heute;
+  const { data } = await service().from("appointments")
+    .select("slot_date,hour,kind,status,dauer_min,student_id,note")
+    .in("kind", ["einzel", "probe"]).neq("status", "abgesagt")
+    .gte("slot_date", von).lte("slot_date", addDaysStr(von, 70));
+  const ende = hour + dauerMin / 60;
+  const treffer = ((data || []) as { slot_date: string; hour: number; dauer_min?: number; student_id: string | null; note: string | null }[])
+    .filter((a) => weekdayOf(a.slot_date) === weekday)
+    .filter((a) => { const s = Number(a.hour), e = s + (Number(a.dauer_min) || 60) / 60; return s < ende && e > hour; })
+    .sort((a, b) => a.slot_date.localeCompare(b.slot_date));
+  const aus: { datumDe: string; wer: string }[] = [];
+  for (const t of treffer) {
+    const wer = t.student_id ? (await getProfile(t.student_id))?.name || "Schüler" : ((t.note || "").split("|")[0] || "Gast") + " (Probe)";
+    aus.push({ datumDe: `${t.slot_date.slice(8, 10)}.${t.slot_date.slice(5, 7)}.`, wer });
+  }
+  return aus;
+}
+
+/** Warntext für Kleana (mit Namen) – leer, wenn nichts kollidiert. */
+function kollisionsText(kollisionen: { datumDe: string; wer: string }[]): string {
+  return kollisionen.length
+    ? ` ⚠️ ACHTUNG: An diesen Tagen ist die Zeit schon einzeln belegt: ${kollisionen.map((k) => `${k.datumDe} (${k.wer})`).join(", ")}. Beide Familien erwarten dieselbe Stunde – bitte eine davon verschieben oder absagen.`
+    : "";
+}
+
+/** Warntext für die Familie – nur Daten, KEINE fremden Namen (Datenschutz). */
+function kollisionsTextFamilie(kollisionen: { datumDe: string; wer: string }[]): string {
+  if (!kollisionen.length) return "";
+  const tage = kollisionen.map((k) => k.datumDe).join(", ");
+  return kollisionen.length > 1
+    ? `Wichtig: Am ${tage} ist die Zeit ausnahmsweise schon anderweitig belegt – an diesen Tagen entfällt deine Stunde. Anna meldet sich dazu.`
+    : `Wichtig: Am ${tage} ist die Zeit ausnahmsweise schon anderweitig belegt – an diesem Tag entfällt deine Stunde. Anna meldet sich dazu.`;
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -261,8 +304,12 @@ export async function POST(req: Request): Promise<Response> {
         if (r.error) r = await service().from("fixed_slots").insert({ student_id: user.id, weekday: s.wd, hour, status: "angefragt", mode, dauer_min: dauerMin });
         if (r.error) return bad("Speichern fehlgeschlagen: " + r.error.message);
       }
-      after(() => sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.`));
-      return ok({ message: "Fester Termin angefragt. Kleana bestätigt ihn." });
+      // Kollidiert der Wunsch-Wochenslot mit künftigen Einzel-/Probestunden?
+      // Kleana soll es schon in der Anfrage-Mail sehen, nicht erst hinterher.
+      const koll = await festeTerminKollisionen(s.wd, hour, dauerMin, date);
+      after(() => sendMail(ADMIN_EMAIL, "Neue Anfrage: fester Termin", `${prof.name} möchte einen festen wöchentlichen Termin: ${prettyDate(date, hour)} (${dauerMin} Min., ${mode === "online" ? "online" : "vor Ort"}). Bitte im Kalender bestätigen.${kollisionsText(koll)}`));
+      // Auch die Familie soll es sofort sehen – ohne fremde Namen.
+      return ok({ message: `Fester Termin angefragt. Kleana bestätigt ihn.${koll.length ? " " + kollisionsTextFamilie(koll) : ""}` });
     }
     if (action === "bookExtra") {
       // Auch hier: fehlende Unterschrift blockiert nicht mehr, nur die
@@ -552,9 +599,13 @@ export async function POST(req: Request): Promise<Response> {
           student_id: sid, weekday: weekdayOf(date), hour, status: "aktiv", mode, dauer_min: dauerMin,
         });
         if (r.error) return bad("Eintragen fehlgeschlagen: " + r.error.message);
-        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl))); }
+        // Auch hier: künftige Einzel-/Probestunden auf demselben Wochenslot
+        // laut melden – slotKonflikt sah nur den angeklickten Tag. Die Familie
+        // bekommt die betroffenen Tage (ohne Namen) direkt in die Mail.
+        const koll = await festeTerminKollisionen(weekdayOf(date), hour, dauerMin, date);
+        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl, kollisionsTextFamilie(koll) || undefined))); }
         await syncLessons(true);
-        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.${hinweis}` });
+        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
       }
       // Nachtragen: Eine GEHALTENE Stunde aus der Vergangenheit erfassen
       // (z. B. Lillys Stunden vor Vertragsbeginn, die nie im Kalender
@@ -730,9 +781,13 @@ export async function POST(req: Request): Promise<Response> {
         const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
         const abDatum = s.fixedPending.ab_datum && s.fixedPending.ab_datum > heute ? s.fixedPending.ab_datum : null;
         const abText = abDatum ? `, ab ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : "";
+        // Kollidiert der neue Wochentermin mit schon gebuchten Einzel-/
+        // Probestunden in den nächsten Wochen? Laut sagen statt schweigen –
+        // Kleana mit Namen, die Familie (in der Mail) nur mit den Tagen.
+        const koll = await festeTerminKollisionen(s.wd, hour, Number((s.fixedPending as { dauer_min?: number }).dauer_min) || 60, s.fixedPending.ab_datum || date);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl))); }
-        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}` });
+        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl, kollisionsTextFamilie(koll) || undefined))); }
+        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
     }

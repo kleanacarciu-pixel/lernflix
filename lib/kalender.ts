@@ -275,7 +275,12 @@ const teamsBlock = (mode?: string | null, teams?: string | null) =>
     : "";
 
 export const mailTemplates = {
-  confirmed: (when: string, mode?: string | null, teams?: string | null) => wrapMail("Termin bestätigt ✓", `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
+  confirmed: (when: string, mode?: string | null, teams?: string | null, hinweis?: string) => wrapMail("Termin bestätigt ✓",
+    `<p>Dein Termin am <b>${when}</b> ist bestätigt. Wir sehen uns!</p>`
+    // z. B. „Am 21.09. ist die Zeit ausnahmsweise belegt" – die Familie soll
+    // von einer Überschneidung nicht erst vor verschlossener Tür erfahren.
+    + (hinweis ? `<p style="background:#fff3d6;border-radius:10px;padding:12px">⚠️ ${hinweis}</p>` : "")
+    + teamsBlock(mode, teams) + contactBlock(mode)),
   probeConfirmed: (name: string, when: string, mode?: string | null, teams?: string | null) => wrapMail(`Danke, ${name}! 🎉`, `<p>Schön, dass du <b>Lerne mit Anna</b> kennenlernen möchtest! Deine <b>kostenlose Probestunde</b> am <b>${when}</b> ist bestätigt. Ich freue mich auf dich!</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
   rejected: (when: string) => wrapMail("Termin abgesagt", `<p>Leider konnte dein angefragter Termin am <b>${when}</b> nicht bestätigt werden. Der Slot ist wieder frei – du kannst gern einen anderen wählen.</p>`),
   annaCancel: (when: string) => wrapMail("Termin verschoben", `<p>Dein Termin am <b>${when}</b> muss leider ausfallen. Du bekommst dafür eine <b>Nachhol-Stunde gutgeschrieben</b> (kein Minus) – buche einfach einen freien Slot.</p>`),
