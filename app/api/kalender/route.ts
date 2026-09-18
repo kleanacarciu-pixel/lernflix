@@ -969,13 +969,16 @@ export async function POST(req: Request): Promise<Response> {
         arr.push(`${DAY_NAMES[f.weekday]} ${fmtZeit(Number(f.hour))}${d !== 60 ? ` (${d} Min.)` : ""}${m}`);
         fixByStudent.set(f.student_id, arr);
       });
-      const rows = (studs || []).map((p: { user_id: string; name: string; minus_hours: number; plus_hours: number; makeup_credits: number; teams_link?: string | null }) => {
+      const rows = (studs || []).map((p: { user_id: string; name: string; email?: string | null; minus_hours: number; plus_hours: number; makeup_credits: number; teams_link?: string | null }) => {
         const d = groupBalanceDates(apptsByStudent.get(p.user_id) || []);
         return {
           id: p.user_id, name: p.name, fix: (fixByStudent.get(p.user_id) || []).join(", ") || "—",
           minus: p.minus_hours, plus: p.plus_hours, nach: p.makeup_credits,
           minusD: d.minus, plusD: d.plus, nachD: d.nach,
           teams: p.teams_link || null,
+          // E-Mail mit anzeigen: Bei gleichen Vornamen (zwei Sophies) ist sie
+          // das einzige Merkmal, an dem Kleana die Konten unterscheiden kann.
+          email: p.email || null,
         };
       });
       // Kleanas eigener Link = Standard für alle ohne eigenen Link
@@ -1073,21 +1076,23 @@ export async function POST(req: Request): Promise<Response> {
         // Absage einer gebuchten Stunde schlicht nichts. Der Zeitpunkt steckt
         // seit dem Storno-Vermerk in der Notiz.
         sb.from("appointments").select("id,student_id,slot_date,hour,note").eq("kind", "einzel").eq("status", "abgesagt").like("note", "storno:%").order("slot_date", { ascending: false }).limit(30),
-        sb.from("profiles").select("user_id,name"),
+        sb.from("profiles").select("user_id,name,email"),
         ladeEinstellung(SCHLUESSEL_ABSAGEN_GESEHEN),
       ]);
-      const profs = (profRes.data || []) as { user_id: string; name: string }[];
+      const profs = (profRes.data || []) as { user_id: string; name: string; email?: string | null }[];
       const nameOf = (id: string | null) => (id ? profs.find((p) => p.user_id === id)?.name : null) || "—";
+      // E-Mail zur Anfrage: unterscheidet Schüler mit gleichem Vornamen.
+      const mailOf = (id: string | null) => (id ? profs.find((p) => p.user_id === id)?.email : null) || null;
       const pend = (pendRes.data || []) as { student_id: string | null; slot_date: string; hour: number; kind: string; mode: string | null; note: string | null }[];
       const pfix = (pfixRes.data || []) as { student_id: string; weekday: number; hour: number; mode: string | null; ab_datum?: string | null }[];
       const canc = (cancRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; credited: boolean; note: string | null }[];
       const storni = (stornoRes.data || []) as { id: string; student_id: string | null; slot_date: string; hour: number; note: string | null }[];
       const requests = [
-        ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode })),
+        ...pend.map((p) => ({ date: p.slot_date, hour: p.hour, who: p.student_id ? nameOf(p.student_id) : ((p.note || "").split("|")[0] + " (Probe)"), kind: p.kind, mode: p.mode, mail: p.student_id ? mailOf(p.student_id) : (p.note || "").split("|")[1] || null })),
         // ab = Wunsch-Starttag der Familie (z. B. „ab 07.10."). Ohne ihn zeigte
         // die Liste nur „jeden Mi" und das Bestätigungs-Fenster sprang zum
         // NÄCHSTEN Mittwoch – Kleana sah ein anderes Datum als in der Mail.
-        ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode, ab: f.ab_datum || null })),
+        ...pfix.map((f) => ({ weekday: f.weekday, hour: f.hour, who: nameOf(f.student_id), kind: "fix", mode: f.mode, ab: f.ab_datum || null, mail: mailOf(f.student_id) })),
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
       const cancellations = [
