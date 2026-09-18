@@ -12,8 +12,8 @@ import { VAPID_PUBLIC_KEY, vapidAlsBytes } from "@/lib/push-kern";
 
 type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
-type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null };
-type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null };
+type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null; email?: string | null };
+type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null; ab?: string | null; mail?: string | null };
 type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; plusVerr?: boolean; einzel?: boolean; wann?: string | null };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
@@ -717,6 +717,16 @@ export default function KalenderPage() {
     if (eingabe === null) return;
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
+  // Namen ändern – z. B. wenn zwei Schüler gleich heißen (zwei Sophies) und
+  // in Anfragen/Listen nicht auseinanderzuhalten sind. Der Name ist zugleich
+  // der Anmeldename; Login per E-Mail-Adresse geht unabhängig davon weiter.
+  function nameBearbeiten(r: OverviewRow) {
+    const eingabe = window.prompt(
+      `Neuer Name für „${r.name}“\n\nTipp bei doppelten Vornamen: Nachnamen oder Kürzel anhängen, z. B. „Sophie M.“.\nDer Name ist auch der Anmeldename – bitte der Familie Bescheid geben (Login per E-Mail geht weiterhin).`,
+      r.name);
+    if (eingabe === null) return;
+    void act("renameStudent", { studentId: r.id, name: eingabe.trim() });
+  }
   // Passwort vergessen: Kleana erzeugt ein frisches und schickt es der
   // Familie selbst (z. B. per WhatsApp). Kein „Passwort vergessen"-Mailweg –
   // die Familien laufen ohnehin über Kleana.
@@ -741,14 +751,20 @@ export default function KalenderPage() {
   }
 
   function openRequest(r: ReqRow) {
-    const date = r.date || nextWeekdayDate(r.weekday ?? 0);
+    // Fester Termin: Die Familie hat einen konkreten Starttag angeklickt
+    // (r.ab, z. B. „ab 07.10."). Liegt er in der Zukunft, ist ER der Termin –
+    // vorher sprang das Fenster zum NÄCHSTEN Wochentag und zeigte damit ein
+    // anderes Datum als die Anfrage-Mail.
+    const date = r.date || (r.ab && r.ab > today ? r.ab : nextWeekdayDate(r.weekday ?? 0));
     const hour = r.hour;
     const dt = parseIso(date);
     const when = `${DAYS[(dt.getDay() + 6) % 7]} ${dm(dt)} um ${fmtZeit(hour)}`;
     const kindLbl = r.kind === "fix" ? "Fester wöchentlicher Termin" : r.kind === "probe" ? "Probestunde" : "Extra-/Nachholstunde";
     jumpTo(date);
-    setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{r.who}</b> · {when}</p><p style={{ margin: "0 0 8px" }}>{kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</p>
-      {r.kind === "fix" ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
+    setModal(<div className="modal"><h2>Anfrage bestätigen</h2><p><b>{r.who}</b> · {when}</p>
+      {r.mail ? <p style={{ margin: "0 0 6px", color: "#8a949c", fontSize: 14 }}>{r.mail}</p> : null}
+      <p style={{ margin: "0 0 8px" }}>{kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</p>
+      {r.kind === "fix" ? <div className="okbox">Wird ab <b>{DAYS[(dt.getDay() + 6) % 7]} {dm(dt)}</b> <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
       <div className="col">
         <button className="btn p" onClick={() => act("adminConfirm", { date, hour })}>Bestätigen &amp; Mail</button>
         <button className="btn r" onClick={() => act("adminReject", { date, hour })}>Absagen &amp; Mail</button>
@@ -915,7 +931,14 @@ export default function KalenderPage() {
   const legend = buildLegend(role);
   const wEnd = addDays(weekStart, 6);
   const effSel = days.find((d) => d.date === selDay) ? selDay : (days.find((d) => d.date === today)?.date || days[0]?.date || "");
-  function jumpTo(dateStr: string) { const d = parseIso(dateStr); setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr); }
+  function jumpTo(dateStr: string) {
+    const d = parseIso(dateStr);
+    setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr);
+    // „ansehen" in den Listen: Ist die Zielwoche schon offen, änderte sich
+    // bisher sichtbar NICHTS (die Listen stehen über dem Kalender) – Kleana
+    // dachte, der Knopf sei kaputt. Deshalb immer zum Kalender rollen.
+    setTimeout(() => document.querySelector(".titelbtn")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }
   function nextWeekdayDate(wd: number) { const t = new Date(); t.setHours(0, 0, 0, 0); for (let i = 0; i < 14; i++) { const x = addDays(t, i); if ((x.getDay() + 6) % 7 === wd) return iso(x); } return iso(t); }
 
   return (
@@ -990,7 +1013,7 @@ export default function KalenderPage() {
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" disabled={exportLaeuft} onClick={() => void kalenderCsvExportieren()} title="Eigene Sicherheitskopie: Minus-Stunden, fester Termin und alle Absagen/Nachholtermine als CSV herunterladen">{exportLaeuft ? "… lädt" : "📥 Kalenderstand als CSV"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button></td><td>{r.fix}</td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern (z. B. bei zwei gleichen Vornamen)`} onClick={() => nameBearbeiten(r)}>✏️</button>{r.email ? <div style={{ color: "#8a949c", fontSize: 12, marginTop: 2 }}>{r.email}</div> : null}</td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
@@ -1006,8 +1029,10 @@ export default function KalenderPage() {
                     <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link setzen"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen`} onClick={() => confirmPasswort(r)}>🔑</button>
+                    <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern`} onClick={() => nameBearbeiten(r)}>✏️</button>
                     <button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button>
                   </div>
+                  {r.email ? <div style={{ color: "#8a949c", fontSize: 12 }}>{r.email}</div> : null}
                   {r.fix ? <div className="ovfix">Fester Termin: {r.fix}</div> : null}
                   <div className="ovzahlen">
                     <span className="ovz"><span className="ovl">Minus</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag " + (r.minus ? "m" : "z")}>{r.minus}</span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span>
@@ -1039,10 +1064,11 @@ export default function KalenderPage() {
             <h3>Offene Anfragen (alle Daten)</h3>
             {inbox.requests.length === 0 ? <p style={{ color: "#999", margin: "6px 0 0" }}>Keine offenen Anfragen.</p> :
               <div className="inbxlist">{inbox.requests.map((r, i) => {
-                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${fmtZeit(r.hour)}` : `jeden ${DAYS[r.weekday ?? 0]} ${fmtZeit(r.hour)}`;
+                const when = r.date ? `${DAYS[(parseIso(r.date).getDay() + 6) % 7]} ${dm(parseIso(r.date))} ${fmtZeit(r.hour)}`
+                  : `jeden ${DAYS[r.weekday ?? 0]} ${fmtZeit(r.hour)}${r.ab && r.ab > today ? ` (ab ${dm(parseIso(r.ab))})` : ""}`;
                 const kindLbl = r.kind === "fix" ? "fester Termin" : r.kind === "probe" ? "Probestunde" : "Extra-Stunde";
                 return <button key={i} className="inbxrow" onClick={() => openRequest(r)}>
-                  <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}</span><span className="ibgo">bestätigen ›</span></button>;
+                  <span className="ibw">{r.who}</span><span className="ibd">{when} · {kindLbl}{r.mode ? " · " + modeText(r.mode) : ""}{r.mail ? <><br /><span style={{ color: "#8a949c" }}>{r.mail}</span></> : null}</span><span className="ibgo">bestätigen ›</span></button>;
               })}</div>}
             {inbox.cancellations.length > 0 && <>
               <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
