@@ -717,6 +717,16 @@ export default function KalenderPage() {
     if (eingabe === null) return;
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
+  // Namen ändern – z. B. wenn zwei Schüler gleich heißen (zwei Sophies) und
+  // in Anfragen/Listen nicht auseinanderzuhalten sind. Der Name ist zugleich
+  // der Anmeldename; Login per E-Mail-Adresse geht unabhängig davon weiter.
+  function nameBearbeiten(r: OverviewRow) {
+    const eingabe = window.prompt(
+      `Neuer Name für „${r.name}“\n\nTipp bei doppelten Vornamen: Nachnamen oder Kürzel anhängen, z. B. „Sophie M.“.\nDer Name ist auch der Anmeldename – bitte der Familie Bescheid geben (Login per E-Mail geht weiterhin).`,
+      r.name);
+    if (eingabe === null) return;
+    void act("renameStudent", { studentId: r.id, name: eingabe.trim() });
+  }
   // Passwort vergessen: Kleana erzeugt ein frisches und schickt es der
   // Familie selbst (z. B. per WhatsApp). Kein „Passwort vergessen"-Mailweg –
   // die Familien laufen ohnehin über Kleana.
@@ -919,7 +929,14 @@ export default function KalenderPage() {
   const legend = buildLegend(role);
   const wEnd = addDays(weekStart, 6);
   const effSel = days.find((d) => d.date === selDay) ? selDay : (days.find((d) => d.date === today)?.date || days[0]?.date || "");
-  function jumpTo(dateStr: string) { const d = parseIso(dateStr); setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr); }
+  function jumpTo(dateStr: string) {
+    const d = parseIso(dateStr);
+    setWeekStart(mondayOf(d)); setViewMonth(new Date(d.getFullYear(), d.getMonth(), 1)); setSelDay(dateStr);
+    // „ansehen" in den Listen: Ist die Zielwoche schon offen, änderte sich
+    // bisher sichtbar NICHTS (die Listen stehen über dem Kalender) – Kleana
+    // dachte, der Knopf sei kaputt. Deshalb immer zum Kalender rollen.
+    setTimeout(() => document.querySelector(".titelbtn")?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  }
   function nextWeekdayDate(wd: number) { const t = new Date(); t.setHours(0, 0, 0, 0); for (let i = 0; i < 14; i++) { const x = addDays(t, i); if ((x.getDay() + 6) % 7 === wd) return iso(x); } return iso(t); }
 
   return (
@@ -994,7 +1011,7 @@ export default function KalenderPage() {
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" disabled={exportLaeuft} onClick={() => void kalenderCsvExportieren()} title="Eigene Sicherheitskopie: Minus-Stunden, fester Termin und alle Absagen/Nachholtermine als CSV herunterladen">{exportLaeuft ? "… lädt" : "📥 Kalenderstand als CSV"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button></td><td>{r.fix}</td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern (z. B. bei zwei gleichen Vornamen)`} onClick={() => nameBearbeiten(r)}>✏️</button></td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
@@ -1010,6 +1027,7 @@ export default function KalenderPage() {
                     <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link setzen"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen`} onClick={() => confirmPasswort(r)}>🔑</button>
+                    <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern`} onClick={() => nameBearbeiten(r)}>✏️</button>
                     <button className="rmv" title="Schüler entfernen" onClick={() => confirmRemove(r)}>✕</button>
                   </div>
                   {r.fix ? <div className="ovfix">Fester Termin: {r.fix}</div> : null}

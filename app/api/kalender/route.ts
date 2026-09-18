@@ -498,6 +498,22 @@ export async function POST(req: Request): Promise<Response> {
       if (error) return bad("Konnte das Passwort nicht setzen: " + error.message, 500);
       return ok({ password: neuesPw, message: `Neues Passwort für ${p.name}: ${neuesPw}` });
     }
+    if (action === "renameStudent") {
+      // Zwei Schüler mit demselben Namen (Kleanas zwei Sophies) sind in allen
+      // Listen nicht auseinanderzuhalten – der Name lässt sich jetzt ändern.
+      // Der Name ist zugleich der Anmeldename; der Login per E-Mail-Adresse
+      // funktioniert unabhängig davon weiter.
+      const sid = String(body.studentId || "");
+      const neu = String(body.name || "").trim().replace(/[|<>]/g, "/").slice(0, 80);
+      if (!sid) return bad("Kein Schüler angegeben.");
+      if (!neu) return bad("Bitte einen Namen angeben.");
+      const p = await getProfile(sid);
+      if (!p || p.role === "admin") return bad("Nicht erlaubt.");
+      if (neu === p.name) return ok({ message: "Der Name ist unverändert." });
+      const { error } = await service().from("profiles").update({ name: neu }).eq("user_id", sid);
+      if (error) return bad("Umbenennen fehlgeschlagen: " + error.message, 500);
+      return ok({ message: `Umbenannt: „${p.name}“ heißt jetzt „${neu}“. Das ist auch der neue Anmeldename – bitte der Familie Bescheid geben (Login per E-Mail geht weiterhin).` });
+    }
 
     if (action === "adminBook") {
       // Kleana trägt selbst einen Termin für einen Schüler ein – Start im
