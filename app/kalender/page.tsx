@@ -634,8 +634,18 @@ export default function KalenderPage() {
         <div className="col">
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<AdminBuchen students={(overview || []).map((r) => ({ id: r.id, name: r.name }))}
             startHour={startZelle} schlussMin={schlussMin} api={api} onClose={() => setModal(null)}
-            onSubmit={(sid, m, vonMin, d, fest) => act("adminBook", { date, hour: vonMin / 60, studentId: sid, mode: m, dauerMin: d, fest })} />); }}>
+            onSubmit={(sid, m, vonMin, d, fest, ohneMail) => act("adminBook", { date, hour: vonMin / 60, studentId: sid, mode: m, dauerMin: d, fest, ohneMail })} />); }}>
             ✏️ Termin für Schüler eintragen
+          </button>
+          <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<ProbeForm when={when} startHour={startZelle} schlussMin={schlussMin}
+            titel="🎓 Probestunde eintragen" hinweisText="Für einen Interessenten ohne Zugang. E-Mail ist freiwillig – mit E-Mail geht sofort eine Bestätigung raus, ohne sagst du selbst Bescheid." knopf="Eintragen & bestätigen" emailOptional
+            onClose={() => setModal(null)}
+            onSubmit={async (name, email, m, vonMin, dauerMin) => {
+              const d = await api("adminProbe", { date, hour: vonMin / 60, name, email, mode: m, dauerMin });
+              if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde eingetragen ✓")); void loadWeek(); return ""; }
+              return String(d.error || "Fehler.");
+            }} />); }}>
+            🎓 Probestunde für Interessent eintragen
           </button>
           <button className="btn p" onClick={() => { const startZelle = s.hour; setModal(<BlockWahl when={when} startHour={startZelle} schlussMin={schlussMin}
             onClose={() => setModal(null)} onSubmit={(vonMin, d, titel, vorlaufMin) => act("block", { date, hour: vonMin / 60, dauerMin: d, titel, vorlaufMin })} />); }}>
@@ -1290,7 +1300,7 @@ function zeitFehler(von: string, bis: string, schlussMin: number): string {
 function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }: {
   students: { id: string; name: string }[]; startHour: number; schlussMin: number;
   api: (a: string, p?: Record<string, unknown>) => Promise<Record<string, unknown>>;
-  onSubmit: (studentId: string, mode: string, vonMin: number, dauerMin: number, fest: boolean) => void; onClose: () => void;
+  onSubmit: (studentId: string, mode: string, vonMin: number, dauerMin: number, fest: boolean, ohneMail: boolean) => void; onClose: () => void;
 }) {
   const startMin = Math.round(startHour * 60);
   const [liste, setListe] = useState(students);
@@ -1298,6 +1308,7 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
   const [von, setVon] = useState(minZuZeit(startMin));
   const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const [fest, setFest] = useState(false);
+  const [ohneMail, setOhneMail] = useState(false);
   useEffect(() => {
     if (liste.length > 0) return;
     (async () => {
@@ -1322,11 +1333,15 @@ function AdminBuchen({ students, startHour, schlussMin, api, onSubmit, onClose }
       <button type="button" className={"btn " + (!fest ? "p" : "g")} onClick={() => setFest(false)}>Nur dieses Datum</button>
       <button type="button" className={"btn " + (fest ? "p" : "g")} onClick={() => setFest(true)}>Jede Woche fest</button>
     </div>
+    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, cursor: "pointer" }}>
+      <input type="checkbox" checked={ohneMail} onChange={(e) => setOhneMail(e.target.checked)} />
+      <span>Ohne Mail eintragen (Familie ist schon informiert)</span>
+    </label>
     {fehler ? <div className="err">{fehler}</div>
-      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>{fest ? " (wöchentlich)" : ""}. Und: online oder vor Ort?</p>}
+      : <p style={{ margin: "10px 0 4px" }}>Also <b>{von}–{bis}</b>{fest ? " (wöchentlich)" : ""}{ohneMail ? ", ohne Mail" : ""}. Und: online oder vor Ort?</p>}
     <div className="col">
-      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>💻 Online</button>
-      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest)}>📍 Vor Ort</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "online", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest, ohneMail)}>💻 Online</button>
+      <button className="btn p" disabled={!sid || !!fehler} onClick={() => onSubmit(sid, "vor_ort", zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), fest, ohneMail)}>📍 Vor Ort</button>
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
@@ -1396,21 +1411,23 @@ function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
-function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose }: { when: string; startHour: number; schlussMin: number; onSubmit: (name: string, email: string, mode: string, vonMin: number, dauerMin: number) => Promise<string>; onClose: () => void }) {
+function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose, titel, hinweisText, knopf, emailOptional }: { when: string; startHour: number; schlussMin: number; onSubmit: (name: string, email: string, mode: string, vonMin: number, dauerMin: number) => Promise<string>; onClose: () => void; titel?: string; hinweisText?: string; knopf?: string; emailOptional?: boolean }) {
   const startMin = Math.round(startHour * 60);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState("");
   const [von, setVon] = useState(minZuZeit(startMin)); const [bis, setBis] = useState(minZuZeit(Math.min(startMin + 60, schlussMin)));
   const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
-    if (!name.trim() || !email.trim()) { setErr("Bitte Name und E-Mail angeben."); return; }
+    // Kleana darf die E-Mail weglassen (Interessent läuft z. B. über WhatsApp)
+    if (!name.trim() || (!email.trim() && !emailOptional)) { setErr("Bitte Name und E-Mail angeben."); return; }
     if (!mode) { setErr("Bitte online oder vor Ort wählen."); return; }
     const zf = zeitFehler(von, bis, schlussMin);
     if (zf) { setErr(zf); return; }
     setLoad(true); setErr(await onSubmit(name.trim(), email.trim(), mode, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von))); setLoad(false);
   }
-  return <div className="modal"><h2>Probestunde anfragen</h2><p>{when}</p>
-    <label>Dein Name</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
-    <label>Deine E-Mail</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
+  return <div className="modal"><h2>{titel || "Probestunde anfragen"}</h2><p>{when}</p>
+    {hinweisText ? <div className="okbox">{hinweisText}</div> : null}
+    <label>{emailOptional ? "Name des Interessenten" : "Dein Name"}</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Vor- und Nachname" />
+    <label>{emailOptional ? "E-Mail (freiwillig)" : "Deine E-Mail"}</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="du@example.com" />
     <label>Von wann bis wann?</label>
     <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
     <label>Online oder vor Ort?</label>
@@ -1419,7 +1436,7 @@ function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose }: { when: s
       <button type="button" className={"btn " + (mode === "vor_ort" ? "p" : "g")} onClick={() => setMode("vor_ort")}>📍 Vor Ort</button>
     </div>
     {err ? <div className="err">{err}</div> : null}
-    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Anfragen"}</button></div></div>;
+    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : (knopf || "Anfragen")}</button></div></div>;
 }
 function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
