@@ -28,7 +28,7 @@ const fmtZeit = (hour: number) => { const m = Math.round(hour * 60); return `${S
 const STUNDE_PX = 56;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
-const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-block": "blk", "sw-closed": "closed", "sw-abges": "abges" };
+const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-einz": "einz", "sw-block": "blk", "sw-closed": "closed", "sw-abges": "abges" };
 function mondayOf(d: Date) { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function dm(d: Date) { return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`; }
@@ -164,7 +164,7 @@ const CSS = `
 .legclear{border:0;background:#f7dcd4;color:#b4491f;cursor:pointer;font:inherit;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:8px}
 .legend i{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);flex:none}
 .cell.dim{opacity:.13}.dayrow.dim{opacity:.32}
-.sw-free{background:#eafaf7}.sw-busy{background:#d9eafb;border-color:#5b9bd5}.sw-mine{background:var(--grad);border-color:transparent}
+.sw-free{background:#eafaf7}.sw-busy{background:#d9eafb;border-color:#5b9bd5}.sw-einz{background:#eadefb;border-color:#a07fd8}.sw-mine{background:var(--grad);border-color:transparent}
 .sw-req{background:#fff3d6;border-color:#e3b84d}.sw-closed{background:#f4f4f4}
 .sw-block{background:#e7ebee;border-color:#aeb8c0}
 .sw-abges{background:#fde6e4;border-color:#d9655a}
@@ -231,7 +231,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
   padding:2px 7px;overflow:hidden;box-shadow:0 1px 2px rgba(16,35,60,.14);display:flex;flex-direction:column;z-index:2}
 .oblock .obtitel{font-size:.78rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oblock .obzeit{font-size:.68rem;opacity:.8;line-height:1.15}
-.oblock.busy{background:#d9eafb;color:#174e85;border-left-color:#5b9bd5}       /* gebucht: blau + Name */
+.oblock.busy{background:#d9eafb;color:#174e85;border-left-color:#5b9bd5}       /* fester Termin: blau */
+.oblock.einz{background:#eadefb;color:#5b3ea8;border-left-color:#a07fd8}       /* einmalige Stunde: lila */
 .oblock.mine{background:var(--grad);color:#fff;border-left-color:rgba(255,255,255,.65)} /* deine eigene Stunde (Schüler) */
 .oblock.req{background:#fff3d6;color:#8a6d1a;border-left-color:#e3b84d}        /* Anfrage: gelb */
 .oblock.blk{background:#e7ebee;color:#5f6b73;border-left-color:#aeb8c0}        /* geblockt: grau */
@@ -1157,28 +1158,33 @@ function cellView(s: Slot, role: string): { cls: string; label: string } {
   if (s.state === "closed") return { cls: "closed", label: "" };
   if (s.state === "past" && !s.cont) return { cls: "past", label: "" };
   if (s.state === "free") return { cls: "free", label: "frei" };
+  // Kleanas Farbregel für alle sichtbar: BLAU = fester Wochentermin,
+  // LILA = einmalige Stunde (Extra/Probe). Dazu ein klares Wort im Kästchen –
+  // Farben allein muss man sich merken, „Fest belegt" versteht jeder.
+  const belegCls = s.fixed ? "busy" : "einz";
   // Fortsetzungs-Zelle eines längeren Termins: gleiche Farbe, dezentes Zeichen
   if (s.cont) {
-    const cls = s.state === "block" ? "blk" : s.mine ? "mine" : s.state === "req" ? (role === "admin" || s.mine ? "req" : "busy") : "busy";
+    const cls = s.state === "block" ? "blk" : s.mine ? "mine" : s.state === "req" ? (role === "admin" || s.mine ? "req" : belegCls) : belegCls;
     return { cls, label: "⋯" };
   }
   if (s.state === "block") return { cls: "blk", label: role === "admin" ? (s.name ? `🔒 ${s.name}` : "Geblockt") : "Belegt" };
   const e = modeEmoji(s.mode);
+  const belegLbl = s.fixed ? "Fest belegt" : "Einmalig belegt";
   if (s.state === "req") {
     if (role === "admin") return { cls: "req", label: `${e ? e + " " : ""}${s.name || ""} (Anfrage)` };
     if (s.mine) return { cls: "req", label: `${e ? e + " " : ""}Angefragt` };
-    return { cls: "busy", label: "Belegt" };
+    return { cls: belegCls, label: belegLbl };
   }
   // busy / mine
   if (s.mine) return { cls: "mine", label: `${e ? e + " " : ""}Du` };
-  if (role === "admin") return { cls: "busy", label: `${e ? e + " " : ""}${s.name || "Belegt"}` };
-  return { cls: "busy", label: "Belegt" };
+  if (role === "admin") return { cls: belegCls, label: `${e ? e + " " : ""}${s.name || "Belegt"}` };
+  return { cls: belegCls, label: belegLbl };
 }
 function buildLegend(role: string) {
   const items = [{ c: "sw-free", t: "frei / buchbar" }];
-  if (role === "public") items.push({ c: "sw-busy", t: "belegt" });
-  else if (role === "student") items.push({ c: "sw-mine", t: "deine Stunde" }, { c: "sw-req", t: "angefragt" }, { c: "sw-busy", t: "belegt (andere)" });
-  else items.push({ c: "sw-busy", t: "gebucht" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-abges", t: "abgesagt" }, { c: "sw-block", t: "geblockt (du)" });
+  if (role === "public") items.push({ c: "sw-busy", t: "fest belegt (wöchentlich)" }, { c: "sw-einz", t: "einmalig belegt" });
+  else if (role === "student") items.push({ c: "sw-mine", t: "deine Stunde" }, { c: "sw-req", t: "angefragt" }, { c: "sw-busy", t: "fest belegt (andere)" }, { c: "sw-einz", t: "einmalig belegt (andere)" });
+  else items.push({ c: "sw-busy", t: "fester Termin" }, { c: "sw-einz", t: "einmalige Stunde" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-abges", t: "abgesagt" }, { c: "sw-block", t: "geblockt (du)" });
   items.push({ c: "sw-closed", t: "geschlossen" });
   return items;
 }
