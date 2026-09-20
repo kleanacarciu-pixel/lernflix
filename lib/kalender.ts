@@ -436,7 +436,11 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
       const mine = role === "student" && iv.sid === viewerId;
       if (role === "admin") return { ...basis, state: iv.t, name: iv.name, fixed: iv.fixed, mode: effMode };
       if (mine) return { ...basis, state: iv.t, mine: true, fixed: iv.fixed, mode: effMode };
-      return basis; // andere Schüler / öffentlich: nur "belegt", KEIN Name
+      // Andere Schüler / Öffentlichkeit: KEIN Name, KEIN Modus – aber ob es
+      // ein fester Wochentermin oder eine einmalige Stunde ist, dürfen alle
+      // sehen (Kleanas Wunsch: blau = fest, lila = einmalig). Das verrät
+      // nichts Persönliches und macht den Kalender lesbar.
+      return { ...basis, fixed: iv.fixed };
     });
     // Absagen als rote Info-Blöcke – nur für Kleana; Dauer aus dem festen
     // Termin bzw. der abgesagten Buchung (sonst 60 Min.)
