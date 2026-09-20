@@ -571,6 +571,9 @@ export async function POST(req: Request): Promise<Response> {
       const sp = await getProfile(sid);
       if (!sp || sp.role === "admin") return bad("Bitte einen Schüler wählen.");
       const nachtrag = body.nachtrag === true;
+      // „Ohne Mail": Kleana trägt ein, die Familie bekommt bewusst KEINE
+      // Benachrichtigung (z. B. weil alles schon per WhatsApp besprochen ist).
+      const ohneMail = body.ohneMail === true;
       if (nachtrag && body.fest === true) return bad("Nachtragen geht nur für einzelne Stunden, nicht für feste Termine.");
       // Beim NACHTRAGEN gilt die Belegt-Prüfung nicht: Die Stunde hat in
       // Wirklichkeit stattgefunden – was der Kalender für diesen vergangenen
@@ -603,9 +606,10 @@ export async function POST(req: Request): Promise<Response> {
         // laut melden – slotKonflikt sah nur den angeklickten Tag. Die Familie
         // bekommt die betroffenen Tage (ohne Namen) direkt in die Mail.
         const koll = await festeTerminKollisionen(weekdayOf(date), hour, dauerMin, date);
-        if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl, kollisionsTextFamilie(koll) || undefined))); }
+        if (sp.email && !ohneMail) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Fester Termin eingetragen", em, "Fester Termin eingetragen", mailTemplates.confirmed(`${DAY_NAMES[weekdayOf(date)]} ${fmtZeit(hour)} (wöchentlich)`, mode, tl, kollisionsTextFamilie(koll) || undefined))); }
         await syncLessons(true);
-        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
+        const mailText = ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben.";
+        return ok({ message: `Fester Termin für ${sp.name} eingetragen – ab jetzt jede Woche.${mailText}${hinweis}${kollisionsText(koll)}` });
       }
       // Nachtragen: Eine GEHALTENE Stunde aus der Vergangenheit erfassen
       // (z. B. Lillys Stunden vor Vertragsbeginn, die nie im Kalender
@@ -663,9 +667,9 @@ export async function POST(req: Request): Promise<Response> {
         await syncLessons(true);
         return ok({ message: `Stunde für ${sp.name} am ${prettyDate(date, hour)} nachgetragen und ${wie}. (Keine Mail an die Familie.)` });
       }
-      if (sp.email) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Termin eingetragen", em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
+      if (sp.email && !ohneMail) { const em = sp.email, tl = await teamsLinkFuer(sid); after(() => mailZustellenOderMelden("Termin eingetragen", em, "Termin eingetragen", mailTemplates.confirmed(prettyDate(date, hour), mode, tl))); }
       await syncLessons(true);
-      return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt. Mail gesendet.` });
+      return ok({ message: `Stunde für ${sp.name} eingetragen und bestätigt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
     }
 
     if (action === "stundeAlsPlus") {
@@ -790,6 +794,26 @@ export async function POST(req: Request): Promise<Response> {
         return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
+    }
+    if (action === "adminProbe") {
+      // Kleana trägt selbst eine Probestunde für einen Interessenten ein
+      // (z. B. am Telefon vereinbart). Anders als beim öffentlichen Formular:
+      // sofort BESTÄTIGT, E-Mail optional (manche laufen über WhatsApp), und
+      // ohne die "schon ein Schüler-Zugang"-Sperre – Kleana weiß, was sie tut.
+      const name = String(body.name || "").trim().replace(/[|<>]/g, "/").slice(0, 80);
+      const email = String(body.email || "").trim().toLowerCase().slice(0, 160);
+      if (!validSlot || hour + dauerMin / 60 > schluss) return bad("Ungültiger Slot.");
+      if (!name) return bad("Bitte den Namen des Interessenten angeben.");
+      if (email && !/^[^\s|@]+@[^\s|@]+\.[^\s|@]+$/.test(email)) return bad("Bitte eine gültige E-Mail-Adresse angeben (oder das Feld leer lassen).");
+      if (!mode) return bad("Bitte online oder vor Ort wählen.");
+      if (hoursUntil(date, hour) <= 0) return bad("Dieser Termin liegt in der Vergangenheit.");
+      if (await slotKonflikt(date, hour, dauerMin)) return bad("Dieser Zeitraum ist schon belegt.");
+      { const { error } = await service().from("appointments").insert({ student_id: null, slot_date: date, hour, kind: "probe", status: "bestaetigt", mode, dauer_min: dauerMin, note: `${name}|${email}` });
+        if (error) return bad("Eintragen fehlgeschlagen: " + error.message); }
+      if (email) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde eingetragen (Gast)", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(name, prettyDate(date, hour), mode, tl))); }
+      return ok({ message: email
+        ? `Probestunde für ${name} eingetragen und bestätigt. Bestätigungs-Mail an ${email} gesendet.`
+        : `Probestunde für ${name} eingetragen und bestätigt. Ohne E-Mail – bitte selbst Bescheid geben.` });
     }
     if (action === "adminReject") {
       if (!validSlot) return bad("Ungültiger Slot.");
