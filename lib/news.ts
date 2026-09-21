@@ -32,9 +32,17 @@ export const QUELLEN: Quelle[] = [
   { id: "n4t", name: "News4teachers", kategorie: "Schule", urls: [
     "https://www.news4teachers.de/feed/",
   ] },
-  // Breiter Regional-Feed: nur Schul-/Bildungsthemen durchlassen.
+  // Breiter Regional-Feed: nur Schul-/Bildungsthemen durchlassen. SZ hat die
+  // Feed-Adressen umgestellt (kein "/rss/"-Praefix mehr, kleingeschrieben).
   { id: "sz", name: "Süddeutsche Bayern", kategorie: "Schule Bayern", urls: [
-    "https://rss.sueddeutsche.de/rss/Bayern",
+    "https://rss.sueddeutsche.de/bayern",
+  ], nurMit: SCHUL_THEMEN },
+  // Zusaetzlich der dedizierte Bildungs-Feed der SZ - liefert zuverlaessiger
+  // Bildungsthemen als der gefilterte Bayern-Feed, allerdings bundesweit statt
+  // regional. Faellt die URL doch nicht (mehr), wird die Quelle wie ueblich
+  // still uebersprungen.
+  { id: "sz-bildung", name: "Süddeutsche Bildung", kategorie: "Bildung", urls: [
+    "https://rss.sueddeutsche.de/bildung",
   ], nurMit: SCHUL_THEMEN },
 ];
 
@@ -135,7 +143,10 @@ async function holeEine(url: string, q: Quelle): Promise<{ eintraege: Eintrag[];
         "User-Agent": "Mozilla/5.0 (compatible; LerneMitAnna-News/1.0; +https://lernemitanna.de)",
         Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
       },
-      signal: AbortSignal.timeout(8000),
+      // 15s statt 8s: News4teachers (WordPress-Feed, nicht gecacht) antwortet
+      // gelegentlich langsam - 8s reichten fuer einen "timeout"-Fehler in der
+      // Warnmail, obwohl der Feed selbst intakt ist (Direktabruf lieferte sofort).
+      signal: AbortSignal.timeout(15000),
       next: { revalidate: NEWS_REVALIDATE },
     });
     if (!res.ok) return { eintraege: [], fehler: `HTTP ${res.status}` };
