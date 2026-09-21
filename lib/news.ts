@@ -32,9 +32,17 @@ export const QUELLEN: Quelle[] = [
   { id: "n4t", name: "News4teachers", kategorie: "Schule", urls: [
     "https://www.news4teachers.de/feed/",
   ] },
-  // Breiter Regional-Feed: nur Schul-/Bildungsthemen durchlassen.
+  // Breiter Regional-Feed: nur Schul-/Bildungsthemen durchlassen. SZ hat die
+  // Feed-Adressen umgestellt (kein "/rss/"-Praefix mehr, kleingeschrieben).
   { id: "sz", name: "Süddeutsche Bayern", kategorie: "Schule Bayern", urls: [
-    "https://rss.sueddeutsche.de/rss/Bayern",
+    "https://rss.sueddeutsche.de/bayern",
+  ], nurMit: SCHUL_THEMEN },
+  // Zusaetzlich der dedizierte Bildungs-Feed der SZ - liefert zuverlaessiger
+  // Bildungsthemen als der gefilterte Bayern-Feed, allerdings bundesweit statt
+  // regional. Faellt die URL doch nicht (mehr), wird die Quelle wie ueblich
+  // still uebersprungen.
+  { id: "sz-bildung", name: "Süddeutsche Bildung", kategorie: "Bildung", urls: [
+    "https://rss.sueddeutsche.de/bildung",
   ], nurMit: SCHUL_THEMEN },
 ];
 
