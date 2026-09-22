@@ -1,19 +1,21 @@
 // =============================================================================
-// Finanzheft – Trennung privat/Firma
+// Finanzheft / Buchhaltung – doppelte Buchführung für privat + Firma
 //
-//   laden       – alle Buchungen + Salden beider Konten
-//   anlegen     – Einnahme/Ausgabe auf einem Konto buchen
-//   transfer    – Geld gezielt von einem Konto aufs andere übertragen
-//   loeschen    – eine Buchung (bzw. einen ganzen Transfer) entfernen
+//   laden        – Konten, Kontosalden, Auswertung (Monat/Jahr), Buchungen
+//   einnahme     – Geld kommt auf ein Konto rein (mit optionaler USt)
+//   ausgabe      – Geld geht von einem Konto raus (mit optionaler Vorsteuer)
+//   transfer     – Geld von einem Konto aufs andere übertragen
+//   kontoAnlegen – neue Kategorie (Konto) anlegen
+//   loeschen     – eine Buchung (alle ihre Zeilen) entfernen
 //
 // Reine Innensicht: nur die Admin-Rolle kommt hier durch.
 // =============================================================================
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile } from "@/lib/kalender";
 import {
-  ladeBuchungen, salden, buchungAnlegen, transferAnlegen, buchungLoeschen,
-  FIRMA_KATEGORIEN, PRIVAT_KATEGORIEN,
-} from "@/lib/finanzheft";
+  ladeKonten, uebersicht, einnahmeAnlegen, ausgabeAnlegen, transferAnlegen,
+  buchungLoeschen, kontoAnlegen, UST_SAETZE,
+} from "@/lib/buchhaltung";
 import { euroZuCent } from "@/lib/vertrag-kern";
 
 export const runtime = "nodejs";
@@ -38,36 +40,54 @@ export async function POST(req: Request): Promise<Response> {
 
   switch (action) {
     case "laden": {
-      const buchungen = await ladeBuchungen();
-      return ok({ buchungen, salden: await salden(), firmaKategorien: FIRMA_KATEGORIEN, privatKategorien: PRIVAT_KATEGORIEN });
+      const [konten, u] = await Promise.all([ladeKonten(), uebersicht()]);
+      return ok({ konten, ustSaetze: UST_SAETZE, ...u });
     }
 
-    case "anlegen": {
-      const konto = String(body.konto ?? "");
-      const typ = String(body.typ ?? "");
+    case "einnahme": {
+      const aktivKontoId = Number(body.aktivKontoId);
+      const ertragKontoId = Number(body.ertragKontoId);
       const betrag = Number(body.betrag);
-      const kategorie = String(body.kategorie ?? "").trim().slice(0, 80);
-      const beschreibung = String(body.beschreibung ?? "").trim().slice(0, 300);
+      const ustSatz = Number(body.ustSatz ?? 0);
       const datum = String(body.datum ?? "").trim();
-      if (konto !== "privat" && konto !== "firma") return bad("Ungültiges Konto.");
-      if (typ !== "einnahme" && typ !== "ausgabe") return bad("Ungültiger Typ.");
+      const beschreibung = String(body.beschreibung ?? "").trim().slice(0, 300);
+      if (!Number.isInteger(aktivKontoId) || !Number.isInteger(ertragKontoId)) return bad("Bitte beide Konten wählen.");
       if (!Number.isFinite(betrag) || betrag <= 0) return bad("Ungültiger Betrag.");
+      const r = await einnahmeAnlegen({ aktivKontoId, ertragKontoId, bruttoCent: euroZuCent(betrag), ustSatz, datum, beschreibung });
+      return r.ok ? ok() : bad(r.error);
+    }
 
-      const r = await buchungAnlegen({ konto, typ, betragCent: euroZuCent(betrag), kategorie, beschreibung, datum });
-      return r.ok ? ok({ warnung: r.warnung }) : bad(r.error);
+    case "ausgabe": {
+      const aktivKontoId = Number(body.aktivKontoId);
+      const aufwandKontoId = Number(body.aufwandKontoId);
+      const betrag = Number(body.betrag);
+      const ustSatz = Number(body.ustSatz ?? 0);
+      const datum = String(body.datum ?? "").trim();
+      const beschreibung = String(body.beschreibung ?? "").trim().slice(0, 300);
+      if (!Number.isInteger(aktivKontoId) || !Number.isInteger(aufwandKontoId)) return bad("Bitte beide Konten wählen.");
+      if (!Number.isFinite(betrag) || betrag <= 0) return bad("Ungültiger Betrag.");
+      const r = await ausgabeAnlegen({ aktivKontoId, aufwandKontoId, bruttoCent: euroZuCent(betrag), ustSatz, datum, beschreibung });
+      return r.ok ? ok() : bad(r.error);
     }
 
     case "transfer": {
-      const von = String(body.von ?? "");
-      const nach = String(body.nach ?? "");
+      const vonKontoId = Number(body.vonKontoId);
+      const nachKontoId = Number(body.nachKontoId);
       const betrag = Number(body.betrag);
-      const beschreibung = String(body.beschreibung ?? "").trim().slice(0, 300);
       const datum = String(body.datum ?? "").trim();
-      if ((von !== "privat" && von !== "firma") || (nach !== "privat" && nach !== "firma")) return bad("Ungültiges Konto.");
+      const beschreibung = String(body.beschreibung ?? "").trim().slice(0, 300);
+      if (!Number.isInteger(vonKontoId) || !Number.isInteger(nachKontoId)) return bad("Bitte beide Konten wählen.");
       if (!Number.isFinite(betrag) || betrag <= 0) return bad("Ungültiger Betrag.");
-
-      const r = await transferAnlegen({ von, nach, betragCent: euroZuCent(betrag), datum, beschreibung });
+      const r = await transferAnlegen({ vonKontoId, nachKontoId, betragCent: euroZuCent(betrag), datum, beschreibung });
       return r.ok ? ok() : bad(r.error);
+    }
+
+    case "kontoAnlegen": {
+      const name = String(body.name ?? "");
+      const typ = String(body.typ ?? "");
+      if (typ !== "aktiv" && typ !== "ertrag" && typ !== "aufwand") return bad("Ungültiger Kontotyp.");
+      const r = await kontoAnlegen(name, typ);
+      return r.ok ? ok({ id: r.id }) : bad(r.error);
     }
 
     case "loeschen": {
