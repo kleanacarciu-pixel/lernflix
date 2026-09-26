@@ -701,8 +701,8 @@ export default function KalenderPage() {
     setModal(<VerschiebenForm when={when} name={s.name || "Schüler"} fixed={!!s.fixed}
       date={date} startHour={s.hour} dauerMin={s.dauer || 60}
       onClose={() => setModal(null)}
-      onSubmit={async (zielDatum, vonMin, dauerMin, ohneMail) => {
-        const d = await api("adminMove", { date, hour: s.hour, zielDatum, zielHour: vonMin / 60, dauerMin, ohneMail });
+      onSubmit={async (zielDatum, vonMin, dauerMin, ohneMail, dauerhaft) => {
+        const d = await api("adminMove", { date, hour: s.hour, zielDatum, zielHour: vonMin / 60, dauerMin, ohneMail, dauerhaft });
         if (d.ok) { setModal(null); showToast(String(d.message || "Verschoben ✓")); void loadWeek(); return ""; }
         return String(d.error || "Fehler.");
       }} />);
@@ -1488,13 +1488,14 @@ function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose, titel, hinw
 // Ladenschluss richtet sich nach dem ZIEL-Wochentag (Mo–Fr 20, Sa/So 19 Uhr).
 function VerschiebenForm({ when, name, fixed, date, startHour, dauerMin, onSubmit, onClose }: {
   when: string; name: string; fixed: boolean; date: string; startHour: number; dauerMin: number;
-  onSubmit: (zielDatum: string, vonMin: number, dauerMin: number, ohneMail: boolean) => Promise<string>; onClose: () => void;
+  onSubmit: (zielDatum: string, vonMin: number, dauerMin: number, ohneMail: boolean, dauerhaft: boolean) => Promise<string>; onClose: () => void;
 }) {
   const startMin = Math.round(startHour * 60);
   const [zielDatum, setZielDatum] = useState(date);
   const [von, setVon] = useState(minZuZeit(startMin));
   const [bis, setBis] = useState(minZuZeit(startMin + dauerMin));
   const [ohneMail, setOhneMail] = useState(false);
+  const [dauerhaft, setDauerhaft] = useState(false);
   const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   const datumOk = /^\d{4}-\d{2}-\d{2}$/.test(zielDatum);
   const wd = datumOk ? (parseIso(zielDatum).getDay() + 6) % 7 : 0;
@@ -1502,14 +1503,23 @@ function VerschiebenForm({ when, name, fixed, date, startHour, dauerMin, onSubmi
   const fehler = !datumOk ? "Bitte ein Ziel-Datum wählen." : zeitFehler(von, bis, schlussMin);
   async function go() {
     if (fehler) { setErr(fehler); return; }
-    setLoad(true); setErr(await onSubmit(zielDatum, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), ohneMail)); setLoad(false);
+    setLoad(true); setErr(await onSubmit(zielDatum, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), ohneMail, fixed && dauerhaft)); setLoad(false);
   }
   return <div className="modal"><h2>🔀 Termin verschieben</h2>
     <p><b>{name}</b> · bisher {when}</p>
+    {fixed && <>
+      <label>Nur einmal oder für immer?</label>
+      <div className="acts" style={{ marginTop: 6 }}>
+        <button type="button" className={"btn " + (!dauerhaft ? "p" : "g")} onClick={() => setDauerhaft(false)}>Nur diese eine Stunde</button>
+        <button type="button" className={"btn " + (dauerhaft ? "p" : "g")} onClick={() => setDauerhaft(true)}>Dauerhaft (jede Woche)</button>
+      </div>
+    </>}
     <div className="okbox">{fixed
-      ? "Nur DIESE eine Stunde wird verlegt – der feste Wochentermin bleibt bestehen. Guthaben und Abrechnung ändern sich nicht."
+      ? (dauerhaft
+        ? "Der feste Wochentermin wandert komplett: Ab dem gewählten Tag gilt der neue Wochentag jede Woche. Guthaben ändern sich nicht – hat der Schüler einen Vertrag, danach dort noch „Termin wechseln“ machen (kommt als Hinweis)."
+        : "Nur DIESE eine Stunde wird verlegt – der feste Wochentermin bleibt bestehen. Guthaben und Abrechnung ändern sich nicht.")
       : "Der Termin wandert einfach – Guthaben und Abrechnung ändern sich nicht."}</div>
-    <label>Auf welchen Tag?</label>
+    <label>{fixed && dauerhaft ? "Erster Termin am neuen Tag?" : "Auf welchen Tag?"}</label>
     <input type="date" value={zielDatum} onChange={(e) => setZielDatum(e.target.value)}
       style={{ display: "block", width: "100%", marginTop: 4, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, font: "inherit", boxSizing: "border-box" }} />
     <label>Von wann bis wann? (frei eintippbar, z. B. 16:33)</label>
@@ -1519,7 +1529,9 @@ function VerschiebenForm({ when, name, fixed, date, startHour, dauerMin, onSubmi
       <span>Ohne Mail verschieben (Familie ist schon informiert)</span>
     </label>
     {err || fehler ? <div className="err">{err || fehler}</div>
-      : <p style={{ margin: "10px 0 4px" }}>Also {DAYS[wd]} {dm(parseIso(zielDatum))} <b>{von}–{bis}</b>{ohneMail ? ", ohne Mail" : " – die Familie bekommt eine Mail"}.</p>}
+      : <p style={{ margin: "10px 0 4px" }}>Also {fixed && dauerhaft
+        ? <>jeden <b>{DAYS[wd]} {von}–{bis}</b>, ab {dm(parseIso(zielDatum))}</>
+        : <>{DAYS[wd]} {dm(parseIso(zielDatum))} <b>{von}–{bis}</b></>}{ohneMail ? ", ohne Mail" : " – die Familie bekommt eine Mail"}.</p>}
     <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
       <button className="btn p" onClick={go} disabled={load || !!fehler}>{load ? "…" : "Verschieben"}</button></div></div>;
 }
