@@ -13,7 +13,7 @@ import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stund
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
 import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
-import { buchungErlaubt as vertragUnterschrieben } from "@/lib/vertrag";
+import { buchungErlaubt as vertragUnterschrieben, laufenderVertrag } from "@/lib/vertrag";
 import { aboSpeichern, aboEntfernen, pushAnKleana, type PushAbo } from "@/lib/push";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
@@ -986,6 +986,47 @@ export async function POST(req: Request): Promise<Response> {
         if (email && !ohneMail) { const em = email, md = s.booking.mode, tl = await teamsLinkFuer(s.booking.student_id); after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Dein Termin wurde verschoben", mailTemplates.moved(prettyDate(date, hour), nachher, md, tl))); }
         await syncLessons(true);
         return ok({ message: `Verschoben auf ${nachher}.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
+      }
+      // FESTER Termin, dauerhaft: der Wochentermin selbst wandert – alter
+      // Slot wird beendet, ab dem Zieltag gilt der neue Wochentag/die neue
+      // Zeit jede Woche (Muster wie endFixed + adminBook-fest, in einem
+      // Schritt und ohne doppelte Mails).
+      if (s.fixedActive && body.dauerhaft === true) {
+        const fa = s.fixedActive as { id: string; student_id: string; mode: string | null };
+        const wdNeu = weekdayOf(zielDatum);
+        // Erst der Wochen-Blick: Liegt auf dem Ziel-WOCHENslot schon ein
+        // fester Termin oder eine offene Anfrage? zielBelegt sieht nur den
+        // einen Zieltag – ein fester Termin, der erst später beginnt
+        // (ab_datum), würde dort durchrutschen und ab dann jede Woche kollidieren.
+        { const { data } = await service().from("fixed_slots").select("id,hour,dauer_min").eq("weekday", wdNeu).in("status", ["aktiv", "angefragt"]);
+          const rows = (data || []) as { id: string; hour: number; dauer_min: number | null }[];
+          if (rows.some((f) => f.id !== fa.id && Number(f.hour) < zielHour + dauerMin / 60 && Number(f.hour) + (Number(f.dauer_min) || 60) / 60 > zielHour)) {
+            return bad("Auf dem Ziel-Wochenslot liegt schon ein fester Termin oder eine offene Anfrage.");
+          } }
+        if (await zielBelegt(null, fa.student_id)) return bad("Der Ziel-Zeitraum ist schon belegt.");
+        { const { error } = await service().from("fixed_slots").update({ status: "beendet" }).eq("id", fa.id);
+          if (error) return bad("Verschieben fehlgeschlagen: " + error.message); }
+        // ab_datum = Zieltag: frühere Wochen zeigen den neuen Slot nie.
+        // Ohne V8-Migration wird ohne das Feld gespeichert (Muster requestFixed).
+        let r = await service().from("fixed_slots").insert({ student_id: fa.student_id, weekday: wdNeu, hour: zielHour, status: "aktiv", mode: fa.mode, dauer_min: dauerMin, ab_datum: zielDatum });
+        if (r.error) r = await service().from("fixed_slots").insert({ student_id: fa.student_id, weekday: wdNeu, hour: zielHour, status: "aktiv", mode: fa.mode, dauer_min: dauerMin });
+        if (r.error) {
+          // Halb verschoben wäre schlimmer als gar nicht – alten Slot zurückholen.
+          await service().from("fixed_slots").update({ status: "aktiv" }).eq("id", fa.id);
+          return bad("Verschieben fehlgeschlagen: " + r.error.message);
+        }
+        // Künftige Einzel-/Probestunden auf dem neuen Wochenslot laut melden
+        // (blockieren nicht – Kleana entscheidet, wie sie sie auflöst).
+        const koll = await festeTerminKollisionen(wdNeu, zielHour, dauerMin, zielDatum);
+        const sp = await getProfile(fa.student_id);
+        const abDe = `${zielDatum.slice(8, 10)}.${zielDatum.slice(5, 7)}.`;
+        if (sp?.email && !ohneMail) { const em = sp.email, tl = await teamsLinkFuer(fa.student_id); after(() => mailZustellenOderMelden("Termin verschoben (fest, dauerhaft)", em, "Dein fester Termin wurde verschoben", mailTemplates.moved(`${DAY_NAMES[s.wd]} um ${fmtZeit(hour)} Uhr (wöchentlich)`, `${DAY_NAMES[wdNeu]} um ${fmtZeit(zielHour)} Uhr – jede Woche, ab ${abDe}`, fa.mode, tl))); }
+        await syncLessons(true);
+        // Ehrlich bleiben: Ein Schuljahresvertrag rechnet Terminliste und
+        // Raten über die Verträge-Seite – die kennt den neuen Tag noch nicht.
+        const vertrag = await laufenderVertrag(fa.student_id);
+        const vHinweis = vertrag ? " Achtung: Der Vertrag (Terminliste & Raten) kennt den neuen Wochentag noch nicht – bitte auf der Verträge-Seite bei diesem Schüler „Termin wechseln“ ausführen." : "";
+        return ok({ message: `Fester Termin dauerhaft verschoben: jetzt jeden ${DAY_NAMES[wdNeu]} um ${fmtZeit(zielHour)}, ab ${abDe}${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}${vHinweis}${kollisionsText(koll)}` });
       }
       // Stunde eines FESTEN Termins: das Original-Datum wird als „verschoben"
       // freigegeben (KEIN Nachhol-Guthaben, KEINE Gutschrift), am Ziel

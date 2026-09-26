@@ -169,19 +169,27 @@ export function einmalbetragCent(jahresbetragCent: number): number {
 // --- Raten ------------------------------------------------------------------
 
 /**
- * Ratenmonate vom Vertragsbeginn bis einschließlich Juli des Schuljahresendes.
+ * Ratenmonate vom Vertragsbeginn bis einschließlich des Monats, in dem der
+ * Unterricht endet (beim vollen Schuljahr also bis Juli).
  * August ist nie ein Ratenmonat.
+ *
+ * Der End-MONAT zählt mit: Ein Vertrag mit festem Ende im April (z. B.
+ * Abitur oder Wegzug) hat auch nur Raten bis April – vorher wurde hier nur
+ * das JAHR gelesen und stur bis Juli gerechnet, sodass ein April-Vertrag
+ * trotzdem elf Raten bekam.
  *
  * @returns Monatserste als ISO-Daten, z. B. ["2027-03-01", ...]
  */
 export function ratenMonate(vertragsbeginn: string, letzterSchultag: string): string[] {
   const [bJahr, bMonat] = vertragsbeginn.split("-").map(Number);
-  const zielJahr = Number(letzterSchultag.split("-")[0]);
+  const [zielJahr, zielMonatRoh] = letzterSchultag.split("-").map(Number);
+  // Endet der Unterricht im August (nie ein Ratenmonat), ist Juli der letzte.
+  const zielMonat = zielMonatRoh === 8 ? 7 : zielMonatRoh;
   const monate: string[] = [];
 
   let jahr = bJahr, monat = bMonat;
-  // Obergrenze: Juli des Jahres, in dem das Schuljahr endet.
-  while (jahr < zielJahr || (jahr === zielJahr && monat <= 7)) {
+  // Obergrenze: der Monat, in dem der Unterricht endet.
+  while (jahr < zielJahr || (jahr === zielJahr && monat <= zielMonat)) {
     if (monat !== 8) monate.push(`${jahr}-${String(monat).padStart(2, "0")}-01`);
     monat++;
     if (monat > 12) { monat = 1; jahr++; }

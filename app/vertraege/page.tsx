@@ -530,7 +530,9 @@ export default function VertraegeSeite() {
                 onChange={(e) => { setNEnde(e.target.value); setVorschau(null); }} />
               <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
                 leer = bis zum Schuljahresende. Für Abiturienten oder befristete
-                Verträge: Termine und Raten laufen nur bis zu diesem Datum.
+                Verträge: Termine und Raten laufen nur bis zu diesem Datum –
+                z. B. Ende April = 8 Monatsraten statt 11. Die Vorschau unten
+                zeigt die genaue Anzahl.
               </span>
             </label>
             {/* Nur zeigen, wenn es überhaupt Schulen mit eigenen Ferien gibt –

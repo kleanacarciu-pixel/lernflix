@@ -157,6 +157,25 @@ describe("Ratenmonate", () => {
   test("Beginn im Juli: genau eine Rate", () => {
     assert.deepEqual(ratenMonate("2027-07-01", LETZTER), ["2027-07-01"]);
   });
+
+  test("festes Vertragsende im April: Raten nur bis April, nicht bis Juli", () => {
+    // Kleanas Fall (Sept. 2026): Ein Schüler bleibt nur bis April – die
+    // Familie soll acht Raten bis April zahlen, nicht elf bis Juli.
+    const m = ratenMonate("2026-09-01", "2027-04-15");
+    assert.equal(m.length, 8);
+    assert.equal(m[0], "2026-09-01");
+    assert.equal(m[m.length - 1], "2027-04-01");
+  });
+
+  test("festes Vertragsende im Dezember: Raten enden im selben Kalenderjahr", () => {
+    assert.deepEqual(ratenMonate("2026-09-01", "2026-12-20"),
+      ["2026-09-01", "2026-10-01", "2026-11-01", "2026-12-01"]);
+  });
+
+  test("Ende im August fällt auf Juli zurück (August ist nie Ratenmonat)", () => {
+    const m = ratenMonate("2026-09-01", "2027-08-05");
+    assert.equal(m[m.length - 1], "2027-07-01");
+  });
 });
 
 describe("Raten (Sollwert aus Abschnitt 8)", () => {
