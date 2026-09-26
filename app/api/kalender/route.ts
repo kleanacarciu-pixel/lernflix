@@ -746,6 +746,9 @@ export async function POST(req: Request): Promise<Response> {
 
     if (action === "adminConfirm") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      // Kleanas Regel: keine Mail ohne ihr Okay – „Bestätigen OHNE Mail"
+      // bestätigt genauso, nur die Benachrichtigung unterbleibt bewusst.
+      const ohneMail = body.ohneMail === true;
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
         if (s.booking.kind === "probe") {
@@ -755,8 +758,8 @@ export async function POST(req: Request): Promise<Response> {
             if (error) return bad("Bestätigen fehlgeschlagen: " + error.message); }
           const gname = (s.booking.note || "").split("|")[0] || "";
           const email = (s.booking.note || "").split("|")[1];
-          if (email) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde bestätigt", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
-          return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
+          if (email && !ohneMail) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde bestätigt", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
+          return ok({ message: `Probestunde bestätigt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : email ? " Bestätigungs-Mail gesendet." : " Achtung: keine Gast-E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
         }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
@@ -768,8 +771,8 @@ export async function POST(req: Request): Promise<Response> {
             if (sp) await revertCounting(sp, counted);
             return bad("Bestätigen fehlgeschlagen: " + error.message);
           } }
-        if (sp?.email) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Termin bestätigt", em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
-        return ok({ message: "Bestätigt. Bestätigungs-Mail gesendet." });
+        if (sp?.email && !ohneMail) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Termin bestätigt", em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
+        return ok({ message: `Bestätigt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Bestätigungs-Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
@@ -790,8 +793,8 @@ export async function POST(req: Request): Promise<Response> {
         // Kleana mit Namen, die Familie (in der Mail) nur mit den Tagen.
         const koll = await festeTerminKollisionen(s.wd, hour, Number((s.fixedPending as { dauer_min?: number }).dauer_min) || 60, s.fixedPending.ab_datum || date);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl, kollisionsTextFamilie(koll) || undefined))); }
-        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
+        if (sp?.email && !ohneMail) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl, kollisionsTextFamilie(koll) || undefined))); }
+        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}${hinweis}${kollisionsText(koll)}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
@@ -834,15 +837,19 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "adminReject") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      // Auch beim Ablehnen entscheidet Kleana, ob eine Mail rausgeht.
+      const ohneMail = body.ohneMail === true;
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
         { const { error } = await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
           if (error) return bad("Ablehnen fehlgeschlagen: " + error.message); }
         const email = s.booking.student_id ? (await getProfile(s.booking.student_id))?.email : (s.booking.note || "").split("|")[1];
-        if (email) { const em = email; after(() => mailZustellenOderMelden("Termin abgesagt", em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
+        if (email && !ohneMail) { const em = email; after(() => mailZustellenOderMelden("Termin abgesagt", em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
         // Ehrlich bleiben: „Mail gesendet" nur behaupten, wenn es eine
         // Adresse gibt – sonst glaubt Kleana, die Familie sei informiert.
-        return ok({ message: email
+        return ok({ message: ohneMail
+          ? "Anfrage abgesagt. Wie gewünscht KEINE Mail gesendet."
+          : email
           ? "Anfrage abgesagt. Absage-Mail gesendet."
           : "Anfrage abgesagt. Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben." });
       }
@@ -850,8 +857,10 @@ export async function POST(req: Request): Promise<Response> {
         { const { error } = await service().from("fixed_slots").update({ status: "beendet" }).eq("id", s.fixedPending.id);
           if (error) return bad("Ablehnen fehlgeschlagen: " + error.message); }
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Anfrage abgesagt", em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
-        return ok({ message: sp?.email
+        if (sp?.email && !ohneMail) { const em = sp.email; after(() => mailZustellenOderMelden("Anfrage abgesagt", em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
+        return ok({ message: ohneMail
+          ? "Anfrage abgesagt. Wie gewünscht KEINE Mail gesendet."
+          : sp?.email
           ? "Anfrage abgesagt. Absage-Mail gesendet."
           : "Anfrage abgesagt. Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben." });
       }

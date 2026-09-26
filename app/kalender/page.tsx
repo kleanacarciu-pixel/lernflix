@@ -674,7 +674,9 @@ export default function KalenderPage() {
         {s.fixed ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
         <div className="col">
           <button className="btn p" onClick={() => act("adminConfirm", { date, hour: s.hour })}>Bestätigen &amp; Mail</button>
+          <button className="btn g" onClick={() => act("adminConfirm", { date, hour: s.hour, ohneMail: true })}>Bestätigen OHNE Mail</button>
           <button className="btn r" onClick={() => act("adminReject", { date, hour: s.hour })}>Absagen &amp; Mail</button>
+          <button className="btn g" onClick={() => act("adminReject", { date, hour: s.hour, ohneMail: true })}>Absagen OHNE Mail</button>
           <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
         </div></div>);
       return;
@@ -804,7 +806,9 @@ export default function KalenderPage() {
       {r.kind === "fix" ? <div className="okbox">Wird ab <b>{DAYS[(dt.getDay() + 6) % 7]} {dm(dt)}</b> <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
       <div className="col">
         <button className="btn p" onClick={() => act("adminConfirm", { date, hour })}>Bestätigen &amp; Mail</button>
+        <button className="btn g" onClick={() => act("adminConfirm", { date, hour, ohneMail: true })}>Bestätigen OHNE Mail</button>
         <button className="btn r" onClick={() => act("adminReject", { date, hour })}>Absagen &amp; Mail</button>
+        <button className="btn g" onClick={() => act("adminReject", { date, hour, ohneMail: true })}>Absagen OHNE Mail</button>
         <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
       </div></div>);
   }
