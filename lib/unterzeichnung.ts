@@ -16,6 +16,8 @@ export type Erinnerungsergebnis = {
   verschickt: number;
   /** Verträge, bei denen nichts rausging – mit Grund, damit es auffällt. */
   probleme: { name: string; grund: string }[];
+  /** Fällige Verträge (Namen) – im Nur-Melden-Modus für Kleanas Bericht. */
+  faellig: string[];
 };
 
 /**
@@ -26,6 +28,13 @@ export type Erinnerungsergebnis = {
  */
 export async function erinnerungslauf(opt: {
   heute?: string; basisUrl: string; probelauf?: boolean;
+  /**
+   * Kleanas Wahl (Sept. 2026): Familien NICHT mehr automatisch anmailen.
+   * Mit anFamilien = false werden die fälligen Verträge nur eingesammelt
+   * (faellig) und als erinnert markiert – Kleana bekommt sie einmalig im
+   * täglichen Bericht und erinnert selbst über „nochmal senden".
+   */
+  anFamilien?: boolean;
 } ): Promise<Erinnerungsergebnis> {
   const heute = opt.heute || heuteIso();
   const sb = service();
@@ -38,7 +47,7 @@ export async function erinnerungslauf(opt: {
     .is("erinnert_am", null);
   const kandidaten = ((vRes.data || []) as Vertrag[]).filter((v) => erinnerungFaellig(v, heute));
 
-  const ergebnis: Erinnerungsergebnis = { geprueft: kandidaten.length, verschickt: 0, probleme: [] };
+  const ergebnis: Erinnerungsergebnis = { geprueft: kandidaten.length, verschickt: 0, probleme: [], faellig: [] };
   if (!kandidaten.length) return ergebnis;
 
   const [pRes, sjRes] = await Promise.all([
@@ -51,6 +60,17 @@ export async function erinnerungslauf(opt: {
   for (const v of kandidaten) {
     const p = profile.find((x) => x.user_id === v.schueler_id);
     const name = p?.name || "dein Kind";
+    // Nur-Melden-Modus: keine Mail an die Familie – Name einsammeln und als
+    // erinnert markieren, damit Kleana ihn genau EINMAL im Bericht sieht.
+    if (!opt.anFamilien) {
+      ergebnis.faellig.push(name);
+      if (!opt.probelauf) {
+        const up = await sb.from("vertraege")
+          .update({ erinnert_am: new Date().toISOString() }).eq("id", v.id);
+        if (up.error) ergebnis.probleme.push({ name, grund: `Vormerken fehlgeschlagen: ${up.error.message}` });
+      }
+      continue;
+    }
     if (!p?.email) {
       ergebnis.probleme.push({ name, grund: "keine E-Mail-Adresse hinterlegt" });
       continue;
