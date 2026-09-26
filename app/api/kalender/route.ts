@@ -795,6 +795,23 @@ export async function POST(req: Request): Promise<Response> {
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
+    if (action === "mailProtokoll") {
+      // Welche Mails hat das System verschickt? Kleana wusste das Resend-Konto
+      // nicht mehr – der Server kennt den Schlüssel ohnehin und holt die
+      // Liste der zuletzt gesendeten Mails direkt bei Resend ab.
+      const key = process.env.RESEND_API_KEY;
+      if (!key) return bad("RESEND_API_KEY fehlt in den Vercel-Umgebungsvariablen.");
+      const r = await fetch("https://api.resend.com/emails?limit=100", { headers: { Authorization: `Bearer ${key}` } });
+      if (!r.ok) return bad(`Resend liefert die Liste nicht (Status ${r.status}). Das Protokoll gibt es sonst im Resend-Konto unter „Emails".`);
+      const j = await r.json().catch(() => null) as { data?: { to?: string[] | string; subject?: string; created_at?: string; last_event?: string }[] } | null;
+      const mails = (j?.data || []).map((m) => ({
+        an: Array.isArray(m.to) ? m.to.join(", ") : String(m.to || "—"),
+        betreff: String(m.subject || "—"),
+        wann: String(m.created_at || ""),
+        status: String(m.last_event || ""),
+      }));
+      return ok({ mails });
+    }
     if (action === "adminProbe") {
       // Kleana trägt selbst eine Probestunde für einen Interessenten ein
       // (z. B. am Telefon vereinbart). Anders als beim öffentlichen Formular:
