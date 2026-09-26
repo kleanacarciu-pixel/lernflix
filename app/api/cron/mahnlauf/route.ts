@@ -54,7 +54,11 @@ export async function GET(req: Request): Promise<Response> {
 
   const basisUrl = process.env.KALENDER_URL
     || `https://${req.headers.get("host") || "lernflix.lernemitanna.de"}`;
-  const unterschriften = await erinnerungslauf({ heute: datum, basisUrl, probelauf: testlauf });
+  // anFamilien: false = Kleanas Wahl (Sept. 2026): KEINE automatische
+  // Erinnerungs-Mail an die Familien mehr. Fällige Verträge werden nur
+  // eingesammelt; Kleana bekommt sie unten einmalig gemeldet und erinnert
+  // selbst über „nochmal senden" auf der Verträge-Seite.
+  const unterschriften = await erinnerungslauf({ heute: datum, basisUrl, probelauf: testlauf, anFamilien: false });
 
   if (testlauf) {
     await sendMail(
@@ -65,8 +69,8 @@ export async function GET(req: Request): Promise<Response> {
          <li>Bank-Check an dich: ${ergebnis.adminHinweis ? "ja" : "nein"}</li>
          <li>Zahlungserinnerungen an Eltern: ${ergebnis.erinnerungen}</li>
          <li>Pausierungen: ${ergebnis.pausierungen}</li>
-         <li>Offene Verträge, für die heute eine Unterschrifts-Erinnerung fällig
-             wäre: ${unterschriften.verschickt} (geprüft: ${unterschriften.geprueft})</li>
+         <li>Offene Verträge, die dir heute zum Selbst-Erinnern gemeldet
+             würden: ${unterschriften.faellig.length} (geprüft: ${unterschriften.geprueft})</li>
        </ul>
        ${unterschriften.probleme.length
           ? `<p><b>Dabei gäbe es Probleme:</b></p><ul>${unterschriften.probleme
@@ -79,15 +83,28 @@ export async function GET(req: Request): Promise<Response> {
     );
   }
 
-  // Ging bei den Erinnerungen etwas schief, soll Kleana das erfahren –
-  // still verschluckt wäre der Vertrag einfach nie unterschrieben worden.
+  // Statt die Familien automatisch anzumailen (Kleanas Wahl: keine Mails
+  // ohne ihr Okay), bekommt KLEANA einmalig Bescheid, wer nach fünf Tagen
+  // noch nicht unterschrieben hat – erinnern kann sie dann selbst.
+  if (!testlauf && unterschriften.faellig.length) {
+    await sendMail(
+      ADMIN_EMAIL,
+      "Noch nicht unterschrieben – magst du erinnern?",
+      `<p>Diese Verträge warten seit mehr als ${5} Tagen auf die Unterschrift:</p>
+       <ul>${unterschriften.faellig.map((n) => `<li>${n}</li>`).join("")}</ul>
+       <p>Es wurde <b>keine</b> automatische Mail an die Familien geschickt –
+          so wie du es eingestellt hast. Wenn du erinnern möchtest: Seite
+          „Verträge" → beim Vertrag auf <b>„nochmal senden"</b>.</p>`,
+    );
+  }
+  // Ging beim Vormerken etwas schief, soll Kleana das erfahren.
   if (!testlauf && unterschriften.probleme.length) {
     await sendMail(
       ADMIN_EMAIL,
-      "Erinnerung an offene Verträge nicht möglich",
-      `<p>Diese Familien hätten heute eine Erinnerung zum Unterschreiben bekommen sollen:</p>
-       <ul>${unterschriften.probleme.map((p) => `<li>${p.name}: ${p.grund}</li>`).join("")}</ul>
-       <p>Am besten kurz selbst melden.</p>`,
+      "Erinnerungs-Vormerkung fehlgeschlagen",
+      `<p>Bei diesen Verträgen klappte das Vormerken nicht – sie tauchen
+          morgen eventuell noch einmal in der Liste auf:</p>
+       <ul>${unterschriften.probleme.map((p) => `<li>${p.name}: ${p.grund}</li>`).join("")}</ul>`,
     );
   }
 

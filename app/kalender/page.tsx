@@ -14,7 +14,7 @@ type Balance = { minus: number; plus: number; nach: number; dates: { minus: stri
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null; email?: string | null };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null; ab?: string | null; mail?: string | null };
-type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; plusVerr?: boolean; einzel?: boolean; wann?: string | null };
+type CancRow = { id?: string; date: string; hour: number; who: string; credited: boolean; byAnna: boolean; plusVerr?: boolean; einzel?: boolean; wann?: string | null; verschobenAuf?: string | null };
 type Inbox = { requests: ReqRow[]; cancellations: CancRow[] };
 type NextLesson = { id: string; title: string; starts_at: string; ends_at: string; kind: string; mode?: string | null; teamsLink?: string | null };
 
@@ -674,7 +674,9 @@ export default function KalenderPage() {
         {s.fixed ? <div className="okbox">Wird ab jetzt <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
         <div className="col">
           <button className="btn p" onClick={() => act("adminConfirm", { date, hour: s.hour })}>Bestätigen &amp; Mail</button>
+          <button className="btn g" onClick={() => act("adminConfirm", { date, hour: s.hour, ohneMail: true })}>Bestätigen OHNE Mail</button>
           <button className="btn r" onClick={() => act("adminReject", { date, hour: s.hour })}>Absagen &amp; Mail</button>
+          <button className="btn g" onClick={() => act("adminReject", { date, hour: s.hour, ohneMail: true })}>Absagen OHNE Mail</button>
           <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
         </div></div>);
       return;
@@ -683,6 +685,7 @@ export default function KalenderPage() {
       setModal(<div className="modal"><h2>Termin von {s.name}</h2><p><b>{s.name}</b> · {when}{s.mode ? " · " + modeText(s.mode) : ""}</p>
         <div className="okbox">„Absagen“ verrechnet fair (Guthaben/Plus) + Mail an die Familie. „Ohne Mail“ macht dasselbe, aber still – für versehentlich eingetragene Termine.</div>
         <div className="col">
+          <button className="btn p" onClick={() => openVerschieben(date, s, when)}>🔀 Verschieben (anderer Tag / andere Zeit)</button>
           <button className="btn p" onClick={() => act("adminCancel", { date, hour: s.hour })}>Diese Stunde absagen (mit Mail)</button>
           <button className="btn g" onClick={() => act("adminCancel", { date, hour: s.hour, ohneMail: true })}>Absagen OHNE Mail (aus Versehen eingetragen)</button>
           {s.fixed ? <button className="btn r" onClick={() => act("endFixed", { date, hour: s.hour })}>Festen Termin dauerhaft beenden</button> : null}
@@ -691,6 +694,19 @@ export default function KalenderPage() {
     }
   }
 
+  // Termin verschieben statt absagen: gleiche Stunde, neuer Tag/Zeit –
+  // ohne Guthaben-Hin-und-Her. Fehler (z. B. Ziel belegt) bleiben im
+  // Formular stehen, damit Kleana einfach eine andere Zeit wählt.
+  function openVerschieben(date: string, s: Slot, when: string) {
+    setModal(<VerschiebenForm when={when} name={s.name || "Schüler"} fixed={!!s.fixed}
+      date={date} startHour={s.hour} dauerMin={s.dauer || 60}
+      onClose={() => setModal(null)}
+      onSubmit={async (zielDatum, vonMin, dauerMin, ohneMail) => {
+        const d = await api("adminMove", { date, hour: s.hour, zielDatum, zielHour: vonMin / 60, dauerMin, ohneMail });
+        if (d.ok) { setModal(null); showToast(String(d.message || "Verschoben ✓")); void loadWeek(); return ""; }
+        return String(d.error || "Fehler.");
+      }} />);
+  }
   function openProbe(date: string, hour: number, when: string) {
     const wd = (parseIso(date).getDay() + 6) % 7;
     const schlussMin = (wd < 5 ? 20 : 19) * 60;
@@ -804,7 +820,9 @@ export default function KalenderPage() {
       {r.kind === "fix" ? <div className="okbox">Wird ab <b>{DAYS[(dt.getDay() + 6) % 7]} {dm(dt)}</b> <b>jede Woche</b> als fester Termin eingetragen.</div> : null}
       <div className="col">
         <button className="btn p" onClick={() => act("adminConfirm", { date, hour })}>Bestätigen &amp; Mail</button>
+        <button className="btn g" onClick={() => act("adminConfirm", { date, hour, ohneMail: true })}>Bestätigen OHNE Mail</button>
         <button className="btn r" onClick={() => act("adminReject", { date, hour })}>Absagen &amp; Mail</button>
+        <button className="btn g" onClick={() => act("adminReject", { date, hour, ohneMail: true })}>Absagen OHNE Mail</button>
         <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
       </div></div>);
   }
@@ -1112,7 +1130,8 @@ export default function KalenderPage() {
               <h3 style={{ marginTop: 16 }}>Letzte Absagen</h3>
               <div className="inbxlist">{inbox.cancellations.map((c, i) => (
                 <div key={c.id || i} className="inbxrow cr">
-                  <button className="ibmain" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.byAnna ? "von dir abgesagt"
+                  <button className="ibmain" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.verschobenAuf ? `von dir verschoben auf ${dm(parseIso(c.verschobenAuf))}`
+                    : c.byAnna ? "von dir abgesagt"
                     : c.einzel ? `gebuchte Stunde storniert${c.wann ? ` (am ${new Date(c.wann).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr)` : ""}`
                     : c.plusVerr ? "Absage (mit Plusstunde verrechnet)"
                     : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>
@@ -1464,6 +1483,45 @@ function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose, titel, hinw
     </div>
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button><button className="btn p" onClick={go} disabled={load}>{load ? "…" : (knopf || "Anfragen")}</button></div></div>;
+}
+// Verschieben eines gebuchten Termins: Ziel-Datum + Von–Bis wählen. Der
+// Ladenschluss richtet sich nach dem ZIEL-Wochentag (Mo–Fr 20, Sa/So 19 Uhr).
+function VerschiebenForm({ when, name, fixed, date, startHour, dauerMin, onSubmit, onClose }: {
+  when: string; name: string; fixed: boolean; date: string; startHour: number; dauerMin: number;
+  onSubmit: (zielDatum: string, vonMin: number, dauerMin: number, ohneMail: boolean) => Promise<string>; onClose: () => void;
+}) {
+  const startMin = Math.round(startHour * 60);
+  const [zielDatum, setZielDatum] = useState(date);
+  const [von, setVon] = useState(minZuZeit(startMin));
+  const [bis, setBis] = useState(minZuZeit(startMin + dauerMin));
+  const [ohneMail, setOhneMail] = useState(false);
+  const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  const datumOk = /^\d{4}-\d{2}-\d{2}$/.test(zielDatum);
+  const wd = datumOk ? (parseIso(zielDatum).getDay() + 6) % 7 : 0;
+  const schlussMin = (wd < 5 ? 20 : 19) * 60;
+  const fehler = !datumOk ? "Bitte ein Ziel-Datum wählen." : zeitFehler(von, bis, schlussMin);
+  async function go() {
+    if (fehler) { setErr(fehler); return; }
+    setLoad(true); setErr(await onSubmit(zielDatum, zeitZuMin(von), zeitZuMin(bis) - zeitZuMin(von), ohneMail)); setLoad(false);
+  }
+  return <div className="modal"><h2>🔀 Termin verschieben</h2>
+    <p><b>{name}</b> · bisher {when}</p>
+    <div className="okbox">{fixed
+      ? "Nur DIESE eine Stunde wird verlegt – der feste Wochentermin bleibt bestehen. Guthaben und Abrechnung ändern sich nicht."
+      : "Der Termin wandert einfach – Guthaben und Abrechnung ändern sich nicht."}</div>
+    <label>Auf welchen Tag?</label>
+    <input type="date" value={zielDatum} onChange={(e) => setZielDatum(e.target.value)}
+      style={{ display: "block", width: "100%", marginTop: 4, padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, font: "inherit", boxSizing: "border-box" }} />
+    <label>Von wann bis wann? (frei eintippbar, z. B. 16:33)</label>
+    <ZeitVonBis von={von} bis={bis} setVon={setVon} setBis={setBis} />
+    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, cursor: "pointer" }}>
+      <input type="checkbox" checked={ohneMail} onChange={(e) => setOhneMail(e.target.checked)} />
+      <span>Ohne Mail verschieben (Familie ist schon informiert)</span>
+    </label>
+    {err || fehler ? <div className="err">{err || fehler}</div>
+      : <p style={{ margin: "10px 0 4px" }}>Also {DAYS[wd]} {dm(parseIso(zielDatum))} <b>{von}–{bis}</b>{ohneMail ? ", ohne Mail" : " – die Familie bekommt eine Mail"}.</p>}
+    <div className="acts"><button className="btn g" onClick={onClose}>Zurück</button>
+      <button className="btn p" onClick={go} disabled={load || !!fehler}>{load ? "…" : "Verschieben"}</button></div></div>;
 }
 function ChangePassword({ onSave, onClose }: { onSave: (pw: string) => Promise<string>; onClose: () => void }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [err, setErr] = useState(""); const [load, setLoad] = useState(false);

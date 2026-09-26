@@ -6,6 +6,7 @@ import { NextResponse, after } from "next/server";
 import {
   service, signInFlexibel, refresh, userFromToken, getProfile, profilEntfernt, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
+  tagIntervalle, type ApptRow,
   sendMail, mailZustellenOderMelden, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
@@ -746,6 +747,9 @@ export async function POST(req: Request): Promise<Response> {
 
     if (action === "adminConfirm") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      // Kleanas Regel: keine Mail ohne ihr Okay – „Bestätigen OHNE Mail"
+      // bestätigt genauso, nur die Benachrichtigung unterbleibt bewusst.
+      const ohneMail = body.ohneMail === true;
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
         if (s.booking.kind === "probe") {
@@ -755,8 +759,8 @@ export async function POST(req: Request): Promise<Response> {
             if (error) return bad("Bestätigen fehlgeschlagen: " + error.message); }
           const gname = (s.booking.note || "").split("|")[0] || "";
           const email = (s.booking.note || "").split("|")[1];
-          if (email) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde bestätigt", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
-          return ok({ message: "Probestunde bestätigt. Bestätigungs-Mail gesendet." });
+          if (email && !ohneMail) { const tl = await teamsLinkFuer(null); after(() => mailZustellenOderMelden("Probestunde bestätigt", email, "Deine Probestunde ist bestätigt ✓", mailTemplates.probeConfirmed(gname, prettyDate(date, hour), s.booking!.mode, tl))); }
+          return ok({ message: `Probestunde bestätigt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : email ? " Bestätigungs-Mail gesendet." : " Achtung: keine Gast-E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
         }
         const sp = await getProfile(s.booking.student_id || "");
         let counted: string | null = null;
@@ -768,8 +772,8 @@ export async function POST(req: Request): Promise<Response> {
             if (sp) await revertCounting(sp, counted);
             return bad("Bestätigen fehlgeschlagen: " + error.message);
           } }
-        if (sp?.email) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Termin bestätigt", em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
-        return ok({ message: "Bestätigt. Bestätigungs-Mail gesendet." });
+        if (sp?.email && !ohneMail) { const em = sp.email, md = s.booking.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Termin bestätigt", em, "Termin bestätigt", mailTemplates.confirmed(prettyDate(date, hour), md, tl))); }
+        return ok({ message: `Bestätigt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Bestätigungs-Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
       if (s.fixedPending) {
         if (s.fixedActive) return bad("Slot ist schon fest vergeben.");
@@ -790,8 +794,8 @@ export async function POST(req: Request): Promise<Response> {
         // Kleana mit Namen, die Familie (in der Mail) nur mit den Tagen.
         const koll = await festeTerminKollisionen(s.wd, hour, Number((s.fixedPending as { dauer_min?: number }).dauer_min) || 60, s.fixedPending.ab_datum || date);
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl, kollisionsTextFamilie(koll) || undefined))); }
-        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}. Mail gesendet.${hinweis}${kollisionsText(koll)}` });
+        if (sp?.email && !ohneMail) { const em = sp.email, md = s.fixedPending.mode, tl = await teamsLinkFuer(sp.user_id); after(() => mailZustellenOderMelden("Fester Termin bestätigt", em, "Fester Termin bestätigt", mailTemplates.confirmed(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)} (wöchentlich${abText})`, md, tl, kollisionsTextFamilie(koll) || undefined))); }
+        return ok({ message: `Fester Termin bestätigt – jede Woche${abDatum ? ` ab dem ${abDatum.slice(8, 10)}.${abDatum.slice(5, 7)}.` : " ab jetzt"}.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}${hinweis}${kollisionsText(koll)}` });
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
@@ -834,15 +838,19 @@ export async function POST(req: Request): Promise<Response> {
     }
     if (action === "adminReject") {
       if (!validSlot) return bad("Ungültiger Slot.");
+      // Auch beim Ablehnen entscheidet Kleana, ob eine Mail rausgeht.
+      const ohneMail = body.ohneMail === true;
       const s = await inspectSlot(date, hour);
       if (s.booking && s.booking.status === "angefragt") {
         { const { error } = await service().from("appointments").update({ status: "abgesagt" }).eq("id", s.booking.id);
           if (error) return bad("Ablehnen fehlgeschlagen: " + error.message); }
         const email = s.booking.student_id ? (await getProfile(s.booking.student_id))?.email : (s.booking.note || "").split("|")[1];
-        if (email) { const em = email; after(() => mailZustellenOderMelden("Termin abgesagt", em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
+        if (email && !ohneMail) { const em = email; after(() => mailZustellenOderMelden("Termin abgesagt", em, "Termin abgesagt", mailTemplates.rejected(prettyDate(date, hour)))); }
         // Ehrlich bleiben: „Mail gesendet" nur behaupten, wenn es eine
         // Adresse gibt – sonst glaubt Kleana, die Familie sei informiert.
-        return ok({ message: email
+        return ok({ message: ohneMail
+          ? "Anfrage abgesagt. Wie gewünscht KEINE Mail gesendet."
+          : email
           ? "Anfrage abgesagt. Absage-Mail gesendet."
           : "Anfrage abgesagt. Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben." });
       }
@@ -850,8 +858,10 @@ export async function POST(req: Request): Promise<Response> {
         { const { error } = await service().from("fixed_slots").update({ status: "beendet" }).eq("id", s.fixedPending.id);
           if (error) return bad("Ablehnen fehlgeschlagen: " + error.message); }
         const sp = await getProfile(s.fixedPending.student_id);
-        if (sp?.email) { const em = sp.email; after(() => mailZustellenOderMelden("Anfrage abgesagt", em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
-        return ok({ message: sp?.email
+        if (sp?.email && !ohneMail) { const em = sp.email; after(() => mailZustellenOderMelden("Anfrage abgesagt", em, "Anfrage abgesagt", mailTemplates.rejected(`${DAY_NAMES[s.wd]} ${fmtZeit(hour)}`))); }
+        return ok({ message: ohneMail
+          ? "Anfrage abgesagt. Wie gewünscht KEINE Mail gesendet."
+          : sp?.email
           ? "Anfrage abgesagt. Absage-Mail gesendet."
           : "Anfrage abgesagt. Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben." });
       }
@@ -929,6 +939,81 @@ export async function POST(req: Request): Promise<Response> {
           : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
       return bad("Hier ist kein Termin zum Absagen.");
+    }
+    if (action === "adminMove") {
+      // Stunde VERSCHIEBEN statt absagen + neu eintragen: kein Guthaben-
+      // Hin-und-Her, keine Verrechnungs-Änderung – der Termin wandert nur.
+      if (!validSlot) return bad("Ungültiger Slot.");
+      const ohneMail = body.ohneMail === true;
+      const zielDatum = String(body.zielDatum || "");
+      const zielHour = Number(body.zielHour);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zielDatum) || !feinRasterOk(zielHour)) return bad("Bitte Ziel-Datum und Uhrzeit wählen.");
+      if (!dauerOk(dauerMin)) return bad("Ungültige Dauer.");
+      const zielSchluss = weekdayOf(zielDatum) < 5 ? 20 : 19;
+      if (zielHour < 8 || zielHour + dauerMin / 60 > zielSchluss) return bad("Die Ziel-Zeit liegt außerhalb der Öffnungszeiten.");
+      if (hoursUntil(zielDatum, zielHour) <= 0) return bad("Das Ziel liegt in der Vergangenheit – bitte einen künftigen Zeitpunkt wählen.");
+      const s = await inspectSlot(date, hour);
+      const nachher = prettyDate(zielDatum, zielHour);
+      // Belegt-Prüfung am Ziel, aber ohne den Termin, der gerade verschoben
+      // wird – sonst blockierte er sich beim Schieben am selben Tag selbst.
+      const zielBelegt = async (ausserApptId: string | null, ohneFixSid: string | null) => {
+        const sb = service();
+        const wd2 = weekdayOf(zielDatum);
+        const [fxRes, apRes, wbRes] = await Promise.all([
+          sb.from("fixed_slots").select("*").eq("weekday", wd2).in("status", ["aktiv", "angefragt"]),
+          sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", zielDatum),
+          sb.from("weekly_blocks").select("*").eq("weekday", wd2),
+        ]);
+        const appts = ((apRes.data || []) as (ApptRow & { id: string })[]).filter((a) => a.id !== ausserApptId);
+        const fixe = ((fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[])
+          // Beim Verschieben einer FEST-Stunde am selben Wochentag zählt der
+          // eigene feste Termin nicht als Konflikt – genau er wird ja verlegt.
+          // (Nur bei gleichem Wochentag: Ein anderer Fest-Slot desselben
+          // Schülers zur selben Uhrzeit an einem anderen Tag bleibt Konflikt.)
+          .filter((f) => !(ohneFixSid && f.student_id === ohneFixSid
+            && gleicheStunde(Number(f.hour), hour) && wd2 === weekdayOf(date)));
+        const ivs = tagIntervalle(zielDatum, wd2, fixe, appts, (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[], () => "Schüler");
+        const ende = zielHour + dauerMin / 60;
+        return ivs.some((iv) => iv.start < ende && iv.ende > zielHour);
+      };
+      // Gebuchte Einzel-/Probestunde: einfach umhängen, Verrechnung bleibt.
+      if (s.booking) {
+        if (await zielBelegt(s.booking.id, null)) return bad("Der Ziel-Zeitraum ist schon belegt.");
+        { const { error } = await service().from("appointments")
+            .update({ slot_date: zielDatum, hour: zielHour, dauer_min: dauerMin }).eq("id", s.booking.id);
+          if (error) return bad("Verschieben fehlgeschlagen: " + error.message); }
+        const email = s.booking.student_id ? (await getProfile(s.booking.student_id))?.email : (s.booking.note || "").split("|")[1];
+        if (email && !ohneMail) { const em = email, md = s.booking.mode, tl = await teamsLinkFuer(s.booking.student_id); after(() => mailZustellenOderMelden("Termin verschoben (Einzel)", em, "Dein Termin wurde verschoben", mailTemplates.moved(prettyDate(date, hour), nachher, md, tl))); }
+        await syncLessons(true);
+        return ok({ message: `Verschoben auf ${nachher}.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
+      }
+      // Stunde eines FESTEN Termins: das Original-Datum wird als „verschoben"
+      // freigegeben (KEIN Nachhol-Guthaben, KEINE Gutschrift), am Ziel
+      // entsteht die ersetzende Einzelstunde – bewusst OHNE Verrechnung
+      // (counted null): Es ist dieselbe, über den Vertrag bezahlte Stunde.
+      if (s.fixedActive && !s.absageVon(s.fixedActive.student_id)) {
+        const fa = s.fixedActive as { student_id: string; mode: string | null; dauer_min?: number };
+        if (await zielBelegt(null, fa.student_id)) return bad("Der Ziel-Zeitraum ist schon belegt.");
+        const { data: absRow, error: absErr } = await service().from("appointments").insert({
+          student_id: fa.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt",
+          credited: false, note: `verschoben:${zielDatum}`,
+        }).select("id").single();
+        if (absErr || !absRow) return bad("Verschieben fehlgeschlagen: " + (absErr?.message || "unbekannt"));
+        const { error: neuErr } = await service().from("appointments").insert({
+          student_id: fa.student_id, slot_date: zielDatum, hour: zielHour, kind: "einzel",
+          status: "bestaetigt", mode: fa.mode, dauer_min: dauerMin, counted: null,
+        });
+        if (neuErr) {
+          // Halb verschoben wäre schlimmer als gar nicht – Freigabe zurücknehmen.
+          await service().from("appointments").delete().eq("id", (absRow as { id: string }).id);
+          return bad("Verschieben fehlgeschlagen: " + neuErr.message);
+        }
+        const sp = await getProfile(fa.student_id);
+        if (sp?.email && !ohneMail) { const em = sp.email, tl = await teamsLinkFuer(fa.student_id); after(() => mailZustellenOderMelden("Termin verschoben (fest)", em, "Dein Termin wurde verschoben", mailTemplates.moved(prettyDate(date, hour), nachher, fa.mode, tl))); }
+        await syncLessons(true);
+        return ok({ message: `Verschoben auf ${nachher} – der feste Wochentermin bleibt, nur diese eine Stunde ist verlegt.${ohneMail ? " Wie gewünscht KEINE Mail gesendet." : sp?.email ? " Mail gesendet." : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
+      }
+      return bad("Hier ist kein Termin zum Verschieben.");
     }
     if (action === "block") {
       // Blockieren minutengenau: Start im 5-Minuten-Raster, Dauer ab 5 Min.
@@ -1192,8 +1277,10 @@ export async function POST(req: Request): Promise<Response> {
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
       const cancellations = [
-        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, plusVerr: c.note === "plusverrechnet", einzel: false, wann: null as string | null })),
-        ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, plusVerr: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null })),
+        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, plusVerr: c.note === "plusverrechnet", einzel: false, wann: null as string | null,
+          // Verschobene Fest-Stunde: kein „abgesagt", sondern „verlegt auf …".
+          verschobenAuf: (c.note || "").startsWith("verschoben:") ? (c.note || "").slice("verschoben:".length) : null })),
+        ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, plusVerr: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null, verschobenAuf: null as string | null })),
       ]
         .sort((a, b) => b.date.localeCompare(a.date))
         .filter((c) => !gesehen.has(c.id))

@@ -116,11 +116,18 @@ describe("Der Erinnerungslauf", () => {
   });
 
   test("vermerkt wird erst NACH erfolgreichem Versand", () => {
+    // lastIndexOf: Das erste erinnert_am gehört inzwischen zum
+    // Nur-Melden-Modus (Kleanas Wahl) – hier zählt der Familien-Zweig.
     const versand = quelle.indexOf("vorlageSenden(");
-    const vermerk = quelle.indexOf("erinnert_am: new Date()");
+    const vermerk = quelle.lastIndexOf("erinnert_am: new Date()");
     const abbruch = quelle.indexOf("if (!r.ok)");
     assert.ok(versand < abbruch && abbruch < vermerk,
       "Ein fehlgeschlagener Versand darf nicht als erledigt vermerkt werden");
+  });
+
+  test("Kleanas Wahl: der tägliche Lauf mailt die Familien NICHT an", () => {
+    const cron = readFileSync("app/api/cron/mahnlauf/route.ts", "utf8");
+    assert.match(cron, /anFamilien: false/);
   });
 
   test("ein Probelauf verschickt nichts und speichert nichts", () => {
@@ -131,10 +138,11 @@ describe("Der Erinnerungslauf", () => {
     assert.match(quelle, /probleme\.push\(\{ name, grund: "keine E-Mail-Adresse hinterlegt" \}\)/);
   });
 
-  test("Kleana wird benachrichtigt, wenn eine Erinnerung nicht rausging", () => {
+  test("Kleana bekommt die fälligen Verträge gemeldet, statt dass Familien Post kriegen", () => {
     const cron = readFileSync("app/api/cron/mahnlauf/route.ts", "utf8");
+    assert.match(cron, /unterschriften\.faellig\.length/);
+    assert.match(cron, /magst du erinnern/);
     assert.match(cron, /unterschriften\.probleme\.length/);
-    assert.match(cron, /Erinnerung an offene Verträge nicht möglich/);
   });
 
   test("ein Text ohne {link} lässt sich gar nicht erst speichern", () => {
