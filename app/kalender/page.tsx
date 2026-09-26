@@ -989,7 +989,7 @@ export default function KalenderPage() {
             <a className="back nurdesk" href="https://lernemitanna.de">← lernemitanna.de</a>
             <a className="btn g sm applink nurdesk" style={{ textDecoration: "none" }} href="/app-installieren">📱 Als App</a>
             {session
-              ? <>{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a>{session.role === "admin" && pushStatus && (
+              ? <>{session.role === "admin" && <a className="btn g sm" style={{ textDecoration: "none" }} href="/admin" title="Zur Admin-Übersicht: Kalender, Finanzheft, Verträge, …">🏠 Übersicht</a>}{meinTeams && session.role !== "admin" && <a className="btn p sm" style={{ textDecoration: "none" }} href={meinTeams} target="_blank" rel="noreferrer" title="Deine Video-Stunde in Microsoft Teams öffnen">📹 Teams</a>}<a className="btn p sm" style={{ textDecoration: "none" }} href="/klassenzimmer">🏫 Klassenzimmer</a>{session.role === "admin" && pushStatus && (
                   <button className="btn g sm"
                     title={pushStatus === "an"
                       ? "Termin-Erinnerungen sind AN: ca. 15 Minuten vor jedem Termin kommt eine Nachricht auf dieses Gerät. Tippen zum Ausschalten."

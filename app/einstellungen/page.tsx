@@ -93,6 +93,7 @@ export default function EinstellungenSeite() {
         <p style={{ color: F.soft, marginTop: 0 }}>
           <a href="/vertraege" style={{ color: F.blue }}>Verträge</a> ·{' '}
           <a href="/zahlungen" style={{ color: F.blue }}>Zahlungen</a> ·{' '}
+          <a href="/finanzheft" style={{ color: F.blue }}>Finanzheft</a> ·{' '}
           <a href="/schuljahr" style={{ color: F.blue }}>Schuljahr &amp; Ferien</a> ·{' '}
           <a href="/kalender" style={{ color: F.blue }}>Kalender</a>
         </p>
