@@ -284,6 +284,7 @@ export const mailTemplates = {
   probeConfirmed: (name: string, when: string, mode?: string | null, teams?: string | null) => wrapMail(`Danke, ${name}! 🎉`, `<p>Schön, dass du <b>Lerne mit Anna</b> kennenlernen möchtest! Deine <b>kostenlose Probestunde</b> am <b>${when}</b> ist bestätigt. Ich freue mich auf dich!</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
   rejected: (when: string) => wrapMail("Termin abgesagt", `<p>Leider konnte dein angefragter Termin am <b>${when}</b> nicht bestätigt werden. Der Slot ist wieder frei – du kannst gern einen anderen wählen.</p>`),
   annaCancel: (when: string) => wrapMail("Termin verschoben", `<p>Dein Termin am <b>${when}</b> muss leider ausfallen. Du bekommst dafür eine <b>Nachhol-Stunde gutgeschrieben</b> (kein Minus) – buche einfach einen freien Slot.</p>`),
+  moved: (von: string, nach: string, mode?: string | null, teams?: string | null) => wrapMail("Termin verschoben 🔀", `<p>Dein Termin am <b>${von}</b> wurde verschoben – er findet jetzt am <b>${nach}</b> statt. Alles andere bleibt gleich.</p>` + teamsBlock(mode, teams) + contactBlock(mode)),
   probeReceived: (name: string, when: string) => wrapMail(`Danke, ${name}!`, `<p>Deine <b>Probestunde</b> am <b>${when}</b> ist angefragt. Kleana bestätigt sie in Kürze – du bekommst dann eine Bestätigung per E-Mail.</p>`),
   invite: (name: string, email: string, password: string) => wrapMail(`Willkommen, ${name}!`,
     `<p>Kleana hat dir einen Zugang zum Terminkalender angelegt. Damit siehst du deine Stunden und kannst Termine buchen oder absagen.</p>
