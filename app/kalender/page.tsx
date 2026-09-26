@@ -728,6 +728,32 @@ export default function KalenderPage() {
     if (eingabe === null) return;
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
+  // Gesendete Mails direkt in der App zeigen – Kleana wusste das
+  // Resend-Konto nicht mehr; der Server holt die Liste selbst ab.
+  async function mailProtokollZeigen() {
+    setModal(<div className="modal"><h2>📧 Gesendete Mails</h2><p>Wird geladen …</p></div>);
+    const d = await api("mailProtokoll");
+    if (!d.ok) { info("Gesendete Mails", "", String(d.error || "Fehler.")); return; }
+    const mails = (d.mails as { an: string; betreff: string; wann: string; status: string }[]) || [];
+    const statusDe: Record<string, string> = {
+      delivered: "✓ zugestellt", sent: "gesendet", opened: "✓ geöffnet", clicked: "✓ Link geklickt",
+      bounced: "⚠️ unzustellbar", complained: "⚠️ Spam-Beschwerde", delivery_delayed: "verzögert",
+    };
+    const wannDe = (iso: string) => { try { return new Date(iso).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
+    setModal(<div className="modal histmodal"><h2>📧 Gesendete Mails</h2>
+      <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>Die letzten {mails.length} Mails, neueste zuerst.</p>
+      {mails.length === 0 ? <p>Keine Mails gefunden.</p> : (
+        <div style={{ maxHeight: 420, overflowY: "auto" }}>
+          {mails.map((m, i) => (
+            <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "8px 0" }}>
+              <div style={{ fontWeight: 700 }}>{m.betreff}</div>
+              <div style={{ fontSize: 13, color: "#666" }}>an {m.an} · {wannDe(m.wann)}{m.status ? ` · ${statusDe[m.status] || m.status}` : ""}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="acts"><button className="btn p" onClick={() => setModal(null)}>Schließen</button></div></div>);
+  }
   // Namen ändern – z. B. wenn zwei Schüler gleich heißen (zwei Sophies) und
   // in Anfragen/Listen nicht auseinanderzuhalten sind. Der Name ist zugleich
   // der Anmeldename; Login per E-Mail-Adresse geht unabhängig davon weiter.
@@ -1017,6 +1043,7 @@ export default function KalenderPage() {
             <a className="minibtn" style={{ textDecoration: "none" }} href="/vertraege">📄 Verträge</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
+            <button className="minibtn" title="Welche Mails hat das System an die Familien geschickt?" onClick={() => void mailProtokollZeigen()}>📧 Gesendete Mails</button>
           </div>
         )}
 
