@@ -491,6 +491,57 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
     }
 
     /**
+     * Zahlweise nachträglich umstellen (Kleanas Fall, Sept. 2026: eine
+     * Mutter hatte beim Unterschreiben aus Versehen „Einmalzahlung"
+     * angetippt und will doch Monatsraten).
+     *
+     * Der Zahlungsplan wird neu geschrieben. Zeilen, die im neuen Plan
+     * keinen Platz mehr haben und die noch NIEMAND angefasst hat (kein
+     * bezahlt-Vermerk, keine Fehlend-Markierung, keine Mahnung), werden
+     * gelöscht; angefasste bleiben stehen und werden gemeldet – nichts,
+     * was Geld betrifft, verschwindet still. Der Vertrag als PDF zeigt ab
+     * jetzt die neue Zahlweise (er wird bei jedem Abruf frisch erzeugt).
+     */
+    case "zahlweiseAendern": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const neu = text(body.zahlweise, 10) === "einmal" ? "einmal" : "raten";
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (v.vertrag.status === "beendet" || v.vertrag.status === "gekuendigt") {
+        return bad("Dieser Vertrag läuft nicht mehr – die Zahlweise lässt sich nur bei laufenden Verträgen umstellen.");
+      }
+      if (v.vertrag.zahlweise === neu) {
+        return ok({ message: `Der Vertrag steht schon auf ${neu === "einmal" ? "Einmalzahlung" : "Monatsraten"} – nichts zu ändern.` });
+      }
+      { const r = await sb.from("vertraege").update({ zahlweise: neu, geaendert_am: new Date().toISOString() }).eq("id", id);
+        if (r.error) return bad(r.error.message, 500); }
+      // Alte Plan-Zeilen aufräumen, die es im neuen Plan nicht mehr gibt
+      // (raten -> einmal: alle Monate außer dem Vertragsbeginn; einmal ->
+      // raten: der Startmonat wird einfach zur ersten Rate umgeschrieben).
+      const neueMonate = new Set(
+        neu === "einmal" ? [v.vertrag.vertragsbeginn] : v.rechnung.raten.map((r) => r.monat),
+      );
+      const alte = await ladeZahlungen(id);
+      const behalten: string[] = [];
+      for (const z of alte) {
+        if (neueMonate.has(z.monat)) continue;
+        if (z.bezahlt_am || z.offen_seit || z.erinnerung_am || z.pausiert_am) {
+          behalten.push(monatName(z.monat));
+          continue;
+        }
+        await sb.from("zahlungen").delete().eq("id", z.id);
+      }
+      const plan = await schreibeZahlungsplan(id);
+      const betragText = neu === "einmal"
+        ? `eine Einmalzahlung über ${centFormat(v.rechnung.einmalCent)} (mit 50,00 € Nachlass)`
+        : `${v.rechnung.raten.length} Monatsraten à ${centFormat(v.rechnung.raten[0]?.betragCent ?? 0)}`;
+      return ok({ message: `Zahlweise geändert: jetzt ${neu === "einmal" ? "Einmalzahlung" : "Monatsraten"} – ${betragText}. Es wurde KEINE Mail verschickt – sag der Familie bitte selbst Bescheid.${
+        plan.ok ? "" : " ACHTUNG: Der Zahlungsplan ließ sich nicht vollständig neu schreiben – bitte einmal die Zahlungen-Seite prüfen."}${
+        behalten.length ? ` Hinweis: Die Monate ${behalten.join(", ")} hatten schon Vermerke (bezahlt/fehlend) und blieben deshalb stehen – bitte auf der Zahlungen-Seite kurz prüfen.` : ""}` });
+    }
+
+    /**
      * Rückfall: außerhalb des Portals unterschrieben.
      *
      * Manche Eltern drucken lieber aus und unterschreiben auf Papier. Kleana
