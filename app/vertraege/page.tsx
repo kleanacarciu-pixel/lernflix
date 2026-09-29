@@ -486,6 +486,23 @@ export default function VertraegeSeite() {
                     setWDatum('');
                   }}>Termin wechseln</button>
                 )}
+                {/* Nachträglich umstellen, wenn die Familie sich beim
+                    Unterschreiben vertippt hat. Vor der Unterschrift wählt
+                    sie ohnehin selbst – da braucht es den Knopf nicht. */}
+                {v.bestaetigt && (v.status === 'aktiv' || v.status === 'angeboten') && (
+                  <button style={knopfKlein} onClick={() => {
+                    const ziel = v.zahlweise === 'einmal' ? 'raten' : 'einmal';
+                    if (!window.confirm(`${v.name}: von ${v.zahlweise === 'einmal' ? 'Einmalzahlung auf Monatsraten' : 'Monatsraten auf Einmalzahlung (50,00 € Nachlass)'} umstellen?\n\nDer Zahlungsplan wird neu geschrieben. Es wird KEINE Mail verschickt – sag der Familie selbst Bescheid.`)) return;
+                    void (async () => {
+                      setFehler(''); setHinweis('');
+                      try {
+                        const d = await api('zahlweiseAendern', { vertrag_id: v.id, zahlweise: ziel });
+                        setHinweis(String(d.message || 'Zahlweise geändert.'));
+                        await neuLaden();
+                      } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+                    })();
+                  }}>auf {v.zahlweise === 'einmal' ? 'Raten' : 'Einmalzahlung'} umstellen</button>
+                )}
                 <button style={knopfKlein} onClick={() => {
                   setElternFuer(v); setOName(v.eltern?.name || ''); setOAnschrift(v.eltern?.anschrift || '');
                   setOEmail(v.eltern?.email || ''); setOTelefon(v.eltern?.telefon || '');
