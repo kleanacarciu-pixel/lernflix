@@ -214,6 +214,8 @@ async function vertragPdf(v: Vollbild): Promise<Buffer> {
       ? rechnung.alleTermine[rechnung.alleTermine.length - 1] ?? null
       : null,
     stundensatzCent: euroZuCent(Number(vertrag.stundensatz)),
+    // Aufschlüsselung mit Familienpreis-Vermerk – steht so auch im Vertrag.
+    posten: rechnung.posten,
     jahresbetragCent: rechnung.jahresbetragCent,
     zahlweise: vertrag.zahlweise,
     raten: rechnung.raten,

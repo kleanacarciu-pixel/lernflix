@@ -433,6 +433,8 @@ export type VertragPdfDaten = {
   /** Fester Wochentermin. */
   zeiten: { wochentag: number; uhrzeit?: string | null }[];
   anzahlTermine: number;
+  /** Jahresrechnung je Wochentag – macht den Familienpreis IM Vertrag sichtbar. */
+  posten?: { wochentag: number; anzahl: number; satzCent: number; ermaessigt?: boolean }[];
   /** Beginn bei Quereinstieg – nur gesetzt, wenn nicht ab Schuljahresbeginn. */
   abDatum?: string | null;
   /** Festes Vertragsende (z. B. Abitur) – nur gesetzt, wenn vor dem Schuljahresende. */
@@ -557,6 +559,23 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
     .text("· Schuljahresbetrag gesamt:", R + 196, yV, { width: 140 });
   feldKasten(d, R + 336, yV - 3, 110, centFormat(dat.jahresbetragCent));
   d.y = yV + 20;
+
+  // Aufschlüsselung je Posten – macht den Familienpreis IM Vertrag sichtbar
+  // (Kleanas Wunsch, Okt. 2026): Vorher stand nur der reguläre Stundensatz
+  // da, der Jahresbetrag war aber ermäßigt gerechnet – das sah nach einem
+  // Rechenfehler aus. Bewusst EINE kompakte Zeile, damit der Vertrag
+  // weiter auf eine Seite passt. Gilt automatisch für alle künftig
+  // erzeugten PDFs, auch bei schon unterschriebenen Verträgen (die PDF
+  // entsteht bei jedem Abruf frisch); hochgeladene Papier-Fassungen
+  // bleiben unverändert, das sind feste Dateien.
+  if (dat.posten?.length) {
+    d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau).text(
+      dat.posten.map((p) =>
+        `${WOCHENTAGE[p.wochentag]}: ${p.anzahl} × ${centFormat(p.satzCent)}${p.ermaessigt ? " (Familienpreis, AGB § 6 Abs. 2)" : ""}`,
+      ).join("  ·  "),
+      R, d.y, { width: breite });
+    d.moveDown(0.3);
+  }
 
   d.font("Helvetica").fontSize(9).fillColor(FARBEN.ink).text("Zahlweise:", R, d.y);
   d.moveDown(0.25);

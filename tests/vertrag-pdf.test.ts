@@ -101,6 +101,32 @@ describe("Der Vertrag steht vollständig in der PDF", async () => {
   });
 });
 
+describe("Familienpreis steht im Vertrag selbst", async () => {
+  // Kleanas Wunsch (Okt. 2026): Vorher nannte die PDF nur den regulären
+  // Stundensatz, der Jahresbetrag war aber ermäßigt gerechnet – das sah
+  // nach einem Rechenfehler aus. Gilt automatisch auch für schon
+  // unterschriebene Verträge, weil die PDF bei jedem Abruf frisch entsteht.
+  const pdf = await nachhilfevertragPdf({
+    ...beispiel,
+    jahresbetragCent: 2_880_00,
+    zeiten: [{ wochentag: 1, uhrzeit: "16:00" }, { wochentag: 3, uhrzeit: "16:00" }],
+    posten: [
+      { wochentag: 1, anzahl: 36, satzCent: 40_00, ermaessigt: true },
+      { wochentag: 3, anzahl: 36, satzCent: 40_00, ermaessigt: true },
+    ],
+  });
+  const alles = texte(inhalt(pdf)).join(" ");
+
+  test("die Aufschlüsselung nennt den ermäßigten Satz als Familienpreis", () => {
+    assert.ok(alles.includes("(Familienpreis,"), "Familienpreis-Vermerk fehlt");
+    assert.ok(alles.includes("36 × 40,00"), "ermäßigter Posten fehlt");
+  });
+
+  test("der Vertrag passt damit weiterhin auf eine Seite", () => {
+    assert.equal([...pdf.toString("latin1").matchAll(/\/Type\s*\/Page[^s]/g)].length, 1);
+  });
+});
+
 describe("Unterschriften und Zeitstempel", async () => {
   test("ohne Unterschriften entsteht die PDF trotzdem – nur ohne Bilder", async () => {
     const pdf = await nachhilfevertragPdf(beispiel);
