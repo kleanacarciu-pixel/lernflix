@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile, profilEntfernt, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
-import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, type Vertrag } from "@/lib/vertrag";
+import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, ratenAbFuer, ratenAbSpeichern, type Vertrag } from "@/lib/vertrag";
 import {
   euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
   ratenNeuVerteilen, monatsErster, tagDavor, type Ratenplan,
@@ -90,6 +90,7 @@ async function vollbild(vertragId: string) {
     zweitesKind: vertrag.zweites_kind,
     vertragsbeginn: vertrag.vertragsbeginn,
     schuleId: vertrag.schule_id,
+    vertragId,
   });
 
   return { vertrag, zeiten, schueler, schuljahr, rechnung, schule };
@@ -117,7 +118,12 @@ async function restratenAnpassen(v: Vollbild, stichtag: string): Promise<{ berei
     ? ([...enden] as string[]).sort().pop()! : null;
   const planEnde = vertragsEnde && vertragsEnde < v.schuljahr.letzter_schultag
     ? vertragsEnde : v.schuljahr.letzter_schultag;
-  const monate = ratenMonate(v.vertrag.vertragsbeginn, planEnde);
+  // Auch hier die „weniger Raten"-Option beachten – sonst erfände eine
+  // Vertragsänderung wieder Raten für Monate vor dem gewählten Start.
+  const ratenAb = await ratenAbFuer(v.vertrag.id);
+  const ratenStart = ratenAb && ratenAb > v.vertrag.vertragsbeginn ? ratenAb : v.vertrag.vertragsbeginn;
+  let monate = ratenMonate(ratenStart, planEnde);
+  if (!monate.length) monate = ratenMonate(v.vertrag.vertragsbeginn, planEnde);
   const { faellig, verbleibend } = teileRatenmonate(monate, stichtag);
   const zRows = await ladeZahlungen(v.vertrag.id);
   const faelligSet = new Set(faellig);
@@ -542,6 +548,68 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
     }
 
     /**
+     * „Weniger Raten" wählen (Kleanas Fall, Okt. 2026): Eine Familie
+     * unterschreibt erst im Oktober und soll 10 Raten ab Oktober zahlen
+     * statt 11 ab September – derselbe Jahresbetrag, nur anders verteilt.
+     *
+     * body.monat = 1–12 (erster Ratenmonat) oder 0 = zurück zum Standard
+     * (Raten ab Vertragsbeginn). Der Monat wird gegen die tatsächlich
+     * möglichen Ratenmonate dieses Vertrags geprüft – das Jahr ergibt
+     * sich daraus von selbst. Der Zahlungsplan wird neu geschrieben;
+     * angefasste Zeilen (bezahlt/fehlend) bleiben stehen und werden
+     * gemeldet, genau wie beim Umstellen der Zahlweise.
+     */
+    case "ratenAbSetzen": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const monatNr = Number(body.monat);
+      if (!Number.isInteger(monatNr) || monatNr < 0 || monatNr > 12) return bad("Bitte einen Monat wählen.");
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (v.vertrag.status === "beendet" || v.vertrag.status === "gekuendigt") {
+        return bad("Dieser Vertrag läuft nicht mehr – die Raten lassen sich nur bei laufenden Verträgen anpassen.");
+      }
+      if (v.vertrag.zahlweise === "einmal") {
+        return bad("Dieser Vertrag steht auf Einmalzahlung – da gibt es keine Monatsraten. Erst „auf Raten umstellen“, dann hier anpassen.");
+      }
+      let neu: string | null = null;
+      if (monatNr) {
+        if (monatNr === 8) return bad("August ist nie ein Ratenmonat – bitte einen anderen Monat wählen.");
+        // Mögliche Monate aus dem Standard-Plan dieses Vertrags – so stimmt
+        // das Jahr automatisch (Oktober = 2026, Februar = 2027 usw.).
+        const enden = v.zeiten.map((z) => z.bis_datum);
+        const vertragsEnde = enden.length && enden.every(Boolean)
+          ? ([...enden] as string[]).sort().pop()! : null;
+        const planEnde = vertragsEnde && vertragsEnde < v.schuljahr.letzter_schultag
+          ? vertragsEnde : v.schuljahr.letzter_schultag;
+        const moeglich = ratenMonate(v.vertrag.vertragsbeginn, planEnde);
+        neu = moeglich.find((m) => Number(m.slice(5, 7)) === monatNr) || null;
+        if (!neu) return bad("Dieser Monat liegt außerhalb des Ratenzeitraums dieses Vertrags.");
+        if (neu === moeglich[0]) neu = null; // erster möglicher Monat = Standard
+      }
+      if (!(await ratenAbSpeichern(id, neu))) return bad("Das ließ sich nicht speichern.", 500);
+
+      // Frisch rechnen und – falls schon ein Zahlungsplan existiert (bei
+      // aktiven Verträgen) – alte Zeilen vor dem neuen Start aufräumen.
+      const nachher = await vollbild(id);
+      if (!nachher) return bad("Neuberechnung fehlgeschlagen.", 500);
+      const alte = await ladeZahlungen(id);
+      const behalten: string[] = [];
+      if (alte.length) {
+        const neueMonate = new Set(nachher.rechnung.raten.map((r) => r.monat));
+        for (const z of alte) {
+          if (neueMonate.has(z.monat)) continue;
+          if (z.bezahlt_am || z.offen_seit || z.erinnerung_am || z.pausiert_am) { behalten.push(monatName(z.monat)); continue; }
+          await sb.from("zahlungen").delete().eq("id", z.id);
+        }
+        await schreibeZahlungsplan(id);
+      }
+      const r1 = nachher.rechnung.raten[0];
+      return ok({ message: `Raten angepasst: ${nachher.rechnung.raten.length} Monatsraten ab ${r1 ? monatName(r1.monat) : "—"} à ${centFormat(r1?.betragCent ?? 0)}. Die Familie sieht das beim Unterschreiben bzw. auf ihrer Vertragsseite – es wurde KEINE Mail verschickt.${
+        behalten.length ? ` Hinweis: Die Monate ${behalten.join(", ")} hatten schon Vermerke (bezahlt/fehlend) und blieben stehen – bitte auf der Zahlungen-Seite kurz prüfen.` : ""}` });
+    }
+
+    /**
      * Rückfall: außerhalb des Portals unterschrieben.
      *
      * Manche Eltern drucken lieber aus und unterschreiben auf Papier. Kleana
@@ -575,6 +643,30 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       if (up.error || !up.data) return bad("Das ließ sich nicht speichern.", 500);
 
       await schreibeZahlungsplan(id);
+      return ok({ art: datei.art, kb: Math.round(datei.bytes / 1024) });
+    }
+
+    /**
+     * Falsches Foto hochgeladen (Kleanas Fall, Okt. 2026): NUR die
+     * hochgeladene Fassung austauschen. Status, Zahlweise, Zeitstempel und
+     * Zahlungsplan bleiben unangetastet – der Vertrag war ja zu Recht
+     * freigeschaltet, nur die Datei war die falsche.
+     */
+    case "externErsetzen": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const datei = pruefeExterneUnterschrift(body.datei);
+      if (!datei.ok) return bad(datei.grund);
+      const v = await vollbild(id);
+      if (!v) return bad("Vertrag nicht gefunden.", 404);
+      if (!v.vertrag.externe_unterschrift) {
+        return bad("Für diesen Vertrag ist keine hochgeladene Fassung hinterlegt – zum ersten Hochladen bitte „auf Papier unterschrieben“ nutzen.");
+      }
+      const up = await sb.from("vertraege").update({
+        externe_unterschrift: datei.datenUri,
+        geaendert_am: new Date().toISOString(),
+      }).eq("id", id);
+      if (up.error) return bad("Das ließ sich nicht speichern.", 500);
       return ok({ art: datei.art, kb: Math.round(datei.bytes / 1024) });
     }
 
