@@ -744,6 +744,18 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       if (ende && !/^\d{4}-\d{2}-\d{2}$/.test(ende)) return bad("Bitte ein gültiges Datum für die letzte Stunde angeben.");
       if (ende && ende < start) return bad("Die letzte Stunde kann nicht vor der ersten liegen.");
       const bis = ende && ende < sj.letzter_schultag ? ende : null;
+      // Optionaler erster Ratenmonat (Kleanas Fall: Unterricht lief schon ab
+      // September, unterschrieben wird im Oktober -> Raten erst ab Oktober).
+      const ratenMonatNr = Number(body.raten_ab_monat) || 0;
+      let ratenAb: string | null = null;
+      if (ratenMonatNr) {
+        if (!Number.isInteger(ratenMonatNr) || ratenMonatNr < 1 || ratenMonatNr > 12 || ratenMonatNr === 8) {
+          return bad("Bitte einen gültigen ersten Ratenmonat wählen (August ist nie ein Ratenmonat).");
+        }
+        const moeglich = ratenMonate(beginn, bis || sj.letzter_schultag);
+        ratenAb = moeglich.find((m) => Number(m.slice(5, 7)) === ratenMonatNr) || null;
+        if (!ratenAb) return bad("Der gewählte erste Ratenmonat liegt außerhalb des Ratenzeitraums dieses Vertrags.");
+      }
 
       const r = await rechneVertrag({
         schuljahr: sj,
@@ -751,6 +763,7 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
         stundensatzCent: satzCent, stundensatzZweitCent: zweitCent,
         zweitesKind: body.zweites_kind === true, vertragsbeginn: beginn,
         schuleId: text(body.schule_id, 40) || null,
+        ratenAb,
       });
       return ok({
         schuljahr: sj.name, posten: r.posten, jahresbetragCent: r.jahresbetragCent,
@@ -794,6 +807,20 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       if (ende && !/^\d{4}-\d{2}-\d{2}$/.test(ende)) return bad("Bitte ein gültiges Datum für die letzte Stunde angeben.");
       if (ende && ende < start) return bad("Die letzte Stunde kann nicht vor der ersten liegen.");
       const bis = ende && ende < sj.letzter_schultag ? ende : null;
+      // Optionaler erster Ratenmonat – VOR dem Anlegen prüfen, damit kein
+      // Vertrag mit abgelehnter Raten-Wahl entsteht (Auflösung wie in der
+      // Vorschau; gespeichert wird nach dem Anlegen über ratenAbSpeichern).
+      const ratenMonatNr = Number(body.raten_ab_monat) || 0;
+      let ratenAb: string | null = null;
+      if (ratenMonatNr) {
+        if (!Number.isInteger(ratenMonatNr) || ratenMonatNr < 1 || ratenMonatNr > 12 || ratenMonatNr === 8) {
+          return bad("Bitte einen gültigen ersten Ratenmonat wählen (August ist nie ein Ratenmonat).");
+        }
+        const moeglich = ratenMonate(beginn, bis || sj.letzter_schultag);
+        const treffer = moeglich.find((m) => Number(m.slice(5, 7)) === ratenMonatNr) || null;
+        if (!treffer) return bad("Der gewählte erste Ratenmonat liegt außerhalb des Ratenzeitraums dieses Vertrags.");
+        if (treffer !== moeglich[0]) ratenAb = treffer; // erster Monat = Standard
+      }
 
       const r = await rechneVertrag({
         schuljahr: sj,
@@ -852,6 +879,10 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
         await sb.from("vertraege").delete().eq("id", vertrag.id);
         return bad("Die Wochentermine ließen sich nicht speichern: " + zRes.error.message, 500);
       }
+
+      // Gewählten ersten Ratenmonat merken – VOR dem Angebot, damit Mail,
+      // Bestätigungsseite und PDF von Anfang an den richtigen Plan zeigen.
+      if (ratenAb) await ratenAbSpeichern(vertrag.id, ratenAb);
 
       // Ehrlich zurueckmelden, ob das Angebot wirklich rausging: ohne
       // hinterlegte E-Mail-Adresse wird der Vertrag zwar angelegt, die
