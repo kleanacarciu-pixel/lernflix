@@ -127,6 +127,21 @@ describe("Familienpreis steht im Vertrag selbst", async () => {
   });
 });
 
+describe("Die Stundenlänge steht ehrlich im Vertrag", () => {
+  // 45-Minuten-Schüler (Okt. 2026): Vorher stand fest „Dauer: 60 Min." im
+  // Vertrag – egal, wie lange die Stunde wirklich ist.
+  test("ohne Angabe bleibt es bei 60 Minuten", async () => {
+    const alles = texte(inhalt(await nachhilfevertragPdf(beispiel))).join(" ");
+    assert.ok(alles.includes("Dauer: 60 Min."), "Standard-Dauer fehlt");
+  });
+
+  test("45-Minuten-Vertrag: die PDF nennt 45 Minuten", async () => {
+    const alles = texte(inhalt(await nachhilfevertragPdf({ ...beispiel, stundenMinuten: 45 }))).join(" ");
+    assert.ok(alles.includes("Dauer: 45 Min."), "45-Minuten-Angabe fehlt");
+    assert.equal(alles.includes("Dauer: 60 Min."), false);
+  });
+});
+
 describe("Unterschriften und Zeitstempel", async () => {
   test("ohne Unterschriften entsteht die PDF trotzdem – nur ohne Bilder", async () => {
     const pdf = await nachhilfevertragPdf(beispiel);

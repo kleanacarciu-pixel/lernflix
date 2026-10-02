@@ -140,6 +140,9 @@ export default function VertraegeSeite() {
   // Kleanas Fall: Unterricht lief schon ab September, unterschrieben wird
   // erst im Oktober – die Raten sollen trotzdem erst ab Oktober laufen.
   const [nRatenMonat, setNRatenMonat] = useState(0);
+  // Stundenlänge: 60 Min. Standard, 45 Min. für Schüler, die kürzer bleiben
+  // (der Knopf setzt den Satz auf 40 € – bleibt danach frei änderbar).
+  const [nMinuten, setNMinuten] = useState(60);
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
   // Erziehungsberechtigte – stehen so im Vertrag
   const [eName, setEName] = useState('');
@@ -310,6 +313,7 @@ export default function VertraegeSeite() {
     schule_id: nSchule || undefined,
     unterrichtsende: nEnde || undefined,
     raten_ab_monat: nRatenMonat || undefined,
+    stunden_minuten: nMinuten,
     zeiten: nZeiten,
     stundensatz: Number(nSatz.replace(',', '.')) || 0,
     stundensatz_zweittermin: nZweitSatz ? Number(nZweitSatz.replace(',', '.')) : undefined,
@@ -562,6 +566,22 @@ export default function VertraegeSeite() {
             <label style={etikett}>Stundensatz (€)
               <input style={feld} value={nSatz} inputMode="decimal"
                 onChange={(e) => { setNSatz(e.target.value); setVorschau(null); }} />
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <button type="button"
+                  style={{ ...knopfKlein, ...(nMinuten === 60 ? { background: F.blue, color: "#fff", borderColor: F.blue } : {}) }}
+                  onClick={() => { setNMinuten(60); setNSatz('45'); setVorschau(null); }}>
+                  60 Min · 45 €
+                </button>
+                <button type="button"
+                  style={{ ...knopfKlein, ...(nMinuten === 45 ? { background: F.blue, color: "#fff", borderColor: F.blue } : {}) }}
+                  onClick={() => { setNMinuten(45); setNSatz('40'); setVorschau(null); }}>
+                  45 Min · 40 €
+                </button>
+              </div>
+              <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
+                Die Knöpfe setzen den Satz nur vor – du kannst ihn danach frei
+                ändern. Die Dauer steht so im Vertrag.
+              </span>
             </label>
             <label style={etikett}>Erste Stunde am
               <input style={feld} type="date" value={nBeginn}
