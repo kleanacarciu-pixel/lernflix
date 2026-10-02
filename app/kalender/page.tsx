@@ -777,7 +777,7 @@ export default function KalenderPage() {
     if (!d.ok) { info("Probestunden", "", String(d.error || "Fehler.")); return; }
     const heute = String(d.heute || "");
     const proben = (d.proben as { date: string; hour: number; dauerMin: number; name: string; email: string | null; mode: string | null; status: string }[]) || [];
-    const statusDe: Record<string, string> = { bestaetigt: "✓ bestätigt", angefragt: "⏳ wartet auf deine Bestätigung", abgesagt: "✕ abgesagt" };
+    const statusDe: Record<string, string> = { bestaetigt: "✓ bestätigt", angefragt: "⏳ noch bestätigen", abgesagt: "✕ abgesagt" };
     const zeile = (p: typeof proben[number], i: number) => (
       <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "8px 0" }}>
         <div style={{ fontWeight: 700 }}>{p.name}{p.mode ? ` ${modeEmoji(p.mode)}` : ""}</div>
@@ -792,7 +792,7 @@ export default function KalenderPage() {
     setModal(<div className="modal histmodal"><h2>🎓 Probestunden</h2>
       <div style={{ maxHeight: 440, overflowY: "auto" }}>
         <p style={{ margin: "0 0 4px", fontWeight: 700 }}>Kommende</p>
-        {kommend.length === 0 ? <p style={{ color: "#666", fontSize: 14 }}>Gerade keine Probestunde geplant. Zum Eintragen: freien Slot antippen → „🎓 Probestunde für Interessent“.</p> : kommend.map(zeile)}
+        {kommend.length === 0 ? <p style={{ color: "#666", fontSize: 14 }}>Keine Probestunde geplant. Eintragen: freien Slot antippen → „🎓 Probestunde“.</p> : kommend.map(zeile)}
         {alt.length > 0 && <>
           <p style={{ margin: "14px 0 4px", fontWeight: 700 }}>Vergangene &amp; abgesagte (letzte 60 Tage)</p>
           {alt.map(zeile)}
@@ -1078,20 +1078,19 @@ export default function KalenderPage() {
           const betrag = (r.betragCent / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
           if (r.status === "fehlt") return (
             <div className="warn" style={{ margin: "10px 0" }}>
-              ⚠️ Die <b>{mName}-Rate ({betrag})</b> ist noch offen – bitte jetzt überweisen,
-              sonst pausiert der Vertrag. {r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“
+              ⚠️ {mName}-Rate ({betrag}) noch offen – bitte überweisen, sonst pausiert der Unterricht.
+              {" "}{r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“
             </div>
           );
           if (r.status === "faellig") return (
             <div className="okbox" style={{ margin: "10px 0" }}>
-              💶 Monatsrate <b>{mName}: {betrag}</b> – fällig bis zum <b>10.</b>{" "}
-              Überweisung an {r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“.
-              Schon überwiesen? Dann ist alles gut – hier steht danach automatisch „erledigt“.
+              💶 {mName}-Rate: <b>{betrag}</b> – bitte bis zum <b>10.</b> überweisen.
+              {" "}{r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“
             </div>
           );
           return (
             <div className="okbox" style={{ margin: "10px 0" }}>
-              ✓ Monatsrate <b>{mName}</b> ist erledigt – danke!
+              ✓ {mName}-Rate erledigt – danke!
             </div>
           );
         })()}
