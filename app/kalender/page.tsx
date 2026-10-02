@@ -10,7 +10,7 @@ import {
 } from "@/lib/stundenkonto-kern";
 import { VAPID_PUBLIC_KEY, vapidAlsBytes } from "@/lib/push-kern";
 
-type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[] };
+type Balance = { minus: number; plus: number; nach: number; dates: { minus: string[]; plus: string[]; nach: string[] }; fix?: { weekday: number; hour: number; mode: string | null; dauer?: number }[]; rate?: { monat: string; status: string; betragCent: number; inhaber: string; iban: string; zweck: string } | null };
 type Session = { token: string; refresh: string; role: "student" | "admin"; name: string };
 type OverviewRow = { id: string; name: string; fix: string; minus: number; plus: number; nach: number; minusD?: string[]; plusD?: string[]; nachD?: string[]; teams?: string | null; email?: string | null };
 type ReqRow = { date?: string; weekday?: number; hour: number; who: string; kind: string; mode?: string | null; ab?: string | null; mail?: string | null };
@@ -1072,6 +1072,29 @@ export default function KalenderPage() {
           </div>
         )}
         {/* Fruehwarnung: nur noch eine Gutschrift frei (Punkt 1) */}
+        {role === "student" && balance?.rate && (() => {
+          const r = balance.rate;
+          const mName = MONTHS[Number(r.monat.slice(5, 7)) - 1] || "";
+          const betrag = (r.betragCent / 100).toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
+          if (r.status === "fehlt") return (
+            <div className="warn" style={{ margin: "10px 0" }}>
+              ⚠️ Die <b>{mName}-Rate ({betrag})</b> ist noch offen – bitte jetzt überweisen,
+              sonst pausiert der Vertrag. {r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“
+            </div>
+          );
+          if (r.status === "faellig") return (
+            <div className="okbox" style={{ margin: "10px 0" }}>
+              💶 Monatsrate <b>{mName}: {betrag}</b> – fällig bis zum <b>10.</b>{" "}
+              Überweisung an {r.inhaber}{r.iban ? <> · IBAN <b>{r.iban}</b></> : null} · Verwendungszweck: „{r.zweck}“.
+              Schon überwiesen? Dann ist alles gut – hier steht danach automatisch „erledigt“.
+            </div>
+          );
+          return (
+            <div className="okbox" style={{ margin: "10px 0" }}>
+              ✓ Monatsrate <b>{mName}</b> ist erledigt – danke!
+            </div>
+          );
+        })()}
         {role === "student" && balance && balance.minus >= WARNUNG_AB_MINUS && (
           <div className="warn" style={{ margin: "10px 0" }}>
             {balance.minus >= MAX_MINUS

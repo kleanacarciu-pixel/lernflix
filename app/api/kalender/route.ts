@@ -14,6 +14,7 @@ import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } fro
 import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
 import { buchungErlaubt as vertragUnterschrieben, laufenderVertrag } from "@/lib/vertrag";
+import { euroZuCent } from "@/lib/vertrag-kern";
 import { aboSpeichern, aboEntfernen, pushAnKleana, type PushAbo } from "@/lib/push";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
@@ -58,6 +59,40 @@ async function inspectSlot(date: string, hour: number) {
     weeklyBlock: ((wbRes.data || []) as { id: string; hour: number }[])
       .some((w) => gleicheStunde(Number(w.hour), hour)),
   };
+}
+
+/**
+ * Monatsraten-Hinweis für die Familie im Kalender (Idee einer Mutter,
+ * Okt. 2026): Vom 1.–10. steht dort „fällig bis zum 10." samt Betrag und
+ * Bankverbindung, danach „erledigt – danke" (Umkehrlogik: nicht markiert
+ * gilt als bezahlt). Hat Kleana die Rate als FEHLEND markiert, wird der
+ * Hinweis rot. Bewusst NUR Anzeige – keine zusätzlichen Mails.
+ */
+async function monatsRateFuer(userId: string, name: string): Promise<Record<string, unknown> | null> {
+  try {
+    const v = await laufenderVertrag(userId);
+    if (!v || v.status !== "aktiv" || v.zahlweise !== "raten") return null;
+    const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    const monat = `${heute.slice(0, 7)}-01`;
+    const [zRes, sjRes] = await Promise.all([
+      service().from("zahlungen").select("soll_betrag,bezahlt_am,offen_seit").eq("vertrag_id", v.id).eq("monat", monat).maybeSingle(),
+      service().from("schuljahre").select("name").eq("id", v.schuljahr_id).maybeSingle(),
+    ]);
+    const z = zRes.data as { soll_betrag: number; bezahlt_am: string | null; offen_seit: string | null } | null;
+    // Kein Ratenmonat (z. B. August, Raten erst ab später) = kein Hinweis.
+    if (!z) return null;
+    const tag = Number(heute.slice(8, 10));
+    const status = z.bezahlt_am ? "erledigt" : z.offen_seit ? "fehlt" : tag <= 10 ? "faellig" : "erledigt";
+    // Dieselben Umgebungsvariablen wie in der Vertrags-PDF – aber bewusst
+    // NICHT aus dem PDF-Modul importiert: das zöge pdfkit in diese Route
+    // (siehe tests/pdf-bundling.test.ts).
+    return {
+      monat, status, betragCent: euroZuCent(Number(z.soll_betrag)),
+      inhaber: process.env.BANK_INHABER || "Kleana Carciu",
+      iban: process.env.BANK_IBAN || "",
+      zweck: `Nachhilfe ${name} ${(sjRes.data as { name: string } | null)?.name || ""}`.trim(),
+    };
+  } catch { return null; }
 }
 
 /**
@@ -199,7 +234,7 @@ export async function POST(req: Request): Promise<Response> {
       // TEMPO: alles parallel laden; die Stunden-Synchronisation läuft NACH
       // der Antwort (after) und gedrosselt – sie darf das Laden nie bremsen
       const istSchueler = role === "student" && !!prof;
-      const [days, nextLesson, dates, myfixRes, meinTeams] = await Promise.all([
+      const [days, nextLesson, dates, myfixRes, meinTeams, rate] = await Promise.all([
         buildWeek(monday, role, viewerId),
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
@@ -208,6 +243,8 @@ export async function POST(req: Request): Promise<Response> {
           : Promise.resolve({ data: null }),
         // Schüler bekommen ihren Teams-Link als festen Knopf in der Kopfzeile
         istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
+        // Monatsraten-Hinweis (fällig/erledigt/offen) für die Familie
+        istSchueler ? monatsRateFuer(prof!.user_id, prof!.name) : Promise.resolve(null),
       ]);
       if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
@@ -220,7 +257,7 @@ export async function POST(req: Request): Promise<Response> {
       if (istSchueler && dates) {
         const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])
           .map((f) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));
-        out.balance = { minus: prof!.minus_hours, plus: prof!.plus_hours, nach: prof!.makeup_credits, dates, fix };
+        out.balance = { minus: prof!.minus_hours, plus: prof!.plus_hours, nach: prof!.makeup_credits, dates, fix, rate };
       }
       return ok(out);
     }
