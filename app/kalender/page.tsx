@@ -770,6 +770,36 @@ export default function KalenderPage() {
       )}
       <div className="acts"><button className="btn p" onClick={() => setModal(null)}>Schließen</button></div></div>);
   }
+  // Übersicht aller Probestunden: kommende oben, die letzten 60 Tage darunter.
+  async function probenZeigen() {
+    setModal(<div className="modal"><h2>🎓 Probestunden</h2><p>Wird geladen …</p></div>);
+    const d = await api("probeListe");
+    if (!d.ok) { info("Probestunden", "", String(d.error || "Fehler.")); return; }
+    const heute = String(d.heute || "");
+    const proben = (d.proben as { date: string; hour: number; dauerMin: number; name: string; email: string | null; mode: string | null; status: string }[]) || [];
+    const statusDe: Record<string, string> = { bestaetigt: "✓ bestätigt", angefragt: "⏳ wartet auf deine Bestätigung", abgesagt: "✕ abgesagt" };
+    const zeile = (p: typeof proben[number], i: number) => (
+      <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "8px 0" }}>
+        <div style={{ fontWeight: 700 }}>{p.name}{p.mode ? ` ${modeEmoji(p.mode)}` : ""}</div>
+        <div style={{ fontSize: 13, color: "#666" }}>
+          {DAYS[(parseIso(p.date).getDay() + 6) % 7]} {dm(parseIso(p.date))} {fmtZeit(p.hour)}–{minZuZeit(Math.round(p.hour * 60) + p.dauerMin)} · {statusDe[p.status] || p.status}
+        </div>
+        {p.email && <div style={{ fontSize: 12, color: "#8a949c" }}>{p.email}</div>}
+      </div>
+    );
+    const kommend = proben.filter((p) => p.date >= heute && p.status !== "abgesagt");
+    const alt = proben.filter((p) => p.date < heute || p.status === "abgesagt").reverse();
+    setModal(<div className="modal histmodal"><h2>🎓 Probestunden</h2>
+      <div style={{ maxHeight: 440, overflowY: "auto" }}>
+        <p style={{ margin: "0 0 4px", fontWeight: 700 }}>Kommende</p>
+        {kommend.length === 0 ? <p style={{ color: "#666", fontSize: 14 }}>Gerade keine Probestunde geplant. Zum Eintragen: freien Slot antippen → „🎓 Probestunde für Interessent“.</p> : kommend.map(zeile)}
+        {alt.length > 0 && <>
+          <p style={{ margin: "14px 0 4px", fontWeight: 700 }}>Vergangene &amp; abgesagte (letzte 60 Tage)</p>
+          {alt.map(zeile)}
+        </>}
+      </div>
+      <div className="acts"><button className="btn p" onClick={() => setModal(null)}>Schließen</button></div></div>);
+  }
   // Namen ändern – z. B. wenn zwei Schüler gleich heißen (zwei Sophies) und
   // in Anfragen/Listen nicht auseinanderzuhalten sind. Der Name ist zugleich
   // der Anmeldename; Login per E-Mail-Adresse geht unabhängig davon weiter.
@@ -1062,6 +1092,7 @@ export default function KalenderPage() {
             <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
             <button className="minibtn" title="Welche Mails hat das System an die Familien geschickt?" onClick={() => void mailProtokollZeigen()}>📧 Gesendete Mails</button>
+            <button className="minibtn" title="Alle Probestunden: kommende und vergangene, mit Status" onClick={() => void probenZeigen()}>🎓 Probestunden</button>
           </div>
         )}
 

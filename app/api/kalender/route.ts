@@ -819,6 +819,32 @@ export async function POST(req: Request): Promise<Response> {
       }));
       return ok({ mails });
     }
+    if (action === "probeListe") {
+      // Übersicht aller Probestunden (Kleanas Wunsch, Okt. 2026): kommende
+      // und die der letzten 60 Tage – mit Name, E-Mail, Status. Gäste stehen
+      // mit Name|E-Mail in der Notiz, eingeladene Schüler über ihr Profil.
+      const sb = service();
+      const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+      const [pRes, profRes] = await Promise.all([
+        sb.from("appointments").select("student_id,slot_date,hour,dauer_min,mode,status,note")
+          .eq("kind", "probe").gte("slot_date", addDaysStr(heute, -60))
+          .order("slot_date").order("hour"),
+        sb.from("profiles").select("user_id,name,email"),
+      ]);
+      if (pRes.error) return bad("Konnte die Probestunden nicht laden: " + pRes.error.message);
+      const profs = (profRes.data || []) as { user_id: string; name: string; email: string | null }[];
+      const proben = ((pRes.data || []) as { student_id: string | null; slot_date: string; hour: number; dauer_min: number | null; mode: string | null; status: string; note: string | null }[])
+        .map((a) => {
+          const p = a.student_id ? profs.find((x) => x.user_id === a.student_id) : null;
+          return {
+            date: a.slot_date, hour: a.hour, dauerMin: Number(a.dauer_min) || 60,
+            name: p?.name || (a.note || "").split("|")[0] || "Gast",
+            email: p?.email || (a.note || "").split("|")[1] || null,
+            mode: a.mode, status: a.status,
+          };
+        });
+      return ok({ proben, heute });
+    }
     if (action === "adminProbe") {
       // Kleana trägt selbst eine Probestunde für einen Interessenten ein
       // (z. B. am Telefon vereinbart). Anders als beim öffentlichen Formular:
