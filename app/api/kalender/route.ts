@@ -61,6 +61,41 @@ async function inspectSlot(date: string, hour: number) {
 }
 
 /**
+ * Monatsraten-Hinweis für die Familie im Kalender (Idee einer Mutter,
+ * Okt. 2026): Vom 1.–10. steht dort „fällig bis zum 10." samt Betrag und
+ * Bankverbindung, danach „erledigt – danke" (Umkehrlogik: nicht markiert
+ * gilt als bezahlt). Hat Kleana die Rate als FEHLEND markiert, wird der
+ * Hinweis rot. Bewusst NUR Anzeige – keine zusätzlichen Mails.
+ */
+async function monatsRateFuer(userId: string, name: string): Promise<Record<string, unknown> | null> {
+  try {
+    const v = await laufenderVertrag(userId);
+    if (!v || v.status !== "aktiv" || v.zahlweise !== "raten") return null;
+    const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    const monat = `${heute.slice(0, 7)}-01`;
+    const [zRes, sjRes] = await Promise.all([
+      service().from("zahlungen").select("bezahlt_am,offen_seit").eq("vertrag_id", v.id).eq("monat", monat).maybeSingle(),
+      service().from("schuljahre").select("name").eq("id", v.schuljahr_id).maybeSingle(),
+    ]);
+    const z = zRes.data as { bezahlt_am: string | null; offen_seit: string | null } | null;
+    // Kein Ratenmonat (z. B. August, Raten erst ab später) = kein Hinweis.
+    if (!z) return null;
+    const tag = Number(heute.slice(8, 10));
+    const status = z.bezahlt_am ? "erledigt" : z.offen_seit ? "fehlt" : tag <= 10 ? "faellig" : "erledigt";
+    // Dieselben Umgebungsvariablen wie in der Vertrags-PDF – aber bewusst
+    // NICHT aus dem PDF-Modul importiert: das zöge pdfkit in diese Route
+    // (siehe tests/pdf-bundling.test.ts). Der Betrag bleibt bewusst
+    // draußen (Kleanas Wunsch): Die Familie kennt ihre Rate.
+    return {
+      monat, status,
+      inhaber: process.env.BANK_INHABER || "Kleana Carciu",
+      iban: process.env.BANK_IBAN || "",
+      zweck: `Nachhilfe ${name} ${(sjRes.data as { name: string } | null)?.name || ""}`.trim(),
+    };
+  } catch { return null; }
+}
+
+/**
  * Stundenkonto schreiben.
  *
  * Der Fehler wurde hier frueher verschluckt: Als die Obergrenze im Code auf
@@ -199,7 +234,7 @@ export async function POST(req: Request): Promise<Response> {
       // TEMPO: alles parallel laden; die Stunden-Synchronisation läuft NACH
       // der Antwort (after) und gedrosselt – sie darf das Laden nie bremsen
       const istSchueler = role === "student" && !!prof;
-      const [days, nextLesson, dates, myfixRes, meinTeams] = await Promise.all([
+      const [days, nextLesson, dates, myfixRes, meinTeams, rate] = await Promise.all([
         buildWeek(monday, role, viewerId),
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
@@ -208,6 +243,8 @@ export async function POST(req: Request): Promise<Response> {
           : Promise.resolve({ data: null }),
         // Schüler bekommen ihren Teams-Link als festen Knopf in der Kopfzeile
         istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
+        // Monatsraten-Hinweis (fällig/erledigt/offen) für die Familie
+        istSchueler ? monatsRateFuer(prof!.user_id, prof!.name) : Promise.resolve(null),
       ]);
       if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
@@ -220,7 +257,7 @@ export async function POST(req: Request): Promise<Response> {
       if (istSchueler && dates) {
         const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])
           .map((f) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));
-        out.balance = { minus: prof!.minus_hours, plus: prof!.plus_hours, nach: prof!.makeup_credits, dates, fix };
+        out.balance = { minus: prof!.minus_hours, plus: prof!.plus_hours, nach: prof!.makeup_credits, dates, fix, rate };
       }
       return ok(out);
     }
@@ -818,6 +855,32 @@ export async function POST(req: Request): Promise<Response> {
         status: String(m.last_event || ""),
       }));
       return ok({ mails });
+    }
+    if (action === "probeListe") {
+      // Übersicht aller Probestunden (Kleanas Wunsch, Okt. 2026): kommende
+      // und die der letzten 60 Tage – mit Name, E-Mail, Status. Gäste stehen
+      // mit Name|E-Mail in der Notiz, eingeladene Schüler über ihr Profil.
+      const sb = service();
+      const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+      const [pRes, profRes] = await Promise.all([
+        sb.from("appointments").select("student_id,slot_date,hour,dauer_min,mode,status,note")
+          .eq("kind", "probe").gte("slot_date", addDaysStr(heute, -60))
+          .order("slot_date").order("hour"),
+        sb.from("profiles").select("user_id,name,email"),
+      ]);
+      if (pRes.error) return bad("Konnte die Probestunden nicht laden: " + pRes.error.message);
+      const profs = (profRes.data || []) as { user_id: string; name: string; email: string | null }[];
+      const proben = ((pRes.data || []) as { student_id: string | null; slot_date: string; hour: number; dauer_min: number | null; mode: string | null; status: string; note: string | null }[])
+        .map((a) => {
+          const p = a.student_id ? profs.find((x) => x.user_id === a.student_id) : null;
+          return {
+            date: a.slot_date, hour: a.hour, dauerMin: Number(a.dauer_min) || 60,
+            name: p?.name || (a.note || "").split("|")[0] || "Gast",
+            email: p?.email || (a.note || "").split("|")[1] || null,
+            mode: a.mode, status: a.status,
+          };
+        });
+      return ok({ proben, heute });
     }
     if (action === "adminProbe") {
       // Kleana trägt selbst eine Probestunde für einen Interessenten ein
