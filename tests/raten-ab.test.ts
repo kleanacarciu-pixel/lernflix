@@ -50,4 +50,15 @@ describe("Die Option kommt überall an", () => {
     assert.match(route, /moeglich\.find\(\(m\) => Number\(m\.slice\(5, 7\)\) === monatNr\)/);
     assert.match(route, /August ist nie ein Ratenmonat/);
   });
+
+  test("schon beim Anlegen wählbar – Vorschau und Angebot rechnen gleich", () => {
+    // Kleanas Fall (Okt. 2026): Unterricht lief ab September, unterschrieben
+    // wird im Oktober – die Wahl gehört direkt ins Neuer-Vertrag-Formular.
+    const route = readFileSync("app/api/vertrag/route.ts", "utf8");
+    assert.ok([...route.matchAll(/Number\(body\.raten_ab_monat\)/g)].length >= 2,
+      "vorschau UND anlegen müssen raten_ab_monat annehmen");
+    assert.match(route, /if \(ratenAb\) await ratenAbSpeichern\(vertrag\.id, ratenAb\);/);
+    const seite = readFileSync("app/vertraege/page.tsx", "utf8");
+    assert.match(seite, /raten_ab_monat: nRatenMonat \|\| undefined/);
+  });
 });

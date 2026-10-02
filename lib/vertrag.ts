@@ -118,6 +118,9 @@ export async function rechneVertrag(opt: {
   schuleId?: string | null;
   /** Gesetzt = die „weniger Raten"-Option dieses Vertrags wird beachtet. */
   vertragId?: string | null;
+  /** Erster Ratenmonat direkt ("YYYY-MM-01") – für die Vorschau VOR dem
+   *  Anlegen, wo es noch keine Vertrags-Id gibt. Gewinnt über vertragId. */
+  ratenAb?: string | null;
 }): Promise<Vertragsrechnung> {
   const { schuljahr, zeiten, stundensatzCent, stundensatzZweitCent, zweitesKind, vertragsbeginn, schuleId } = opt;
 
@@ -148,7 +151,7 @@ export async function rechneVertrag(opt: {
 
   // „Weniger Raten": Beginnt der gewählte erste Ratenmonat später als der
   // Vertragsbeginn, verteilt sich derselbe Jahresbetrag auf weniger Monate.
-  const ratenAb = opt.vertragId ? await ratenAbFuer(opt.vertragId) : null;
+  const ratenAb = opt.ratenAb ?? (opt.vertragId ? await ratenAbFuer(opt.vertragId) : null);
   const ratenStart = ratenAb && ratenAb > vertragsbeginn ? ratenAb : vertragsbeginn;
   let raten = ratenplan({
     jahresbetragCent: preis.jahresbetragCent,

@@ -136,6 +136,10 @@ export default function VertraegeSeite() {
   const [nBeginn, setNBeginn] = useState(() =>
     new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' }));
   const [nEnde, setNEnde] = useState('');
+  // Erster Ratenmonat (0 = Standard: ab dem Monat der ersten Stunde).
+  // Kleanas Fall: Unterricht lief schon ab September, unterschrieben wird
+  // erst im Oktober – die Raten sollen trotzdem erst ab Oktober laufen.
+  const [nRatenMonat, setNRatenMonat] = useState(0);
   const [nZeiten, setNZeiten] = useState<Zeit[]>([{ wochentag: 1, uhrzeit: '15:00' }]);
   // Erziehungsberechtigte – stehen so im Vertrag
   const [eName, setEName] = useState('');
@@ -305,6 +309,7 @@ export default function VertraegeSeite() {
     schueler_id: nSchueler,
     schule_id: nSchule || undefined,
     unterrichtsende: nEnde || undefined,
+    raten_ab_monat: nRatenMonat || undefined,
     zeiten: nZeiten,
     stundensatz: Number(nSatz.replace(',', '.')) || 0,
     stundensatz_zweittermin: nZweitSatz ? Number(nZweitSatz.replace(',', '.')) : undefined,
@@ -335,7 +340,7 @@ export default function VertraegeSeite() {
     // Vorschau fuer das alte Enddatum bzw. die alte Schule anzeigen, waehrend
     // „anlegen" schon die neuen Werte schickte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, vollstaendig, vorschau, nSchueler, nBeginn, nEnde, nSchule, nSatz, nZweitSatz, nZweitesKind, nZeiten]);
+  }, [token, vollstaendig, vorschau, nSchueler, nBeginn, nEnde, nRatenMonat, nSchule, nSatz, nZweitSatz, nZweitesKind, nZeiten]);
 
   async function kuendigungRechnen(v: VertragZeile, zum: string) {
     setFehler('');
@@ -574,6 +579,22 @@ export default function VertraegeSeite() {
                 Verträge: Termine und Raten laufen nur bis zu diesem Datum –
                 z. B. Ende April = 8 Monatsraten statt 11. Die Vorschau unten
                 zeigt die genaue Anzahl.
+              </span>
+            </label>
+            <label style={etikett}>Erste Rate im Monat (optional)
+              <select style={{ ...feld, background: '#fff' }} value={nRatenMonat}
+                onChange={(e) => { setNRatenMonat(Number(e.target.value)); setVorschau(null); }}>
+                <option value={0}>Standard (ab Monat der ersten Stunde)</option>
+                {[9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7].map((m) => (
+                  <option key={m} value={m}>
+                    ab {['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', '', 'September', 'Oktober', 'November', 'Dezember'][m]}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontWeight: 400, fontSize: 12, color: F.muted }}>
+                Lief der Unterricht schon und die Familie unterschreibt erst
+                jetzt: ersten Ratenmonat später wählen – gleicher Jahresbetrag,
+                weniger (dafür höhere) Raten. Die Vorschau zeigt es sofort.
               </span>
             </label>
             {/* Nur zeigen, wenn es überhaupt Schulen mit eigenen Ferien gibt –
