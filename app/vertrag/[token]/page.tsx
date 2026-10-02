@@ -309,7 +309,7 @@ export default function VertragUnterschreiben() {
         <Wahl
           gewaehlt={zahlweise === 'raten'} onWahl={() => setZahlweise('raten')}
           titel={`${daten.raten.length} Monatsraten à ${eur(daten.raten[0]?.betragCent ?? 0)}`}
-          text={`Jeweils vom 1. bis 10. des Monats, erstmals im ${daten.raten[0] ? monatName(daten.raten[0].monat) : 'ersten Monat'}, letztmalig im ${daten.raten.length ? monatName(daten.raten[daten.raten.length - 1].monat) : 'Juli'}. Der August ist zahlungsfrei.`} />
+          text={`Jeweils vom 1. bis 10. des Monats, erstmals im ${daten.raten[0] ? monatName(daten.raten[0].monat) : 'ersten Monat'}, letztmalig im ${daten.raten.length ? monatName(daten.raten[daten.raten.length - 1].monat) : 'Juli'}.${daten.raten.length && daten.raten[daten.raten.length - 1].monat.slice(5, 7) === '07' ? ' Der August ist zahlungsfrei.' : ''}`} />
         <Wahl
           gewaehlt={zahlweise === 'einmal'} onWahl={() => setZahlweise('einmal')}
           titel={`Einmalzahlung ${eur(daten.einmalCent)}`}

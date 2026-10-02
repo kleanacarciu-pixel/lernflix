@@ -31,9 +31,11 @@ export const HINWEIS_FERIEN =
   + "und in Terminanzahl und Betrag nicht enthalten.";
 
 /** Verwendungszweck im Abschnitt „Vergütung“. */
-export function zahlungshinweis(vornameKind: string, schuljahrName: string): string {
+export function zahlungshinweis(vornameKind: string, schuljahrName: string, mitAugustSatz = true): string {
   return `Zahlung per Überweisung; Verwendungszweck: „Nachhilfe ${vornameKind} ${schuljahrName}“. `
-    + "Der August ist beitragsfrei.";
+    // Bei einem festen Vertragsende vor dem Sommer (z. B. Mai) ist der
+    // August-Satz sinnlos und fliegt raus (Kleanas Wunsch, Okt. 2026).
+    + (mitAugustSatz ? "Der August ist beitragsfrei." : "");
 }
 
 /** Abschnitt 3 – wortgleich zu übernehmen. */
