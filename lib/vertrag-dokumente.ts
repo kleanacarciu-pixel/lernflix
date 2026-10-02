@@ -579,7 +579,7 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
     `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag – 50 €)`);
   d.moveDown(0.2);
   d.font("Helvetica").fontSize(8).fillColor(FARBEN.grau)
-    .text(zahlungshinweis(dat.kind.name.split(" ")[0], dat.schuljahrName), R, d.y, { width: breite });
+    .text(zahlungshinweis(dat.kind.name.split(" ")[0], dat.schuljahrName, !dat.bisDatum), R, d.y, { width: breite });
   // Die Bankverbindung gehört IN den Vertrag – die Eltern sollen zum
   // Überweisen nicht in E-Mails suchen müssen.
   {

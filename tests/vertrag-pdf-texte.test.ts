@@ -46,6 +46,14 @@ describe("Hinweise", () => {
     assert.match(h, /„Nachhilfe Lea 2026\/27“/);
     assert.match(h, /August ist beitragsfrei/);
   });
+
+  test("festes Vertragsende vor dem Sommer: KEIN August-Satz", () => {
+    // Kleanas Wunsch (Okt. 2026): Bei einem Vertrag bis Mai ist
+    // „Der August ist beitragsfrei" sinnlos und muss weg.
+    const h = zahlungshinweis("Benjamin", "2026/27", false);
+    assert.equal(/August/.test(h), false);
+    assert.match(h, /„Nachhilfe Benjamin 2026\/27“/);
+  });
 });
 
 describe("„Das Wichtigste auf einen Blick“ – wortgleich", () => {
