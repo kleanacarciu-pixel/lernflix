@@ -39,10 +39,17 @@ export function zahlungshinweis(vornameKind: string, schuljahrName: string): str
 /** Abschnitt 3 – wortgleich zu übernehmen. */
 export type Punkt = { titel: string; text: string };
 
-export const WICHTIGSTES: Punkt[] = [
+/**
+ * vertragsendeDe = das ECHTE Vertragsende als deutscher Text: der 31. Juli
+ * des Schuljahres – oder das fest vereinbarte frühere Ende (z. B. Abitur
+ * im Mai). Vorher stand hier starr „31. Juli 2027", und ein Vertrag bis
+ * Mai behauptete im Blick-Abschnitt trotzdem Juli (Kleanas Fund, Okt. 2026).
+ */
+export function wichtigstes(vertragsendeDe: string): Punkt[] {
+  return [
   {
     titel: "Laufzeit & Kündigung",
-    text: "Vertrag bis 31. Juli 2027. Kündigung jederzeit mit einer Frist von 4 Wochen "
+    text: `Vertrag bis ${vertragsendeDe}. Kündigung jederzeit mit einer Frist von 4 Wochen `
       + "zum Monatsende (Textform).",
   },
   {
@@ -67,7 +74,8 @@ export const WICHTIGSTES: Punkt[] = [
     text: "Es gelten die AGB (Stand 21.08.2026) einschließlich Widerrufsbelehrung sowie die "
       + "Terminliste als Anlagen und Bestandteil dieses Vertrags.",
   },
-];
+  ];
+}
 
 /** Die beiden Pflicht-Bestätigungen aus dem Portal. */
 export const BESTAETIGUNG_AGB =

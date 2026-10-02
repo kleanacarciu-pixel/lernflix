@@ -9,8 +9,11 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   TITEL, ANBIETERIN, FUSSZEILE, unterzeile, HINWEIS_FERIEN, zahlungshinweis,
-  WICHTIGSTES, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
+  wichtigstes, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
 } from "../lib/vertrag-pdf-texte.ts";
+
+// Volles Schuljahr – das Vertragsende wandert als einziger Baustein hinein.
+const WICHTIGSTES = wichtigstes("31. Juli 2027");
 
 describe("Kopf und Parteien", () => {
   test("Titel und Unterzeile", () => {
@@ -59,6 +62,13 @@ describe("„Das Wichtigste auf einen Blick“ – wortgleich", () => {
     assert.match(p.text, /bis 31\. Juli 2027/);
     assert.match(p.text, /Frist von 4 Wochen zum Monatsende/);
     assert.match(p.text, /Textform/);
+  });
+
+  test("festes Vertragsende: der Blick-Abschnitt nennt das ECHTE Ende", () => {
+    // Kleanas Fund (Okt. 2026): Benjamins Vertrag endet im Mai, die PDF
+    // behauptete trotzdem „bis 31. Juli 2027".
+    const p = wichtigstes("13.05.2027").find((x) => x.titel === "Laufzeit & Kündigung")!;
+    assert.match(p.text, /Vertrag bis 13\.05\.2027\./);
   });
 
   test("Absagen: Vier-Stunden-Regel, verfällt nie, höchstens vier offen", () => {
