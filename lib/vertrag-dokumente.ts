@@ -435,6 +435,8 @@ export type VertragPdfDaten = {
   anzahlTermine: number;
   /** Jahresrechnung je Wochentag – macht den Familienpreis IM Vertrag sichtbar. */
   posten?: { wochentag: number; anzahl: number; satzCent: number; ermaessigt?: boolean }[];
+  /** Stundenlänge in Minuten (45-Minuten-Schüler) – fehlt = 60. */
+  stundenMinuten?: number;
   /** Beginn bei Quereinstieg – nur gesetzt, wenn nicht ab Schuljahresbeginn. */
   abDatum?: string | null;
   /** Festes Vertragsende (z. B. Abitur) – nur gesetzt, wenn vor dem Schuljahresende. */
@@ -538,7 +540,7 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
   const zeitText = dat.zeiten
     .map((z) => `${WOCHENTAGE[z.wochentag]}${z.uhrzeit ? ` ${String(z.uhrzeit).slice(0, 5)} Uhr` : ""}`)
     .join(" und ");
-  zeileMitFeld(d, R, breite, "Fester Wochentermin (Tag / Uhrzeit):", zeitText, "Dauer: 60 Min.", 190);
+  zeileMitFeld(d, R, breite, "Fester Wochentermin (Tag / Uhrzeit):", zeitText, `Dauer: ${dat.stundenMinuten || 60} Min.`, 190);
   const zeitraum = [
     dat.abDatum ? `ab ${datumDe(dat.abDatum)}` : "",
     dat.bisDatum ? `bis ${datumDe(dat.bisDatum)}` : "",

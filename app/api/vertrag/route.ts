@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile, profilEntfernt, sendMail, mailZustellenOderMelden, ADMIN_EMAIL, type MailAnhang } from "@/lib/kalender";
 import { aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
-import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, ratenAbFuer, ratenAbSpeichern, type Vertrag } from "@/lib/vertrag";
+import { rechneVertrag, ladeVertrag, laufenderVertrag, standardZweitsatzCent, ratenAbFuer, ratenAbSpeichern, stundenMinutenFuer, stundenMinutenSpeichern, type Vertrag } from "@/lib/vertrag";
 import {
   euroZuCent, centFormat, wochentagWechseln, teileRatenmonate, ratenMonate,
   ratenNeuVerteilen, monatsErster, tagDavor, type Ratenplan,
@@ -93,7 +93,7 @@ async function vollbild(vertragId: string) {
     vertragId,
   });
 
-  return { vertrag, zeiten, schueler, schuljahr, rechnung, schule };
+  return { vertrag, zeiten, schueler, schuljahr, rechnung, schule, stundenMinuten: await stundenMinutenFuer(vertragId) };
 }
 
 type Vollbild = NonNullable<Awaited<ReturnType<typeof vollbild>>>;
@@ -153,7 +153,8 @@ async function vertragsansicht(v: Vollbild) {
     // Beendete Zeilen ausblenden – ein festes Vertragsende in der Zukunft
     // (bis_datum, z. B. Abitur) zählt dabei nicht als beendet.
     zeiten: v.zeiten.filter((z) => !z.bis_datum || z.bis_datum >= heuteIso()).map((z) => ({ wochentag: z.wochentag, uhrzeit: z.uhrzeit })),
-    zeitText: zeitText(v.zeiten.filter((z) => !z.bis_datum || z.bis_datum >= heuteIso())),
+    zeitText: zeitText(v.zeiten.filter((z) => !z.bis_datum || z.bis_datum >= heuteIso()))
+      + (v.stundenMinuten === 45 ? " (je 45 Min.)" : ""),
     termine: v.rechnung.alleTermine,
     posten: v.rechnung.posten,
     stundensatzCent: euroZuCent(Number(v.vertrag.stundensatz)),
@@ -216,6 +217,8 @@ async function vertragPdf(v: Vollbild): Promise<Buffer> {
     stundensatzCent: euroZuCent(Number(vertrag.stundensatz)),
     // Aufschlüsselung mit Familienpreis-Vermerk – steht so auch im Vertrag.
     posten: rechnung.posten,
+    // 45-Minuten-Schüler: der Vertrag nennt die echte Dauer statt fest 60.
+    stundenMinuten: v.stundenMinuten,
     jahresbetragCent: rechnung.jahresbetragCent,
     zahlweise: vertrag.zahlweise,
     raten: rechnung.raten,
@@ -823,6 +826,10 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
         if (!treffer) return bad("Der gewählte erste Ratenmonat liegt außerhalb des Ratenzeitraums dieses Vertrags.");
         if (treffer !== moeglich[0]) ratenAb = treffer; // erster Monat = Standard
       }
+      // 45-Minuten-Schüler (Okt. 2026): die Länge wird je Vertrag gemerkt,
+      // der Preis läuft ganz normal über den (dann niedrigeren) Stundensatz.
+      const stundenMinuten = body.stunden_minuten == null ? 60 : Number(body.stunden_minuten);
+      if (stundenMinuten !== 45 && stundenMinuten !== 60) return bad("Bitte eine gültige Stundenlänge wählen (45 oder 60 Minuten).");
 
       const r = await rechneVertrag({
         schuljahr: sj,
@@ -885,6 +892,7 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       // Gewählten ersten Ratenmonat merken – VOR dem Angebot, damit Mail,
       // Bestätigungsseite und PDF von Anfang an den richtigen Plan zeigen.
       if (ratenAb) await ratenAbSpeichern(vertrag.id, ratenAb);
+      if (stundenMinuten === 45) await stundenMinutenSpeichern(vertrag.id, 45);
 
       // Ehrlich zurueckmelden, ob das Angebot wirklich rausging: ohne
       // hinterlegte E-Mail-Adresse wird der Vertrag zwar angelegt, die

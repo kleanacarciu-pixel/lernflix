@@ -90,6 +90,33 @@ export async function ratenAbSpeichern(vertragId: string, monat: string | null):
   return speichereEinstellung(SCHLUESSEL_RATEN_AB, JSON.stringify(roh));
 }
 
+// --- 45-Minuten-Stunden (Okt. 2026) -----------------------------------------
+// Manche Schüler bleiben nur 45 Minuten und zahlen dafür einen eigenen Satz
+// (z. B. 40 € statt 45 €). Der Preis läuft ganz normal über das
+// Stundensatz-Feld – hier wird nur die LÄNGE je Vertrag gemerkt, damit
+// Vertrag und Bestätigungsseite ehrlich „45 Min." sagen statt fest „60 Min.".
+// Gespeichert wie raten_ab: JSON-Map im Schlüssel/Wert-Speicher, keine
+// neue Datenbank-Spalte.
+export const SCHLUESSEL_STUNDEN_MINUTEN = "stundenlaenge_je_vertrag";
+
+export async function stundenMinutenFuer(vertragId: string): Promise<number> {
+  try {
+    const roh = JSON.parse((await ladeEinstellung(SCHLUESSEL_STUNDEN_MINUTEN)) || "{}") as Record<string, unknown>;
+    return roh[vertragId] === 45 ? 45 : 60;
+  } catch { return 60; }
+}
+
+/** minuten = 45 setzt die Option, null/60 entfernt sie (Standard 60). */
+export async function stundenMinutenSpeichern(vertragId: string, minuten: number | null): Promise<boolean> {
+  let roh: Record<string, unknown> = {};
+  try {
+    const alt = JSON.parse((await ladeEinstellung(SCHLUESSEL_STUNDEN_MINUTEN)) || "{}");
+    if (alt && typeof alt === "object" && !Array.isArray(alt)) roh = alt as Record<string, unknown>;
+  } catch { /* kaputter Wert – frisch anfangen */ }
+  if (minuten === 45) roh[vertragId] = 45; else delete roh[vertragId];
+  return speichereEinstellung(SCHLUESSEL_STUNDEN_MINUTEN, JSON.stringify(roh));
+}
+
 export type Vertragsrechnung = {
   tage: (TerminTag & { uhrzeit?: string })[];
   jahresbetragCent: number;
