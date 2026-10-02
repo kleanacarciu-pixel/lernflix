@@ -732,8 +732,11 @@ export default function VertraegeSeite() {
               {vorschau.ersterTermin && (
                 <div style={{ color: F.soft, fontSize: 14, marginTop: 4 }}>
                   Erste Stunde: <b>{datumDe(vorschau.ersterTermin)}</b>
-                  {vorschau.vertragsbeginn !== vorschau.unterrichtsbeginn && (
-                    <> · Raten ab {monatName(vorschau.vertragsbeginn)}</>
+                  {/* Die ECHTE erste Rate, nicht der Vertragsbeginn: Mit der
+                      Wahl „Erste Rate im Monat" log die Zeile sonst (Kleanas
+                      Fund, Okt. 2026 – „ab September" trotz Wahl Oktober). */}
+                  {vorschau.raten[0] && vorschau.raten[0].monat.slice(0, 7) !== vorschau.unterrichtsbeginn.slice(0, 7) && (
+                    <> · Raten ab {monatName(vorschau.raten[0].monat)}</>
                   )}
                 </div>
               )}
