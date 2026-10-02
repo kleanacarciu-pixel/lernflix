@@ -6,6 +6,7 @@
 // Jahresbetrag, Ratenplan und Einmalbetrag.
 // =============================================================================
 import { service } from "@/lib/kalender";
+import { ladeEinstellung, speichereEinstellung } from "@/lib/einstellungen";
 import { berechneTermine, aktivesSchuljahr, type Schuljahr } from "@/lib/schuljahr";
 import {
   berechneJahresbetrag, ratenplan, einmalbetragCent, euroZuCent, centFormat,
@@ -62,6 +63,33 @@ export function standardZweitsatzCent(stundensatzCent: number): number {
   return Math.max(0, stundensatzCent - ZWEIT_ABSCHLAG_CENT);
 }
 
+// --- Kleanas Option „weniger Raten" (Okt. 2026) -----------------------------
+// Erster Ratenmonat je Vertrag, wenn er SPÄTER liegen soll als der
+// Vertragsbeginn (z. B. Unterschrift erst im Oktober: 10 Raten ab Oktober
+// statt 11 ab September – derselbe Jahresbetrag, nur anders verteilt).
+// Gespeichert als JSON-Map {vertragId: "YYYY-MM-01"} im vorhandenen
+// Schlüssel/Wert-Speicher – bewusst OHNE neue Datenbank-Spalte.
+export const SCHLUESSEL_RATEN_AB = "raten_ab_je_vertrag";
+
+export async function ratenAbFuer(vertragId: string): Promise<string | null> {
+  try {
+    const roh = JSON.parse((await ladeEinstellung(SCHLUESSEL_RATEN_AB)) || "{}") as Record<string, unknown>;
+    const m = roh[vertragId];
+    return typeof m === "string" && /^\d{4}-\d{2}-01$/.test(m) ? m : null;
+  } catch { return null; }
+}
+
+/** monat = "YYYY-MM-01" setzt die Option, null entfernt sie (Standard). */
+export async function ratenAbSpeichern(vertragId: string, monat: string | null): Promise<boolean> {
+  let roh: Record<string, unknown> = {};
+  try {
+    const alt = JSON.parse((await ladeEinstellung(SCHLUESSEL_RATEN_AB)) || "{}");
+    if (alt && typeof alt === "object" && !Array.isArray(alt)) roh = alt as Record<string, unknown>;
+  } catch { /* kaputter Wert – frisch anfangen */ }
+  if (monat) roh[vertragId] = monat; else delete roh[vertragId];
+  return speichereEinstellung(SCHLUESSEL_RATEN_AB, JSON.stringify(roh));
+}
+
 export type Vertragsrechnung = {
   tage: (TerminTag & { uhrzeit?: string })[];
   jahresbetragCent: number;
@@ -88,6 +116,8 @@ export async function rechneVertrag(opt: {
   zweitesKind?: boolean;
   vertragsbeginn: string;
   schuleId?: string | null;
+  /** Gesetzt = die „weniger Raten"-Option dieses Vertrags wird beachtet. */
+  vertragId?: string | null;
 }): Promise<Vertragsrechnung> {
   const { schuljahr, zeiten, stundensatzCent, stundensatzZweitCent, zweitesKind, vertragsbeginn, schuleId } = opt;
 
@@ -116,15 +146,26 @@ export async function rechneVertrag(opt: {
   const spaetestesEnde = tage.map((t) => t.bis).sort().pop() || schuljahr.letzter_schultag;
   const ratenEnde = spaetestesEnde < schuljahr.letzter_schultag ? spaetestesEnde : schuljahr.letzter_schultag;
 
+  // „Weniger Raten": Beginnt der gewählte erste Ratenmonat später als der
+  // Vertragsbeginn, verteilt sich derselbe Jahresbetrag auf weniger Monate.
+  const ratenAb = opt.vertragId ? await ratenAbFuer(opt.vertragId) : null;
+  const ratenStart = ratenAb && ratenAb > vertragsbeginn ? ratenAb : vertragsbeginn;
+  let raten = ratenplan({
+    jahresbetragCent: preis.jahresbetragCent,
+    vertragsbeginn: ratenStart,
+    letzterSchultag: ratenEnde,
+  });
+  // Läge der gewählte Start HINTER dem letzten Ratenmonat, wäre der Plan
+  // leer und niemand zahlte je – dann lieber die Option ignorieren.
+  if (!raten.length) {
+    raten = ratenplan({ jahresbetragCent: preis.jahresbetragCent, vertragsbeginn, letzterSchultag: ratenEnde });
+  }
+
   return {
     tage,
     jahresbetragCent: preis.jahresbetragCent,
     posten: preis.posten,
-    raten: ratenplan({
-      jahresbetragCent: preis.jahresbetragCent,
-      vertragsbeginn,
-      letzterSchultag: ratenEnde,
-    }),
+    raten,
     einmalCent: einmalbetragCent(preis.jahresbetragCent),
     alleTermine: tage.flatMap((t) => t.termine).sort(),
     familienMonate: preis.familienMonate,

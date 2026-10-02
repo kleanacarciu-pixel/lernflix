@@ -121,6 +121,18 @@ describe("Es war nur die Anzeige – gespeichert wird nichts Vergangenes", () =>
     assert.match(q, /if \(date >= f\.ab_datum \|\| weekdayOf\(date\) !== f\.weekday\) continue;/);
   });
 
+  test("verschobene oder beendete Termine verlieren ihre Klassenzimmer-Stunde", () => {
+    // Kleanas Fall (Okt. 2026): Termin verschoben, aber die Push-Erinnerung
+    // meldete weiter die alte Stunde – sie lag noch in lessons. Der Sync
+    // muss künftige Stunden ohne passenden Kalender-Termin abräumen …
+    const q = readFileSync("lib/stunden.ts", "utf8");
+    assert.match(q, /const kandidatenStarts = new Set\(/);
+    assert.match(q, /if \(kandidatenStarts\.has\(key\)\) continue;/);
+    // … dabei aber NIE Webinare/Gruppen oder Laufendes/Vergangenes löschen.
+    assert.match(q, /if \(l\.kind === "webinar" \|\| l\.kind === "gruppe"\) continue;/);
+    assert.match(q, /if \(Date\.parse\(l\.startsAt\) <= Date\.now\(\)\) continue;/);
+  });
+
   test("beide Buchungswege speichern den angeklickten Tag als ab_datum", () => {
     const route = readFileSync("app/api/kalender/route.ts", "utf8");
     assert.equal([...route.matchAll(/ab_datum: date/g)].length, 2,

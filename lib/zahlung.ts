@@ -53,6 +53,7 @@ export async function schreibeZahlungsplan(vertragId: string): Promise<{ ok: boo
     zweitesKind: vertrag.zweites_kind,
     vertragsbeginn: vertrag.vertragsbeginn,
     schuleId: vertrag.schule_id,
+    vertragId,
   });
 
   const zeilen = vertrag.zahlweise === "einmal"

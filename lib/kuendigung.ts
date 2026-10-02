@@ -70,6 +70,7 @@ export async function abrechnungsbild(
     zweitesKind: vertrag.zweites_kind,
     vertragsbeginn: vertrag.vertragsbeginn,
     schuleId: vertrag.schule_id,
+    vertragId,
   });
 
   // Jeden Termin mit dem Satz seines Wochentags UND Zeitraums versehen: ein

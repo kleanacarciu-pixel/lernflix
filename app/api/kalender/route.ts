@@ -469,6 +469,9 @@ export async function POST(req: Request): Promise<Response> {
       if (!s.fixedActive) return bad("Hier ist kein fester Termin.");
       if (!isAdmin && s.fixedActive.student_id !== user.id) return bad("Nur dein eigener fester Termin.");
       await service().from("fixed_slots").update({ status: "beendet" }).eq("id", s.fixedActive.id);
+      // Künftige Klassenzimmer-Stunden dieses Termins sofort abräumen –
+      // sonst erinnert die Push-Automatik an Stunden, die es nicht mehr gibt.
+      await syncLessons(true);
       return ok({ message: "Fester Termin beendet. Du kannst jetzt einen neuen freien Slot anfragen." });
     }
 

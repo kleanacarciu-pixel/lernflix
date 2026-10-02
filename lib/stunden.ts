@@ -83,11 +83,12 @@ export async function nextLessonFor(userId: string): Promise<NextLesson | null> 
 // --- Kalender -> Klassenzimmer: Stunden automatisch anlegen -----------------
 // Erzeugt für die nächsten SYNC_TAGE Tage aus aktiven festen Terminen und
 // bestätigten Einzel-Buchungen die passenden lessons-Zeilen – inklusive Modus
-// (online/vor Ort, Pro-Datum-Umstellungen gewinnen). Absagen räumen die
-// zugehörige Stunde wieder ab. Dank Unique-Constraint (student_id, starts_at)
-// entstehen nie Doppel; von Hand angelegte Stunden werden nicht angefasst
-// (Insert mit "do nothing", gelöscht wird nur bei vorliegender Absage).
-// Fehlt die V4-Migration, passiert still gar nichts.
+// (online/vor Ort, Pro-Datum-Umstellungen gewinnen). Der Sync ist der CHEF
+// über diese automatisch erzeugten Stunden: künftige Stunden ohne passenden
+// Kalender-Termin (abgesagt, verschoben, fester Termin beendet) werden
+// abgeräumt. Dank Unique-Constraint (student_id, starts_at) entstehen nie
+// Doppel; von Hand angelegte Webinare/Gruppen (ohne Schüler) bleiben
+// unangetastet. Fehlt die V4-Migration, passiert still gar nichts.
 export const SYNC_TAGE = 14;
 
 function heuteBerlin(): string {
@@ -171,11 +172,11 @@ export async function syncLessons(force = false): Promise<void> {
     // Abgleichen mit dem, was schon existiert
     const vonIso = new Date(berlinInstant(von, 0)).toISOString();
     const { data: existRows } = await sb.from("lessons")
-      .select("id,student_id,starts_at,mode")
+      .select("id,student_id,starts_at,mode,kind")
       .gte("starts_at", vonIso).not("student_id", "is", null);
-    const existing = new Map<string, { id: string; mode: string }>();
-    ((existRows || []) as { id: string; student_id: string; starts_at: string; mode: string }[])
-      .forEach((l) => existing.set(`${l.student_id}|${new Date(l.starts_at).toISOString()}`, { id: l.id, mode: l.mode }));
+    const existing = new Map<string, { id: string; mode: string; kind: string | null; startsAt: string }>();
+    ((existRows || []) as { id: string; student_id: string; starts_at: string; mode: string; kind: string | null }[])
+      .forEach((l) => { const iso = new Date(l.starts_at).toISOString(); existing.set(`${l.student_id}|${iso}`, { id: l.id, mode: l.mode, kind: l.kind, startsAt: iso }); });
 
     const neu: Record<string, unknown>[] = [];
     for (const k of kandidaten.values()) {
@@ -188,6 +189,23 @@ export async function syncLessons(force = false): Promise<void> {
     }
     if (neu.length) {
       await sb.from("lessons").upsert(neu, { onConflict: "student_id,starts_at", ignoreDuplicates: true });
+    }
+
+    // Der Sync ist der CHEF über die automatisch erzeugten Stunden: Alle
+    // Stunden MIT Schüler stammen von ihm (von Hand entstehen nur Webinare
+    // ohne Schüler, und die lädt die Abfrage oben gar nicht erst). Eine
+    // künftige Stunde, zu der es im Kalender keinen Termin mehr gibt, wird
+    // deshalb abgeräumt. Vorher blieb sie nach einem VERSCHIEBEN (Einzel-
+    // Update ohne Absage-Zeile) oder nach dem dauerhaften Beenden/Verlegen
+    // eines festen Termins liegen – und die Termin-Erinnerung meldete
+    // Kleana eine Stunde, die es längst nicht mehr gab (Okt. 2026).
+    // Laufendes oder Vergangenes wird nie gelöscht, nur echte Zukunft.
+    const kandidatenStarts = new Set([...kandidaten.values()].map((k) => `${k.studentId}|${k.startsAt}`));
+    for (const [key, l] of existing) {
+      if (l.kind === "webinar" || l.kind === "gruppe") continue;
+      if (kandidatenStarts.has(key)) continue;
+      if (Date.parse(l.startsAt) <= Date.now()) continue;
+      await sb.from("lessons").delete().eq("id", l.id);
     }
 
     // Beginnt ein fester Termin erst später (ab_datum), dürfen früher

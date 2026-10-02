@@ -155,6 +155,13 @@ export default function VertraegeSeite() {
   // Rückfall: auf Papier unterschrieben
   const [externFuer, setExternFuer] = useState<VertragZeile | null>(null);
   const [xZahlweise, setXZahlweise] = useState<'raten' | 'einmal'>('raten');
+  // 'freischalten' = erstes Hochladen (aktiviert den Vertrag);
+  // 'ersetzen' = nur die Datei austauschen (falsches Foto erwischt).
+  const [externModus, setExternModus] = useState<'freischalten' | 'ersetzen'>('freischalten');
+  // „Weniger Raten": erster Ratenmonat wählbar (z. B. Unterschrift erst im
+  // Oktober -> 10 Raten ab Oktober statt 11 ab September).
+  const [ratenFuer, setRatenFuer] = useState<VertragZeile | null>(null);
+  const [rMonat, setRMonat] = useState(0);
   const [xLaedt, setXLaedt] = useState(false);
 
   // Wechsel und Kündigung
@@ -225,10 +232,17 @@ export default function VertraegeSeite() {
         leser.onerror = () => schief(new Error('Die Datei ließ sich nicht lesen.'));
         leser.readAsDataURL(datei);
       });
-      await api('externAktivieren', { vertrag_id: v.id, datei: uri, zahlweise: xZahlweise });
-      setExternFuer(null);
-      await neuLaden();
-      setHinweis(`Vertrag für ${v.name} freigeschaltet – die Familie kann ab sofort buchen.`);
+      if (externModus === 'ersetzen') {
+        await api('externErsetzen', { vertrag_id: v.id, datei: uri });
+        setExternFuer(null);
+        await neuLaden();
+        setHinweis(`Hochgeladene Fassung für ${v.name} ersetzt – das alte Foto ist weg. Über „hochgeladene Fassung“ kannst du das neue gleich prüfen.`);
+      } else {
+        await api('externAktivieren', { vertrag_id: v.id, datei: uri, zahlweise: xZahlweise });
+        setExternFuer(null);
+        await neuLaden();
+        setHinweis(`Vertrag für ${v.name} freigeschaltet – die Familie kann ab sofort buchen.`);
+      }
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Fehler beim Hochladen.');
     } finally { setXLaedt(false); }
@@ -462,13 +476,18 @@ export default function VertraegeSeite() {
                   </button>
                 )}
                 {!v.bestaetigt && v.status !== 'beendet' && (
-                  <button style={knopfKlein} onClick={() => { setExternFuer(v); setXZahlweise('raten'); }}>
+                  <button style={knopfKlein} onClick={() => { setExternFuer(v); setExternModus('freischalten'); setXZahlweise('raten'); }}>
                     auf Papier unterschrieben
                   </button>
                 )}
                 {v.hatExterneFassung && (
                   <button style={knopfKlein}
                     onClick={() => pdfOeffnen(`vertrag=${v.id}&art=extern`)}>hochgeladene Fassung</button>
+                )}
+                {v.hatExterneFassung && (
+                  <button style={knopfKlein} onClick={() => { setExternFuer(v); setExternModus('ersetzen'); }}>
+                    Foto ersetzen
+                  </button>
                 )}
                 <button style={knopfKlein}
                   onClick={() => pdfOeffnen(`vertrag=${v.id}&art=vertrag`)}>Vertrag</button>
@@ -502,6 +521,11 @@ export default function VertraegeSeite() {
                       } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
                     })();
                   }}>auf {v.zahlweise === 'einmal' ? 'Raten' : 'Einmalzahlung'} umstellen</button>
+                )}
+                {(v.status === 'aktiv' || v.status === 'angeboten') && v.zahlweise === 'raten' && (
+                  <button style={knopfKlein} onClick={() => { setRatenFuer(v); setRMonat(0); }}>
+                    Raten anpassen
+                  </button>
                 )}
                 <button style={knopfKlein} onClick={() => {
                   setElternFuer(v); setOName(v.eltern?.name || ''); setOAnschrift(v.eltern?.anschrift || '');
@@ -793,13 +817,16 @@ export default function VertraegeSeite() {
         {externFuer && (
           <div style={overlay} onClick={() => setExternFuer(null)}>
             <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
-              <h2 style={h2}>Auf Papier unterschrieben – {externFuer.name}</h2>
+              <h2 style={h2}>{externModus === 'ersetzen'
+                ? `Foto ersetzen – ${externFuer.name}`
+                : `Auf Papier unterschrieben – ${externFuer.name}`}</h2>
               <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
-                Für Eltern, die lieber ausdrucken und mit der Hand unterschreiben.
-                Lade die unterschriebene Fassung hoch (PDF oder Foto) – der Vertrag
-                wird damit aktiv, der Zahlungsplan läuft an und die Familie kann buchen.
+                {externModus === 'ersetzen'
+                  ? 'Falsches Foto erwischt? Lade hier die richtige Fassung hoch (PDF oder Foto). Das alte Foto wird ersetzt – am Vertrag selbst (Status, Zahlweise, Zahlungen) ändert sich nichts.'
+                  : 'Für Eltern, die lieber ausdrucken und mit der Hand unterschreiben. Lade die unterschriebene Fassung hoch (PDF oder Foto) – der Vertrag wird damit aktiv, der Zahlungsplan läuft an und die Familie kann buchen.'}
               </p>
 
+              {externModus !== 'ersetzen' && (
               <div style={{ marginTop: 6 }}>
                 <div style={{ ...etikett, marginBottom: 8 }}>Gewählte Zahlweise</div>
                 {(['raten', 'einmal'] as const).map((z) => (
@@ -814,11 +841,12 @@ export default function VertraegeSeite() {
                   So, wie die Eltern es auf dem Papier angekreuzt haben.
                 </p>
               </div>
+              )}
 
               <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap', alignItems: 'center' }}>
                 <button style={knopf} disabled={xLaedt}
                   onClick={() => document.getElementById('externe-datei')?.click()}>
-                  {xLaedt ? 'wird hochgeladen …' : 'Datei wählen und freischalten'}
+                  {xLaedt ? 'wird hochgeladen …' : externModus === 'ersetzen' ? 'Richtige Datei wählen' : 'Datei wählen und freischalten'}
                 </button>
                 <button style={knopfKlein} onClick={() => setExternFuer(null)}>abbrechen</button>
               </div>
@@ -837,6 +865,49 @@ export default function VertraegeSeite() {
         )}
 
         {/* ------------------------------------------- Vertrag per WhatsApp */}
+        {ratenFuer && (
+          <div style={overlay} onClick={() => setRatenFuer(null)}>
+            <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Raten anpassen – {ratenFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Ab welchem Monat soll die erste Rate laufen? Der Jahresbetrag
+                bleibt genau derselbe – er verteilt sich nur auf weniger Monate
+                (jede Rate wird entsprechend höher). Beispiel: Unterschrift erst
+                im Oktober → „ab Oktober“ = 10 Raten statt 11.
+              </p>
+              <label style={etikett}>Erste Rate im Monat
+                <select value={rMonat} onChange={(e) => setRMonat(Number(e.target.value))}
+                  style={{ ...feld, background: '#fff' }}>
+                  <option value={0}>Standard (ab Vertragsbeginn)</option>
+                  {[9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7].map((m) => (
+                    <option key={m} value={m}>
+                      {['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', '', 'September', 'Oktober', 'November', 'Dezember'][m]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p style={{ color: F.muted, fontSize: 13 }}>
+                Es wird keine Mail verschickt. Die Familie sieht den neuen Plan
+                beim Unterschreiben bzw. auf ihrer Vertragsseite.
+              </p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button style={knopf} onClick={() => {
+                  const v = ratenFuer;
+                  setRatenFuer(null);
+                  void (async () => {
+                    setFehler(''); setHinweis('');
+                    try {
+                      const d = await api('ratenAbSetzen', { vertrag_id: v.id, monat: rMonat });
+                      setHinweis(String(d.message || 'Raten angepasst.'));
+                      await neuLaden();
+                    } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+                  })();
+                }}>Speichern</button>
+                <button style={knopfKlein} onClick={() => setRatenFuer(null)}>abbrechen</button>
+              </div>
+            </div>
+          </div>
+        )}
         {waFuer && (
           <div style={overlay} onClick={() => setWaFuer(null)}>
             <div style={{ ...karte, maxWidth: 560, margin: 0 }} onClick={(e) => e.stopPropagation()}>
