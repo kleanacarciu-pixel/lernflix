@@ -14,7 +14,6 @@ import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } fro
 import { gesehenListe, mitGesehen } from "@/lib/gesehen-kern";
 import { zahlungsSperreFuer, vorlageSenden } from "@/lib/zahlung";
 import { buchungErlaubt as vertragUnterschrieben, laufenderVertrag } from "@/lib/vertrag";
-import { euroZuCent } from "@/lib/vertrag-kern";
 import { aboSpeichern, aboEntfernen, pushAnKleana, type PushAbo } from "@/lib/push";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
@@ -75,19 +74,20 @@ async function monatsRateFuer(userId: string, name: string): Promise<Record<stri
     const heute = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
     const monat = `${heute.slice(0, 7)}-01`;
     const [zRes, sjRes] = await Promise.all([
-      service().from("zahlungen").select("soll_betrag,bezahlt_am,offen_seit").eq("vertrag_id", v.id).eq("monat", monat).maybeSingle(),
+      service().from("zahlungen").select("bezahlt_am,offen_seit").eq("vertrag_id", v.id).eq("monat", monat).maybeSingle(),
       service().from("schuljahre").select("name").eq("id", v.schuljahr_id).maybeSingle(),
     ]);
-    const z = zRes.data as { soll_betrag: number; bezahlt_am: string | null; offen_seit: string | null } | null;
+    const z = zRes.data as { bezahlt_am: string | null; offen_seit: string | null } | null;
     // Kein Ratenmonat (z. B. August, Raten erst ab später) = kein Hinweis.
     if (!z) return null;
     const tag = Number(heute.slice(8, 10));
     const status = z.bezahlt_am ? "erledigt" : z.offen_seit ? "fehlt" : tag <= 10 ? "faellig" : "erledigt";
     // Dieselben Umgebungsvariablen wie in der Vertrags-PDF – aber bewusst
     // NICHT aus dem PDF-Modul importiert: das zöge pdfkit in diese Route
-    // (siehe tests/pdf-bundling.test.ts).
+    // (siehe tests/pdf-bundling.test.ts). Der Betrag bleibt bewusst
+    // draußen (Kleanas Wunsch): Die Familie kennt ihre Rate.
     return {
-      monat, status, betragCent: euroZuCent(Number(z.soll_betrag)),
+      monat, status,
       inhaber: process.env.BANK_INHABER || "Kleana Carciu",
       iban: process.env.BANK_IBAN || "",
       zweck: `Nachhilfe ${name} ${(sjRes.data as { name: string } | null)?.name || ""}`.trim(),
