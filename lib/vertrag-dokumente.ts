@@ -422,7 +422,7 @@ function laufText(
 
 import {
   TITEL, ANBIETERIN, FUSSZEILE, unterzeile, HINWEIS_FERIEN, zahlungshinweis,
-  WICHTIGSTES, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
+  wichtigstes, BESTAETIGUNG_AGB, BESTAETIGUNG_WIDERRUF, FARBEN,
 } from "./vertrag-pdf-texte.ts";
 
 export type VertragPdfDaten = {
@@ -566,8 +566,15 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
   // „Raten", und der wäre sonst schon angekreuzt, ohne dass jemand
   // gewählt hat. Erst im unterschriebenen Vertrag ist die Wahl amtlich.
   const zahlweiseGewaehlt = !!(dat.unterzeichnetAm || dat.agbBestaetigtAm);
+  // Zeitraum aus dem ECHTEN Ratenplan, nicht fest "Sep–Jul": Bei einem
+  // späteren ersten Ratenmonat (z. B. ab Oktober) oder einem festen
+  // Vertragsende log die feste Beschriftung sonst (Kleanas Fund, Okt. 2026).
+  const mKurz = (iso: string) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][Number(iso.slice(5, 7)) - 1] || "";
+  const ratenZeitraum = dat.raten.length
+    ? `${mKurz(dat.raten[0].monat)}–${mKurz(dat.raten[dat.raten.length - 1].monat)}`
+    : "Sep–Jul";
   ankreuzZeile(d, R, zahlweiseGewaehlt && dat.zahlweise === "raten",
-    `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} (Sep–Jul, fällig 1.–10.)`);
+    `${dat.raten.length} Monatsraten à ${centFormat(dat.raten[0]?.betragCent ?? 0)} (${ratenZeitraum}, fällig 1.–10.)`);
   ankreuzZeile(d, R, zahlweiseGewaehlt && dat.zahlweise === "einmal",
     `Einmalzahlung von ${centFormat(dat.einmalCent)} (Jahresbetrag – 50 €)`);
   d.moveDown(0.2);
@@ -584,7 +591,12 @@ export async function nachhilfevertragPdf(dat: VertragPdfDaten): Promise<Buffer>
 
   // --- 3. Das Wichtigste ---
   abschnitt(d, 3, "Das Wichtigste auf einen Blick");
-  for (const p of WICHTIGSTES) {
+  // Laufzeit mit dem ECHTEN Ende: fest vereinbartes Vertragsende (z. B.
+  // Abitur im Mai) oder der 31. Juli des Schuljahres (AGB § 9).
+  const vertragsende = dat.bisDatum
+    ? datumDe(dat.bisDatum)
+    : `31. Juli ${Number(dat.schuljahrName.slice(0, 4)) + 1}`;
+  for (const p of wichtigstes(vertragsende)) {
     d.font("Helvetica-Bold").fontSize(8.5).fillColor(FARBEN.ink)
       .text(`${p.titel}: `, { continued: true });
     d.font("Helvetica").fillColor(FARBEN.grau).text(p.text, { lineGap: 0.6 });

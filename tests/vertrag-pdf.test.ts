@@ -12,7 +12,9 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { nachhilfevertragPdf } from "../lib/vertrag-dokumente.ts";
-import { TITEL, FUSSZEILE, ANBIETERIN, WICHTIGSTES } from "../lib/vertrag-pdf-texte.ts";
+import { TITEL, FUSSZEILE, ANBIETERIN, wichtigstes } from "../lib/vertrag-pdf-texte.ts";
+
+const WICHTIGSTES = wichtigstes("31. Juli 2027");
 import { inhalt, texte } from "./pdf-lesen.ts";
 
 const beispiel = {
