@@ -131,6 +131,9 @@ describe("Es war nur die Anzeige – gespeichert wird nichts Vergangenes", () =>
     // … dabei aber NIE Webinare/Gruppen oder Laufendes/Vergangenes löschen.
     assert.match(q, /if \(l\.kind === "webinar" \|\| l\.kind === "gruppe"\) continue;/);
     assert.match(q, /if \(Date\.parse\(l\.startsAt\) <= Date\.now\(\)\) continue;/);
+    // … und bei einer gescheiterten Quellen-Abfrage gar nicht erst anfangen:
+    // leere Quellen sähen sonst aus wie „alle Termine weg".
+    assert.match(q, /if \(fxRes\.error \|\| apRes\.error\) return;/);
   });
 
   test("beide Buchungswege speichern den angeklickten Tag als ab_datum", () => {

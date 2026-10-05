@@ -118,6 +118,12 @@ export async function syncLessons(force = false): Promise<void> {
     ]);
     const teacherId = (adminRow as { user_id: string } | null)?.user_id;
     if (!teacherId) return;
+    // Scheitert eine der Quellen-Abfragen (Supabase wirft nicht, es kommt
+    // {data: null, error}), SOFORT aussteigen: Mit leeren Quellen gäbe es
+    // keine Kandidaten, und der Chef-Abgleich unten würde gültige künftige
+    // Stunden löschen – bis zum nächsten Lauf wären Erinnerungen und
+    // „Nächste Stunde" weg. Lieber diesen Lauf auslassen.
+    if (fxRes.error || apRes.error) return;
 
     const overrides = new Map<string, string>();
     ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
