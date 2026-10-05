@@ -226,6 +226,10 @@ export default function KlassenzimmerPage() {
   const [dateiKat, setDateiKat] = useState<DateiKat>("alle");
   const [berichte, setBerichte] = useState<Bericht[]>([]);
   const [berichtEntwurf, setBerichtEntwurf] = useState("");
+  // Fotos aus der Stunde (Heft, Aufgabenblatt) für den Bericht – verkleinert
+  // als data-URL, damit die KI sie direkt anschauen kann
+  const [berichtFotos, setBerichtFotos] = useState<{ name: string; dataUrl: string }[]>([]);
+  const berichtFotoRef = useRef<HTMLInputElement>(null);
   const [kiLaeuft, setKiLaeuft] = useState<string | null>(null); // Text des Lade-Hinweises
   const [offenerBericht, setOffenerBericht] = useState<string | null>(null);
   // Diktieren (Spracheingabe des Browsers) für den Stundenbericht
@@ -418,18 +422,51 @@ export default function KlassenzimmerPage() {
     r.start();
   }
 
+  // Handy-Fotos sind viel zu groß zum Mitschicken (oft 3–8 MB). Deshalb
+  // werden sie hier im Browser verkleinert und als JPEG neu gepackt –
+  // das verträgt auch iPhone-Fotos (HEIC), weil der Browser sie selbst
+  // entschlüsselt und wir nur noch das fertige Bild abmalen.
+  async function fotoVerkleinern(datei: File): Promise<string> {
+    const url = URL.createObjectURL(datei);
+    try {
+      const bild = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error("unlesbar"));
+        i.src = url;
+      });
+      const max = 1400; // längste Seite – reicht, um Heftseiten gut zu lesen
+      const f = Math.min(1, max / Math.max(bild.width, bild.height));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(bild.width * f));
+      c.height = Math.max(1, Math.round(bild.height * f));
+      c.getContext("2d")!.drawImage(bild, 0, 0, c.width, c.height);
+      return c.toDataURL("image/jpeg", 0.82);
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function berichtFotosWaehlen(dateien: FileList) {
+    for (const datei of Array.from(dateien)) {
+      if (berichtFotos.length + 1 > 4) { zeige("Mehr als 4 Fotos gehen nicht – die wichtigsten reichen."); break; }
+      try {
+        const dataUrl = await fotoVerkleinern(datei);
+        setBerichtFotos((alt) => alt.length >= 4 ? alt : [...alt, { name: datei.name, dataUrl }]);
+      } catch { zeige(`„${datei.name}“ konnte nicht gelesen werden – bitte als Foto (JPG/PNG) anhängen.`); }
+    }
+  }
+
   // KI-Bericht/Quiz erstellen: dauert 10–40 Sekunden, deshalb mit Hinweis
   async function berichtErstellen() {
     // Läuft noch eine Aufnahme, erst beenden – sonst wäre der Stopp-Knopf
     // während der KI-Wartezeit gesperrt und das Mikrofon liefe weiter.
     if (diktiert) diktatStoppen();
     const eingabe = berichtEntwurf.trim();
-    if (!eingabe || kiLaeuft) return;
+    if ((!eingabe && !berichtFotos.length) || kiLaeuft) return;
     setKiLaeuft("Der Bericht wird geschrieben … das dauert etwa eine halbe Minute.");
-    const d = await api("berichtErstellen", { ...zielParam(), eingabe });
+    const d = await api("berichtErstellen", { ...zielParam(), eingabe, fotos: berichtFotos.map((x) => x.dataUrl) });
     setKiLaeuft(null);
     if (d.ok) {
       setBerichtEntwurf("");
+      setBerichtFotos([]);
       const neu = d.report as Bericht;
       if (neu) { setBerichte((alt) => [neu, ...alt]); setOffenerBericht(neu.id); }
       zeige("Bericht erstellt und hochgeladen ✓");
@@ -646,19 +683,37 @@ export default function KlassenzimmerPage() {
               <div className="card">
                 <h4>Neuer Stundenbericht</h4>
                 <p className="muted" style={{ margin: "0 0 8px", fontSize: ".84rem" }}>
-                  Schreib in ein paar Stichpunkten, was ihr in der Stunde gemacht habt — die KI macht daraus
-                  einen schönen Bericht mit Erklärung, Beispielen und Hausaufgaben für {schuelerName}.
+                  Häng Fotos aus der Stunde an (Heft, gerechnete Aufgaben, Aufgabenblatt) und schreib kurz dazu,
+                  was ihr gemacht habt und welche Aufgabe {schuelerName} machen soll — den Rest übernimmt die KI.
                 </p>
                 {/* Während der Aufnahme gesperrt: Die Spracherkennung baut das
                     Feld bei jedem Ergebnis neu auf und würde zwischendurch
                     Getipptes stillschweigend überschreiben. */}
-                <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen: Kürzen und Erweitern geübt, klappt schon gut. Bei Textaufgaben noch unsicher. Klasse 6.“`}
+                <textarea className="feld" rows={3} placeholder={`z. B. „Bruchrechnen geübt, klappt schon gut. Hausaufgabe: Blatt auf dem Foto, Nr. 1–4.“`}
                   value={berichtEntwurf} onChange={(e) => setBerichtEntwurf(e.target.value)} disabled={!!kiLaeuft || diktiert}
                   title={diktiert ? "Erst die Aufnahme stoppen, dann tippen." : undefined} />
+                {berichtFotos.length > 0 && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                    {berichtFotos.map((f, i) => (
+                      <span key={i} style={{ position: "relative", display: "inline-block" }}>
+                        {/* Mini-Vorschau: ein normales <img> reicht hier – die data-URL kommt aus dem eigenen Canvas */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.dataUrl} alt={f.name} style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid rgba(26,26,26,.15)" }} />
+                        <button title="Foto entfernen" disabled={!!kiLaeuft}
+                          onClick={() => setBerichtFotos((alt) => alt.filter((_, n) => n !== i))}
+                          style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: 0, background: "#C03A31", color: "#fff", fontSize: 11, lineHeight: "20px", padding: 0, cursor: "pointer" }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input ref={berichtFotoRef} type="file" accept="image/*" multiple style={{ display: "none" }}
+                  onChange={(e) => { if (e.target.files?.length) void berichtFotosWaehlen(e.target.files); e.target.value = ""; }} />
                 <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <button className="btnG" disabled={!!kiLaeuft || berichtFotos.length >= 4}
+                    onClick={() => berichtFotoRef.current?.click()}>📷 Fotos anhängen</button>
                   <button className={"btnG"} style={diktiert ? { background: "#FDEEEC", color: "#C03A31" } : undefined}
                     disabled={!!kiLaeuft && !diktiert} onClick={diktierenToggle}>{diktiert ? "Aufnahme stoppen" : "Diktieren"}</button>
-                  <button className="btnA" disabled={!!kiLaeuft || berichtEntwurf.trim().length < 10} onClick={() => void berichtErstellen()}>Bericht erstellen</button>
+                  <button className="btnA" disabled={!!kiLaeuft || (berichtEntwurf.trim().length < 10 && berichtFotos.length === 0)} onClick={() => void berichtErstellen()}>Bericht erstellen</button>
                   <button className="btnG" disabled={!!kiLaeuft || berichte.filter((b) => b.art === "bericht").length === 0}
                     title="Erstellt aus den letzten Berichten ein Wiederholungs-Quiz" onClick={() => void quizErstellen()}>Wiederholungs-Quiz</button>
                 </div>

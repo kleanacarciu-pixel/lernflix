@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { service, userFromToken, getProfile, profilEntfernt } from "@/lib/kalender";
 import { nextLessonFor, syncLessons } from "@/lib/stunden";
-import { kiBereit, kiText, BERICHT_SYSTEM, QUIZ_SYSTEM } from "@/lib/ki";
+import { kiBereit, kiText, BERICHT_SYSTEM, QUIZ_SYSTEM, type KiBild } from "@/lib/ki";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -273,12 +273,26 @@ export async function POST(req: Request): Promise<Response> {
       if (!istLehrerin) return fehler("Nur Kleana kann Berichte erstellen.", 403);
       if (!kiBereit()) return fehler("Der KI-Schlüssel fehlt noch: Bitte ANTHROPIC_API_KEY in Vercel eintragen (Anleitung im Chat mit Claude).");
       const eingabe = String(body.eingabe || "").trim().slice(0, 4000);
-      if (eingabe.length < 10) return fehler("Bitte kurz beschreiben, was ihr in der Stunde gemacht habt (ein paar Stichpunkte reichen).");
+      // Fotos aus der Stunde (vom Handy, bereits verkleinert) kommen als
+      // "data:image/…;base64,…" – hier prüfen und für die KI auspacken.
+      const fotos: KiBild[] = [];
+      if (Array.isArray(body.fotos)) {
+        for (const roh of body.fotos.slice(0, 4)) {
+          const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(roh));
+          if (!m) return fehler("Ein Foto konnte nicht gelesen werden – bitte noch einmal anhängen.");
+          if (m[2].length > 2_800_000) return fehler("Ein Foto ist zu groß geraten – bitte entfernen und noch einmal anhängen.");
+          fotos.push({ mediaType: m[1] as KiBild["mediaType"], data: m[2] });
+        }
+      }
+      if (eingabe.length < 10 && !fotos.length) return fehler("Bitte Fotos anhängen oder kurz beschreiben, was ihr in der Stunde gemacht habt.");
       const profSchueler = await getProfile(zielSchueler);
       let inhalt = "";
       try {
         inhalt = await kiText(BERICHT_SYSTEM,
-          `Schüler/in: ${profSchueler?.name || "unbekannt"}\nDatum der Stunde: ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}\n\nKleanas Stichpunkte zur Stunde:\n${eingabe}`);
+          `Schüler/in: ${profSchueler?.name || "unbekannt"}\nDatum der Stunde: ${new Date().toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })}`
+          + (fotos.length ? `\nAngehängt: ${fotos.length} Foto(s) aus der Stunde.` : "")
+          + `\n\nKleanas Notiz zur Stunde:\n${eingabe || "(keine – alles steht auf den Fotos)"}`,
+          fotos);
       } catch (e) { return fehler(e instanceof Error ? e.message : "KI-Fehler – bitte noch einmal versuchen."); }
       if (!inhalt) return fehler("Die KI hat keinen Bericht geliefert – bitte noch einmal versuchen.");
       const titel = (inhalt.match(/^#\s+(.+)$/m)?.[1] || "Stundenbericht").slice(0, 160);
