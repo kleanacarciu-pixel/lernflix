@@ -416,13 +416,21 @@ export default function KalenderPage() {
   // darf ihre (veraltete) Antwort die frischen Daten nicht überschreiben.
   const ladeNr = useRef(0);
 
+  // Schüler-Übersicht und Anfragen-Liste hängen nicht von der angezeigten
+  // Woche ab – sie bei jedem ‹/›-Klick mitzuladen machte den Wochenwechsel
+  // spürbar zäh (die Übersicht wälzt serverseitig alle Schüler und Termine).
+  // Deshalb werden sie nur geholt, wenn sie veraltet sein können: beim
+  // Start, nach eigenen Aktionen und beim Auto-Refresh.
+  const extrasDirty = useRef(true);
+
   const loadWeek = useCallback(async () => {
     const nr = ++ladeNr.current;
     const isAdmin = session?.role === "admin";
+    const mitExtras = isAdmin && extrasDirty.current;
     const [d, o, ib] = await Promise.all([
       api("week", { monday: iso(weekStart) }),
-      isAdmin ? api("overview") : Promise.resolve(null),
-      isAdmin ? api("adminInbox") : Promise.resolve(null),
+      mitExtras ? api("overview") : Promise.resolve(null),
+      mitExtras ? api("adminInbox") : Promise.resolve(null),
     ]);
     if (nr !== ladeNr.current) return; // inzwischen gibt es eine neuere Anfrage
     if (d.ok && typeof d.version === "string") {
@@ -432,6 +440,7 @@ export default function KalenderPage() {
     if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); }
     if (isAdmin && o && o.ok) { setOverview((o.students as OverviewRow[]) || []); setTeamsDefault((o.teamsDefault as string) || null); }
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
+    if (mitExtras && o && o.ok && ib && ib.ok) extrasDirty.current = false;
     if (!isAdmin) { setOverview(null); setInbox(null); }
   }, [api, weekStart, session]);
 
@@ -461,7 +470,7 @@ export default function KalenderPage() {
     if (!ready) return;
     let letzterLauf = Date.now();
     let letzterTick = Date.now();
-    const lauf = () => { letzterLauf = Date.now(); void loadWeek().catch(() => { }); };
+    const lauf = () => { letzterLauf = Date.now(); extrasDirty.current = true; void loadWeek().catch(() => { }); };
     const t = window.setInterval(() => {
       const nun = Date.now();
       const warEingefroren = nun - letzterTick > 20000; // Takt stand still
@@ -490,7 +499,7 @@ export default function KalenderPage() {
     setModal(null); // Fenster sofort schließen -> fühlt sich direkt an
     const d = await api(action, params);
     setBusy(false);
-    if (d.ok) { showToast(String(d.message || "Erledigt ✓")); void loadWeek(); }
+    if (d.ok) { showToast(String(d.message || "Erledigt ✓")); extrasDirty.current = true; void loadWeek(); }
     else info("Hinweis", "", String(d.error || "Fehler."));
   }
   // ✕ in „Letzte Absagen“: Zeile sofort ausblenden und „gesehen“ merken.
@@ -642,7 +651,7 @@ export default function KalenderPage() {
             onClose={() => setModal(null)}
             onSubmit={async (name, email, m, vonMin, dauerMin) => {
               const d = await api("adminProbe", { date, hour: vonMin / 60, name, email, mode: m, dauerMin });
-              if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde eingetragen ✓")); void loadWeek(); return ""; }
+              if (d.ok) { setModal(null); showToast(String(d.message || "Probestunde eingetragen ✓")); extrasDirty.current = true; void loadWeek(); return ""; }
               return String(d.error || "Fehler.");
             }} />); }}>
             🎓 Probestunde für Interessent eintragen
@@ -703,7 +712,7 @@ export default function KalenderPage() {
       onClose={() => setModal(null)}
       onSubmit={async (zielDatum, vonMin, dauerMin, ohneMail, dauerhaft) => {
         const d = await api("adminMove", { date, hour: s.hour, zielDatum, zielHour: vonMin / 60, dauerMin, ohneMail, dauerhaft });
-        if (d.ok) { setModal(null); showToast(String(d.message || "Verschoben ✓")); void loadWeek(); return ""; }
+        if (d.ok) { setModal(null); showToast(String(d.message || "Verschoben ✓")); extrasDirty.current = true; void loadWeek(); return ""; }
         return String(d.error || "Fehler.");
       }} />);
   }
@@ -882,7 +891,7 @@ export default function KalenderPage() {
   function openAddStudent() {
     setModal(<AddStudent onClose={() => setModal(null)} onCreate={async (name, email) => {
       const d = await api("createStudent", { name, email });
-      if (d.ok) { await loadWeek(); setModal(null); info("Schüler angelegt ✓", String(d.message || "")); return ""; }
+      if (d.ok) { extrasDirty.current = true; await loadWeek(); setModal(null); info("Schüler angelegt ✓", String(d.message || "")); return ""; }
       return String(d.error || "Fehler.");
     }} />);
   }
@@ -918,6 +927,7 @@ export default function KalenderPage() {
     if (d.ok) {
       setGeloeschte((alt) => (alt || []).filter((x) => x.id !== id));
       info("Wiederhergestellt ✓", `${name} kann sich wieder einloggen.\n\nNeues Passwort: ${d.password}\n\nBitte selbst weitergeben – am besten gleich danach vom Schüler ändern lassen (Menü → Passwort ändern).`);
+      extrasDirty.current = true;
       void loadWeek();
     } else showToast(String(d.error || "Fehler."));
   }
