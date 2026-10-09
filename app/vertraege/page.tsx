@@ -169,6 +169,15 @@ export default function VertraegeSeite() {
   // Oktober -> 10 Raten ab Oktober statt 11 ab September).
   const [ratenFuer, setRatenFuer] = useState<VertragZeile | null>(null);
   const [rMonat, setRMonat] = useState(0);
+  // Der echte Zahlungsplan im „Raten anpassen"-Fenster + Hand-Korrektur
+  // einer einzelnen Rate (z. B. wenn eine schon überwiesene Rate durch
+  // eine Vertragsänderung einen anderen Soll-Betrag bekommen hat).
+  const [rPlan, setRPlan] = useState<{ monat: string; betrag: number; bezahlt: boolean; offen: boolean }[] | null>(null);
+  const [rKMonat, setRKMonat] = useState('');
+  const [rKBetrag, setRKBetrag] = useState('');
+  // Vertrag früher beenden (z. B. Zusatztermine nach Terminwechsel unerwünscht)
+  const [frueherFuer, setFrueherFuer] = useState<VertragZeile | null>(null);
+  const [fZum, setFZum] = useState('');
   const [xLaedt, setXLaedt] = useState(false);
 
   // Wechsel und Kündigung
@@ -532,8 +541,21 @@ export default function VertraegeSeite() {
                   }}>auf {v.zahlweise === 'einmal' ? 'Raten' : 'Einmalzahlung'} umstellen</button>
                 )}
                 {(v.status === 'aktiv' || v.status === 'angeboten') && v.zahlweise === 'raten' && (
-                  <button style={knopfKlein} onClick={() => { setRatenFuer(v); setRMonat(0); }}>
+                  <button style={knopfKlein} onClick={() => {
+                    setRatenFuer(v); setRMonat(0); setRPlan(null); setRKMonat(''); setRKBetrag('');
+                    void (async () => {
+                      try {
+                        const d = await api('zahlplan', { vertrag_id: v.id });
+                        if (Array.isArray(d.zeilen)) setRPlan(d.zeilen as { monat: string; betrag: number; bezahlt: boolean; offen: boolean }[]);
+                      } catch { /* Plan-Liste ist optional – Dialog geht trotzdem */ }
+                    })();
+                  }}>
                     Raten anpassen
+                  </button>
+                )}
+                {(v.status === 'aktiv' || v.status === 'angeboten') && (
+                  <button style={knopfKlein} onClick={() => { setFrueherFuer(v); setFZum(''); }}>
+                    früher beenden
                   </button>
                 )}
                 <button style={knopfKlein} onClick={() => {
@@ -785,8 +807,9 @@ export default function VertraegeSeite() {
               <h2 style={h2}>Termin wechseln – {wechselFuer.name}</h2>
               <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
                 Termine vor dem Wechseldatum bleiben auf dem alten Wochentag, ab dem
-                Wechseldatum gilt der neue. Bereits fällige Raten bleiben unverändert;
-                nur die restlichen Monate werden neu verteilt.
+                Wechseldatum gilt der neue. Monatsraten, die schon begonnen haben
+                (auch die des laufenden Monats), bleiben unverändert; nur kommende
+                Monate werden neu verteilt.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
                 <label style={etikett}>bisher
@@ -948,6 +971,91 @@ export default function VertraegeSeite() {
                   })();
                 }}>Speichern</button>
                 <button style={knopfKlein} onClick={() => setRatenFuer(null)}>abbrechen</button>
+              </div>
+
+              {/* Der echte Zahlungsplan + Hand-Korrektur einer einzelnen Rate.
+                  Wichtig seit Imans Fall (Okt. 2026): Nach Vertragsänderungen
+                  kann eine schon überwiesene Rate einen anderen Soll-Betrag
+                  tragen – hier lässt sie sich gerade ziehen. */}
+              <div style={{ borderTop: `1px solid ${F.line}`, marginTop: 16, paddingTop: 12 }}>
+                <b style={{ fontSize: 15 }}>Einzelne Rate korrigieren</b>
+                {!rPlan && <p style={{ color: F.muted, fontSize: 13 }}>Zahlungsplan wird geladen …</p>}
+                {rPlan && rPlan.length === 0 && (
+                  <p style={{ color: F.muted, fontSize: 13 }}>Noch kein Zahlungsplan vorhanden (entsteht mit der Unterschrift).</p>
+                )}
+                {rPlan && rPlan.length > 0 && (<>
+                  <p style={{ color: F.soft, fontSize: 13, margin: '6px 0 8px' }}>
+                    So stehen die Raten wirklich im System. Ändert nur die eine
+                    Zeile – ohne Mail, ohne Neuberechnung.
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
+                    <label style={etikett}>Monat
+                      <select style={{ ...feld, background: '#fff' }} value={rKMonat}
+                        onChange={(e) => {
+                          setRKMonat(e.target.value);
+                          const z = rPlan.find((x) => x.monat === e.target.value);
+                          setRKBetrag(z ? z.betrag.toFixed(2) : '');
+                        }}>
+                        <option value="">bitte wählen …</option>
+                        {rPlan.map((z) => (
+                          <option key={z.monat} value={z.monat}>
+                            {monatName(z.monat)} – {z.betrag.toFixed(2).replace('.', ',')} €{z.bezahlt ? ' (bezahlt)' : z.offen ? ' (als fehlend markiert)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label style={etikett}>neuer Betrag (€)
+                      <input style={feld} type="number" step="0.01" min="0" value={rKBetrag}
+                        onChange={(e) => setRKBetrag(e.target.value)} />
+                    </label>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button style={knopfKlein} disabled={!rKMonat || !rKBetrag} onClick={() => {
+                      const v = ratenFuer;
+                      void (async () => {
+                        setFehler(''); setHinweis('');
+                        try {
+                          const d = await api('rateKorrigieren', { vertrag_id: v.id, monat: rKMonat, betrag: rKBetrag });
+                          setHinweis(String(d.message || 'Rate korrigiert.'));
+                          const p = await api('zahlplan', { vertrag_id: v.id });
+                          if (Array.isArray(p.zeilen)) setRPlan(p.zeilen as { monat: string; betrag: number; bezahlt: boolean; offen: boolean }[]);
+                        } catch (e) { setFehler(e instanceof Error ? e.message : 'Fehler.'); }
+                      })();
+                    }}>Rate korrigieren</button>
+                  </div>
+                </>)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --------------------------------------------- Vertrag früher beenden */}
+        {frueherFuer && (
+          <div style={overlay} onClick={() => setFrueherFuer(null)}>
+            <div style={{ ...karte, maxWidth: 540, margin: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={h2}>Vertrag früher beenden – {frueherFuer.name}</h2>
+              <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
+                Der Vertrag endet dann an diesem Tag: Termine danach fallen weg,
+                der Jahresbetrag wird neu berechnet. Monatsraten, die schon
+                begonnen haben, bleiben unverändert – nur kommende Monate werden
+                neu verteilt. Es wird <b>keine Mail</b> verschickt. Das Datum
+                lässt sich jederzeit noch einmal ändern.
+              </p>
+              <label style={etikett}>letzter Unterrichtstag
+                <input style={feld} type="date" value={fZum} onChange={(e) => setFZum(e.target.value)} />
+              </label>
+              <p style={{ color: F.muted, fontSize: 13 }}>
+                Tipp: Danach in der Meldung die Terminzahl prüfen – passt sie
+                nicht, einfach ein anderes Datum setzen.
+              </p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button style={knopf} disabled={!fZum}
+                  onClick={() => { const v = frueherFuer; setFrueherFuer(null);
+                    void tun(() => api('frueherBeenden', { vertrag_id: v.id, zum: fZum }),
+                      'Vertragsende gesetzt.'); }}>
+                  Vertragsende setzen
+                </button>
+                <button style={knopfKlein} onClick={() => setFrueherFuer(null)}>abbrechen</button>
               </div>
             </div>
           </div>
