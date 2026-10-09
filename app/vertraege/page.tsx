@@ -785,8 +785,9 @@ export default function VertraegeSeite() {
               <h2 style={h2}>Termin wechseln – {wechselFuer.name}</h2>
               <p style={{ color: F.soft, fontSize: 14, marginTop: 0 }}>
                 Termine vor dem Wechseldatum bleiben auf dem alten Wochentag, ab dem
-                Wechseldatum gilt der neue. Bereits fällige Raten bleiben unverändert;
-                nur die restlichen Monate werden neu verteilt.
+                Wechseldatum gilt der neue. Monatsraten, die schon begonnen haben
+                (auch die des laufenden Monats), bleiben unverändert; nur kommende
+                Monate werden neu verteilt.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10 }}>
                 <label style={etikett}>bisher

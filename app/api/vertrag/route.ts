@@ -971,10 +971,17 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
       // Restraten: bereits fällige Raten bleiben, der Rest wird neu verteilt.
       const { bereitsFaelligCent, restplan } = await restratenAnpassen(nachher, wechseldatum);
 
-      // Eltern informieren – mit neuer Terminliste im Anhang
+      // Eltern informieren – mit neuer Terminliste im Anhang.
+      // Wichtig nach Imans Fall (Okt. 2026): Die Mail erklärt, WARUM sich
+      // der Betrag ändert – sonst wirkt ein neuer Ratenbetrag wie ein
+      // Rechenfehler, obwohl nur die Terminzahl anders ist.
       if (nachher.schueler.email) {
         const dateien = await anhaenge(nachher);
         const neueRate = restplan[0]?.betragCent ?? 0;
+        const diff = nachher.rechnung.alleTermine.length - vorher.rechnung.alleTermine.length;
+        const warumText = diff === 0
+          ? "Die Zahl der Termine bleibt gleich – am Betrag ändert sich dadurch nichts."
+          : `Auf dem neuen Wochentag gibt es bis zum Schuljahresende <b>${Math.abs(diff)} Termin${Math.abs(diff) === 1 ? "" : "e"} ${diff > 0 ? "mehr" : "weniger"}</b> (Ferien- und Feiertagslage). Der Preis pro Stunde bleibt gleich – es ist einfach ${diff > 0 ? "mehr" : "weniger"} Unterricht.`;
         const betragText = nachher.vertrag.zahlweise === "einmal"
           ? `Neuer Gesamtbetrag: <b>${centFormat(nachher.rechnung.einmalCent)}</b> (Einmalzahlung)`
           : restplan.length
@@ -989,8 +996,9 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
            <p><b>Ab ${datumDe(wechseldatum)}:</b> ${WOCHENTAGE[neuerWochentag]}${neuZeile.uhrzeit ? ` ${String(neuZeile.uhrzeit).slice(0, 5)} Uhr` : ""}<br>
               <b>Termine insgesamt:</b> ${nachher.rechnung.alleTermine.length}<br>
               <b>Neuer Jahresbetrag:</b> ${centFormat(nachher.rechnung.jahresbetragCent)}</p>
+           <p>${warumText}</p>
            <p>${betragText}<br>
-              Bereits gezahlte Raten bleiben unverändert.</p>
+              Alle Monatsraten, die schon begonnen haben oder bezahlt sind, bleiben unverändert.</p>
            <p>Die neue Terminliste findest du im Anhang.</p>
            <p>Liebe Grüße<br>Anna</p>`,
           { anhaenge: dateien, kopieAn: ADMIN_EMAIL },
