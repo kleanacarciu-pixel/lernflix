@@ -614,6 +614,108 @@ async function vertragAktion(req: Request, body: Record<string, unknown>, action
         behalten.length ? ` Hinweis: Die Monate ${behalten.join(", ")} hatten schon Vermerke (bezahlt/fehlend) und blieben stehen – bitte auf der Zahlungen-Seite kurz prüfen.` : ""}` });
     }
 
+    // Der echte Zahlungsplan (was wirklich in den Monats-Zeilen steht) –
+    // fürs „Raten anpassen"-Fenster. Der Vertrag zeigt sonst nur den
+    // rechnerischen Durchschnitt, der nach Vertragsänderungen von den
+    // echten Raten abweichen kann (Imans Fall, Okt. 2026).
+    case "zahlplan": {
+      const id = text(body.vertrag_id, 40);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      const rows = await ladeZahlungen(id);
+      return ok({
+        zeilen: rows.map((z) => ({
+          monat: z.monat, betrag: Number(z.soll_betrag),
+          bezahlt: !!z.bezahlt_am, offen: !!z.offen_seit,
+        })),
+      });
+    }
+
+    /**
+     * Eine einzelne Monatsrate von Hand korrigieren.
+     *
+     * Für Fälle, in denen der automatische Plan nicht zur Wirklichkeit
+     * passt – z. B. wenn eine schon überwiesene Rate durch eine
+     * Vertragsänderung einen anderen Soll-Betrag bekommen hat. Ändert NUR
+     * die eine Zeile, verschickt keine Mail und rechnet nichts anderes um.
+     */
+    case "rateKorrigieren": {
+      const id = text(body.vertrag_id, 40);
+      const monat = text(body.monat, 10);
+      const betragCent = euroZuCent(Number(String(body.betrag ?? "").replace(",", ".")));
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!/^\d{4}-\d{2}-01$/.test(monat)) return bad("Bitte einen gültigen Monat wählen.");
+      if (!Number.isFinite(betragCent) || betragCent <= 0 || betragCent > 500000) {
+        return bad("Bitte einen Betrag zwischen 0,01 € und 5.000 € eingeben.");
+      }
+      const rows = await ladeZahlungen(id);
+      if (!rows.some((z) => z.monat === monat)) return bad("Für diesen Monat gibt es keine Rate im Zahlungsplan.", 404);
+      const r = await sb.from("zahlungen")
+        .update({ soll_betrag: (betragCent / 100).toFixed(2) })
+        .eq("vertrag_id", id).eq("monat", monat);
+      if (r.error) return bad(r.error.message, 500);
+      return ok({ message: `${monatName(monat)}-Rate auf ${centFormat(betragCent)} korrigiert. Es wurde KEINE Mail verschickt.` });
+    }
+
+    /**
+     * Vertrag früher beenden (z. B. Familie möchte die durch einen
+     * Terminwechsel entstandenen Zusatztermine nicht).
+     *
+     * Setzt das Vertragsende auf den gewählten Tag: Termine danach fallen
+     * weg, der Jahresbetrag wird neu berechnet, und die noch nicht
+     * angelaufenen Monatsraten verteilen sich neu. Keine Mail – Kleana
+     * sagt der Familie selbst Bescheid. Das Datum lässt sich jederzeit
+     * noch einmal neu setzen (auch wieder später).
+     */
+    case "frueherBeenden": {
+      const id = text(body.vertrag_id, 40);
+      const zum = text(body.zum, 10);
+      if (!id) return bad("Kein Vertrag gewählt.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(zum)) return bad("Bitte ein gültiges Datum wählen.");
+      if (zum < heuteIso()) return bad("Das Datum liegt in der Vergangenheit – bitte einen künftigen Tag wählen.");
+
+      const vorher = await vollbild(id);
+      if (!vorher) return bad("Vertrag nicht gefunden.", 404);
+      if (zum >= vorher.schuljahr.letzter_schultag) {
+        return bad("Das Datum liegt nicht vor dem Schuljahresende – da gibt es nichts zu verkürzen.");
+      }
+
+      // Bisheriges Ende: Zeilen ohne bis_datum laufen bis zum Schuljahresende.
+      // Zeilen, die genau dieses Ende tragen, werden beim erneuten Setzen
+      // mitgenommen – so lässt sich ein vertipptes Datum auch wieder nach
+      // hinten korrigieren.
+      const bisherEnde = vorher.zeiten.some((z) => !z.bis_datum)
+        ? vorher.schuljahr.letzter_schultag
+        : ([...vorher.zeiten].map((z) => z.bis_datum as string).sort().pop() ?? vorher.schuljahr.letzter_schultag);
+      for (const z of vorher.zeiten) {
+        if (z.ab_datum && z.ab_datum > zum) {
+          // Zeile hätte am neuen Ende noch gar nicht begonnen -> löschen
+          // (ein bis_datum vor dem ab_datum lehnt die Datenbank ab).
+          const r = await sb.from("vertrag_zeiten").delete().eq("id", z.id);
+          if (r.error) return bad(r.error.message, 500);
+          continue;
+        }
+        if (!z.bis_datum || z.bis_datum > zum || z.bis_datum === bisherEnde) {
+          const r = await sb.from("vertrag_zeiten").update({ bis_datum: zum }).eq("id", z.id);
+          if (r.error) return bad(r.error.message, 500);
+        }
+      }
+
+      const nachher = await vollbild(id);
+      if (!nachher) return bad("Neuberechnung fehlgeschlagen.", 500);
+      await sb.from("vertraege")
+        .update({ jahresbetrag: (nachher.rechnung.jahresbetragCent / 100).toFixed(2) })
+        .eq("id", id);
+      // Angelaufene Raten bleiben stehen, nur kommende Monate tragen die Änderung.
+      const { restplan } = await restratenAnpassen(nachher, heuteIso());
+      return ok({
+        message: `Vertrag endet jetzt am ${datumDe(zum)}: ${nachher.rechnung.alleTermine.length} Termine, Jahresbetrag ${centFormat(nachher.rechnung.jahresbetragCent)}.${
+          restplan.length ? ` Restliche ${restplan.length} Raten: je ${centFormat(restplan[0]?.betragCent ?? 0)}.` : ""
+        } Es wurde KEINE Mail verschickt – sag der Familie selbst Bescheid. Passt die Terminzahl nicht, einfach ein anderes Datum setzen.`,
+        anzahlTermine: nachher.rechnung.alleTermine.length,
+        jahresbetragCent: nachher.rechnung.jahresbetragCent,
+      });
+    }
+
     /**
      * Rückfall: außerhalb des Portals unterschrieben.
      *
