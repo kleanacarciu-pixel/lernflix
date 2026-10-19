@@ -49,10 +49,12 @@ describe("Datums-Helfer für den Wechsel", () => {
 describe("Ratenmonate am Stichtag teilen", () => {
   const monate = ratenMonate("2026-09-01", LETZTER); // Sep .. Jul = 11
 
-  test("Wechsel am 5. Januar: Januar-Rate ist noch offen", () => {
+  test("Wechsel am 5. Januar: Januar hat begonnen, die Rate bleibt unangetastet", () => {
+    // Imans Fall: Das Zahlfenster läuft 1.–10., viele überweisen sofort.
+    // Ein angelaufener Monat darf deshalb NIE mit neu verteilt werden.
     const { faellig, verbleibend } = teileRatenmonate(monate, "2027-01-05");
-    assert.deepEqual(faellig, ["2026-09-01", "2026-10-01", "2026-11-01", "2026-12-01"]);
-    assert.equal(verbleibend[0], "2027-01-01");
+    assert.deepEqual(faellig, ["2026-09-01", "2026-10-01", "2026-11-01", "2026-12-01", "2027-01-01"]);
+    assert.equal(verbleibend[0], "2027-02-01");
     assert.equal(faellig.length + verbleibend.length, monate.length);
   });
 
@@ -62,9 +64,16 @@ describe("Ratenmonate am Stichtag teilen", () => {
     assert.equal(verbleibend[0], "2027-02-01");
   });
 
-  test("Grenzfall 10. des Monats zählt noch als offen", () => {
-    const { verbleibend } = teileRatenmonate(monate, "2027-01-10");
-    assert.equal(verbleibend[0], "2027-01-01");
+  test("auch am 1. des Monats zählt die Rate schon als angelaufen", () => {
+    const { faellig, verbleibend } = teileRatenmonate(monate, "2027-01-01");
+    assert.ok(faellig.includes("2027-01-01"));
+    assert.equal(verbleibend[0], "2027-02-01");
+  });
+
+  test("Imans Fall: Wechsel am 9.10. lässt die bezahlte Oktober-Rate in Ruhe", () => {
+    const { faellig, verbleibend } = teileRatenmonate(monate, "2026-10-09");
+    assert.deepEqual(faellig, ["2026-09-01", "2026-10-01"]);
+    assert.equal(verbleibend.length, 9); // Nov–Jul werden neu verteilt
   });
 
   test("Wechsel vor Vertragsbeginn: nichts ist fällig", () => {

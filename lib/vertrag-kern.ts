@@ -292,19 +292,21 @@ export function tagDavor(iso: string): string {
 /**
  * Teilt die Ratenmonate am Stichtag in „schon fällig" und „kommt noch".
  *
- * Eine Rate gilt als fällig, wenn ihr Monat vor dem Stichtagsmonat liegt –
- * oder wenn es der Stichtagsmonat selbst ist und der Stichtag nach dem 10.
- * liegt (bis dahin war sie zu zahlen). Nur die noch offenen Monate werden
- * nach einer Vertragsänderung neu berechnet; bereits gezahlte Raten bleiben
- * unangetastet.
+ * Eine Rate gilt als fällig, sobald ihr Monat BEGONNEN hat – das Zahlfenster
+ * läuft vom 1. bis 10., und viele Familien überweisen gleich am Monatsanfang.
+ * Nur Monate, die am Stichtag noch gar nicht angefangen haben, werden nach
+ * einer Vertragsänderung neu berechnet; angelaufene Raten bleiben unangetastet.
+ *
+ * Imans Fall (Okt. 2026): Terminwechsel am 9.10. – die frühere Regel („fällig
+ * erst nach dem 10.") verteilte die bereits BEZAHLTE Oktober-Rate mit neu,
+ * und die Familie bekam eine Mail mit einem Oktober-Betrag, der nicht zu
+ * ihrer Überweisung passte.
  */
 export function teileRatenmonate(monate: string[], stichtag: string): { faellig: string[]; verbleibend: string[] } {
   const stichMonat = monatsErster(stichtag);
-  const stichTagImMonat = Number(stichtag.slice(8, 10));
   const faellig: string[] = [], verbleibend: string[] = [];
   for (const m of monate) {
-    const schon = m < stichMonat || (m === stichMonat && stichTagImMonat > 10);
-    (schon ? faellig : verbleibend).push(m);
+    (m <= stichMonat ? faellig : verbleibend).push(m);
   }
   return { faellig, verbleibend };
 }
