@@ -24,7 +24,7 @@ describe("Kopf und Parteien", () => {
 
   test("Anbieterin mit vollständiger Anschrift", () => {
     assert.equal(ANBIETERIN.zeile,
-      "Kleana Carciu · Lerne mit Anna · Kohlbrennerstraße 16 · 81929 München");
+      "Kleana Carciu · Lerne mit Anna · Stefan-George-Ring 24 · 81929 München");
     assert.match(ANBIETERIN.rolle, /Anbieterin/);
   });
 

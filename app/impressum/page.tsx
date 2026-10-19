@@ -34,7 +34,7 @@ export default function Impressum() {
 
         <Section titel="Angaben gemäß § 5 TMG">
           Kleana Carciu<br />
-          Kohlbrennerstraße 16<br />
+          Stefan-George-Ring 24<br />
           81929 München<br />
           Deutschland
         </Section>
@@ -46,7 +46,7 @@ export default function Impressum() {
 
         <Section titel="Verantwortlich für den Inhalt">
           Kleana Carciu<br />
-          Kohlbrennerstraße 16<br />
+          Stefan-George-Ring 24<br />
           81929 München
         </Section>
 

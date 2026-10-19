@@ -28,7 +28,7 @@ export const AGB_UNTERZEILE = "für Nachhilfeleistungen von „Lerne mit Anna“
 export const AGB_MARKDOWN = String.raw`
 Anbieterin:
 Kleana Carciu – Lerne mit Anna
-Kohlbrennerstraße 16
+Stefan-George-Ring 24
 81929 München
 Telefon: +49 (0)176 24700519
 E-Mail: lernemitanna@outlook.com
@@ -174,7 +174,7 @@ Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertr
 
 Um Ihr Widerrufsrecht auszuüben, müssen Sie uns
 
-Kleana Carciu, Kohlbrennerstraße 16, 81929 München, lernemitanna@outlook.com
+Kleana Carciu, Stefan-George-Ring 24, 81929 München, lernemitanna@outlook.com
 
 mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder eine E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
 
@@ -198,7 +198,7 @@ Soll der Unterricht bereits vor Ablauf der Widerrufsfrist beginnen, ist hierfür
 
 *(Wenn Sie den Vertrag widerrufen wollen, füllen Sie bitte dieses Formular aus und senden Sie es zurück.)*
 
-An Kleana Carciu, Kohlbrennerstraße 16, 81929 München, lernemitanna@outlook.com:
+An Kleana Carciu, Stefan-George-Ring 24, 81929 München, lernemitanna@outlook.com:
 
 Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der folgenden Dienstleistung:
 

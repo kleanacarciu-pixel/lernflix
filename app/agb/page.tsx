@@ -32,7 +32,7 @@ export default function AGB() {
         <h1 style={{ fontSize: '40px', fontWeight: 800, color: F.ink, margin: '0 0 32px', letterSpacing: '-0.03em', lineHeight: 1.05 }}>Allgemeine Geschäftsbedingungen</h1>
 
         <Section titel="1. Geltungsbereich">
-          Diese AGB gelten für alle Käufe auf Lernflix, betrieben von Kleana Carciu, Kohlbrennerstraße 16, 81929 München.
+          Diese AGB gelten für alle Käufe auf Lernflix, betrieben von Kleana Carciu, Stefan-George-Ring 24, 81929 München.
         </Section>
 
         <Section titel="2. Vertragsschluss">

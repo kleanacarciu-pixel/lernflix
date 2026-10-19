@@ -79,7 +79,7 @@ describe("Einzelne Sätze, auf die es ankommt", () => {
     assert.equal(AGB_STAND, "21. August 2026");
     assert.equal(AGB_TITEL, "Allgemeine Geschäftsbedingungen (AGB)");
     assert.match(AGB_UNTERZEILE, /Lerne mit Anna/);
-    assert.ok(text.includes("Kohlbrennerstraße 16"));
+    assert.ok(text.includes("Stefan-George-Ring 24"));
     assert.ok(text.includes("Telefon: +49 (0)176 24700519"));
     assert.ok(text.includes("Kleinunternehmerregelung gemäß § 19 UStG"));
   });
@@ -210,7 +210,7 @@ describe("Die AGB-PDF enthält den ganzen Wortlaut", async () => {
   test("Kopf, Stand und Anschrift stehen darin", () => {
     assert.ok(gedruckt.includes(AGB_TITEL));
     assert.ok(gedruckt.includes("Stand: 21. August 2026"));
-    assert.ok(gedruckt.includes("Kohlbrennerstraße 16"));
+    assert.ok(gedruckt.includes("Stefan-George-Ring 24"));
   });
 
   test("der Stand steht nur einmal – nicht doppelt im Kopf", () => {
