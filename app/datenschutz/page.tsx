@@ -36,7 +36,7 @@ export default function Datenschutz() {
         </p>
 
         <Section titel="1. Verantwortliche">
-          Kleana Carciu (Lerne mit Anna), Kohlbrennerstraße 16, 81929 München, Deutschland.
+          Kleana Carciu (Lerne mit Anna), Stefan-George-Ring 24, 81929 München, Deutschland.
           E-Mail: lernemitanna@outlook.com, Telefon: +49 176 24700519. Bei allen Fragen zum Datenschutz
           kannst du dich jederzeit direkt an diese Adresse wenden.
         </Section>

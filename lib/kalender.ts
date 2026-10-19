@@ -264,7 +264,7 @@ function wrapMail(title: string, body: string): string {
       <p style="margin:20px 0 0"><a href="${APP_URL}" style="display:inline-block;background:#2BB3C0;color:#fff;text-decoration:none;padding:11px 18px;border-radius:9px;font-weight:600">Zum Kalender</a></p>
     </div></div>`;
 }
-const ADDRESS_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0"><b>📍 Adresse (vor Ort):</b><br>Kohlbrennerstraße 16<br>81929 München<br>bei <b>Carciu/Sadikaj</b> bitte klingeln.</div>`;
+const ADDRESS_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0"><b>📍 Adresse (vor Ort):</b><br>Stefan-George-Ring 24<br>81929 München<br>bei <b>Lerne mit Anna</b> bitte klingeln.</div>`;
 const ONLINE_HTML = `<div style="background:#f4f6f7;border-radius:10px;padding:14px;margin:14px 0">💻 Der Termin findet <b>online</b> statt – du erhältst den Zugangslink rechtzeitig in einer separaten E-Mail.</div>`;
 function contactBlock(mode?: string | null): string { return mode === "vor_ort" ? ADDRESS_HTML : mode === "online" ? ONLINE_HTML : ""; }
 

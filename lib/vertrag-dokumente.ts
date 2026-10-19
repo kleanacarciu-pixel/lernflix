@@ -53,7 +53,7 @@ function kopf(d: PDFKit.PDFDocument, titel: string, unterzeile?: string): void {
 function fuss(d: PDFKit.PDFDocument): void {
   const y = d.page.height - RAND + 8;
   d.fontSize(8).fillColor(GRAU).font("Helvetica")
-    .text("Kleana Carciu · Lerne mit Anna · Kohlbrennerstraße 16 · 81929 München · lernemitanna@outlook.com",
+    .text("Kleana Carciu · Lerne mit Anna · Stefan-George-Ring 24 · 81929 München · lernemitanna@outlook.com",
       RAND, y, { width: d.page.width - 2 * RAND, align: "center" });
 }
 

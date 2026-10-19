@@ -12,7 +12,7 @@
 export const TITEL = "Nachhilfevertrag";
 
 export const ANBIETERIN = {
-  zeile: "Kleana Carciu · Lerne mit Anna · Kohlbrennerstraße 16 · 81929 München",
+  zeile: "Kleana Carciu · Lerne mit Anna · Stefan-George-Ring 24 · 81929 München",
   rolle: "nachfolgend „Anbieterin“",
   name: "Kleana Carciu",
   ort: "München",
