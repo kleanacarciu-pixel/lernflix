@@ -186,7 +186,8 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .modal{background:#fff;border-radius:16px;max-width:430px;width:100%;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);max-height:88dvh;overflow-y:auto;overscroll-behavior:contain}
 .modal h2{font-size:1.25rem;margin-bottom:8px}.modal p{color:var(--muted);margin:0 0 8px}
 .modal label{display:block;font-weight:600;font-size:.85rem;margin:12px 0 4px;color:var(--ink)}
-.modal input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
+.modal input,.modal textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
+.modal textarea{resize:vertical}
 .pwrow{display:flex;gap:8px;align-items:center}.pwrow input{flex:1}
 .eye{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:1rem}
 .warn{background:#ffeaea;border:1px solid #f5b5b5;color:#a12a2a;padding:12px 14px;border-radius:10px;font-weight:500}
@@ -1125,6 +1126,13 @@ export default function KalenderPage() {
             <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
             <button className="minibtn" title="Welche Mails hat das System an die Familien geschickt?" onClick={() => void mailProtokollZeigen()}>📧 Gesendete Mails</button>
+            <button className="minibtn" title="Eine Nachricht an alle Familien schicken – das System kennt die Adressen" onClick={() => setModal(
+              <RundmailForm onClose={() => setModal(null)} onSubmit={async (betreff, text) => {
+                const d = await api("rundmail", { betreff, text });
+                if (d.ok) { setModal(null); info("Rundmail", "", String(d.message || "Gesendet.")); return ""; }
+                return String(d.error || "Fehler.");
+              }} />
+            )}>📨 Rundmail an alle</button>
             <button className="minibtn" title="Alle Probestunden: kommende und vergangene, mit Status" onClick={() => void probenZeigen()}>🎓 Probestunden</button>
           </div>
         )}
@@ -1521,6 +1529,36 @@ function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
+// Rundmail an alle Familien: Betreff + Text eingeben, das System schickt sie
+// an jede hinterlegte Eltern-Adresse (jede Adresse nur einmal – Geschwister
+// teilen sich oft eine) im gewohnten Mail-Design mit „Lerne mit Anna"-Kopf.
+function RundmailForm({ onSubmit, onClose }: {
+  onSubmit: (betreff: string, text: string) => Promise<string>; onClose: () => void;
+}) {
+  const [betreff, setBetreff] = useState("");
+  const [text, setText] = useState("");
+  const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  async function go() {
+    if (betreff.trim().length < 3) { setErr("Bitte einen Betreff eingeben."); return; }
+    if (text.trim().length < 20) { setErr("Bitte den Text der Mail eingeben (ein paar Sätze)."); return; }
+    if (!window.confirm(`Die Mail „${betreff.trim()}“ jetzt an ALLE Familien schicken?`)) return;
+    setLoad(true); setErr(await onSubmit(betreff.trim(), text.trim())); setLoad(false);
+  }
+  return <div className="modal"><h2>📨 Rundmail an alle Familien</h2>
+    <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
+      Geht an jede hinterlegte Eltern-Adresse (jede nur einmal), im gewohnten
+      Mail-Design mit „Lerne mit Anna“-Kopf. Leerzeile im Text = neuer Absatz.
+    </p>
+    <label>Betreff</label>
+    <input value={betreff} onChange={(e) => setBetreff(e.target.value)} placeholder="z. B. Kurze Info – keine Nachhilfe vom 9. bis 12. November" />
+    <label>Text</label>
+    <textarea rows={10} value={text} onChange={(e) => setText(e.target.value)}
+      placeholder={"Liebe Eltern, liebe Schülerinnen und Schüler,\n\n…\n\nLiebe Grüße\neure Kleana"} />
+    {err ? <div className="err">{err}</div> : null}
+    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button>
+      <button className="btn p" onClick={go} disabled={load}>{load ? "wird gesendet …" : "An alle senden"}</button></div></div>;
+}
+
 function ProbeForm({ when, startHour, schlussMin, onSubmit, onClose, titel, hinweisText, knopf, emailOptional }: { when: string; startHour: number; schlussMin: number; onSubmit: (name: string, email: string, mode: string, vonMin: number, dauerMin: number) => Promise<string>; onClose: () => void; titel?: string; hinweisText?: string; knopf?: string; emailOptional?: boolean }) {
   const startMin = Math.round(startHour * 60);
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [mode, setMode] = useState("");

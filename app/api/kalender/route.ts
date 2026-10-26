@@ -7,7 +7,7 @@ import {
   service, signInFlexibel, refresh, userFromToken, getProfile, profilEntfernt, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   tagIntervalle, type ApptRow,
-  sendMail, mailZustellenOderMelden, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
+  sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
@@ -933,6 +933,50 @@ export async function POST(req: Request): Promise<Response> {
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
+    // Eine Nachricht an ALLE Familien auf einmal – im gewohnten Mail-Design
+    // der App. Kleana kennt die Adressen nicht auswendig; das System schon.
+    // Geschwister teilen sich oft eine Eltern-Adresse, darum wird jede
+    // Adresse nur EINMAL angeschrieben.
+    if (action === "rundmail") {
+      const betreff = String(body.betreff || "").trim().slice(0, 150);
+      const textRoh = String(body.text || "").trim().slice(0, 6000);
+      if (betreff.length < 3) return bad("Bitte einen Betreff eingeben.");
+      if (textRoh.length < 20) return bad("Bitte den Text der Mail eingeben (ein paar Sätze).");
+
+      let zeilen: { name: string; email: string | null }[] = [];
+      {
+        let r = await service().from("profiles").select("name,email").eq("role", "student").is("deleted_at", null);
+        // Ohne Sicherheit-V1-Migration gibt es kein deleted_at – dann ohne Filter.
+        if (r.error) r = await service().from("profiles").select("name,email").eq("role", "student");
+        if (r.error) return bad(r.error.message, 500);
+        zeilen = (r.data || []) as { name: string; email: string | null }[];
+      }
+      const ohneMail: string[] = [];
+      const adressen = new Set<string>();
+      for (const z of zeilen) {
+        const em = (z.email || "").trim().toLowerCase();
+        if (!em) { ohneMail.push(z.name); continue; }
+        adressen.add(em);
+      }
+      if (!adressen.size) return bad("Keine Familie hat eine E-Mail-Adresse hinterlegt.");
+
+      const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const html = esc(textRoh).split(/\n{2,}/)
+        .map((abs) => `<p style="margin:0 0 12px">${abs.replace(/\n/g, "<br>")}</p>`).join("");
+      const mailHtml = wrapMail(betreff, html);
+
+      const fehlgeschlagen: string[] = [];
+      for (const em of adressen) {
+        const r = await sendMail(em, betreff, mailHtml);
+        if (!r.ok) fehlgeschlagen.push(em);
+      }
+      return ok({
+        message: `Rundmail an ${adressen.size - fehlgeschlagen.length} Familie(n) gesendet.`
+          + (fehlgeschlagen.length ? ` ⚠️ Nicht angekommen bei: ${fehlgeschlagen.join(", ")} – bitte dort selbst Bescheid geben.` : "")
+          + (ohneMail.length ? ` Ohne hinterlegte E-Mail (bitte selbst informieren): ${ohneMail.join(", ")}.` : ""),
+      });
+    }
+
     if (action === "adminCancel") {
       if (!validSlot) return bad("Ungültiger Slot.");
       // „Ohne Mail": für versehentlich eingetragene Termine – der Termin wird
