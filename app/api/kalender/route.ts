@@ -1283,6 +1283,38 @@ export async function POST(req: Request): Promise<Response> {
         ? `Eingetragen: „${titel}“ ${fmtZeit(hour)}–${ende}. Nur du siehst den Titel – alle anderen sehen „belegt“. ${vlText}`
         : `Geblockt: ${fmtZeit(hour)}–${ende} (nur dieses Datum).` });
     }
+    // Mehrere ganze Tage auf einmal blockieren (z. B. Abwesenheits-Woche):
+    // Jeder Tag bekommt EINEN Block über die kompletten Öffnungszeiten –
+    // niemand kann dann Nachhol-, Zusatz- oder Probestunden buchen. Tage,
+    // an denen noch etwas im Kalender steht (Termin oder eigener Block),
+    // werden übersprungen und gemeldet. Freigeben geht wie bei jedem
+    // Block: im Kalender antippen → freigeben.
+    if (action === "tageBlockieren") {
+      const von = String(body.von || "").trim();
+      const bis = String(body.bis || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(von) || !/^\d{4}-\d{2}-\d{2}$/.test(bis)) return bad("Bitte Von- und Bis-Datum wählen.");
+      if (bis < von) return bad("Das Bis-Datum liegt vor dem Von-Datum.");
+      const tage: string[] = [];
+      for (let d = von; d <= bis; d = addDaysStr(d, 1)) {
+        tage.push(d);
+        if (tage.length > 31) return bad("Bitte höchstens 31 Tage am Stück blockieren.");
+      }
+      const geblockt: string[] = [], uebersprungen: string[] = [];
+      for (const d of tage) {
+        const tagSchluss = weekdayOf(d) < 5 ? 20 : 19;
+        const dauer = (tagSchluss - 8) * 60;
+        if (await slotKonflikt(d, 8, dauer)) { uebersprungen.push(d); continue; }
+        const { error } = await service().from("appointments").insert({
+          student_id: null, slot_date: d, hour: 8, kind: "block", status: "bestaetigt", dauer_min: dauer,
+        });
+        if (error) return bad("Blockieren fehlgeschlagen: " + error.message);
+        geblockt.push(d);
+      }
+      const de = (x: string) => `${x.slice(8, 10)}.${x.slice(5, 7)}.`;
+      return ok({ message: `${geblockt.length} Tag(e) komplett geblockt${geblockt.length ? `: ${geblockt.map(de).join(", ")}` : ""}.`
+        + (uebersprungen.length ? ` ⚠️ Übersprungen, weil dort noch etwas im Kalender steht (Termin oder Block): ${uebersprungen.map(de).join(", ")} – erst absagen/freigeben, dann noch einmal blockieren.` : "") });
+    }
+
     if (action === "unblock") {
       if (!validSlot) return bad("Ungültiger Slot.");
       // Nicht per exakter Uhrzeit löschen: erst die Block-Zeilen des Tages
