@@ -1130,8 +1130,16 @@ export default function KalenderPage() {
             <a className="minibtn" style={{ textDecoration: "none" }} href="/zahlungen">💶 Zahlungen</a>
             <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
             <button className="minibtn" title="Welche Mails hat das System an die Familien geschickt?" onClick={() => void mailProtokollZeigen()}>📧 Gesendete Mails</button>
-            <button className="minibtn" title="Eine Nachricht an alle Familien schicken – das System kennt die Adressen" onClick={() => setModal(
-              <RundmailForm onClose={() => setModal(null)} aktuellerHinweis={hinweis}
+            <button className="minibtn" title="Eine Nachricht an alle Familien schicken – das System kennt die Adressen" onClick={() => { void (async () => {
+              // Erst nachsehen, ob vom letzten Versand Nachzügler offen sind –
+              // dann bietet das Fenster das automatische Nachsenden an.
+              let nz: { betreff: string; text: string; adressen: string[] } | null = null;
+              try {
+                const st = await api("rundmailStatus");
+                if (st.ok && st.nachzuegler) nz = st.nachzuegler as { betreff: string; text: string; adressen: string[] };
+              } catch { /* ohne Status geht das Fenster trotzdem auf */ }
+              setModal(
+              <RundmailForm onClose={() => setModal(null)} aktuellerHinweis={hinweis} nachzuegler={nz}
                 onHinweisLoeschen={() => {
                   void (async () => {
                     const d = await api("kalenderHinweis", { loeschen: true });
@@ -1161,7 +1169,8 @@ export default function KalenderPage() {
                   info("Rundmail", "", String(d.message || "Gesendet.") + hinweisMeldung);
                   return "";
                 }} />
-            )}>📨 Rundmail an alle</button>
+              );
+            })(); }}>📨 Rundmail an alle</button>
             <button className="minibtn" title="Alle Probestunden: kommende und vergangene, mit Status" onClick={() => void probenZeigen()}>🎓 Probestunden</button>
           </div>
         )}
@@ -1561,10 +1570,11 @@ function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
 // Rundmail an alle Familien: Betreff + Text eingeben, das System schickt sie
 // an jede hinterlegte Eltern-Adresse (jede Adresse nur einmal – Geschwister
 // teilen sich oft eine) im gewohnten Mail-Design mit „Lerne mit Anna"-Kopf.
-function RundmailForm({ onSubmit, onClose, aktuellerHinweis, onHinweisLoeschen, onNurHinweis }: {
+function RundmailForm({ onSubmit, onClose, aktuellerHinweis, onHinweisLoeschen, onNurHinweis, nachzuegler }: {
   onSubmit: (betreff: string, text: string, hinweis: { text: string; bis: string } | null, nurAn: string) => Promise<string>;
   onClose: () => void; aktuellerHinweis: string | null; onHinweisLoeschen: () => void;
   onNurHinweis: (hinweis: { text: string; bis: string }) => Promise<string>;
+  nachzuegler: { betreff: string; text: string; adressen: string[] } | null;
 }) {
   const [betreff, setBetreff] = useState("");
   const [text, setText] = useState("");
@@ -1599,6 +1609,21 @@ function RundmailForm({ onSubmit, onClose, aktuellerHinweis, onHinweisLoeschen, 
       Mail-Design mit „Lerne mit Anna“-Kopf. Leerzeile im Text = neuer Absatz.
       Der Versand ist gedrosselt und kann bis zu einer halben Minute dauern.
     </p>
+    {/* Vom letzten Versand blieben Mails liegen? Ein Tipp schickt sie nach –
+        nur an die Fehlenden, niemand bekommt etwas doppelt. */}
+    {nachzuegler && (
+      <div className="warn" style={{ fontSize: 14 }}>
+        ⚠️ Beim letzten Versand („{nachzuegler.betreff}“) kamen <b>{nachzuegler.adressen.length} Mail(s) nicht an</b>.{" "}
+        <button type="button" className="btn p sm" disabled={load} onClick={() => {
+          if (!window.confirm(`Die Mail „${nachzuegler.betreff}“ jetzt automatisch an die ${nachzuegler.adressen.length} fehlende(n) Adresse(n) nachsenden?`)) return;
+          void (async () => {
+            setLoad(true);
+            setErr(await onSubmit(nachzuegler.betreff, nachzuegler.text, null, nachzuegler.adressen.join(", ")));
+            setLoad(false);
+          })();
+        }}>{load ? "wird gesendet …" : "Jetzt automatisch nachsenden"}</button>
+      </div>
+    )}
     <label>Betreff</label>
     <input value={betreff} onChange={(e) => setBetreff(e.target.value)} placeholder="z. B. Kurze Info – keine Nachhilfe vom 9. bis 12. November" />
     <label>Text</label>
@@ -1617,7 +1642,9 @@ function RundmailForm({ onSubmit, onClose, aktuellerHinweis, onHinweisLoeschen, 
       <input value={hinweisText} onChange={(e) => setHinweisText(e.target.value)} maxLength={200}
         placeholder="z. B. Vom 9.–12. November keine Nachhilfe – alle Stunden werden gutgeschrieben." />
       <label>anzeigen bis (letzter Tag)</label>
-      <input type="date" value={hinweisBis} onChange={(e) => setHinweisBis(e.target.value)} />
+      {/* min = heute: ein vergangenes Datum (13.10. statt 12.11.) machte den
+          Hinweis beim ersten Versand unsichtbar – das geht jetzt nicht mehr. */}
+      <input type="date" min={iso(new Date())} value={hinweisBis} onChange={(e) => setHinweisBis(e.target.value)} />
       <p style={{ margin: "8px 0 0" }}>
         <button type="button" className="btn g sm" disabled={load} onClick={() => void nurHinweisSpeichern()}>
           Nur Hinweis speichern (ohne Mail)

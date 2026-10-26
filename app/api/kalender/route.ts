@@ -1008,12 +1008,30 @@ export async function POST(req: Request): Promise<Response> {
         }
         if (!r.ok) fehlgeschlagen.push(em);
       }
+      // Nachzügler merken: Beim nächsten Öffnen des Rundmail-Fensters bietet
+      // die App von selbst an, die fehlenden nachzusenden (ein Tipp, kein
+      // Adressen-Abtippen). Kommt alles an, wird der Merker geleert.
+      await speichereEinstellung("rundmail_nachzuegler", fehlgeschlagen.length
+        ? JSON.stringify({ betreff, text: textRoh, adressen: fehlgeschlagen, wann: new Date().toISOString() })
+        : null);
       return ok({
         message: `Rundmail an ${adressen.size - fehlgeschlagen.length} Familie(n) gesendet.`
-          + (fehlgeschlagen.length ? ` ⚠️ Nicht angekommen bei: ${fehlgeschlagen.join(", ")} – bitte noch einmal nur an diese Adressen senden oder selbst Bescheid geben.` : "")
+          + (fehlgeschlagen.length ? ` ⚠️ ${fehlgeschlagen.length} Mail(s) kamen nicht an – beim nächsten Öffnen des Rundmail-Fensters kannst du sie mit einem Tipp automatisch nachsenden.` : "")
           + (unbekannt.length ? ` ⚠️ Keine Familien-Adresse (übersprungen): ${unbekannt.join(", ")}.` : "")
           + (nurAn.length === 0 && ohneMail.length ? ` Ohne hinterlegte E-Mail (bitte selbst informieren): ${ohneMail.join(", ")}.` : ""),
       });
+    }
+
+    // Gibt es vom letzten Rundmail-Versand noch Nachzügler? (Fürs
+    // automatische Nachsenden im Rundmail-Fenster.)
+    if (action === "rundmailStatus") {
+      try {
+        const roh = await ladeEinstellung("rundmail_nachzuegler");
+        if (!roh) return ok({ nachzuegler: null });
+        const nz = JSON.parse(roh) as { betreff?: string; text?: string; adressen?: string[] };
+        if (!nz.betreff || !nz.text || !Array.isArray(nz.adressen) || !nz.adressen.length) return ok({ nachzuegler: null });
+        return ok({ nachzuegler: { betreff: nz.betreff, text: nz.text, adressen: nz.adressen } });
+      } catch { return ok({ nachzuegler: null }); }
     }
 
     // Hinweis-Banner oben im Kalender – sehen alle Familien beim Öffnen
