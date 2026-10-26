@@ -22,6 +22,9 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Die Rundmail an viele Familien wird gedrosselt verschickt (der
+// Mail-Dienst erlaubt nur ~2 Mails pro Sekunde) – das braucht Zeit.
+export const maxDuration = 60;
 
 function bad(msg: string, code = 400) { return NextResponse.json({ ok: false, error: msg }, { status: code }); }
 function ok(data: Record<string, unknown> = {}) { return NextResponse.json({ ok: true, ...data }); }
@@ -962,7 +965,7 @@ export async function POST(req: Request): Promise<Response> {
         zeilen = (r.data || []) as { name: string; email: string | null }[];
       }
       const ohneMail: string[] = [];
-      const adressen = new Set<string>();
+      let adressen = new Set<string>();
       for (const z of zeilen) {
         const em = (z.email || "").trim().toLowerCase();
         if (!em) { ohneMail.push(z.name); continue; }
@@ -970,21 +973,65 @@ export async function POST(req: Request): Promise<Response> {
       }
       if (!adressen.size) return bad("Keine Familie hat eine E-Mail-Adresse hinterlegt.");
 
+      // Nachzügler-Versand: nur an die angegebenen Adressen (z. B. wenn beim
+      // ersten Lauf einzelne nicht ankamen). Nur bekannte Familien-Adressen
+      // sind erlaubt – Tippfehler landen im Hinweis statt im Nirgendwo.
+      const nurAn = String(body.nurAn || "").toLowerCase().split(/[\s,;]+/)
+        .map((s) => s.trim()).filter((s) => s.includes("@"));
+      let unbekannt: string[] = [];
+      if (nurAn.length) {
+        const bekannte = adressen;
+        unbekannt = nurAn.filter((a) => !bekannte.has(a));
+        adressen = new Set(nurAn.filter((a) => bekannte.has(a)));
+        if (!adressen.size) return bad("Keine der angegebenen Adressen gehört zu einer Familie – bitte Schreibweise prüfen.");
+      }
+
       const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       const html = esc(textRoh).split(/\n{2,}/)
         .map((abs) => `<p style="margin:0 0 12px">${abs.replace(/\n/g, "<br>")}</p>`).join("");
       const mailHtml = wrapMail(betreff, html);
 
+      // Der Mail-Dienst (Resend) erlaubt nur ~2 Mails pro Sekunde. Beim
+      // ersten Lissabon-Versand (Okt. 2026) gingen deshalb 8 von 18 Mails
+      // verloren. Darum: gedrosselt senden und bei einem Fehler nach kurzer
+      // Pause bis zu zweimal erneut versuchen.
+      const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
       const fehlgeschlagen: string[] = [];
+      let erste = true;
       for (const em of adressen) {
-        const r = await sendMail(em, betreff, mailHtml);
+        if (!erste) await pause(600);
+        erste = false;
+        let r = await sendMail(em, betreff, mailHtml);
+        for (let versuch = 1; !r.ok && versuch <= 2; versuch++) {
+          await pause(1200 * versuch);
+          r = await sendMail(em, betreff, mailHtml);
+        }
         if (!r.ok) fehlgeschlagen.push(em);
       }
+      // Nachzügler merken: Beim nächsten Öffnen des Rundmail-Fensters bietet
+      // die App von selbst an, die fehlenden nachzusenden (ein Tipp, kein
+      // Adressen-Abtippen). Kommt alles an, wird der Merker geleert.
+      await speichereEinstellung("rundmail_nachzuegler", fehlgeschlagen.length
+        ? JSON.stringify({ betreff, text: textRoh, adressen: fehlgeschlagen, wann: new Date().toISOString() })
+        : null);
       return ok({
         message: `Rundmail an ${adressen.size - fehlgeschlagen.length} Familie(n) gesendet.`
-          + (fehlgeschlagen.length ? ` ⚠️ Nicht angekommen bei: ${fehlgeschlagen.join(", ")} – bitte dort selbst Bescheid geben.` : "")
-          + (ohneMail.length ? ` Ohne hinterlegte E-Mail (bitte selbst informieren): ${ohneMail.join(", ")}.` : ""),
+          + (fehlgeschlagen.length ? ` ⚠️ ${fehlgeschlagen.length} Mail(s) kamen nicht an – beim nächsten Öffnen des Rundmail-Fensters kannst du sie mit einem Tipp automatisch nachsenden.` : "")
+          + (unbekannt.length ? ` ⚠️ Keine Familien-Adresse (übersprungen): ${unbekannt.join(", ")}.` : "")
+          + (nurAn.length === 0 && ohneMail.length ? ` Ohne hinterlegte E-Mail (bitte selbst informieren): ${ohneMail.join(", ")}.` : ""),
       });
+    }
+
+    // Gibt es vom letzten Rundmail-Versand noch Nachzügler? (Fürs
+    // automatische Nachsenden im Rundmail-Fenster.)
+    if (action === "rundmailStatus") {
+      try {
+        const roh = await ladeEinstellung("rundmail_nachzuegler");
+        if (!roh) return ok({ nachzuegler: null });
+        const nz = JSON.parse(roh) as { betreff?: string; text?: string; adressen?: string[] };
+        if (!nz.betreff || !nz.text || !Array.isArray(nz.adressen) || !nz.adressen.length) return ok({ nachzuegler: null });
+        return ok({ nachzuegler: { betreff: nz.betreff, text: nz.text, adressen: nz.adressen } });
+      } catch { return ok({ nachzuegler: null }); }
     }
 
     // Hinweis-Banner oben im Kalender – sehen alle Familien beim Öffnen
@@ -999,6 +1046,12 @@ export async function POST(req: Request): Promise<Response> {
       const bis = String(body.bis || "").trim();
       if (textH.length < 3) return bad("Bitte einen kurzen Hinweis-Text eingeben.");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(bis)) return bad("Bitte angeben, bis zu welchem Tag der Hinweis gezeigt werden soll.");
+      // Ein „bis" in der Vergangenheit machte den Hinweis sofort unsichtbar –
+      // genau das ist beim Lissabon-Versand passiert (13.10. statt 12.11.).
+      const heuteBerlin = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+      if (bis < heuteBerlin) {
+        return bad(`Das Datum ${bis.slice(8, 10)}.${bis.slice(5, 7)}.${bis.slice(0, 4)} liegt in der Vergangenheit – der Hinweis wäre sofort unsichtbar. Bitte den letzten Tag wählen, an dem er noch zu sehen sein soll.`);
+      }
       if (!(await speichereEinstellung("kalender_hinweis", JSON.stringify({ text: textH, bis })))) {
         return bad("Der Hinweis ließ sich nicht speichern.", 500);
       }
