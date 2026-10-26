@@ -255,7 +255,7 @@ export async function mailZustellenOderMelden(
   return r;
 }
 
-function wrapMail(title: string, body: string): string {
+export function wrapMail(title: string, body: string): string {
   return `<div style="font-family:Inter,Arial,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
     <div style="background:linear-gradient(135deg,#2BB3C0,#3E7BB6);color:#fff;padding:22px 24px;border-radius:14px 14px 0 0">
       <div style="font-size:18px;font-weight:700">Lerne mit Anna</div></div>

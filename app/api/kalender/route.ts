@@ -7,7 +7,7 @@ import {
   service, signInFlexibel, refresh, userFromToken, getProfile, profilEntfernt, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   tagIntervalle, type ApptRow,
-  sendMail, mailZustellenOderMelden, mailTemplates, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
+  sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
@@ -234,7 +234,7 @@ export async function POST(req: Request): Promise<Response> {
       // TEMPO: alles parallel laden; die Stunden-Synchronisation läuft NACH
       // der Antwort (after) und gedrosselt – sie darf das Laden nie bremsen
       const istSchueler = role === "student" && !!prof;
-      const [days, nextLesson, dates, myfixRes, meinTeams, rate] = await Promise.all([
+      const [days, nextLesson, dates, myfixRes, meinTeams, rate, hinweisRoh] = await Promise.all([
         buildWeek(monday, role, viewerId),
         viewerId ? nextLessonFor(viewerId) : Promise.resolve(null),
         istSchueler ? balanceDates(prof!.user_id) : Promise.resolve(null),
@@ -245,6 +245,8 @@ export async function POST(req: Request): Promise<Response> {
         istSchueler ? teamsLinkFuer(prof!.user_id) : Promise.resolve(null),
         // Monatsraten-Hinweis (fällig/erledigt/offen) für die Familie
         istSchueler ? monatsRateFuer(prof!.user_id, prof!.name) : Promise.resolve(null),
+        // Kalender-Hinweis (z. B. Abwesenheits-Woche) – für alle sichtbar
+        ladeEinstellung("kalender_hinweis"),
       ]);
       if (viewerId) after(() => syncLessons());
       const out: Record<string, unknown> = { days, viewer: { role, name: prof?.name || null } };
@@ -254,6 +256,14 @@ export async function POST(req: Request): Promise<Response> {
       out.version = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
       if (nextLesson) out.nextLesson = nextLesson;
       if (meinTeams) out.teamsLink = meinTeams;
+      // Der Hinweis verschwindet nach seinem „bis"-Tag von selbst (Berliner Datum).
+      try {
+        if (hinweisRoh) {
+          const h = JSON.parse(hinweisRoh) as { text?: string; bis?: string };
+          const heuteBerlin = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+          if (h.text && h.bis && heuteBerlin <= h.bis) out.hinweis = h.text;
+        }
+      } catch { /* kaputter Eintrag -> kein Hinweis */ }
       if (istSchueler && dates) {
         const fix = ((myfixRes.data || []) as { weekday: number; hour: number; mode: string | null; dauer_min: number }[])
           .map((f) => ({ weekday: f.weekday, hour: Number(f.hour), mode: f.mode, dauer: Number(f.dauer_min) || 60 }));
@@ -933,6 +943,68 @@ export async function POST(req: Request): Promise<Response> {
       }
       return bad("Keine Anfrage in diesem Slot.");
     }
+    // Eine Nachricht an ALLE Familien auf einmal – im gewohnten Mail-Design
+    // der App. Kleana kennt die Adressen nicht auswendig; das System schon.
+    // Geschwister teilen sich oft eine Eltern-Adresse, darum wird jede
+    // Adresse nur EINMAL angeschrieben.
+    if (action === "rundmail") {
+      const betreff = String(body.betreff || "").trim().slice(0, 150);
+      const textRoh = String(body.text || "").trim().slice(0, 6000);
+      if (betreff.length < 3) return bad("Bitte einen Betreff eingeben.");
+      if (textRoh.length < 20) return bad("Bitte den Text der Mail eingeben (ein paar Sätze).");
+
+      let zeilen: { name: string; email: string | null }[] = [];
+      {
+        let r = await service().from("profiles").select("name,email").eq("role", "student").is("deleted_at", null);
+        // Ohne Sicherheit-V1-Migration gibt es kein deleted_at – dann ohne Filter.
+        if (r.error) r = await service().from("profiles").select("name,email").eq("role", "student");
+        if (r.error) return bad(r.error.message, 500);
+        zeilen = (r.data || []) as { name: string; email: string | null }[];
+      }
+      const ohneMail: string[] = [];
+      const adressen = new Set<string>();
+      for (const z of zeilen) {
+        const em = (z.email || "").trim().toLowerCase();
+        if (!em) { ohneMail.push(z.name); continue; }
+        adressen.add(em);
+      }
+      if (!adressen.size) return bad("Keine Familie hat eine E-Mail-Adresse hinterlegt.");
+
+      const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const html = esc(textRoh).split(/\n{2,}/)
+        .map((abs) => `<p style="margin:0 0 12px">${abs.replace(/\n/g, "<br>")}</p>`).join("");
+      const mailHtml = wrapMail(betreff, html);
+
+      const fehlgeschlagen: string[] = [];
+      for (const em of adressen) {
+        const r = await sendMail(em, betreff, mailHtml);
+        if (!r.ok) fehlgeschlagen.push(em);
+      }
+      return ok({
+        message: `Rundmail an ${adressen.size - fehlgeschlagen.length} Familie(n) gesendet.`
+          + (fehlgeschlagen.length ? ` ⚠️ Nicht angekommen bei: ${fehlgeschlagen.join(", ")} – bitte dort selbst Bescheid geben.` : "")
+          + (ohneMail.length ? ` Ohne hinterlegte E-Mail (bitte selbst informieren): ${ohneMail.join(", ")}.` : ""),
+      });
+    }
+
+    // Hinweis-Banner oben im Kalender – sehen alle Familien beim Öffnen
+    // (z. B. „Keine Nachhilfe vom 9.–12. November"). Verschwindet nach dem
+    // „bis"-Tag von selbst; vorher kann Kleana ihn hier auch entfernen.
+    if (action === "kalenderHinweis") {
+      if (body.loeschen === true) {
+        await speichereEinstellung("kalender_hinweis", null);
+        return ok({ message: "Kalender-Hinweis entfernt." });
+      }
+      const textH = String(body.text || "").trim().slice(0, 200);
+      const bis = String(body.bis || "").trim();
+      if (textH.length < 3) return bad("Bitte einen kurzen Hinweis-Text eingeben.");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(bis)) return bad("Bitte angeben, bis zu welchem Tag der Hinweis gezeigt werden soll.");
+      if (!(await speichereEinstellung("kalender_hinweis", JSON.stringify({ text: textH, bis })))) {
+        return bad("Der Hinweis ließ sich nicht speichern.", 500);
+      }
+      return ok({ message: `Hinweis steht jetzt oben im Kalender – bis ${bis.slice(8, 10)}.${bis.slice(5, 7)}.${bis.slice(0, 4)}.` });
+    }
+
     if (action === "adminCancel") {
       if (!validSlot) return bad("Ungültiger Slot.");
       // „Ohne Mail": für versehentlich eingetragene Termine – der Termin wird
