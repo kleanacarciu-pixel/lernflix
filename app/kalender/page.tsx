@@ -331,6 +331,7 @@ export default function KalenderPage() {
   const [overview, setOverview] = useState<OverviewRow[] | null>(null);
   const [teamsDefault, setTeamsDefault] = useState<string | null>(null);
   const [meinTeams, setMeinTeams] = useState<string | null>(null); // Schüler: eigener Teams-Knopf
+  const [hinweis, setHinweis] = useState<string | null>(null); // Kalender-Hinweis von Kleana (für alle)
   const [inbox, setInbox] = useState<Inbox | null>(null);
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
@@ -438,7 +439,7 @@ export default function KalenderPage() {
       if (versionRef.current && versionRef.current !== d.version) { window.location.reload(); return; }
       versionRef.current = d.version;
     }
-    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); }
+    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); setHinweis((d.hinweis as string) || null); }
     if (isAdmin && o && o.ok) { setOverview((o.students as OverviewRow[]) || []); setTeamsDefault((o.teamsDefault as string) || null); }
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
     if (mitExtras && o && o.ok && ib && ib.ok) extrasDirty.current = false;
@@ -1062,6 +1063,9 @@ export default function KalenderPage() {
           </div>
         </div>
 
+        {/* Kalender-Hinweis von Kleana (z. B. Abwesenheits-Woche) – für alle */}
+        {hinweis && <div className="warn">📢 {hinweis}</div>}
+
         {!session && <div className="hint"><b>Neu hier?</b> Klick auf einen freien Slot, um eine <b>Probestunde</b> anzufragen (ohne Anmeldung).</div>}
 
         {session && nextLesson && nextLesson.id !== stundeWeg && (
@@ -1127,11 +1131,28 @@ export default function KalenderPage() {
             <a className="minibtn" style={{ textDecoration: "none" }} href="/schuljahr">🏫 Schuljahr &amp; Ferien</a>
             <button className="minibtn" title="Welche Mails hat das System an die Familien geschickt?" onClick={() => void mailProtokollZeigen()}>📧 Gesendete Mails</button>
             <button className="minibtn" title="Eine Nachricht an alle Familien schicken – das System kennt die Adressen" onClick={() => setModal(
-              <RundmailForm onClose={() => setModal(null)} onSubmit={async (betreff, text) => {
-                const d = await api("rundmail", { betreff, text });
-                if (d.ok) { setModal(null); info("Rundmail", "", String(d.message || "Gesendet.")); return ""; }
-                return String(d.error || "Fehler.");
-              }} />
+              <RundmailForm onClose={() => setModal(null)} aktuellerHinweis={hinweis}
+                onHinweisLoeschen={() => {
+                  void (async () => {
+                    const d = await api("kalenderHinweis", { loeschen: true });
+                    setModal(null);
+                    if (d.ok) { setHinweis(null); showToast("Kalender-Hinweis entfernt."); }
+                    else info("Hinweis", "", String(d.error || "Fehler."));
+                  })();
+                }}
+                onSubmit={async (betreff, text, hinweisNeu) => {
+                  const d = await api("rundmail", { betreff, text });
+                  if (!d.ok) return String(d.error || "Fehler.");
+                  let hinweisMeldung = "";
+                  if (hinweisNeu) {
+                    const h = await api("kalenderHinweis", hinweisNeu);
+                    hinweisMeldung = h.ok ? ` ${String(h.message || "")}` : ` ⚠️ Der Kalender-Hinweis ließ sich nicht speichern: ${String(h.error || "")}`;
+                    if (h.ok) setHinweis(hinweisNeu.text);
+                  }
+                  setModal(null);
+                  info("Rundmail", "", String(d.message || "Gesendet.") + hinweisMeldung);
+                  return "";
+                }} />
             )}>📨 Rundmail an alle</button>
             <button className="minibtn" title="Alle Probestunden: kommende und vergangene, mit Status" onClick={() => void probenZeigen()}>🎓 Probestunden</button>
           </div>
@@ -1532,17 +1553,27 @@ function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
 // Rundmail an alle Familien: Betreff + Text eingeben, das System schickt sie
 // an jede hinterlegte Eltern-Adresse (jede Adresse nur einmal – Geschwister
 // teilen sich oft eine) im gewohnten Mail-Design mit „Lerne mit Anna"-Kopf.
-function RundmailForm({ onSubmit, onClose }: {
-  onSubmit: (betreff: string, text: string) => Promise<string>; onClose: () => void;
+function RundmailForm({ onSubmit, onClose, aktuellerHinweis, onHinweisLoeschen }: {
+  onSubmit: (betreff: string, text: string, hinweis: { text: string; bis: string } | null) => Promise<string>;
+  onClose: () => void; aktuellerHinweis: string | null; onHinweisLoeschen: () => void;
 }) {
   const [betreff, setBetreff] = useState("");
   const [text, setText] = useState("");
+  // Optional: zusätzlich ein Hinweis-Banner oben im Kalender, das alle
+  // Familien beim Öffnen sehen – verschwindet nach dem „bis"-Tag von selbst.
+  const [mitHinweis, setMitHinweis] = useState(false);
+  const [hinweisText, setHinweisText] = useState("");
+  const [hinweisBis, setHinweisBis] = useState("");
   const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
   async function go() {
     if (betreff.trim().length < 3) { setErr("Bitte einen Betreff eingeben."); return; }
     if (text.trim().length < 20) { setErr("Bitte den Text der Mail eingeben (ein paar Sätze)."); return; }
+    if (mitHinweis && (hinweisText.trim().length < 3 || !hinweisBis)) { setErr("Bitte Hinweis-Text und „anzeigen bis“ ausfüllen (oder das Häkchen entfernen)."); return; }
     if (!window.confirm(`Die Mail „${betreff.trim()}“ jetzt an ALLE Familien schicken?`)) return;
-    setLoad(true); setErr(await onSubmit(betreff.trim(), text.trim())); setLoad(false);
+    setLoad(true);
+    setErr(await onSubmit(betreff.trim(), text.trim(),
+      mitHinweis ? { text: hinweisText.trim(), bis: hinweisBis } : null));
+    setLoad(false);
   }
   return <div className="modal"><h2>📨 Rundmail an alle Familien</h2>
     <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
@@ -1554,6 +1585,24 @@ function RundmailForm({ onSubmit, onClose }: {
     <label>Text</label>
     <textarea rows={10} value={text} onChange={(e) => setText(e.target.value)}
       placeholder={"Liebe Eltern, liebe Schülerinnen und Schüler,\n\n…\n\nLiebe Grüße\neure Kleana"} />
+    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+      <input type="checkbox" style={{ width: "auto" }} checked={mitHinweis}
+        onChange={(e) => { setMitHinweis(e.target.checked); if (e.target.checked && !hinweisText) setHinweisText(betreff.trim()); }} />
+      📢 Zusätzlich als Hinweis oben im Kalender anzeigen
+    </label>
+    {mitHinweis && (<>
+      <label>Hinweis-Text (kurz)</label>
+      <input value={hinweisText} onChange={(e) => setHinweisText(e.target.value)} maxLength={200}
+        placeholder="z. B. Vom 9.–12. November keine Nachhilfe – alle Stunden werden gutgeschrieben." />
+      <label>anzeigen bis (letzter Tag)</label>
+      <input type="date" value={hinweisBis} onChange={(e) => setHinweisBis(e.target.value)} />
+    </>)}
+    {aktuellerHinweis && (
+      <p style={{ margin: "10px 0 0", fontSize: 13, color: "#666" }}>
+        Aktueller Hinweis im Kalender: „{aktuellerHinweis}“ –{" "}
+        <button type="button" className="btn g sm" onClick={onHinweisLoeschen}>Hinweis entfernen</button>
+      </p>
+    )}
     {err ? <div className="err">{err}</div> : null}
     <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button>
       <button className="btn p" onClick={go} disabled={load}>{load ? "wird gesendet …" : "An alle senden"}</button></div></div>;
