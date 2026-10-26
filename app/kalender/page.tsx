@@ -1171,6 +1171,16 @@ export default function KalenderPage() {
                 }} />
               );
             })(); }}>📨 Rundmail an alle</button>
+            <button className="minibtn" title="Ganze Tage komplett blockieren – z. B. während einer Reise kann dann niemand buchen" onClick={() => setModal(
+              <TageBlockForm onClose={() => setModal(null)} onSubmit={async (von, bis) => {
+                const d = await api("tageBlockieren", { von, bis });
+                if (!d.ok) return String(d.error || "Fehler.");
+                setModal(null);
+                info("Tage blockieren", "", String(d.message || "Geblockt."));
+                void loadWeek();
+                return "";
+              }} />
+            )}>🚫 Tage blockieren</button>
             <button className="minibtn" title="Alle Probestunden: kommende und vergangene, mit Status" onClick={() => void probenZeigen()}>🎓 Probestunden</button>
           </div>
         )}
@@ -1567,6 +1577,35 @@ function BuchungsWahl({ title, startHour, schlussMin, onSubmit, onClose }: {
       <button className="btn g" onClick={onClose}>Zurück</button>
     </div></div>;
 }
+// Ganze Tage komplett blockieren (z. B. Abwesenheits-Woche): von/bis wählen,
+// jeder Tag bekommt einen Block über die kompletten Öffnungszeiten.
+function TageBlockForm({ onSubmit, onClose }: {
+  onSubmit: (von: string, bis: string) => Promise<string>; onClose: () => void;
+}) {
+  const [von, setVon] = useState("");
+  const [bis, setBis] = useState("");
+  const [err, setErr] = useState(""); const [load, setLoad] = useState(false);
+  async function go() {
+    if (!von || !bis) { setErr("Bitte beide Tage wählen."); return; }
+    if (bis < von) { setErr("Das Bis-Datum liegt vor dem Von-Datum."); return; }
+    if (!window.confirm(`Alle Tage von ${von.slice(8, 10)}.${von.slice(5, 7)}. bis ${bis.slice(8, 10)}.${bis.slice(5, 7)}. komplett blockieren? Niemand kann dann dort buchen.`)) return;
+    setLoad(true); setErr(await onSubmit(von, bis)); setLoad(false);
+  }
+  return <div className="modal"><h2>🚫 Tage blockieren</h2>
+    <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
+      Blockt ganze Tage von 8 Uhr bis Ladenschluss – niemand kann dann Nachhol-,
+      Zusatz- oder Probestunden buchen (z. B. während einer Reise). Zum
+      Freigeben einfach den Block im Kalender antippen.
+    </p>
+    <label>von (erster Tag)</label>
+    <input type="date" min={iso(new Date())} value={von} onChange={(e) => setVon(e.target.value)} />
+    <label>bis (letzter Tag)</label>
+    <input type="date" min={von || iso(new Date())} value={bis} onChange={(e) => setBis(e.target.value)} />
+    {err ? <div className="err">{err}</div> : null}
+    <div className="acts"><button className="btn g" onClick={onClose}>Abbrechen</button>
+      <button className="btn p" onClick={go} disabled={load}>{load ? "…" : "Blockieren"}</button></div></div>;
+}
+
 // Rundmail an alle Familien: Betreff + Text eingeben, das System schickt sie
 // an jede hinterlegte Eltern-Adresse (jede Adresse nur einmal – Geschwister
 // teilen sich oft eine) im gewohnten Mail-Design mit „Lerne mit Anna"-Kopf.
