@@ -1302,12 +1302,26 @@ export async function POST(req: Request): Promise<Response> {
       const geblockt: string[] = [], uebersprungen: string[] = [];
       for (const d of tage) {
         const tagSchluss = weekdayOf(d) < 5 ? 20 : 19;
-        const dauer = (tagSchluss - 8) * 60;
-        if (await slotKonflikt(d, 8, dauer)) { uebersprungen.push(d); continue; }
-        const { error } = await service().from("appointments").insert({
-          student_id: null, slot_date: d, hour: 8, kind: "block", status: "bestaetigt", dauer_min: dauer,
-        });
-        if (error) return bad("Blockieren fehlgeschlagen: " + error.message);
+        // Die Datenbank erlaubt höchstens 300 Minuten je Block
+        // (appointments_dauer_min_check) – der Tag wird deshalb in mehrere
+        // nahtlose Blöcke zerlegt (Mo–Fr: 8–13, 13–18, 18–20 Uhr).
+        const stuecke: { hour: number; dauer: number }[] = [];
+        for (let h = 8; h < tagSchluss;) {
+          const dauer = Math.min(300, (tagSchluss - h) * 60);
+          stuecke.push({ hour: h, dauer });
+          h += dauer / 60;
+        }
+        let konflikt = false;
+        for (const s of stuecke) {
+          if (await slotKonflikt(d, s.hour, s.dauer)) { konflikt = true; break; }
+        }
+        if (konflikt) { uebersprungen.push(d); continue; }
+        for (const s of stuecke) {
+          const { error } = await service().from("appointments").insert({
+            student_id: null, slot_date: d, hour: s.hour, kind: "block", status: "bestaetigt", dauer_min: s.dauer,
+          });
+          if (error) return bad("Blockieren fehlgeschlagen: " + error.message);
+        }
         geblockt.push(d);
       }
       const de = (x: string) => `${x.slice(8, 10)}.${x.slice(5, 7)}.`;
