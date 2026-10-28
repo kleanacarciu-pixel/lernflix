@@ -3,6 +3,7 @@
 // Wird von app/api/kalender/route.ts genutzt. NUR serverseitig!
 // =============================================================================
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
+import { relevanteFreieTage, type FreierZeitraum } from "./schuljahr-kern.ts";
 
 // --- Konstanten -------------------------------------------------------------
 export const ADMIN_EMAIL = (process.env.KALENDER_ADMIN_EMAIL || "lernemitanna@outlook.com").toLowerCase();
@@ -325,12 +326,53 @@ export function berlinDatum(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
 }
 
+// --- Schulfrei: Ferien und Feiertage je Schüler ------------------------------
+// Die Verträge rechnen unterrichtsfreie Tage längst heraus – der Kalender
+// malte die festen Wochentermine aber trotzdem hin, und eine Absage dort
+// erzeugte fälschlich eine Minusstunde (Nov. 2026). Dieser Kontext sagt,
+// wer an welchem Tag schulfrei hat: aktives Schuljahr + unterrichtsfreie
+// Tage (je Schule) + die Schule aus dem laufenden Vertrag des Schülers.
+export type FreiKontext = { frei: FreierZeitraum[]; schuleVon: Map<string, string | null> };
+
+export async function ladeFreiKontext(): Promise<FreiKontext> {
+  const leer: FreiKontext = { frei: [], schuleVon: new Map() };
+  try {
+    const sb = service();
+    const sj = await sb.from("schuljahre").select("id").eq("aktiv", true).maybeSingle();
+    const sjId = (sj.data as { id: string } | null)?.id;
+    if (!sjId) return leer;
+    const [ftRes, vRes] = await Promise.all([
+      sb.from("unterrichtsfreie_tage").select("datum_von,datum_bis,ist_feiertag,schule_id,bezeichnung").eq("schuljahr_id", sjId),
+      sb.from("vertraege").select("schueler_id,schule_id,status").eq("schuljahr_id", sjId).in("status", ["aktiv", "angeboten"]),
+    ]);
+    // Scheitert eine Abfrage, lieber OHNE Schulfrei-Wissen weitermachen
+    // (Kalender zeigt dann wie früher alles) als falsch auszublenden.
+    if (ftRes.error || vRes.error) return leer;
+    const schuleVon = new Map<string, string | null>();
+    // „angeboten" zuerst setzen, „aktiv" überschreibt – der aktive Vertrag
+    // bestimmt die Schule, wenn es beide gibt (Schuljahreswechsel).
+    const vertraege = (vRes.data || []) as { schueler_id: string; schule_id: string | null; status: string }[];
+    vertraege.filter((v) => v.status !== "aktiv").forEach((v) => schuleVon.set(v.schueler_id, v.schule_id));
+    vertraege.filter((v) => v.status === "aktiv").forEach((v) => schuleVon.set(v.schueler_id, v.schule_id));
+    return { frei: (ftRes.data || []) as FreierZeitraum[], schuleVon };
+  } catch { return leer; }
+}
+
+/** Hat dieser Schüler an dem Tag schulfrei? Liefert die Bezeichnung (z. B. „Herbstferien") oder null. */
+export function schulfreiGrund(ctx: FreiKontext, studentId: string, datum: string): string | null {
+  if (!ctx.frei.length) return null;
+  const rel = relevanteFreieTage(ctx.frei, ctx.schuleVon.get(studentId) ?? null);
+  const t = rel.find((f) => datum >= f.datum_von && datum <= f.datum_bis);
+  return t ? (t.bezeichnung || "schulfrei") : null;
+}
+
 export function tagIntervalle(
   date: string, wd: number,
   fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
   dayAppts: ApptRow[],
   wblocks: { weekday: number; hour: number; dauer_min?: number }[],
   nameOf: (id: string) => string,
+  schulfreiSids?: Set<string>,
 ): Intervall[] {
   const ivs: Intervall[] = [];
   const absage = (sid: string, hour: number) =>
@@ -372,6 +414,9 @@ export function tagIntervalle(
     // (ab_datum), ist der erste Geltungstag. Bucht Lilly am 24.08. ihren
     // Donnerstag "ab 03.09.", darf der 27.08. sie nicht zeigen.
     if (f.ab_datum && date < f.ab_datum) return;
+    // Schulfrei (Ferien/Feiertag der Schule des Kindes): kein Unterricht,
+    // der feste Termin erscheint gar nicht erst – wie in der Terminliste.
+    if (schulfreiSids?.has(f.student_id)) return;
     if (absage(f.student_id, start)) return;
     if (ivs.some((iv) => (iv.t === "busy" || iv.t === "req") && gleicheStunde(iv.start, start))) return;
     const dauer = Number(f.dauer_min) || 60;
@@ -386,7 +431,7 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   const from = days[0], to = days[6];
 
   // feste Slots + Profile + Ereignisse + Dauer-Blocks parallel laden (schneller)
-  const [fxRes, profRes, apptRes, wbRes, ovRes] = await Promise.all([
+  const [fxRes, profRes, apptRes, wbRes, ovRes, freiCtx] = await Promise.all([
     sb.from("fixed_slots").select("*").in("status", ["aktiv", "angefragt"]),
     sb.from("profiles").select("user_id,name"),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").gte("slot_date", from).lte("slot_date", to),
@@ -397,6 +442,8 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
     // V4-Migration; ohne sie liefert die Abfrage einfach einen Fehler und
     // wir zeigen den Grund-Modus des festen Termins
     sb.from("slot_mode_overrides").select("student_id,slot_date,hour,mode").gte("slot_date", from).lte("slot_date", to),
+    // Wer hat in dieser Woche schulfrei? (Ferien/Feiertage je Schule)
+    ladeFreiKontext(),
   ]);
   const overrides = new Map<string, string>();
   ((ovRes.data || []) as { student_id: string; slot_date: string; hour: number; mode: string }[])
@@ -411,7 +458,12 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
   return days.map((date) => {
     const wd = weekdayOf(date);
     const dayAppts = appts.filter((a) => a.slot_date === date);
-    const ivs = tagIntervalle(date, wd, fixe, dayAppts, wblocks, nameOf);
+    // Schüler mit schulfreiem Tag: ihr fester Termin wird heute nicht gemalt
+    const schulfreiSids = new Set<string>();
+    fixe.forEach((f) => {
+      if (f.weekday === wd && schulfreiGrund(freiCtx, f.student_id, date)) schulfreiSids.add(f.student_id);
+    });
+    const ivs = tagIntervalle(date, wd, fixe, dayAppts, wblocks, nameOf, schulfreiSids);
     const slots: SlotOut[] = HOURS.map((hour) => {
       if (!isOpen(wd, hour)) return { hour, state: "closed" };
       const past = hoursUntil(date, hour) <= 0;
