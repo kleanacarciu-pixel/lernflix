@@ -4,7 +4,7 @@
 // genutzt. NUR serverseitig! (DAILY_API_KEY darf nie im Browser landen.)
 // =============================================================================
 import { createHmac } from "node:crypto";
-import { service, berlinInstant, addDaysStr, weekdayOf, minutenSchluessel } from "@/lib/kalender";
+import { service, berlinInstant, addDaysStr, weekdayOf, minutenSchluessel, ladeFreiKontext, schulfreiGrund } from "@/lib/kalender";
 import { pausierteSchueler } from "@/lib/zahlung";
 import { terminFindetStatt } from "@/lib/zahlung-kern";
 
@@ -160,6 +160,11 @@ export async function syncLessons(force = false): Promise<void> {
     // Wochentermin – erst zwei Tage nach der Pausierung, damit niemand ohne
     // Vorwarnung vor der Tür steht. Ohne markierte Rate ist die Liste leer.
     const pausiert = await pausierteSchueler(von);
+    // Ferien und Feiertage (je Schule des Kindes): an schulfreien Tagen gibt
+    // es keinen Unterricht – also auch keine Klassenzimmer-Stunde und keine
+    // Erinnerung. Der Chef-Abgleich unten räumt früher fälschlich angelegte
+    // Stunden an solchen Tagen gleich mit ab.
+    const freiCtx = await ladeFreiKontext();
     for (let i = 0; i <= SYNC_TAGE; i++) {
       const date = addDaysStr(von, i);
       const wd = weekdayOf(date);
@@ -168,6 +173,7 @@ export async function syncLessons(force = false): Promise<void> {
         // Vor dem ersten Geltungstag (dem beim Buchen angeklickten Datum)
         // gibt es diesen Termin nicht – auch keine Klassenzimmer-Stunde.
         if (f.ab_datum && date < f.ab_datum) return;
+        if (schulfreiGrund(freiCtx, f.student_id, date)) return;
         if (!terminFindetStatt(date, pausiert.get(f.student_id) ?? null)) return;
         merken(f.student_id, date, f.hour, f.mode, Number(f.dauer_min) || 60);
       });

@@ -8,6 +8,7 @@ import {
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   tagIntervalle, type ApptRow,
   sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
+  ladeFreiKontext, schulfreiGrund,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
@@ -406,6 +407,15 @@ export async function POST(req: Request): Promise<Response> {
         // eine „Absage" dort würde trotzdem eine Gutschrift erzeugen.
         if (s.fixedActive.ab_datum && date < s.fixedActive.ab_datum) {
           return bad("An diesem Tag hat dein fester Termin noch nicht begonnen – hier gibt es nichts abzusagen.");
+        }
+        // Schulfrei (Ferien/Feiertag): An dem Tag findet sowieso kein
+        // Unterricht statt, die Stunde ist auch nicht im Vertrag mitgezählt.
+        // Eine „Absage" erzeugte hier fälschlich eine Minusstunde (Nov. 2026).
+        {
+          const grund = schulfreiGrund(await ladeFreiKontext(), user.id, date);
+          if (grund) {
+            return bad(`An diesem Tag ist schulfrei (${grund}) – der Unterricht fällt sowieso aus und die Stunde zählt nicht. Du brauchst nichts abzusagen.`);
+          }
         }
         const hu = hoursUntil(date, hour);
         // Nach Stundenbeginn gilt dasselbe wie bei Einzel-Buchungen: nichts
@@ -1103,6 +1113,14 @@ export async function POST(req: Request): Promise<Response> {
           : " Achtung: keine E-Mail hinterlegt – bitte selbst Bescheid geben."}` });
       }
       if (s.fixedActive && !s.absageVon(s.fixedActive.student_id)) {
+        // Schulfrei (Ferien/Feiertag der Schule des Kindes): kein Unterricht,
+        // keine Absage, keine Gutschrift – die Stunde zählt gar nicht.
+        {
+          const grund = schulfreiGrund(await ladeFreiKontext(), s.fixedActive.student_id, date);
+          if (grund) {
+            return bad(`An diesem Tag ist für dieses Kind schulfrei (${grund}) – der Termin findet sowieso nicht statt und zählt nicht. Nichts abzusagen.`);
+          }
+        }
         const sp = await getProfile(s.fixedActive.student_id);
         // Erst die Absage-Zeile, DANN das Guthaben – scheitert das Speichern,
         // bliebe der Termin sonst im Kalender stehen, das Guthaben wäre aber
