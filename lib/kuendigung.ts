@@ -23,9 +23,11 @@ import { bankverbindung } from "@/lib/vertrag-dokumente";
 /** Warum ein Vertragstermin nicht stattgefunden hat – für die Anzeige. */
 const GRUND_TEXT: Record<string, string> = {
   anna_cancel: "von Anna abgesagt",
+  anna_cancel_plus: "von Anna abgesagt, mit einer Zusatzstunde verrechnet",
   gutschrift: "rechtzeitig abgesagt",
   late: "weniger als 4 Std. vorher abgesagt",
   overmax: "abgesagt, Minus-Konto war voll",
+  plusverrechnet: "abgesagt, mit einer Zusatzstunde verrechnet",
 };
 
 export type Abrechnungsbild = Endabrechnung & {
