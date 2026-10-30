@@ -18,7 +18,7 @@ import { buchungErlaubt as vertragUnterschrieben, laufenderVertrag } from "@/lib
 import { aboSpeichern, aboEntfernen, pushAnKleana, type PushAbo } from "@/lib/push";
 import {
   verrechne, macheRueckgaengig, bewerteAbsage, bewerteAnnaAbsage, verrechnungsVorschau,
-  absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS,
+  absageVorschau, warntVorLimit, freieGutschriften, MAX_MINUS, WARNUNG_AB_MINUS, kontoVerlauf,
 } from "@/lib/stundenkonto-kern";
 
 export const runtime = "nodejs";
@@ -536,6 +536,23 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // === ADMIN-AKTIONEN (nur Kleana) ===
+    // Kompletter Stundenverlauf: Die Zähler zeigen nur OFFENE Stunden – hier
+    // sieht die Familie jede Bewegung mit Datum, auch längst ausgeglichene
+    // (Kleanas Wunsch, Okt. 2026: „die Anzahl soll stimmen, aber der ganze
+    // Verlauf muss sichtbar bleiben"). Schüler sehen ihr eigenes Konto,
+    // Kleana per studentId jedes.
+    if (action === "stundenVerlauf") {
+      const sid = isAdmin && typeof body.studentId === "string" && body.studentId
+        ? String(body.studentId) : user.id;
+      const { data, error } = await service()
+        .from("appointments").select("slot_date,hour,kind,credited,counted,note,status")
+        .eq("student_id", sid).order("slot_date", { ascending: false }).limit(300);
+      if (error) return bad("Verlauf ließ sich nicht laden: " + error.message);
+      const eintraege = kontoVerlauf((data || []) as Parameters<typeof kontoVerlauf>[0])
+        .map((e) => ({ wann: prettyDate(e.datum, e.hour).replace(" um ", ", "), art: e.art, text: e.text }));
+      return ok({ eintraege });
+    }
+
     if (!isAdmin) return bad("Nur Kleana darf das.", 403);
 
     if (action === "setTeamsLink") {

@@ -198,3 +198,59 @@ export function absageVorschau(k: Konto, stundenBisTermin: number): Absagevorsch
         + "Diese Stunde wird NICHT gutgeschrieben und verfällt.",
   };
 }
+
+// --- Stundenverlauf ----------------------------------------------------------
+// Die Zähler (Minus/Plus/Gutschrift) zeigen nur OFFENE Stunden. Familien
+// wollten aber den kompletten Verlauf sehen (Okt. 2026): Was wurde wann
+// abgesagt, nachgeholt, verrechnet oder ist verfallen? Dieser Baustein macht
+// aus den appointment-Zeilen eine lesbare Konto-Historie – rein, testbar.
+
+export type VerlaufArt =
+  | "minus"           // Absage mit Gutschrift: +1 Minus (nachholbar)
+  | "minusAusgleich"  // Nachholstunde: −1 Minus
+  | "nach"            // Von Anna abgesagt: +1 Nachhol-Guthaben
+  | "nachEingeloest"  // Nachholstunde: −1 Nachhol-Guthaben
+  | "plus"            // Zusatzstunde: +1 Plus
+  | "plusVerrechnet"  // Absage direkt mit Plusstunde verrechnet
+  | "verfallen"       // Absage ohne Gutschrift (zu kurzfristig / Konto voll)
+  | "verschoben";     // Stunde wurde verschoben (zählt nicht)
+
+export type VerlaufEintrag = { datum: string; hour: number; art: VerlaufArt; text: string };
+
+export function kontoVerlauf(rows: {
+  slot_date: string; hour: number; kind: string; credited: boolean;
+  counted: string | null; note: string | null; status: string;
+}[]): VerlaufEintrag[] {
+  const aus: VerlaufEintrag[] = [];
+  for (const a of rows) {
+    const basis = { datum: a.slot_date, hour: Number(a.hour) };
+    if (a.kind === "absage") {
+      const note = a.note || "";
+      if (note === "anna_cancel") {
+        aus.push({ ...basis, art: "nach", text: "Von Anna abgesagt – Gutschrift zum kostenlosen Nachholen (+1 Gutschrift)" });
+      } else if (note === "plusverrechnet") {
+        aus.push({ ...basis, art: "plusVerrechnet", text: "Abgesagt – direkt mit einer offenen Zusatzstunde verrechnet (−1 Plus, nichts nachzuholen)" });
+      } else if (note.startsWith("verschoben:")) {
+        const z = note.slice("verschoben:".length);
+        aus.push({ ...basis, art: "verschoben", text: `Verschoben auf den ${z.slice(8, 10)}.${z.slice(5, 7)}.${z.slice(0, 4)} – zählt hier nicht` });
+      } else if (a.credited) {
+        aus.push({ ...basis, art: "minus", text: "Abgesagt – Minusstunde zum Nachholen (+1 Minus)" });
+      } else if (note === "overmax") {
+        aus.push({ ...basis, art: "verfallen", text: `Abgesagt – verfallen: das Stundenkonto war voll (${MAX_MINUS}/${MAX_MINUS})` });
+      } else {
+        aus.push({ ...basis, art: "verfallen", text: `Abgesagt – verfallen: weniger als ${ABSAGE_FRIST_STUNDEN} Stunden vor Beginn` });
+      }
+    } else if (a.kind === "einzel" && a.status === "bestaetigt") {
+      if (a.counted === "minus") {
+        aus.push({ ...basis, art: "minusAusgleich", text: "Nachholstunde – gleicht eine offene Minusstunde aus (−1 Minus)" });
+      } else if (a.counted === "makeup") {
+        aus.push({ ...basis, art: "nachEingeloest", text: "Nachholstunde – Gutschrift von Anna eingelöst (−1 Gutschrift)" });
+      } else if (a.counted === "plus") {
+        aus.push({ ...basis, art: "plus", text: "Zusatzstunde (+1 Plus, Abrechnung am Schuljahresende)" });
+      }
+      // counted null: normale Termine ohne Konto-Bewegung – gehören nicht in den Verlauf
+    }
+    // Stornierte Einzel-Buchungen, Probestunden und Blöcke bewegen das Konto nicht
+  }
+  return aus;
+}

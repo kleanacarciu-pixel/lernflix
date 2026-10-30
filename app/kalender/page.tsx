@@ -755,6 +755,37 @@ export default function KalenderPage() {
     if (eingabe === null) return;
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
+  // Kompletter Stundenverlauf des eigenen Kontos: Die Zähler zeigen nur
+  // OFFENE Stunden – hier sieht die Familie jede Bewegung mit Datum, auch
+  // schon ausgeglichene (abgesagt, nachgeholt, verrechnet, verfallen).
+  async function verlaufZeigen() {
+    setModal(<div className="modal"><h2>📒 Stundenverlauf</h2><p>Wird geladen …</p></div>);
+    const d = await api("stundenVerlauf");
+    if (!d.ok) { info("Stundenverlauf", "", String(d.error || "Fehler.")); return; }
+    const es = (d.eintraege as { wann: string; art: string; text: string }[]) || [];
+    const farbe: Record<string, string> = {
+      minus: "#C03A31", verfallen: "#8a949c", verschoben: "#8a949c",
+      minusAusgleich: "#127a5c", nachEingeloest: "#127a5c", plus: "#127a5c",
+      nach: "#3E7BB6", plusVerrechnet: "#3E7BB6",
+    };
+    setModal(<div className="modal histmodal"><h2>📒 Stundenverlauf</h2>
+      <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
+        Jede Bewegung deines Stundenkontos, neueste zuerst – auch schon
+        ausgeglichene Stunden. Die Zähler oben zeigen nur die offenen.
+      </p>
+      {es.length === 0 ? <p>Noch keine Einträge – hier erscheint alles, sobald mal eine Stunde abgesagt oder nachgeholt wird.</p> : (
+        <div style={{ maxHeight: 420, overflowY: "auto" }}>
+          {es.map((e, i) => (
+            <div key={i} style={{ borderBottom: "1px solid var(--line)", padding: "8px 0" }}>
+              <div style={{ fontWeight: 700 }}>{e.wann}</div>
+              <div style={{ fontSize: 13, color: farbe[e.art] || "#666" }}>{e.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="acts"><button className="btn g" onClick={() => setModal(null)}>Schließen</button></div></div>);
+  }
+
   // Gesendete Mails direkt in der App zeigen – Kleana wusste das
   // Resend-Konto nicht mehr; der Server holt die Liste selbst ab.
   async function mailProtokollZeigen() {
@@ -1084,6 +1115,9 @@ export default function KalenderPage() {
             <span className="pill"><span className="m">Minus {balance.minus}/{MAX_MINUS}</span><span className="tip"><b>Minus-Stunden:</b><br />{balance.dates.minus.length ? balance.dates.minus.join(", ") : "keine"}</span></span>
             <span className="pill"><span className="p">Plus {balance.plus}</span><span className="tip"><b>Plus-Stunden:</b><br />{balance.dates.plus.length ? balance.dates.plus.join(", ") : "keine"}</span></span>
             <span className="pill"><span className="n">Gutschrift (Kleana) {balance.nach}</span><span className="tip"><b>Gutschrift von Kleana (kostenlos nachholbar):</b><br />{balance.dates.nach.length ? balance.dates.nach.join(", ") : "keine"}</span></span>
+            <button className="pill" style={{ cursor: "pointer", font: "inherit" }}
+              title="Der komplette Verlauf deines Stundenkontos – auch schon ausgeglichene Stunden"
+              onClick={() => void verlaufZeigen()}>📒 Verlauf</button>
           </div>
         )}
         {/* Fruehwarnung: nur noch eine Gutschrift frei (Punkt 1) */}
