@@ -46,6 +46,25 @@ describe("Jede Konto-Bewegung bekommt einen lesbaren Eintrag", () => {
     assert.equal(es[0].art, "plus");
     assert.equal(es[1].art, "plusVerrechnet");
   });
+  test("umgewidmete Plusstunde bleibt als Zusatzstunde sichtbar (Kleanas Plus-Bug)", () => {
+    // Nach der Verrechnung wird die konkrete Plus-Zeile zur Ersatzstunde
+    // umgewidmet (counted minus/makeup) – ohne die warplus-Marke verschwand
+    // die Zusatzstunde komplett aus dem Verlauf.
+    const es = kontoVerlauf([
+      zeile({ kind: "einzel", status: "bestaetigt", counted: "minus", note: "warplus" }),
+      zeile({ kind: "einzel", status: "bestaetigt", counted: "makeup", note: "warplus" }),
+    ]);
+    assert.ok(es.every((e) => e.art === "plus"));
+    assert.match(es[0].text, /Zusatzstunde/);
+    assert.match(es[0].text, /Ersatz/);
+  });
+  test("Annas Absage mit Plus-Verrechnung zeigt KEINE Gutschrift", () => {
+    const [e] = kontoVerlauf([zeile({ note: "anna_cancel_plus" })]);
+    assert.equal(e.art, "plusVerrechnet");
+    assert.match(e.text, /Anna/);
+    assert.match(e.text, /−1 Plus/);
+    assert.doesNotMatch(e.text, /Gutschrift/);
+  });
   test("verfallene Absagen nennen den Grund", () => {
     const es = kontoVerlauf([zeile({ note: "overmax" }), zeile({ note: "late" }), zeile({})]);
     assert.ok(es.every((e) => e.art === "verfallen"));
@@ -88,5 +107,14 @@ describe("Wächter: der Verlauf hängt am Kalender", () => {
     const seite = readFileSync("app/kalender/page.tsx", "utf8");
     assert.match(seite, /stundenVerlauf/);
     assert.match(seite, /Stundenverlauf/);
+  });
+  test("Kleana öffnet über den Schülernamen denselben Verlauf", () => {
+    const seite = readFileSync("app/kalender/page.tsx", "utf8");
+    assert.match(seite, /verlaufZeigen\(r\.id, r\.name\)/);
+  });
+  test("verrechnete Plusstunden behalten ihre warplus-Marke", () => {
+    const route = readFileSync("app/api/kalender/route.ts", "utf8");
+    assert.match(route, /counted: als, note: "warplus"/);
+    assert.match(route, /NOTE_ANNA_CANCEL_PLUS : NOTE_ANNA_CANCEL/);
   });
 });

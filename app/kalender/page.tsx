@@ -755,12 +755,14 @@ export default function KalenderPage() {
     if (eingabe === null) return;
     void act("setTeamsLink", { studentId, link: eingabe.trim() });
   }
-  // Kompletter Stundenverlauf des eigenen Kontos: Die Zähler zeigen nur
-  // OFFENE Stunden – hier sieht die Familie jede Bewegung mit Datum, auch
-  // schon ausgeglichene (abgesagt, nachgeholt, verrechnet, verfallen).
-  async function verlaufZeigen() {
-    setModal(<div className="modal"><h2>📒 Stundenverlauf</h2><p>Wird geladen …</p></div>);
-    const d = await api("stundenVerlauf");
+  // Kompletter Stundenverlauf: Die Zähler zeigen nur OFFENE Stunden – hier
+  // sieht die Familie jede Bewegung mit Datum, auch schon ausgeglichene
+  // (abgesagt, nachgeholt, verrechnet, verfallen). Kleana öffnet über den
+  // Schülernamen in der Übersicht GENAU dieselbe Ansicht (mit studentId).
+  async function verlaufZeigen(studentId?: string, name?: string) {
+    const titel = `📒 Stundenverlauf${name ? ` – ${name}` : ""}`;
+    setModal(<div className="modal"><h2>{titel}</h2><p>Wird geladen …</p></div>);
+    const d = await api("stundenVerlauf", studentId ? { studentId } : {});
     if (!d.ok) { info("Stundenverlauf", "", String(d.error || "Fehler.")); return; }
     const es = (d.eintraege as { wann: string; art: string; text: string }[]) || [];
     const farbe: Record<string, string> = {
@@ -768,10 +770,10 @@ export default function KalenderPage() {
       minusAusgleich: "#127a5c", nachEingeloest: "#127a5c", plus: "#127a5c",
       nach: "#3E7BB6", plusVerrechnet: "#3E7BB6",
     };
-    setModal(<div className="modal histmodal"><h2>📒 Stundenverlauf</h2>
+    setModal(<div className="modal histmodal"><h2>{titel}</h2>
       <p style={{ margin: "0 0 8px", color: "#666", fontSize: 14 }}>
-        Jede Bewegung deines Stundenkontos, neueste zuerst – auch schon
-        ausgeglichene Stunden. Die Zähler oben zeigen nur die offenen.
+        Jede Bewegung {name ? "des Stundenkontos" : "deines Stundenkontos"}, neueste zuerst – auch schon
+        ausgeglichene Stunden. Die Zähler {name ? "in der Übersicht" : "oben"} zeigen nur die offenen.
       </p>
       {es.length === 0 ? <p>Noch keine Einträge – hier erscheint alles, sobald mal eine Stunde abgesagt oder nachgeholt wird.</p> : (
         <div style={{ maxHeight: 420, overflowY: "auto" }}>
@@ -897,19 +899,6 @@ export default function KalenderPage() {
         <button className="btn g" onClick={() => act("adminReject", { date, hour, ohneMail: true })}>Absagen OHNE Mail</button>
         <button className="btn g" onClick={() => setModal(null)}>Abbrechen (Fenster schließen)</button>
       </div></div>);
-  }
-
-  async function openHistory(id: string, name: string) {
-    const d = await api("studentHistory", { studentId: id });
-    if (!d.ok) { info("Hinweis", "", String(d.error || "Fehler.")); return; }
-    const h = d.history as { plus: string[]; minus: string[]; late: string[]; overmax: string[]; gutschrift: string[] };
-    setModal(<div className="modal histmodal"><h2>Verlauf – {name}</h2>
-      <div className="histsec"><b className="p">✅ Plus-Stunden ({h.plus.length})</b><div>{h.plus.length ? h.plus.join(" · ") : "keine"}</div></div>
-      <div className="histsec"><b className="m">➖ Minus-Stunden ({h.minus.length})</b><div>{h.minus.length ? h.minus.join(" · ") : "keine"}</div></div>
-      <div className="histsec"><b className="n">🎁 Gutschrift von Kleana ({h.gutschrift.length})</b><div>{h.gutschrift.length ? h.gutschrift.join(" · ") : "keine"}</div></div>
-      <div className="histsec"><b className="w">⚠️ Absage unter 4 Std. – keine Gutschrift ({h.late.length})</b><div>{h.late.length ? h.late.join(" · ") : "keine"}</div></div>
-      {h.overmax.length > 0 && <div className="histsec sub">Über Minus-Maximum abgesagt (nicht gezählt): {h.overmax.join(" · ")}</div>}
-      <div className="acts"><button className="btn p" onClick={() => setModal(null)}>Schließen</button></div></div>);
   }
 
   function chooseMode(action: string, date: string, hour: number, title: string) {
@@ -1223,7 +1212,7 @@ export default function KalenderPage() {
           <div className="overview">
             <div className="ovh"><h3>Übersicht: Plus- &amp; Minus-Stunden</h3><span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{teamsDefault && <a className="minibtn" style={{ textDecoration: "none" }} href={teamsDefault} target="_blank" rel="noreferrer" title="Deinen Teams-Raum jetzt öffnen">▶ Teams öffnen</a>}<button className="minibtn" onClick={() => teamsBearbeiten(null, "Standard", teamsDefault)} title={teamsDefault ? `Standard: ${teamsDefault}` : "Noch kein Standard-Teams-Link hinterlegt"}>{teamsDefault ? "🎦 Teams-Link ✓" : "🎦 Teams-Link"}</button><button className="minibtn" disabled={exportLaeuft} onClick={() => void kalenderCsvExportieren()} title="Eigene Sicherheitskopie: Minus-Stunden, fester Termin und alle Absagen/Nachholtermine als CSV herunterladen">{exportLaeuft ? "… lädt" : "📥 Kalenderstand als CSV"}</button><button className="minibtn" onClick={openAddStudent}>+ Neuen Schüler anlegen</button></span></div>
             <div className="otblwrap"><table className="otbl"><thead><tr><th>Schüler</th><th>Fester Termin</th><th>Minus</th><th>Plus</th><th>Nachhol</th><th></th></tr></thead>
-              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern (z. B. bei zwei gleichen Vornamen)`} onClick={() => nameBearbeiten(r)}>✏️</button>{r.email ? <div style={{ color: "#8a949c", fontSize: 12, marginTop: 2 }}>{r.email}</div> : null}</td><td>{r.fix}</td>
+              <tbody>{overview.map((r) => (<tr key={r.id}><td><button className="namebtn" title="Kompletten Stundenverlauf ansehen" onClick={() => void verlaufZeigen(r.id, r.name)}>{r.name}</button> <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link für diesen Schüler setzen (sonst gilt der Standard)"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen (wenn der Login nicht mehr klappt)`} onClick={() => confirmPasswort(r)}>🔑</button> <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Namen von ${r.name} ändern (z. B. bei zwei gleichen Vornamen)`} onClick={() => nameBearbeiten(r)}>✏️</button>{r.email ? <div style={{ color: "#8a949c", fontSize: 12, marginTop: 2 }}>{r.email}</div> : null}</td><td>{r.fix}</td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: -1 })}>−</button><span className={"tag htip " + (r.minus ? "m" : "z")}>{r.minus}<span className="tt"><b>Minus:</b><br />{r.minusD && r.minusD.length ? r.minusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "minus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: -1 })}>−</button><span className={"tag htip " + (r.plus ? "p" : "z")}>{r.plus}<span className="tt"><b>Plus:</b><br />{r.plusD && r.plusD.length ? r.plusD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "plus", delta: 1 })}>+</button></span></td>
                 <td><span className="stp"><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: -1 })}>−</button><span className={"tag htip " + (r.nach ? "p" : "z")}>{r.nach}<span className="tt"><b>Gutschrift:</b><br />{r.nachD && r.nachD.length ? r.nachD.join(", ") : "keine"}</span></span><button className="stpb" onClick={() => act("adjustBalance", { studentId: r.id, field: "makeup", delta: 1 })}>+</button></span></td>
@@ -1235,7 +1224,7 @@ export default function KalenderPage() {
               {overview.map((r) => (
                 <div key={r.id} className="ovcard">
                   <div className="ovtop">
-                    <button className="namebtn" title="Verlauf ansehen" onClick={() => openHistory(r.id, r.name)}>{r.name}</button>
+                    <button className="namebtn" title="Kompletten Stundenverlauf ansehen" onClick={() => void verlaufZeigen(r.id, r.name)}>{r.name}</button>
                     <a className="kzlink" title={`Klassenzimmer von ${r.name} öffnen`} href={`/klassenzimmer?schueler=${r.id}`}>🏫</a>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer", opacity: r.teams ? 1 : 0.45 }} title={r.teams ? `Eigener Teams-Link: ${r.teams}` : "Eigenen Teams-Link setzen"} onClick={() => teamsBearbeiten(r.id, r.name, r.teams)}>🎦</button>
                     <button className="kzlink" style={{ border: 0, background: "none", cursor: "pointer" }} title={`Neues Passwort für ${r.name} erzeugen`} onClick={() => confirmPasswort(r)}>🔑</button>
@@ -1285,7 +1274,7 @@ export default function KalenderPage() {
               <div className="inbxlist">{inbox.cancellations.map((c, i) => (
                 <div key={c.id || i} className="inbxrow cr">
                   <button className="ibmain" onClick={() => jumpTo(c.date)}><span className="ibw">{c.who}</span><span className="ibd">{DAYS[(parseIso(c.date).getDay() + 6) % 7]} {dm(parseIso(c.date))} {fmtZeit(c.hour)} · {c.verschobenAuf ? `von dir verschoben auf ${dm(parseIso(c.verschobenAuf))}`
-                    : c.byAnna ? "von dir abgesagt"
+                    : c.byAnna ? (c.plusVerr ? "von dir abgesagt (mit Plusstunde verrechnet)" : "von dir abgesagt")
                     : c.einzel ? `gebuchte Stunde storniert${c.wann ? ` (am ${new Date(c.wann).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr)` : ""}`
                     : c.plusVerr ? "Absage (mit Plusstunde verrechnet)"
                     : c.credited ? "Absage (Minus +1)" : "Absage (keine Gutschrift)"}</span><span className="ibgo">ansehen ›</span></button>

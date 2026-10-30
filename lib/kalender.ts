@@ -301,6 +301,10 @@ export type ApptRow = {
   mode?: string | null; note?: string | null; dauer_min?: number;
 };
 export const NOTE_ANNA_CANCEL = "anna_cancel"; // absage-Zeile, die Nachhol-Guthaben erzeugt hat
+// Annas Absage, die statt eines Guthabens direkt mit einer offenen Plusstunde
+// verrechnet wurde – braucht eine EIGENE Notiz, sonst zeigt der Stundenverlauf
+// fälschlich „+1 Gutschrift" und die Datums-Liste am Gutschrift-Zähler lügt.
+export const NOTE_ANNA_CANCEL_PLUS = "anna_cancel_plus";
 export type SlotState = "free" | "busy" | "req" | "block" | "closed" | "past";
 // dauer = Terminlänge in Minuten (nur am Anker gesetzt); cont = Fortsetzungs-
 // Zelle eines längeren Termins, anchor = Startzeit des zugehörigen Ankers

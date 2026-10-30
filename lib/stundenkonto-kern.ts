@@ -210,8 +210,8 @@ export type VerlaufArt =
   | "minusAusgleich"  // Nachholstunde: −1 Minus
   | "nach"            // Von Anna abgesagt: +1 Nachhol-Guthaben
   | "nachEingeloest"  // Nachholstunde: −1 Nachhol-Guthaben
-  | "plus"            // Zusatzstunde: +1 Plus
-  | "plusVerrechnet"  // Absage direkt mit Plusstunde verrechnet
+  | "plus"            // Zusatzstunde: +1 Plus (auch wenn sie später verrechnet wurde)
+  | "plusVerrechnet"  // Absage direkt mit Plusstunde verrechnet (auch Annas)
   | "verfallen"       // Absage ohne Gutschrift (zu kurzfristig / Konto voll)
   | "verschoben";     // Stunde wurde verschoben (zählt nicht)
 
@@ -228,6 +228,8 @@ export function kontoVerlauf(rows: {
       const note = a.note || "";
       if (note === "anna_cancel") {
         aus.push({ ...basis, art: "nach", text: "Von Anna abgesagt – Gutschrift zum kostenlosen Nachholen (+1 Gutschrift)" });
+      } else if (note === "anna_cancel_plus") {
+        aus.push({ ...basis, art: "plusVerrechnet", text: "Von Anna abgesagt – direkt mit einer offenen Zusatzstunde verrechnet (−1 Plus, nichts extra zu zahlen)" });
       } else if (note === "plusverrechnet") {
         aus.push({ ...basis, art: "plusVerrechnet", text: "Abgesagt – direkt mit einer offenen Zusatzstunde verrechnet (−1 Plus, nichts nachzuholen)" });
       } else if (note.startsWith("verschoben:")) {
@@ -241,7 +243,13 @@ export function kontoVerlauf(rows: {
         aus.push({ ...basis, art: "verfallen", text: `Abgesagt – verfallen: weniger als ${ABSAGE_FRIST_STUNDEN} Stunden vor Beginn` });
       }
     } else if (a.kind === "einzel" && a.status === "bestaetigt") {
-      if (a.counted === "minus") {
+      if (a.note === "warplus") {
+        // Diese Stunde zählte als Plus und wurde SPÄTER zur Ersatzstunde einer
+        // Absage umgewidmet (counted ist dann minus/makeup). Ohne die Marke
+        // verschwand die Zusatzstunde komplett aus dem Verlauf – Kleanas
+        // Plus-Bug vom Okt. 2026. Die −1 steht auf der Absage-Zeile.
+        aus.push({ ...basis, art: "plus", text: "Zusatzstunde (+1 Plus) – später als Ersatz für eine abgesagte Stunde verwendet" });
+      } else if (a.counted === "minus") {
         aus.push({ ...basis, art: "minusAusgleich", text: "Nachholstunde – gleicht eine offene Minusstunde aus (−1 Minus)" });
       } else if (a.counted === "makeup") {
         aus.push({ ...basis, art: "nachEingeloest", text: "Nachholstunde – Gutschrift von Anna eingelöst (−1 Gutschrift)" });

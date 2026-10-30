@@ -7,7 +7,7 @@ import {
   service, signInFlexibel, refresh, userFromToken, getProfile, profilEntfernt, buildWeek, balanceDates, groupBalanceDates,
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   tagIntervalle, type ApptRow,
-  sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, type Profile,
+  sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, NOTE_ANNA_CANCEL_PLUS, type Profile,
   ladeFreiKontext, schulfreiGrund,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
@@ -143,7 +143,10 @@ async function aeltesteOffenePlusstunde(studentId: string): Promise<{ id: string
   return ((data || [])[0] as { id: string } | undefined) ?? null;
 }
 async function plusZeileVerrechnen(zeileId: string, als: "minus" | "makeup"): Promise<void> {
-  const { error } = await service().from("appointments").update({ counted: als }).eq("id", zeileId);
+  // note "warplus": Die Stunde WAR eine Plusstunde – nur so kann der
+  // Stundenverlauf sie weiterhin als Zusatzstunde zeigen, statt sie wie eine
+  // gewöhnliche Nachholstunde aussehen zu lassen (Kleanas Plus-Bug, Okt. 2026).
+  const { error } = await service().from("appointments").update({ counted: als, note: "warplus" }).eq("id", zeileId);
   if (error) console.error("Plusstunde ließ sich nicht als verrechnet markieren:", error.message);
 }
 
@@ -1139,19 +1142,21 @@ export async function POST(req: Request): Promise<Response> {
           }
         }
         const sp = await getProfile(s.fixedActive.student_id);
+        // Kleanas Regel: offene Plusstunde geht vor Nachhol-Guthaben – aber
+        // nur, wenn es eine ECHTE offene Plus-Terminzeile gibt (der Zähler
+        // allein kann nach Handkorrekturen oder einer Abrechnung irren).
+        // Bewertet wird VOR dem Einfügen, damit die Absage-Zeile gleich die
+        // passende Notiz trägt – der Stundenverlauf und die Datums-Listen
+        // unterscheiden „Gutschrift" und „mit Plusstunde verrechnet".
+        const offeneZeile = sp && sp.plus_hours > 0 ? await aeltesteOffenePlusstunde(sp.user_id) : null;
+        const anna = sp ? bewerteAnnaAbsage(offeneZeile ? sp : { ...sp, plus_hours: 0 }) : null;
+        const mitPlusVerrechnet = anna?.plusVerrechnet === true;
         // Erst die Absage-Zeile, DANN das Guthaben – scheitert das Speichern,
         // bliebe der Termin sonst im Kalender stehen, das Guthaben wäre aber
         // schon verbucht.
-        { const { error } = await service().from("appointments").insert({ student_id: s.fixedActive.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: false, note: NOTE_ANNA_CANCEL });
+        { const { error } = await service().from("appointments").insert({ student_id: s.fixedActive.student_id, slot_date: date, hour, kind: "absage", status: "abgesagt", credited: false, note: mitPlusVerrechnet ? NOTE_ANNA_CANCEL_PLUS : NOTE_ANNA_CANCEL });
           if (error) return bad("Absagen fehlgeschlagen: " + error.message); }
-        let mitPlusVerrechnet = false;
-        if (sp) {
-          // Kleanas Regel: offene Plusstunde geht vor Nachhol-Guthaben – aber
-          // nur, wenn es eine ECHTE offene Plus-Terminzeile gibt (der Zähler
-          // allein kann nach Handkorrekturen oder einer Abrechnung irren).
-          const offeneZeile = sp.plus_hours > 0 ? await aeltesteOffenePlusstunde(sp.user_id) : null;
-          const anna = bewerteAnnaAbsage(offeneZeile ? sp : { ...sp, plus_hours: 0 });
-          mitPlusVerrechnet = anna.plusVerrechnet;
+        if (sp && anna) {
           await setBalance(sp.user_id, anna.aenderung);
           if (anna.plusVerrechnet && offeneZeile) await plusZeileVerrechnen(offeneZeile.id, "makeup");
         }
@@ -1539,22 +1544,10 @@ export async function POST(req: Request): Promise<Response> {
       await service().from("profiles").update({ [col]: nv }).eq("user_id", sid);
       return ok({ message: "Aktualisiert." });
     }
-    if (action === "studentHistory") {
-      const sid = String(body.studentId || "");
-      const p = await getProfile(sid);
-      if (!p || p.role === "admin") return bad("Nicht gefunden.");
-      const { data } = await service().from("appointments").select("slot_date,hour,kind,credited,counted,note,status").eq("student_id", sid).order("slot_date", { ascending: false }).limit(500);
-      const plus: string[] = [], minus: string[] = [], late: string[] = [], overmax: string[] = [], gutschrift: string[] = [];
-      ((data || []) as { slot_date: string; hour: number; kind: string; credited: boolean; counted: string | null; note: string | null; status: string }[]).forEach((a) => {
-        const label = prettyDate(a.slot_date, a.hour).replace(" um ", ", ");
-        if (a.counted === "plus" && a.status !== "abgesagt") plus.push(label);
-        if (a.kind === "absage" && a.credited) minus.push(label);
-        else if (a.kind === "absage" && a.note === NOTE_ANNA_CANCEL) gutschrift.push(label);
-        else if (a.kind === "absage" && a.note === "late") late.push(label);
-        else if (a.kind === "absage" && a.note === "overmax") overmax.push(label);
-      });
-      return ok({ name: p.name, history: { plus, minus, late, overmax, gutschrift } });
-    }
+    // Die frühere Gruppen-Ansicht „studentHistory" ist durch „stundenVerlauf"
+    // ersetzt: Sie zeigte verrechnete Plusstunden nicht mehr (counted wird
+    // umgewidmet) – zwei Logiken für dieselbe Frage hätten weiter auseinander
+    // gedriftet. Kleana sieht jetzt denselben kompletten Verlauf wie die Familie.
     if (action === "adminInbox") {
       const sb = service();
       // Absagen: mehr laden als gezeigt wird, denn mit ✕ ausgeblendete
@@ -1590,7 +1583,7 @@ export async function POST(req: Request): Promise<Response> {
       ];
       const gesehen = new Set(gesehenListe(gesehenWert));
       const cancellations = [
-        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL, plusVerr: c.note === "plusverrechnet", einzel: false, wann: null as string | null,
+        ...canc.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: c.credited, byAnna: c.note === NOTE_ANNA_CANCEL || c.note === NOTE_ANNA_CANCEL_PLUS, plusVerr: c.note === "plusverrechnet" || c.note === NOTE_ANNA_CANCEL_PLUS, einzel: false, wann: null as string | null,
           // Verschobene Fest-Stunde: kein „abgesagt", sondern „verlegt auf …".
           verschobenAuf: (c.note || "").startsWith("verschoben:") ? (c.note || "").slice("verschoben:".length) : null })),
         ...storni.map((c) => ({ id: c.id, date: c.slot_date, hour: c.hour, who: nameOf(c.student_id), credited: false, byAnna: false, plusVerr: false, einzel: true, wann: (c.note || "").slice("storno:".length) || null, verschobenAuf: null as string | null })),
