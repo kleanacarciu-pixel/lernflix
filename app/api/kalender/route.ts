@@ -142,6 +142,23 @@ async function aeltesteOffenePlusstunde(studentId: string): Promise<{ id: string
     .order("slot_date", { ascending: true }).limit(1);
   return ((data || [])[0] as { id: string } | undefined) ?? null;
 }
+// Pro Datum+Uhrzeit ist nur EINE aktive Buchung erlaubt (Index
+// appointments_unique_active). Scheitert ein Eintrag daran, sagt diese
+// Funktion in Klartext, WAS dort schon steht – statt „duplicate key …".
+async function belegtMeldung(date: string, hour: number): Promise<string> {
+  const { data } = await service().from("appointments").select("kind,note,student_id")
+    .eq("slot_date", date).eq("hour", hour).neq("status", "abgesagt").neq("kind", "absage").limit(1);
+  const b = (data || [])[0] as { kind: string; note: string | null; student_id: string | null } | undefined;
+  let was = "schon ein anderer Termin";
+  if (b) {
+    const titel = (b.note || "").split("|")[0].trim();
+    const nm = b.student_id ? (await getProfile(b.student_id))?.name : null;
+    if (b.kind === "block") was = titel ? `ein blockierter Termin („${titel}“)` : "ein blockierter Termin";
+    else if (b.kind === "probe") was = `die Probestunde von ${nm || titel || "einem Gast"}`;
+    else was = nm ? `eine Stunde von ${nm}` : "die Stunde eines anderen Schülers";
+  }
+  return `Geht nicht: Am ${prettyDate(date, hour)} steht im Kalender schon ${was}. Pro Zeitfenster ist nur ein Termin möglich – bitte diesen Termin im Kalender prüfen (verschieben/löschen), wenn die Stunde wirklich dorthin gehört.`;
+}
 async function plusZeileVerrechnen(zeileId: string, als: "minus" | "makeup"): Promise<void> {
   // note "warplus": Die Stunde WAR eine Plusstunde – nur so kann der
   // Stundenverlauf sie weiterhin als Zusatzstunde zeigen, statt sie wie eine
@@ -743,7 +760,11 @@ export async function POST(req: Request): Promise<Response> {
       { const { error } = await service().from("appointments").insert({
           student_id: sid, slot_date: date, hour, kind: "einzel", status: "bestaetigt", mode, dauer_min: dauerMin, counted,
         });
-        if (error) { await revertCounting(sp, counted); return bad("Eintragen fehlgeschlagen: " + error.message); } }
+        if (error) {
+          await revertCounting(sp, counted);
+          if (error.code === "23505" || /appointments_unique_active/.test(error.message)) return bad(await belegtMeldung(date, hour), 409);
+          return bad("Eintragen fehlgeschlagen: " + error.message);
+        } }
       if (nachtrag) {
         const wie = counted === "plus" ? "als Plusstunde gezählt – sie steht jetzt unter „Zusatzstunden“ zum Abrechnen"
           : counted === "makeup" ? "mit einem offenen Nachhol-Guthaben verrechnet"
