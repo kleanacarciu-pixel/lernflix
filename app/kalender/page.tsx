@@ -333,6 +333,9 @@ export default function KalenderPage() {
   const [meinTeams, setMeinTeams] = useState<string | null>(null); // Schüler: eigener Teams-Knopf
   const [hinweis, setHinweis] = useState<string | null>(null); // Kalender-Hinweis von Kleana (für alle)
   const [inbox, setInbox] = useState<Inbox | null>(null);
+  // Scheitert die Wochen-Abfrage (Handy-Netz!), darf NICHT ewig „wird geladen…"
+  // stehen bleiben – stattdessen eine klare Meldung mit „Neu laden"-Knopf.
+  const [ladeFehler, setLadeFehler] = useState(false);
   const [selDay, setSelDay] = useState<string>("");
   const [filterCls, setFilterCls] = useState<string | null>(null);
   const [legendOffen, setLegendOffen] = useState(false); // Handy: Farben & Filter eingeklappt
@@ -439,7 +442,10 @@ export default function KalenderPage() {
       if (versionRef.current && versionRef.current !== d.version) { window.location.reload(); return; }
       versionRef.current = d.version;
     }
-    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); setHinweis((d.hinweis as string) || null); }
+    if (d.ok) { setDays((d.days as Day[]) || []); setBalance((d.balance as Balance) || null); setNextLesson((d.nextLesson as NextLesson) || null); setMeinTeams((d.teamsLink as string) || null); setHinweis((d.hinweis as string) || null); setLadeFehler(false); }
+    // Antwort kam, war aber nicht ok (z. B. Verbindung weg): Fehler zeigen,
+    // damit statt ewigem Lade-Kringel ein „Neu laden"-Knopf erscheint.
+    else setLadeFehler(true);
     if (isAdmin && o && o.ok) { setOverview((o.students as OverviewRow[]) || []); setTeamsDefault((o.teamsDefault as string) || null); }
     if (isAdmin && ib && ib.ok) setInbox(ib.inbox as Inbox);
     if (mitExtras && o && o.ok && ib && ib.ok) extrasDirty.current = false;
@@ -1310,7 +1316,12 @@ export default function KalenderPage() {
             <div className={"legend" + (legendOffen ? " offen" : "")}>{legend.map((l, i) => { const cls = SWATCH_CLS[l.c]; const on = filterCls === cls; return (
               <button key={i} className={"legitem" + (on ? " on" : "")} onClick={() => setFilterCls(on ? null : cls)}><i className={l.c} />{l.t}</button>
             ); })}{filterCls && <button className="legclear" onClick={() => setFilterCls(null)}>Filter aufheben ✕</button>}</div>
-            {days.length === 0 ? <div className="kloading"><span className="kspin" /> Kalender wird geladen…</div> : <>
+            {days.length === 0 ? (ladeFehler
+              ? <div className="kloading" style={{ flexDirection: "column", gap: 12 }}>
+                  <span>⚠️ Der Kalender ließ sich gerade nicht laden – meist nur ein kurzer Internet-Wackler.</span>
+                  <button className="btn p" onClick={() => { setLadeFehler(false); extrasDirty.current = true; void loadWeek(); }}>↻ Neu laden</button>
+                </div>
+              : <div className="kloading"><span className="kspin" /> Kalender wird geladen…</div>) : <>
             <div className="deskgrid"><div className="owoche">
               <div className="okopf">
                 <div />
