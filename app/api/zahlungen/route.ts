@@ -194,7 +194,37 @@ export async function POST(req: Request): Promise<Response> {
         // Mehr als 5 Zeitstunden hält niemand am Stück: darüber kappen.
         status: "bestaetigt", mode: t.mode || "online", dauer_min: Math.min(t.dauerMin, 300), counted: "plus",
       });
-      if (ins.error) return bad("Übernehmen fehlgeschlagen: " + ins.error.message, 500);
+      if (ins.error) {
+        // Häufigster Fall: An genau diesem Datum+Uhrzeit steht im Kalender
+        // schon etwas anderes (meist ein blockierter Termin oder die Stunde
+        // eines ANDEREN Schülers – pro Zeitfenster ist nur eine aktive
+        // Buchung erlaubt). Statt des kryptischen Datenbank-Textes nachsehen,
+        // WAS dort liegt, und es Kleana in Klartext sagen.
+        const kollision = ins.error.code === "23505"
+          || /appointments_unique_active|duplicate key/i.test(ins.error.message);
+        if (kollision) {
+          const { data: belegt } = await sb.from("appointments")
+            .select("kind,note,student_id")
+            .eq("slot_date", datum).eq("hour", minuten / 60)
+            .neq("status", "abgesagt").neq("kind", "absage").limit(1);
+          const b = (belegt || [])[0] as { kind: string; note: string | null; student_id: string | null } | undefined;
+          let was = "schon ein anderer Termin";
+          if (b) {
+            if (b.kind === "block") {
+              const titel = (b.note || "").split("|")[0].trim();
+              was = titel ? `ein blockierter Termin („${titel}“)` : "ein blockierter Termin";
+            } else if (b.student_id) {
+              const n = await sb.from("profiles").select("name").eq("user_id", b.student_id).single();
+              const nm = (n.data as { name: string } | null)?.name;
+              was = nm ? `eine Stunde von ${nm}` : "die Stunde eines anderen Schülers";
+            }
+          }
+          const dDe = `${datum.slice(8, 10)}.${datum.slice(5, 7)}.${datum.slice(0, 4)}`;
+          const uhr = `${String(Math.floor(minuten / 60)).padStart(2, "0")}:${String(minuten % 60).padStart(2, "0")}`;
+          return bad(`Geht nicht: Am ${dDe} um ${uhr} Uhr steht im Kalender ${was}. Pro Zeitfenster ist nur ein Termin möglich. Prüfe diesen Termin im Kalender – gehört die Stunde wirklich dahin, verschieb oder lösch ihn dort zuerst, dann klappt das Übernehmen.`, 409);
+        }
+        return bad("Übernehmen fehlgeschlagen: " + ins.error.message, 500);
+      }
       // Plus-Zähler im Kalender nachziehen, damit Anzeige und Abrechnung
       // dasselbe sagen. Klappt DAS nicht, muss Kleana es erfahren – die
       // Stunde steht dann zwar in der Abrechnung, aber der Zähler im
