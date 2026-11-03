@@ -83,3 +83,15 @@ describe("Wächter: die Schulfrei-Regel darf nie still wegfallen", () => {
     assert.match(kal, /if \(schulfreiSids\?\.has\(f\.student_id\)\) return;/);
   });
 });
+
+describe("Wächter: schulfreie Termine bleiben sichtbar (grau)", () => {
+  test("die Woche liefert ausgefallene feste Termine als schulfrei-Liste", () => {
+    const kal = readFileSync("lib/kalender.ts", "utf8");
+    assert.match(kal, /schulfrei = tagIntervalle\(date, wd, sichtbar, dayAppts, \[\], nameOf\)/);
+  });
+  test("die Kalender-Seite malt sie als graue Schulfrei-Blöcke", () => {
+    const seite = readFileSync("app/kalender/page.tsx", "utf8");
+    assert.match(seite, /d\.schulfrei \|\| \[\]/);
+    assert.match(seite, /oblock schulfrei/);
+  });
+});

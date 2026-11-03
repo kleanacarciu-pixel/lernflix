@@ -315,7 +315,11 @@ export type SlotOut = {
 // absagen (nur Admin-Sicht): abgesagte Stunden des Tages als rote Info-Blöcke –
 // der Zeitraum bleibt trotzdem frei buchbar
 export type AbsageOut = { start: number; dauer: number; name: string };
-export type DayOut = { date: string; weekday: number; slots: SlotOut[]; absagen?: AbsageOut[] };
+// schulfrei: feste Termine, die an diesem Tag wegen Ferien/Feiertag/
+// schulfreiem Tag ausfallen – grau sichtbar statt spurlos verschwunden
+// (Kleana, Buß- und Bettag 18.11.2026: „die Mittwochs sind verschwunden").
+export type SchulfreiOut = { start: number; dauer: number; name: string; grund: string };
+export type DayOut = { date: string; weekday: number; slots: SlotOut[]; absagen?: AbsageOut[]; schulfrei?: SchulfreiOut[] };
 
 // Belegungs-Intervall eines Tages (Outlook-Stil: Termine sind Zeitblöcke)
 type Intervall = {
@@ -516,7 +520,19 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
         });
       if (!absagen.length) absagen = undefined;
     }
-    return { date, weekday: wd, slots, ...(absagen ? { absagen } : {}) };
+    // Ausgefallene feste Termine wegen Schulfrei: Kleana sieht alle, ein
+    // Schüler nur seinen eigenen. Dieselbe Geltungs-Logik wie oben (ab_datum,
+    // Absagen, gebuchte Stunde am selben Start) – nur ohne Schulfrei-Filter.
+    let schulfrei: SchulfreiOut[] | undefined;
+    if (schulfreiSids.size && (role === "admin" || role === "student")) {
+      const sichtbar = fixe.filter((f) => f.status === "aktiv" && schulfreiSids.has(f.student_id)
+        && (role === "admin" || f.student_id === viewerId));
+      schulfrei = tagIntervalle(date, wd, sichtbar, dayAppts, [], nameOf)
+        .filter((iv) => iv.fixed)
+        .map((iv) => ({ start: iv.start, dauer: iv.dauer, name: iv.name, grund: schulfreiGrund(freiCtx, iv.sid, date) || "schulfrei" }));
+      if (!schulfrei.length) schulfrei = undefined;
+    }
+    return { date, weekday: wd, slots, ...(absagen ? { absagen } : {}), ...(schulfrei ? { schulfrei } : {}) };
   });
 }
 
