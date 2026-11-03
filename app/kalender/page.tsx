@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 // ------- Typen -------
 type Slot = { hour: number; state: string; name?: string; mine?: boolean; fixed?: boolean; mode?: string | null; weekly?: boolean; dauer?: number; cont?: boolean; anchor?: number };
 type Absage = { start: number; dauer: number; name: string };
-type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[] };
+type Schulfrei = { start: number; dauer: number; name: string; grund: string };
+type Day = { date: string; weekday: number; slots: Slot[]; absagen?: Absage[]; schulfrei?: Schulfrei[] };
 import {
   MAX_MINUS, WARNUNG_AB_MINUS, absageVorschau, freieGutschriften,
 } from "@/lib/stundenkonto-kern";
@@ -28,7 +29,7 @@ const fmtZeit = (hour: number) => { const m = Math.round(hour * 60); return `${S
 const STUNDE_PX = 56;
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const pad = (n: number) => String(n).padStart(2, "0");
-const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-einz": "einz", "sw-block": "blk", "sw-closed": "closed", "sw-abges": "abges" };
+const SWATCH_CLS: Record<string, string> = { "sw-free": "free", "sw-mine": "mine", "sw-req": "req", "sw-busy": "busy", "sw-einz": "einz", "sw-block": "blk", "sw-closed": "closed", "sw-abges": "abges", "sw-schulfrei": "schulfrei" };
 function mondayOf(d: Date) { const x = new Date(d); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); x.setHours(0, 0, 0, 0); return x; }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function dm(d: Date) { return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.`; }
@@ -168,6 +169,7 @@ const CSS = `
 .sw-req{background:#fff3d6;border-color:#e3b84d}.sw-closed{background:#f4f4f4}
 .sw-block{background:#e7ebee;border-color:#aeb8c0}
 .sw-abges{background:#fde6e4;border-color:#d9655a}
+.sw-schulfrei{background:repeating-linear-gradient(135deg,#f4f6f8 0 3px,#dfe4e9 3px 6px);border-color:#aab4bf;border-style:dashed}
 table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fixed}
 .kgrid th,.kgrid td{border:1px solid var(--line);text-align:center;padding:0}
 .kgrid thead th:first-child,.kgrid tbody th{width:64px}
@@ -238,6 +240,7 @@ table.kgrid{border-collapse:collapse;width:100%;min-width:760px;table-layout:fix
 .oblock.req{background:#fff3d6;color:#8a6d1a;border-left-color:#e3b84d}        /* Anfrage: gelb */
 .oblock.blk{background:#e7ebee;color:#5f6b73;border-left-color:#aeb8c0}        /* geblockt: grau */
 .oblock.abges{background:#fde6e4;color:#a33228;border-left-color:#d9655a;z-index:1} /* abgesagt: rot (nur Kleana) */
+.oblock.schulfrei{background:repeating-linear-gradient(135deg,#f4f6f8 0 6px,#e8ecf0 6px 12px);color:#5f6b76;border-left-color:#aab4bf;border-left-style:dashed;z-index:0} /* schulfrei: Termin fällt aus */
 .oblock.dim{opacity:.13}
 .oblock:hover{outline:2px solid var(--teal);outline-offset:-1px}
 /* Handy: Outlook-Tagesansicht (Zeitleiste + eine Tagesspalte) */
@@ -1020,6 +1023,16 @@ export default function KalenderPage() {
             </button>
           );
         })}
+        {/* Schulfrei: der feste Termin fällt aus (Ferien/Feiertag) – grau und
+            nicht klickbar, damit darunter weiter eine Einzelstunde buchbar ist */}
+        {(d.schulfrei || []).map((sf, i) => (
+          <div key={"sf" + i} className={"oblock schulfrei" + (filterCls && filterCls !== "schulfrei" ? " dim" : "")}
+            style={{ top: (sf.start - 8) * STUNDE_PX, height: Math.max(18, (sf.dauer / 60) * STUNDE_PX - 2), pointerEvents: "none" }}
+            title={`${sf.name}: kein Unterricht – ${sf.grund} (im Vertrag herausgerechnet)`}>
+            <span className="obtitel">🏖️ {sf.name}</span>
+            {sf.dauer >= 30 && <span className="obzeit">schulfrei · {sf.grund}</span>}
+          </div>
+        ))}
         {events.map((ev) => {
           const v = cellView(ev.s, role);
           const dim = filterCls && v.cls !== filterCls ? " dim" : "";
@@ -1393,8 +1406,8 @@ function cellView(s: Slot, role: string): { cls: string; label: string } {
 function buildLegend(role: string) {
   const items = [{ c: "sw-free", t: "frei / buchbar" }];
   if (role === "public") items.push({ c: "sw-busy", t: "fest belegt (wöchentlich)" }, { c: "sw-einz", t: "einmalig belegt" });
-  else if (role === "student") items.push({ c: "sw-mine", t: "deine Stunde" }, { c: "sw-req", t: "angefragt" }, { c: "sw-busy", t: "fest belegt (andere)" }, { c: "sw-einz", t: "einmalig belegt (andere)" });
-  else items.push({ c: "sw-busy", t: "fester Termin" }, { c: "sw-einz", t: "einmalige Stunde" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-abges", t: "abgesagt" }, { c: "sw-block", t: "geblockt (du)" });
+  else if (role === "student") items.push({ c: "sw-mine", t: "deine Stunde" }, { c: "sw-req", t: "angefragt" }, { c: "sw-busy", t: "fest belegt (andere)" }, { c: "sw-einz", t: "einmalig belegt (andere)" }, { c: "sw-schulfrei", t: "schulfrei (kein Unterricht)" });
+  else items.push({ c: "sw-busy", t: "fester Termin" }, { c: "sw-einz", t: "einmalige Stunde" }, { c: "sw-req", t: "Anfrage" }, { c: "sw-abges", t: "abgesagt" }, { c: "sw-schulfrei", t: "schulfrei (fällt aus)" }, { c: "sw-block", t: "geblockt (du)" });
   items.push({ c: "sw-closed", t: "geschlossen" });
   return items;
 }
