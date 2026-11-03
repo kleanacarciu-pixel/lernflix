@@ -8,7 +8,7 @@ import {
   weekdayOf, hoursUntil, prettyDate, fmtZeit, slotKonflikt, dauerOk, feinRasterOk, gleicheStunde, blockTreffer, DAY_NAMES, addDaysStr,
   tagIntervalle, type ApptRow,
   sendMail, mailZustellenOderMelden, mailTemplates, wrapMail, ADMIN_EMAIL, NOTE_ANNA_CANCEL, NOTE_ANNA_CANCEL_PLUS, type Profile,
-  ladeFreiKontext, schulfreiGrund,
+  ladeFreiKontext, schulfreiGrund, schulfreiAm,
 } from "@/lib/kalender";
 import { nextLessonFor, syncLessons, gastLink, teamsLinkFuer } from "@/lib/stunden";
 import { ladeEinstellung, speichereEinstellung, SCHLUESSEL_ABSAGEN_GESEHEN } from "@/lib/einstellungen";
@@ -1211,10 +1211,11 @@ export async function POST(req: Request): Promise<Response> {
       const zielBelegt = async (ausserApptId: string | null, ohneFixSid: string | null) => {
         const sb = service();
         const wd2 = weekdayOf(zielDatum);
-        const [fxRes, apRes, wbRes] = await Promise.all([
+        const [fxRes, apRes, wbRes, freiCtx] = await Promise.all([
           sb.from("fixed_slots").select("*").eq("weekday", wd2).in("status", ["aktiv", "angefragt"]),
           sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", zielDatum),
           sb.from("weekly_blocks").select("*").eq("weekday", wd2),
+          ladeFreiKontext(),
         ]);
         const appts = ((apRes.data || []) as (ApptRow & { id: string })[]).filter((a) => a.id !== ausserApptId);
         const fixe = ((fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[])
@@ -1224,7 +1225,7 @@ export async function POST(req: Request): Promise<Response> {
           // Schülers zur selben Uhrzeit an einem anderen Tag bleibt Konflikt.)
           .filter((f) => !(ohneFixSid && f.student_id === ohneFixSid
             && gleicheStunde(Number(f.hour), hour) && wd2 === weekdayOf(date)));
-        const ivs = tagIntervalle(zielDatum, wd2, fixe, appts, (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[], () => "Schüler");
+        const ivs = tagIntervalle(zielDatum, wd2, fixe, appts, (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[], () => "Schüler", schulfreiAm(freiCtx, fixe, zielDatum));
         const ende = zielHour + dauerMin / 60;
         return ivs.some((iv) => iv.start < ende && iv.ende > zielHour);
       };
