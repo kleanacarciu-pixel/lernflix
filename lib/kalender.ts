@@ -374,6 +374,13 @@ export function schulfreiGrund(ctx: FreiKontext, studentId: string, datum: strin
   return t ? (t.bezeichnung || "schulfrei") : null;
 }
 
+/** Welche Schüler mit festem Termin haben an diesem Datum schulfrei? */
+export function schulfreiAm(ctx: FreiKontext, fixe: { student_id: string }[], datum: string): Set<string> {
+  const s = new Set<string>();
+  fixe.forEach((f) => { if (schulfreiGrund(ctx, f.student_id, datum)) s.add(f.student_id); });
+  return s;
+}
+
 export function tagIntervalle(
   date: string, wd: number,
   fixe: { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
@@ -538,20 +545,25 @@ export async function buildWeek(monday: string, role: "public" | "student" | "ad
 
 // Kollisions-Prüfung fürs Buchen: überschneidet [hour, hour+dauer) irgendeine
 // bestehende Belegung des Tages? (Absagen geben den festen Termin frei.)
+// Feste Termine, die an diesem Tag schulfrei ausfallen, belegen NICHTS –
+// genau wie in der Wochenansicht. Vorher zeigte der Kalender am Buß- und
+// Bettag (18.11.2026) alles frei, die Buchung wurde aber abgelehnt.
 export async function slotKonflikt(date: string, hour: number, dauerMin: number): Promise<boolean> {
   const sb = service();
   const wd = weekdayOf(date);
-  const [fxRes, apRes, wbRes] = await Promise.all([
+  const [fxRes, apRes, wbRes, freiCtx] = await Promise.all([
     sb.from("fixed_slots").select("*").eq("weekday", wd).in("status", ["aktiv", "angefragt"]),
     sb.from("appointments").select("id,student_id,slot_date,hour,kind,status,mode,note,dauer_min").eq("slot_date", date),
     sb.from("weekly_blocks").select("*").eq("weekday", wd),
+    ladeFreiKontext(),
   ]);
+  const fixe = (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[];
   const ivs = tagIntervalle(
-    date, wd,
-    (fxRes.data || []) as { student_id: string; weekday: number; hour: number; status: string; mode: string | null; dauer_min: number; created_at?: string | null; ab_datum?: string | null }[],
+    date, wd, fixe,
     (apRes.data || []) as ApptRow[],
     (wbRes.data || []) as { weekday: number; hour: number; dauer_min?: number }[],
     () => "Schüler",
+    schulfreiAm(freiCtx, fixe, date),
   );
   const ende = hour + dauerMin / 60;
   return ivs.some((iv) => iv.start < ende && iv.ende > hour);

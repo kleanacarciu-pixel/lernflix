@@ -95,3 +95,27 @@ describe("Wächter: schulfreie Termine bleiben sichtbar (grau)", () => {
     assert.match(seite, /oblock schulfrei/);
   });
 });
+
+describe("Buchen an schulfreien Tagen (Buß- und Bettag 18.11.2026)", () => {
+  test("schulfreiAm nennt genau die Schüler, deren fester Termin ausfällt", async () => {
+    const { schulfreiAm } = await import("../lib/kalender.ts");
+    const ctx: FreiKontext = {
+      frei: [{ datum_von: "2026-11-18", datum_bis: "2026-11-18", ist_feiertag: false, schule_id: null, bezeichnung: "Buß- und Bettag" }],
+      schuleVon: new Map(),
+    };
+    const s = schulfreiAm(ctx, [{ student_id: "a" }, { student_id: "b" }], "2026-11-18");
+    assert.deepEqual([...s].sort(), ["a", "b"]);
+    assert.equal(schulfreiAm(ctx, [{ student_id: "a" }], "2026-11-25").size, 0);
+  });
+  test("ein ausgefallener fester Termin blockiert die Zeit nicht mehr", () => {
+    // tagIntervalle mit Schulfrei-Liste: 14:00 ist frei für eine Extra-Stunde
+    const fix = [{ student_id: "kind", weekday: 2, hour: 14, status: "aktiv", mode: null as string | null, dauer_min: 60, created_at: null as string | null }];
+    assert.equal(tagIntervalle("2026-11-18", 2, fix, [], [], () => "x", new Set(["kind"])).length, 0);
+  });
+  test("Wächter: Buchungs- und Verschiebe-Prüfung kennen Schulfrei", () => {
+    const kal = readFileSync("lib/kalender.ts", "utf8");
+    assert.match(kal, /schulfreiAm\(freiCtx, fixe, date\)/);
+    const route = readFileSync("app/api/kalender/route.ts", "utf8");
+    assert.match(route, /schulfreiAm\(freiCtx, fixe, zielDatum\)/);
+  });
+});
